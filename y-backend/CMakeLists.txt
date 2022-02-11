@@ -8,9 +8,12 @@ find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED context)
 
-include_directories(${OPENSSL_INCLUDE_DIR} include)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-set(LIBS ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+include_directories(${OPENSSL_INCLUDE_DIR} third_party/ include)
+link_directories(third_party/libpq)
+
+set(LIBS pq ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
           ${OPENSSL_LIBRARIES})
 
 add_executable(main main.cpp)

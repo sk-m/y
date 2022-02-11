@@ -8,6 +8,12 @@ y-backend/Makefile
 # logs
 y-backend/*.log
 
+# third party, includes
+y-backend/third_party/libpq
+
 # executables
 # TODO: move to dist/
 y-backend/main
+
+# misc
+.vscode/*.log
