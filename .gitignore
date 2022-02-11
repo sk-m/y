@@ -1,0 +1,13 @@
+# ----- Backend -----
+# cmake stuff
+y-backend/CMakeFiles
+y-backend/CMakeCache.txt
+y-backend/*.cmake
+y-backend/Makefile
+
+# logs
+y-backend/*.log
+
+# executables
+# TODO: move to dist/
+y-backend/main
