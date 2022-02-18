@@ -72,6 +72,9 @@ namespace DB {
 
     bool _init();
 
+    bool _prepare_statement(const char* statement_name, const char* query, int n_params, const Oid *param_types);
+    bool _prepare_core_statements();
+
     inline unsigned char _prepare_connection();
     inline void _free_connection(unsigned char conn_id);
 }
@@ -202,6 +205,36 @@ DB::Results DB::query(const char* query_str, bool as_json) {
     return query_results;
 }
 
+bool DB::_prepare_statement(const char* statement_name, const char* query, int n_params, const Oid *param_types) {
+    auto result = PQprepare(_connections[0], statement_name, query, n_params, param_types);
+    const auto status = PQresultStatus(result);
+
+    if(status != PGRES_COMMAND_OK) {
+        const auto error_message = PQresultErrorMessage(result);
+
+        // TODO @log
+        std::cout << "Could not prepare a statement '" << statement_name << "'\nError message: " << error_message;
+
+        PQclear(result);
+        return false;
+    }
+
+    PQclear(result);
+    return true;
+}
+
+bool DB::_prepare_core_statements() {
+    // Creating a new user
+    if(!_prepare_statement(
+        "user_create",
+        "INSERT INTO public.users (user_username, user_password) VALUES ($1::varchar, $2::varchar) RETURNING user_id",
+        2,
+        NULL
+    )) return false;
+
+    return true;
+}
+
 [[nodiscard]] inline unsigned char DB::_prepare_connection() {
     unsigned char conn_id = -1;
 
@@ -261,6 +294,13 @@ bool DB::_init() {
             // TODO @inclomplete @log use a logger instead
             std::cout << "Connected " << i << " succesfully!\n";
         }
+    }
+
+    // Connections are now open, prepare the core statements
+    if(!_prepare_core_statements()) {
+        // TODO @Log
+        std::cout << "Could not prepare a core statement, please check previous log entries for more info\n";
+        return false;
     }
 
     return true;
