@@ -120,6 +120,7 @@ DB::Results DB::query(const char* query_str, bool as_json) {
 
     if(as_json) {
         // Save data as json
+        // TODO @performance there are a lot of optimization that can take place here
 
         auto d = new rapidjson::Document();
         auto d_allocator = d->GetAllocator();
@@ -131,11 +132,49 @@ DB::Results DB::query(const char* query_str, bool as_json) {
 
             for(int c = 0; c < cols_n; c++) {
                 const auto name = PQfname(result, c);
-                const auto value = PQgetvalue(result, r, c);
+                const auto value_raw = PQgetvalue(result, r, c);
+                rapidjson::Value value;
+
+                if(PQgetisnull(result, r, c)) {
+                    value.SetNull();
+                } else {
+                    // TODO @hack @incomplete Use pg_type table
+                    switch(PQftype(result, c)) {
+                        // Boolean
+                        case 16: {
+                            value.SetBool(value_raw[0] == 't');
+                        } break;
+
+                        // Number
+                        // TODO @incomplete
+                        case 20: {
+                            value.SetInt64(std::stoll(value_raw));
+                        } break;
+
+                        case 21: {
+                            value.SetInt(std::stoi(value_raw));
+                        } break;
+
+                        case 23:{
+                            value.SetInt(std::stol(value_raw));
+                        } break;
+
+                        case 700: {
+                            value.SetFloat(std::stof(value_raw));
+                        } break;
+
+                        case 701: {
+                            value.SetDouble(std::stod(value_raw));
+                        } break;
+
+                        default:
+                            value.SetString(value_raw, strlen(value_raw), d_allocator);
+                    }
+                }
 
                 row.AddMember(
                     rapidjson::Value().SetString(name, strlen(name), d_allocator),
-                    rapidjson::Value().SetString(value, strlen(value), d_allocator),
+                    value,
                     d_allocator
                 );
             }
