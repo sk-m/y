@@ -11,6 +11,7 @@ y-backend/*.log
 # third party, includes
 y-backend/third_party/libpq
 y-backend/third_party/fmt
+y-backend/third_party/rapidjson
 
 # executables
 # TODO: move to dist/
