@@ -10,10 +10,14 @@ y-backend/*.log
 
 # third party, includes
 y-backend/third_party/libpq
+y-backend/third_party/fmt
 
 # executables
 # TODO: move to dist/
 y-backend/main
 
+# sensitive data
+y-backend/src/db_config.hpp
+
 # misc
-.vscode/*.log
+.vscode/

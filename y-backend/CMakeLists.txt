@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 project(YBackend)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_BUILD_TYPE Debug)
 
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -10,10 +11,10 @@ find_package(Boost REQUIRED context)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-include_directories(${OPENSSL_INCLUDE_DIR} third_party/ include)
-link_directories(third_party/libpq)
+include_directories(${OPENSSL_INCLUDE_DIR} third_party/ src/)
+link_directories(third_party/libpq third_party/fmt src/)
 
-set(LIBS pq ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+set(LIBS pq fmt ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
           ${OPENSSL_LIBRARIES})
 
 add_executable(main main.cpp)
