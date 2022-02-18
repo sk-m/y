@@ -13,32 +13,24 @@ int main() {
         [](const drogon::HttpRequestPtr& req,
             std::function<void (const drogon::HttpResponsePtr &)> &&callback)
         {
-            auto res = DB::query("SELECT * FROM some_table LIMIT 10");
-
-            Json::Value json;
+            auto res = DB::query("SELECT * FROM pending_revisions LIMIT 10", true);
 
             if(!res.ok) {
+                Json::Value json;
                 json["error"] = true;
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                callback(resp);
 
+                callback(resp);
                 return;
             }
 
-            for(auto k = 0; k < res.data.size(); k++) {
-                Json::Value row;
+            rapidjson::StringBuffer buffer;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+            res.data_json->Accept(writer);
 
-                auto it = res.data[k].begin();
-                while(it != res.data[k].end()) {
-                    row[it->first] = it->second;
-                    it++;
-                }
-
-                json.append(row);
-            }
-
-            auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+            auto resp = drogon::HttpResponse::newHttpResponse();
+            resp->setBody(buffer.GetString());
             callback(resp);
         },
         {drogon::Get});

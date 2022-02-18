@@ -7,6 +7,10 @@
 #include "../third_party/libpq/libpq-fe.h"
 #include "../third_party/fmt/format.h"
 
+#include "../third_party/rapidjson/document.h"
+#include "../third_party/rapidjson/writer.h"
+#include "../third_party/rapidjson/stringbuffer.h"
+
 #include "./db_config.hpp"
 
 namespace DB {
@@ -22,9 +26,12 @@ namespace DB {
         ExecStatusType error;
 
         /**
-         * @brief Data, returned by the database
+         * @brief Indicates if the data is stored as json in [data_json] or as a vector of hashmaps in [data]
          */
+        bool is_json = false;
+        
         std::vector<std::unordered_map<const char*, const char*> > data;
+        rapidjson::Document* data_json;
 
         /**
          * @brief How many rows were affected
@@ -41,7 +48,12 @@ namespace DB {
         PGresult* _pgresult = nullptr;
 
         ~Results() {
-            if(_pgresult && !do_not_clear_results) PQclear(_pgresult);
+            if(!do_not_clear_results) {
+                if(_pgresult) PQclear(_pgresult);
+                
+                // TODO @cleanup I'm pretty sure we don't need to do this. It probably happns automatically
+                if(is_json) delete data_json;
+            }
         }
     };
 
@@ -54,7 +66,7 @@ namespace DB {
      * @param query_str SQL
      * @return query results
      */
-    Results query(const char* query_str);
+    Results query(const char* query_str, bool as_json = false);
 
     PGconn* _connections[DB_CONNECTIONS_N];
 
@@ -64,7 +76,7 @@ namespace DB {
     inline void _free_connection(unsigned char conn_id);
 }
 
-DB::Results DB::query(const char* query_str) {
+DB::Results DB::query(const char* query_str, bool as_json) {
     // Prepare and gather a connection to the database
     const auto conn_id = _prepare_connection();
     auto connection = _connections[conn_id];
@@ -106,11 +118,42 @@ DB::Results DB::query(const char* query_str) {
     const auto rows_n = PQntuples(result);
     const auto cols_n = PQnfields(result);
 
-    query_results.data = std::vector<std::unordered_map<const char*, const char*>>(rows_n, std::unordered_map<const char*, const char*>(cols_n));
+    if(as_json) {
+        // Save data as json
 
-    for(int r = 0; r < rows_n; r++) {
-        for(int c = 0; c < cols_n; c++) {
-            query_results.data[r].insert(std::make_pair<const char*, const char*>(PQfname(result, c), PQgetvalue(result, r, c)));
+        auto d = new rapidjson::Document();
+        auto d_allocator = d->GetAllocator();
+
+        d->SetArray();
+
+        for(int r = 0; r < rows_n; r++) {
+            rapidjson::Value row(rapidjson::kObjectType);
+
+            for(int c = 0; c < cols_n; c++) {
+                const auto name = PQfname(result, c);
+                const auto value = PQgetvalue(result, r, c);
+
+                row.AddMember(
+                    rapidjson::Value().SetString(name, strlen(name), d_allocator),
+                    rapidjson::Value().SetString(value, strlen(value), d_allocator),
+                    d_allocator
+                );
+            }
+
+            d->PushBack(row, d_allocator);
+        }
+
+        query_results.data_json = std::move(d);
+        query_results.is_json = true;
+    } else {
+        // Save data as a vector of hashmaps
+
+        query_results.data = std::vector<std::unordered_map<const char*, const char*>>(rows_n, std::unordered_map<const char*, const char*>(cols_n));
+
+        for(int r = 0; r < rows_n; r++) {
+            for(int c = 0; c < cols_n; c++) {
+                query_results.data[r].insert(std::make_pair<const char*, const char*>(PQfname(result, c), PQgetvalue(result, r, c)));
+            }
         }
     }
 
