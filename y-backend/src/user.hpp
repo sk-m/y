@@ -1,15 +1,57 @@
 #pragma once
 
 #include <iostream>
+#include <openssl/rand.h>
 
 #include "db.hpp"
+#include "util.cpp"
+
+#include "../third_party/fastpbkdf2/fastpbkdf2.h"
+
+// TODO @check is this ok? Should we increase/decrease these numbers?
+#define PASSWORD_SALT_SIZE_BYTES 64
+#define PASSWORD_KEY_SIZE_BYTES 64
+#define PASSWORD_HASH_ITERATIONS 200000
 
 namespace User {
     std::tuple<unsigned int, bool> user_create(const char* username, const char* password);
 }
 
 std::tuple<unsigned int, bool> User::user_create(const char* username, const char* password) {
-    const char* const sql_params[2] = { username, password };
+    // Check the data
+    const auto password_len = strlen(password);
+
+    if(password_len > 2048) {
+        // TODO @incomplete let's return an error message instead of just returning false
+        return std::make_tuple(0, false);
+    }
+
+    // Generate a salt for the password    
+    // TODO @cleanup I think we can skip the initialization of the array
+    unsigned char salt_raw[PASSWORD_SALT_SIZE_BYTES] = { 0 };
+    RAND_bytes(salt_raw, PASSWORD_SALT_SIZE_BYTES);
+
+    // Hash the password
+    // TODO @cleanup I think we can skip the initialization of the array
+    unsigned char hash_out_raw[PASSWORD_KEY_SIZE_BYTES] = {0};
+
+    fastpbkdf2_hmac_sha512((const unsigned char*)password, password_len,
+                           salt_raw, PASSWORD_SALT_SIZE_BYTES,
+                           PASSWORD_HASH_ITERATIONS,
+                           hash_out_raw, PASSWORD_KEY_SIZE_BYTES);
+
+    // Create a `password` string for the database
+    // `pbkdf2;*hash*;*salt*;*iterations_count*;`
+
+    char hash_hex[(PASSWORD_KEY_SIZE_BYTES * 2) + 1];
+    char salt_hex[(PASSWORD_SALT_SIZE_BYTES * 2) + 1];
+
+    make_hex_string(hash_out_raw, PASSWORD_KEY_SIZE_BYTES, hash_hex);
+    make_hex_string(salt_raw, PASSWORD_SALT_SIZE_BYTES, salt_hex);
+
+    const auto db_password_str = fmt::format("pbkdf2;{};{};{};", hash_hex, salt_hex, PASSWORD_HASH_ITERATIONS);
+
+    const char* const sql_params[2] = { username, db_password_str.c_str() };
     auto result = DB::exec_prepared("user_create", sql_params, 2);
 
     if(PQresultStatus(result) != PGRES_TUPLES_OK) {

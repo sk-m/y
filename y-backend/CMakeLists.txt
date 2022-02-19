@@ -12,9 +12,9 @@ find_package(Boost REQUIRED context)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 include_directories(${OPENSSL_INCLUDE_DIR} third_party/ src/)
-link_directories(third_party/libpq third_party/fmt third_party/rapidjson src/)
+link_directories(third_party/libpq third_party/fmt third_party/rapidjson third_party/fastpbkdf2 src/)
 
-set(LIBS pq fmt ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+set(LIBS pq fmt fastpbkdf2 ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
           ${OPENSSL_LIBRARIES})
 
 add_executable(main main.cpp)

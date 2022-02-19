@@ -12,6 +12,7 @@ y-backend/*.log
 y-backend/third_party/libpq
 y-backend/third_party/fmt
 y-backend/third_party/rapidjson
+y-backend/third_party/fastpbkdf2
 
 # executables
 # TODO: move to dist/
