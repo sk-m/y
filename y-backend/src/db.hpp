@@ -68,12 +68,25 @@ namespace DB {
      */
     Results query(const char* query_str, bool as_json = false);
 
+    /**
+     * @brief Execute a prepared statement. Do not forget to call PQclear() on the result
+     * 
+     * @param statement_name name of the prepared statement
+     * @param params parameters
+     * @param params_n number of paramenters provided
+     * @param result_format 0 - text, 1 - binary
+     * @param param_formats see https://www.postgresql.org/docs/current/libpq-exec.html
+     *
+     * @return PGresult* don't forget to PQclear()!
+     */
+    PGresult* exec_prepared(const char* statement_name, const char* const* params, unsigned int params_n, const int* param_formats = NULL, int result_format = 0);
+
     PGconn* _connections[DB_CONNECTIONS_N];
 
     bool _init();
 
-    bool _prepare_statement(const char* statement_name, const char* query, int n_params, const Oid *param_types);
-    bool _prepare_core_statements();
+    bool _prepare_statement(PGconn* connection, const char* statement_name, const char* query, int n_params, const Oid *param_types);
+    bool _prepare_core_statements(PGconn* connection);
 
     inline unsigned char _prepare_connection();
     inline void _free_connection(unsigned char conn_id);
@@ -205,8 +218,24 @@ DB::Results DB::query(const char* query_str, bool as_json) {
     return query_results;
 }
 
-bool DB::_prepare_statement(const char* statement_name, const char* query, int n_params, const Oid *param_types) {
-    auto result = PQprepare(_connections[0], statement_name, query, n_params, param_types);
+PGresult* DB::exec_prepared(const char* statement_name, const char* const* params, unsigned int params_n, const int* param_formats, int result_format) {
+    const auto conn_id = DB::_prepare_connection();
+    auto connection = DB::_connections[conn_id];
+
+    int sql_param_lenghts[params_n] = {};
+
+    for(int i = 0; i < params_n; i++) {
+        sql_param_lenghts[i] = strlen(params[i]);
+    }
+
+    auto result = PQexecPrepared(connection, statement_name, params_n, params, sql_param_lenghts, param_formats, result_format);
+
+    DB::_free_connection(conn_id);
+    return result;
+}
+
+bool DB::_prepare_statement(PGconn* connection, const char* statement_name, const char* query, int n_params, const Oid *param_types) {
+    auto result = PQprepare(connection, statement_name, query, n_params, param_types);
     const auto status = PQresultStatus(result);
 
     if(status != PGRES_COMMAND_OK) {
@@ -223,9 +252,10 @@ bool DB::_prepare_statement(const char* statement_name, const char* query, int n
     return true;
 }
 
-bool DB::_prepare_core_statements() {
+bool DB::_prepare_core_statements(PGconn* connection) {
     // Creating a new user
     if(!_prepare_statement(
+        connection,
         "user_create",
         "INSERT INTO public.users (user_username, user_password) VALUES ($1::varchar, $2::varchar) RETURNING user_id",
         2,
@@ -290,17 +320,19 @@ bool DB::_init() {
         if(connection_status != ConnStatusType::CONNECTION_OK) {
             std::cout << "Could not connect to the database!\n";
             return false;
-        } else {
-            // TODO @inclomplete @log use a logger instead
-            std::cout << "Connected " << i << " succesfully!\n";
         }
-    }
 
-    // Connections are now open, prepare the core statements
-    if(!_prepare_core_statements()) {
-        // TODO @Log
-        std::cout << "Could not prepare a core statement, please check previous log entries for more info\n";
-        return false;
+        // This connection is now open, prepare the core statements for this connection
+        // TODO @cleanup IIUC, we can avoid this by changing the database config a bit
+        // However, we want to be robust, so I don't want to rely on the database config. Let's be safe
+        if(!_prepare_core_statements(_connections[i])) {
+            // TODO @Log
+            std::cout << "Could not prepare a core statement on connection " << i << ", please check previous log entries for more info\n";
+            return false;
+        }
+
+        // TODO @inclomplete @log use a logger instead
+        std::cout << "Connection " << i << " ready!\n";
     }
 
     return true;
