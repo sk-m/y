@@ -9,19 +9,16 @@ namespace User {
 }
 
 std::tuple<unsigned int, bool> User::user_create(const char* username, const char* password) {
-    const auto conn_id = DB::_prepare_connection();
-    auto connection = DB::_connections[conn_id];
-
-    const char* sql_params[2] = { username, password };
-    const int sql_param_lenghts[2] = { strlen(username), strlen(password) };
-
-    auto result = PQexecPrepared(connection, "user_create", 2, sql_params, sql_param_lenghts, NULL, 0);
+    const char* const sql_params[2] = { username, password };
+    auto result = DB::exec_prepared("user_create", sql_params, 2);
 
     if(PQresultStatus(result) != PGRES_TUPLES_OK) {
-        PQclear(result);
+        const auto error_message = PQresultErrorMessage(result);
 
         // TODO @log
-        std::cout << "Could not create a user from User::user_create()\n";
+        std::cout << "Could not create a user from User::user_create()\n" << error_message;
+
+        PQclear(result);
         return std::make_tuple(0, false);
     }
 
@@ -29,7 +26,5 @@ std::tuple<unsigned int, bool> User::user_create(const char* username, const cha
     const auto user_id = std::stoi(PQgetvalue(result, 0, 0));
 
     PQclear(result);
-    DB::_free_connection(conn_id);
-
     return std::make_tuple(user_id, true);
 }
