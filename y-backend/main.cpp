@@ -1,6 +1,7 @@
 #include <drogon/drogon.h>
 
 #include "src/db.hpp"
+#include "src/user.hpp"
 
 int main() {
     // Connect to the databse
@@ -13,7 +14,9 @@ int main() {
         [](const drogon::HttpRequestPtr& req,
             std::function<void (const drogon::HttpResponsePtr &)> &&callback)
         {
-            auto res = DB::query("SELECT * FROM pending_revisions LIMIT 10", true);
+            User::user_create("max", "some_pass");
+            
+            auto res = DB::query("SELECT * FROM users ORDER BY user_id DESC", true);
 
             if(!res.ok) {
                 Json::Value json;
@@ -30,6 +33,7 @@ int main() {
             res.data_json->Accept(writer);
 
             auto resp = drogon::HttpResponse::newHttpResponse();
+            resp->setContentTypeCode(drogon::ContentType::CT_APPLICATION_JSON);
             resp->setBody(buffer.GetString());
             callback(resp);
         },
