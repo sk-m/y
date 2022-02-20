@@ -14,6 +14,12 @@
 #include "./db_config.hpp"
 
 namespace DB {
+    enum class QueryResultsType: unsigned char {
+        Hashmap,
+        JSON,
+        Raw
+    };
+
     struct Results {
         /**
          * @brief Indicates whether or not the query was successfull and the data can be accessed
@@ -26,9 +32,9 @@ namespace DB {
         ExecStatusType error;
 
         /**
-         * @brief Indicates if the data is stored as json in [data_json] or as a vector of hashmaps in [data]
+         * @brief Indicates where the data is stored, in [data], [data_json] or just in the [_pgresult] object
          */
-        bool is_json = false;
+        QueryResultsType results_type = QueryResultsType::Hashmap;
         
         std::vector<std::unordered_map<const char*, const char*> > data;
         rapidjson::Document* data_json;
@@ -52,7 +58,7 @@ namespace DB {
                 if(_pgresult) PQclear(_pgresult);
                 
                 // TODO @cleanup I'm pretty sure we don't need to do this. It probably happns automatically
-                if(is_json) delete data_json;
+                if(results_type == QueryResultsType::JSON) delete data_json;
             }
         }
     };
@@ -64,9 +70,10 @@ namespace DB {
      * @brief Query the database (blocking)
      * 
      * @param query_str SQL
+     * @param results_type save data as a vector of hashmaps, json or do not do anything with the results (raw)
      * @return query results
      */
-    Results query(const char* query_str, bool as_json = false);
+    Results query(const char* query_str, QueryResultsType results_type = QueryResultsType::Hashmap);
 
     /**
      * @brief Execute a prepared statement. Do not forget to call PQclear() on the result
@@ -92,7 +99,7 @@ namespace DB {
     inline void _free_connection(unsigned char conn_id);
 }
 
-DB::Results DB::query(const char* query_str, bool as_json) {
+DB::Results DB::query(const char* query_str, QueryResultsType results_type) {
     // Prepare and gather a connection to the database
     const auto conn_id = _prepare_connection();
     auto connection = _connections[conn_id];
@@ -134,83 +141,91 @@ DB::Results DB::query(const char* query_str, bool as_json) {
     const auto rows_n = PQntuples(result);
     const auto cols_n = PQnfields(result);
 
-    if(as_json) {
-        // Save data as json
-        // TODO @performance there are a lot of optimization that can take place here
+    switch(results_type) {
+        case QueryResultsType::Hashmap: {
+            // Save data as a vector of hashmaps
 
-        auto d = new rapidjson::Document();
-        auto d_allocator = d->GetAllocator();
+            query_results.data = std::vector<std::unordered_map<const char*, const char*>>(rows_n, std::unordered_map<const char*, const char*>(cols_n));
 
-        d->SetArray();
+            for(int r = 0; r < rows_n; r++) {
+                for(int c = 0; c < cols_n; c++) {
+                    query_results.data[r].insert(std::make_pair<const char*, const char*>(PQfname(result, c), PQgetvalue(result, r, c)));
+                }
+            }
+        } break;
 
-        for(int r = 0; r < rows_n; r++) {
-            rapidjson::Value row(rapidjson::kObjectType);
+        case QueryResultsType::JSON: {
+            // Save data as json
+            // TODO @performance there are a lot of optimization that can take place here
 
-            for(int c = 0; c < cols_n; c++) {
-                const auto name = PQfname(result, c);
-                const auto value_raw = PQgetvalue(result, r, c);
-                rapidjson::Value value;
+            auto d = new rapidjson::Document();
+            auto d_allocator = d->GetAllocator();
 
-                if(PQgetisnull(result, r, c)) {
-                    value.SetNull();
-                } else {
-                    // TODO @hack @incomplete Use pg_type table
-                    switch(PQftype(result, c)) {
-                        // Boolean
-                        case 16: {
-                            value.SetBool(value_raw[0] == 't');
-                        } break;
+            d->SetArray();
 
-                        // Number
-                        // TODO @incomplete
-                        case 20: {
-                            value.SetInt64(std::stoll(value_raw));
-                        } break;
+            for(int r = 0; r < rows_n; r++) {
+                rapidjson::Value row(rapidjson::kObjectType);
 
-                        case 21: {
-                            value.SetInt(std::stoi(value_raw));
-                        } break;
+                for(int c = 0; c < cols_n; c++) {
+                    const auto name = PQfname(result, c);
+                    const auto value_raw = PQgetvalue(result, r, c);
+                    rapidjson::Value value;
 
-                        case 23:{
-                            value.SetInt(std::stol(value_raw));
-                        } break;
+                    if(PQgetisnull(result, r, c)) {
+                        value.SetNull();
+                    } else {
+                        // TODO @hack @incomplete Use pg_type table
+                        switch(PQftype(result, c)) {
+                            // Boolean
+                            case 16: {
+                                value.SetBool(value_raw[0] == 't');
+                            } break;
 
-                        case 700: {
-                            value.SetFloat(std::stof(value_raw));
-                        } break;
+                            // Number
+                            // TODO @incomplete
+                            case 20: {
+                                value.SetInt64(std::stoll(value_raw));
+                            } break;
 
-                        case 701: {
-                            value.SetDouble(std::stod(value_raw));
-                        } break;
+                            case 21: {
+                                value.SetInt(std::stoi(value_raw));
+                            } break;
 
-                        default:
-                            value.SetString(value_raw, strlen(value_raw), d_allocator);
+                            case 23:{
+                                value.SetInt(std::stol(value_raw));
+                            } break;
+
+                            case 700: {
+                                value.SetFloat(std::stof(value_raw));
+                            } break;
+
+                            case 701: {
+                                value.SetDouble(std::stod(value_raw));
+                            } break;
+
+                            default:
+                                value.SetString(value_raw, strlen(value_raw), d_allocator);
+                        }
                     }
+
+                    row.AddMember(
+                        rapidjson::Value().SetString(name, strlen(name), d_allocator),
+                        value,
+                        d_allocator
+                    );
                 }
 
-                row.AddMember(
-                    rapidjson::Value().SetString(name, strlen(name), d_allocator),
-                    value,
-                    d_allocator
-                );
+                d->PushBack(row, d_allocator);
             }
 
-            d->PushBack(row, d_allocator);
-        }
+            query_results.data_json = std::move(d);
+        } break;
 
-        query_results.data_json = std::move(d);
-        query_results.is_json = true;
-    } else {
-        // Save data as a vector of hashmaps
-
-        query_results.data = std::vector<std::unordered_map<const char*, const char*>>(rows_n, std::unordered_map<const char*, const char*>(cols_n));
-
-        for(int r = 0; r < rows_n; r++) {
-            for(int c = 0; c < cols_n; c++) {
-                query_results.data[r].insert(std::make_pair<const char*, const char*>(PQfname(result, c), PQgetvalue(result, r, c)));
-            }
-        }
+        case QueryResultsType::Raw:
+            break;
     }
+
+    query_results.results_type = results_type;
 
     // TODO we might be ok with moving a connection to the "ready" array earlier
     _free_connection(conn_id);
