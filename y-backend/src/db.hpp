@@ -253,6 +253,15 @@ bool DB::_prepare_statement(PGconn* connection, const char* statement_name, cons
 }
 
 bool DB::_prepare_core_statements(PGconn* connection) {
+    // Checking if a username is taken
+    if(!_prepare_statement(
+        connection,
+        "user_is_username_taken",
+        "SELECT count(*) FROM public.users WHERE user_username = $1::varchar",
+        1,
+        NULL
+    )) return false;
+
     // Creating a new user
     if(!_prepare_statement(
         connection,

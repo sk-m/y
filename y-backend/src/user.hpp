@@ -15,7 +15,19 @@
 #define PASSWORD_HASH_ITERATIONS 200000
 
 namespace User {
+    bool is_username_taken(const char* username);
+
     std::tuple<unsigned int, bool> user_create(const char* username, const char* password);
+}
+
+bool User::is_username_taken(const char* username) {
+    const char* const sql_params[1] = { username };
+    auto result = DB::exec_prepared("user_is_username_taken", sql_params, 1);
+    
+    const bool is_taken = PQgetvalue(result, 0, 0)[0] != '0';
+
+    PQclear(result);
+    return is_taken;
 }
 
 std::tuple<unsigned int, bool> User::user_create(const char* username, const char* password) {
