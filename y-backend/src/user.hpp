@@ -74,10 +74,18 @@ std::tuple<unsigned int, bool> User::user_create(const char* username, const cha
     auto result = DB::exec_prepared("user_create", sql_params, 2);
 
     if(PQresultStatus(result) != PGRES_TUPLES_OK) {
-        const auto error_message = PQresultErrorMessage(result);
+        // Check the type of the error
+        const auto error_type = PQresultErrorField(result, PG_DIAG_SQLSTATE);
 
-        // TODO @log
-        std::cout << "Could not create a user from User::user_create()\n" << error_message;
+        // unique_violation (23505), username is probably taken 
+        if(std::stoi(error_type) == 23505) {
+            std::cout << "taken!\n";
+        } else {
+            const auto error_message = PQresultErrorMessage(result);
+
+            // TODO @log
+            std::cout << "Could not create a user from User::user_create()\n" << error_message;
+        }
 
         PQclear(result);
         return std::make_tuple(0, false);
