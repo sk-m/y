@@ -15,9 +15,18 @@
 #define PASSWORD_HASH_ITERATIONS 200000
 
 namespace User {
+    typedef enum: unsigned char {
+        OK = 0,
+        USERNAME_TAKEN = 1,
+        PASSWORD_LENGTH = 2,
+        USERNAME_FORMAT = 3,
+
+        INTERNAL = 255
+    } ErrorCode;
+
     bool is_username_taken(const char* username);
 
-    std::tuple<unsigned int, bool> user_create(const char* username, const char* password);
+    std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
 }
 
 bool User::is_username_taken(const char* username) {
@@ -30,20 +39,23 @@ bool User::is_username_taken(const char* username) {
     return is_taken;
 }
 
-std::tuple<unsigned int, bool> User::user_create(const char* username, const char* password) {
+std::tuple<unsigned int, Error> User::user_create(const char* username, const char* password) {
     // Check the data
     const auto password_len = strlen(password);
 
     if(password_len < 8 || password_len > 2048) {
-        // TODO @incomplete let's return an error message instead of just returning false
-        return std::make_tuple(0, false);
+        return std::make_tuple(0, Error{ ErrorCode::PASSWORD_LENGTH, "Invalid password format." });
     }
 
     std::cmatch username_m;
     if(!std::regex_match(username, username_m, std::regex("^[A-Za-z0-9_]{1,64}$"))) {
-        // TODO @incomplete let's return an error message instead of just returning false
-        return std::make_tuple(0, false);
+        return std::make_tuple(0, Error{ ErrorCode::USERNAME_FORMAT, "Invalid username format." });
     }
+
+    // TODO @cleanup @refactor @performance We do not check if the username is already taken
+    // This is okay, as we will get an error from the INSERT query if the username is already taken, but in that case, we have
+    // already spent some time and processing power on hashing a password that will not go anywhere
+    // In other words, we figure out if the username is okay only AFTER we have hashed the password
 
     // Generate a salt for the password
     // TODO @cleanup I think we can skip the initialization of the array
@@ -79,7 +91,8 @@ std::tuple<unsigned int, bool> User::user_create(const char* username, const cha
 
         // unique_violation (23505), username is probably taken 
         if(std::stoi(error_type) == 23505) {
-            std::cout << "taken!\n";
+            PQclear(result);
+            return std::make_tuple(0, Error{ ErrorCode::USERNAME_TAKEN, "Username is already taken." });
         } else {
             const auto error_message = PQresultErrorMessage(result);
 
@@ -88,12 +101,12 @@ std::tuple<unsigned int, bool> User::user_create(const char* username, const cha
         }
 
         PQclear(result);
-        return std::make_tuple(0, false);
+        return std::make_tuple(0, Error{ ErrorCode::INTERNAL, "Error creating a new user." });
     }
 
     // Get the user id
     const auto user_id = std::stoi(PQgetvalue(result, 0, 0));
 
     PQclear(result);
-    return std::make_tuple(user_id, true);
+    return std::make_tuple(user_id, Error{ 0, nullptr });
 }

@@ -30,11 +30,12 @@ namespace API_User {
 
             // Create a new user
             const auto new_user_results = User::user_create(p_username->second.c_str(), p_password->second.c_str());
+            const auto error = std::get<1>(new_user_results);
 
-            if(!std::get<1>(new_user_results)) {
+            if(!error.is_ok()) {
                 Json::Value json;
                 json["error"] = true;
-                json["error_message"] = "Could not create a new user.";
+                json["error_message"] = error.explanation_user;
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
                 api_callback(resp);

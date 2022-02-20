@@ -1,3 +1,13 @@
+// TODO @cleanup @refactor put all this in namespace Util?
+
+// TODO this is probably completely ok, but I get a feeling that I'm thinking with the JS part of my brain here
+struct Error {
+    unsigned char contextual_error_code = 0;
+    const char* explanation_user = nullptr;
+
+    inline bool is_ok() const { return contextual_error_code == 0; };
+};
+
 constexpr char _hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
