@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <openssl/rand.h>
+#include <regex>
 
 #include "db.hpp"
 #include "util.cpp"
@@ -21,12 +22,18 @@ std::tuple<unsigned int, bool> User::user_create(const char* username, const cha
     // Check the data
     const auto password_len = strlen(password);
 
-    if(password_len > 2048) {
+    if(password_len < 8 || password_len > 2048) {
         // TODO @incomplete let's return an error message instead of just returning false
         return std::make_tuple(0, false);
     }
 
-    // Generate a salt for the password    
+    std::cmatch username_m;
+    if(!std::regex_match(username, username_m, std::regex("^[A-Za-z0-9_]{1,64}$"))) {
+        // TODO @incomplete let's return an error message instead of just returning false
+        return std::make_tuple(0, false);
+    }
+
+    // Generate a salt for the password
     // TODO @cleanup I think we can skip the initialization of the array
     unsigned char salt_raw[PASSWORD_SALT_SIZE_BYTES] = { 0 };
     RAND_bytes(salt_raw, PASSWORD_SALT_SIZE_BYTES);

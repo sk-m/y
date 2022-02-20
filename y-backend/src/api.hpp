@@ -9,6 +9,6 @@
 namespace API {
     void _register_core_api_handlers() {
         // User
-        drogon::app().registerHandler("/user/create", &API_User::Handler::user_create, {drogon::Get});
+        drogon::app().registerHandler("/user/create", &API_User::Handler::user_create, {drogon::Post});
     }
 }

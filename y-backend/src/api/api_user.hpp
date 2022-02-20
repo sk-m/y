@@ -9,28 +9,44 @@ namespace API_User {
     namespace Handler {
         // POST /user/create
         void user_create(API_HANDLER_ARGS) {
-            User::user_create("max", "some_pass");
-        
-            auto res = DB::query("SELECT * FROM users ORDER BY user_id DESC", true);
+            auto body = req->getParameters();
 
-            if(!res.ok) {
+            const auto p_username = body.find("username");
+            const auto p_password = body.find("password");
+
+            // Check if we have got all the params we need
+            if(
+                p_username == body.end() ||
+                p_password == body.end()
+            ) {
                 Json::Value json;
                 json["error"] = true;
+                json["error_message"] = "Some or all of required parameters were not provided - `username` and `password`.";
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-
                 api_callback(resp);
                 return;
             }
 
-            rapidjson::StringBuffer buffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-            res.data_json->Accept(writer);
+            // Create a new user
+            const auto new_user_results = User::user_create(p_username->second.c_str(), p_password->second.c_str());
 
-            auto resp = drogon::HttpResponse::newHttpResponse();
-            resp->setContentTypeCode(drogon::ContentType::CT_APPLICATION_JSON);
-            resp->setBody(buffer.GetString());
+            if(!std::get<1>(new_user_results)) {
+                Json::Value json;
+                json["error"] = true;
+                json["error_message"] = "Could not create a new user.";
 
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                api_callback(resp);
+                return;
+            }
+
+            // Success
+            Json::Value json;
+            json["success"] = true;
+            json["new_user_id"] = std::get<0>(new_user_results);
+
+            auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
         }
     }
