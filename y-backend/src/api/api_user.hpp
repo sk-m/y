@@ -74,18 +74,17 @@ namespace API_User {
 
             // Compare the passwords
             const auto password_cmp_result = User::user_compare_passwords(p_username->second.c_str(), p_password->second.c_str());
+            const auto user = std::get<0>(password_cmp_result);
+            const auto status = std::get<1>(password_cmp_result);
 
-            const bool passwords_match = std::get<0>(password_cmp_result);
-            const auto error = std::get<1>(password_cmp_result);
-
-            // TODO @hack @inclomplete this is not the right check, redo!
-            if(!error.is_ok() || !passwords_match) {
+            if(!status.is_ok()) {
                 Json::Value json;
                 json["error"] = true;
-                json["error_message"] = error.explanation_user;
+                json["error_message"] = status.explanation_user;
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
                 api_callback(resp);
+
                 return;
             }
 
@@ -95,6 +94,8 @@ namespace API_User {
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
+
+            PQclear(user._result);
         }
     }
 }

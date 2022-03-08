@@ -28,10 +28,45 @@ namespace User {
         INTERNAL = 255
     } ErrorCode;
 
+    struct User {
+        unsigned int id;
+
+        char* username;
+        char* password;
+        char* last_login;
+
+        bool ok = false;
+        PGresult* _result;
+    };
+
+    User from_db(PGresult* result);
+
     bool is_username_taken(const char* username);
-    std::tuple<bool, Error> user_compare_passwords(const char* username, const char* password);
+    std::tuple<User, Error> user_compare_passwords(const char* username, const char* password);
 
     std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
+}
+
+User::User User::from_db(PGresult* result) {
+    User user;
+
+    // Check the results first
+    if(PQresultStatus(result) != ExecStatusType::PGRES_TUPLES_OK || PQnfields(result) == 0 || PQntuples(result) == 0) {
+        PQclear(result);
+        return user;
+    }
+   
+    // Create the user object
+    user.ok = true;
+    user._result = std::move(result);
+
+    // TODO @refactor @performance I'm sure this can be more elegant
+    user.id = std::stoi(PQgetvalue(user._result, 0, PQfnumber(user._result, "user_id")));
+    user.username = PQgetvalue(user._result, 0, PQfnumber(user._result, "user_username"));
+    user.password = PQgetvalue(user._result, 0, PQfnumber(user._result, "user_password"));
+    user.last_login = PQgetvalue(user._result, 0, PQfnumber(user._result, "user_last_login"));
+
+    return user;
 }
 
 bool User::is_username_taken(const char* username) {
@@ -44,24 +79,29 @@ bool User::is_username_taken(const char* username) {
     return is_taken;
 }
 
-std::tuple<bool, Error> User::user_compare_passwords(const char* username, const char* password) {
+std::tuple<User::User, Error> User::user_compare_passwords(const char* username, const char* password) {
     // Get the user
     const char* const sql_params[1] = { username };
     auto user_result = DB::exec_prepared("user_get_by_username", sql_params, 1);
 
-    // Get user's password info
-    const auto user_password_info_str = PQgetvalue(user_result, 0, PQfnumber(user_result, "user_password"));
+    User user = from_db(user_result);
+
+    if(!user.ok) {
+        // TODO @robustness !ok does not necessarily mean that the user was not found. Some other error might be the case
+        return std::make_tuple(user, Error {
+            ErrorCode::USER_NOT_FOUND,
+            "User was not found." 
+        });
+    }
 
     // TODO @cleanup @DRY move into util.cpp?
     std::vector<std::string> password_parts;
     std::string token;
-    std::istringstream parts_stream(user_password_info_str);
+    std::istringstream parts_stream(user.password);
 
     while(std::getline(parts_stream, token, ';')) {
         password_parts.push_back(token);
     }
-
-    PQclear(user_result);
 
     // Check which algorithm we are using
     if(password_parts[0] == "pbkdf2") {
@@ -88,16 +128,16 @@ std::tuple<bool, Error> User::user_compare_passwords(const char* username, const
         const auto password_correct = strcmp(db_hash.c_str(), reinterpret_cast<char*>(hash_out_raw)) == 0;
         
         if(password_correct) {
-            return std::make_tuple(true, Error{ 0, nullptr });
+            return std::make_tuple(user, Error{ 0, nullptr });
         } else {
-            return std::make_tuple(false, Error {
+            return std::make_tuple(user, Error {
                 ErrorCode::PASSWORD_INCORRECT,
                 "Password is incorrect." 
             });
         }
     }
 
-    return std::make_tuple(false, Error {
+    return std::make_tuple(user, Error {
         ErrorCode::PASSWORD_HASHING_ALGORITHM_UNSUPPORTED,
         "Password hashing algorithm is (no longer) supported. Please, contact administrators." 
     });
