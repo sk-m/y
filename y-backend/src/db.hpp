@@ -287,6 +287,15 @@ bool DB::_prepare_core_statements(PGconn* connection) {
         2,
         NULL
     )) return false;
+    
+    // Creating a new user session
+    if(!_prepare_statement(
+        connection,
+        "user_create_session",
+        "INSERT INTO public.user_sessions (session_user_id, session_current_ip, session_ip_range, session_token_hash, session_token_salt, session_token_iterations, session_valid_until, session_device) VALUES ($1::integer, $2, $3, $4, $5, $6::integer, $7::timestamp, $8::varchar) RETURNING *",
+        8,
+        NULL
+    )) return false;
 
     // Getting a user by it's id
     if(!_prepare_statement(

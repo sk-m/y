@@ -5,6 +5,10 @@ y-backend/CMakeCache.txt
 y-backend/*.cmake
 y-backend/Makefile
 
+# docs
+y-backend/docs
+y-backend/Doxyfile
+
 # logs
 y-backend/*.log
 

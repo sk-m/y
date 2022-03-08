@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <drogon/drogon.h>
 
 #include "../db.hpp"
@@ -75,12 +76,12 @@ namespace API_User {
             // Compare the passwords
             const auto password_cmp_result = User::user_compare_passwords(p_username->second.c_str(), p_password->second.c_str());
             const auto user = std::get<0>(password_cmp_result);
-            const auto status = std::get<1>(password_cmp_result);
+            const auto user_status = std::get<1>(password_cmp_result);
 
-            if(!status.is_ok()) {
+            if(!user_status.is_ok()) {
                 Json::Value json;
                 json["error"] = true;
-                json["error_message"] = status.explanation_user;
+                json["error_message"] = user_status.explanation_user;
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
                 api_callback(resp);
@@ -88,14 +89,50 @@ namespace API_User {
                 return;
             }
 
-            // Success
+            // Login was successfull, create a new session for this user
+            const auto user_session_response = User::session_create(user.id, req);
+            const auto user_session = std::get<0>(user_session_response);
+            const auto user_session_status = std::get<1>(user_session_response);
+
+            if(!user_session_status.is_ok()) {
+                Json::Value json;
+                json["error"] = true;
+                json["error_message"] = user_session_status.explanation_user;
+
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                api_callback(resp);
+
+                PQclear(user._result);
+                return;
+            }
+
+            // Create a session cookie
+            auto session_cookie = drogon::Cookie();
+            const auto unix_timestamp_us = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+
+            long long cookie_duration_us = unix_timestamp_us + 1.5552e13;
+
+            // TODO @incomplete admins should be able to enable Secure flag
+            // > session_cookie.setSecure(true);
+
+            session_cookie.setKey("y_session");
+            session_cookie.setValue(user_session.token_cleartext);
+            session_cookie.setExpiresDate(trantor::Date(cookie_duration_us));
+            session_cookie.setHttpOnly(true);
+            session_cookie.setSameSite(drogon::Cookie::SameSite::kStrict);
+            session_cookie.setPath("/");
+
             Json::Value json;
             json["success"] = true;
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+            resp->addCookie(session_cookie);
+
             api_callback(resp);
 
             PQclear(user._result);
+            PQclear(user_session._result);
         }
     }
 }

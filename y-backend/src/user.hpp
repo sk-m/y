@@ -13,6 +13,7 @@
 #define PASSWORD_SALT_SIZE_BYTES 64
 #define PASSWORD_KEY_SIZE_BYTES 64
 #define PASSWORD_HASH_ITERATIONS 200000
+#define USER_SESSION_TOKEN_ITERATIONS 10000
 
 namespace User {
     typedef enum: unsigned char {
@@ -39,12 +40,32 @@ namespace User {
         PGresult* _result;
     };
 
+    struct UserSession {
+        char* session_id;
+
+        unsigned int user_id;
+        char* current_ip;
+        char* ip_range;
+        char* token_hash;
+        char* token_salt;
+        unsigned int token_iterations;
+        char* valid_until;
+        char* device;
+
+        char token_cleartext[129];
+
+        bool ok = false;
+        PGresult* _result;
+    };
+
     User from_db(PGresult* result);
+    UserSession session_from_db(PGresult* result);
 
     bool is_username_taken(const char* username);
     std::tuple<User, Error> user_compare_passwords(const char* username, const char* password);
 
     std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
+    std::tuple<UserSession, Error> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
 }
 
 User::User User::from_db(PGresult* result) {
@@ -67,6 +88,33 @@ User::User User::from_db(PGresult* result) {
     user.last_login = PQgetvalue(user._result, 0, PQfnumber(user._result, "user_last_login"));
 
     return user;
+}
+
+User::UserSession User::session_from_db(PGresult* result) {
+    UserSession session;
+
+    // Check the results first
+    if(PQresultStatus(result) != ExecStatusType::PGRES_TUPLES_OK || PQnfields(result) == 0 || PQntuples(result) == 0) {
+        PQclear(result);
+        return session;
+    }
+   
+    // Create the session object
+    session.ok = true;
+    session._result = std::move(result);
+
+    // TODO @refactor @performance I'm sure this can be more elegant
+    session.session_id = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_id"));
+    session.user_id = std::stoi(PQgetvalue(session._result, 0, PQfnumber(session._result, "session_user_id")));
+    session.current_ip = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_current_ip"));
+    session.ip_range = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_ip_range"));
+    session.token_hash = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_token_hash"));
+    session.token_salt = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_token_salt"));
+    session.token_iterations = std::stoi(PQgetvalue(session._result, 0, PQfnumber(session._result, "session_token_iterations")));
+    session.valid_until = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_valid_until"));
+    session.device = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_device"));
+
+    return session;
 }
 
 bool User::is_username_taken(const char* username) {
@@ -210,4 +258,64 @@ std::tuple<unsigned int, Error> User::user_create(const char* username, const ch
 
     PQclear(result);
     return std::make_tuple(user_id, Error{ 0, nullptr });
+}
+
+std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, const drogon::HttpRequestPtr& req) {
+    // Generate a session token & salt
+    unsigned char session_salt_raw[64] = { 0 };
+    RAND_bytes(session_salt_raw, 64);
+
+    unsigned char session_token_raw[64] = { 0 };
+    RAND_bytes(session_token_raw, 64);
+
+    // Hash the token
+    // TODO @cleanup I think we can skip the initialization of the array
+    unsigned char session_token_hash_out_raw[64] = {0};
+
+    fastpbkdf2_hmac_sha512(session_token_raw, 64,
+                           session_salt_raw, 64,
+                           USER_SESSION_TOKEN_ITERATIONS,
+                           session_token_hash_out_raw, 64);
+
+    auto token_cleartext_hex = string_to_hex(std::string(reinterpret_cast<char*>(session_token_raw), 64));
+    auto token_hash_hex = string_to_hex(std::string(reinterpret_cast<char*>(session_token_hash_out_raw), 64));
+    auto token_salt_hex = string_to_hex(std::string(reinterpret_cast<char*>(session_salt_raw), 64));
+
+    // Get some info about a client
+    const auto client_ip = req->getPeerAddr().toIp();
+
+    // TODO @incomplete @placeholder ip range, device & expiration date are placeholders
+    const char* const sql_params[8] = {
+        std::to_string(user_id).c_str(),
+        client_ip.c_str(),
+        fmt::format("{}/32", client_ip).c_str(),
+        token_hash_hex.c_str(),
+        token_salt_hex.c_str(),
+        std::to_string(USER_SESSION_TOKEN_ITERATIONS).c_str(),
+        "2022-01-08 04:05:06+02",
+        "Some device, Windows 11"
+    };
+
+    // Write the session to the database
+    auto result = DB::exec_prepared("user_create_session", sql_params, 8);
+
+    // Check for errors
+    if(PQresultStatus(result) != PGRES_TUPLES_OK) {
+        const auto error_type = PQresultErrorField(result, PG_DIAG_SQLSTATE);
+        const auto error_message = PQresultErrorMessage(result);
+
+        // TODO @log
+        std::cout << "Could not create a new user session from User::session_create()\n" << error_message;
+
+        PQclear(result);
+        return std::make_tuple(UserSession{}, Error{ ErrorCode::INTERNAL, "Error creating a new user session." });
+    }
+
+    auto user_session = session_from_db(result);
+    
+    // Also save the cleartext token (the value that will reside in the user's y_session cookie)
+    strncpy(user_session.token_cleartext, token_cleartext_hex.c_str(), 128);
+    user_session.token_cleartext[128] = '\0';
+
+    return std::make_tuple(user_session, Error{ 0, nullptr });
 }
