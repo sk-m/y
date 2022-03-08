@@ -268,6 +268,8 @@ bool DB::_prepare_statement(PGconn* connection, const char* statement_name, cons
 }
 
 bool DB::_prepare_core_statements(PGconn* connection) {
+    // TODO @cleanup move into a separate file? This function will get quite big
+
     // Checking if a username is taken
     if(!_prepare_statement(
         connection,
@@ -283,6 +285,24 @@ bool DB::_prepare_core_statements(PGconn* connection) {
         "user_create",
         "INSERT INTO public.users (user_username, user_password) VALUES ($1::varchar, $2::varchar) RETURNING user_id",
         2,
+        NULL
+    )) return false;
+
+    // Getting a user by it's id
+    if(!_prepare_statement(
+        connection,
+        "user_get_by_id",
+        "SELECT * FROM public.users WHERE user_id = $1::integer",
+        1,
+        NULL
+    )) return false;
+
+    // Getting a user by it's username
+    if(!_prepare_statement(
+        connection,
+        "user_get_by_username",
+        "SELECT * FROM public.users WHERE user_username = $1::varchar",
+        1,
         NULL
     )) return false;
 
