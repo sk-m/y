@@ -108,17 +108,13 @@ namespace API_User {
 
             // Create a session cookie
             auto session_cookie = drogon::Cookie();
-            const auto unix_timestamp_us = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
-
-            long long cookie_duration_us = unix_timestamp_us + 1.5552e13;
 
             // TODO @incomplete admins should be able to enable Secure flag
             // > session_cookie.setSecure(true);
 
             session_cookie.setKey("y_session");
             session_cookie.setValue(user_session.token_cleartext);
-            session_cookie.setExpiresDate(trantor::Date(cookie_duration_us));
+            session_cookie.setExpiresDate(user_session.valid_until);
             session_cookie.setHttpOnly(true);
             session_cookie.setSameSite(drogon::Cookie::SameSite::kStrict);
             session_cookie.setPath("/");

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <openssl/rand.h>
 #include <regex>
+#include <drogon/drogon.h>
 
 #include "db.hpp"
 #include "util.cpp"
@@ -49,7 +50,7 @@ namespace User {
         char* token_hash;
         char* token_salt;
         unsigned int token_iterations;
-        char* valid_until;
+        trantor::Date valid_until;
         char* device;
 
         char token_cleartext[129];
@@ -103,6 +104,8 @@ User::UserSession User::session_from_db(PGresult* result) {
     session.ok = true;
     session._result = std::move(result);
 
+    const auto valid_until_raw = std::string(PQgetvalue(session._result, 0, PQfnumber(session._result, "session_valid_until")));
+
     // TODO @refactor @performance I'm sure this can be more elegant
     session.session_id = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_id"));
     session.user_id = std::stoi(PQgetvalue(session._result, 0, PQfnumber(session._result, "session_user_id")));
@@ -111,7 +114,17 @@ User::UserSession User::session_from_db(PGresult* result) {
     session.token_hash = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_token_hash"));
     session.token_salt = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_token_salt"));
     session.token_iterations = std::stoi(PQgetvalue(session._result, 0, PQfnumber(session._result, "session_token_iterations")));
-    session.valid_until = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_valid_until"));
+
+    // TODO* @performance @minor This is *extremely* minor, but sometimes we call this function right after creating a new session
+    // (from Postgres' INSERT INTO user_sessions ... RETURNING *). This means, that we already have a Date instance on our
+    // hands, but instead of using it, we rely on this function, which will *parse* the timestamp that we have just created
+    // and sent to the database.
+
+    // So, in other words, we create a new Date, *stringify it*, insert into the database, call this function and *parse the
+    // string timestamp back into Date*
+    // This has a pretty much non-existent impact on the performance, but it doesn't feel good...
+
+    session.valid_until = trantor::Date::fromDbStringLocal(valid_until_raw);
     session.device = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_device"));
 
     return session;
@@ -284,7 +297,21 @@ std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, 
     // Get some info about a client
     const auto client_ip = req->getPeerAddr().toIp();
 
-    // TODO @incomplete @placeholder ip range, device & expiration date are placeholders
+    // Create an expiration date
+    const auto unix_timestamp_us = std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+
+    // TODO @improvement allow admins to set a custom session duration (instead of 1.5552e13 us)
+    long long session_duration_us = unix_timestamp_us + 1.5552e13;
+
+    auto session_expiration_date = trantor::Date(session_duration_us).toDbStringLocal();
+
+    // Create an expiration date string for the database
+    char session_expiration_date_str[session_expiration_date.size() + 1];
+    strncpy(session_expiration_date_str, session_expiration_date.c_str(), session_expiration_date.size());
+    session_expiration_date_str[session_expiration_date.size()] = '\0';
+
+    // TODO @incomplete @placeholder ip range & device are placeholders
     const char* const sql_params[8] = {
         std::to_string(user_id).c_str(),
         client_ip.c_str(),
@@ -292,7 +319,7 @@ std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, 
         token_hash_hex.c_str(),
         token_salt_hex.c_str(),
         std::to_string(USER_SESSION_TOKEN_ITERATIONS).c_str(),
-        "2022-01-08 04:05:06+02",
+        session_expiration_date_str,
         "Some device, Windows 11"
     };
 
