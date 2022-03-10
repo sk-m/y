@@ -237,7 +237,7 @@ PGresult* DB::exec_prepared(const char* statement_name, const char* const* param
     const auto conn_id = DB::_prepare_connection();
     auto connection = DB::_connections[conn_id];
 
-    int sql_param_lenghts[params_n] = {};
+    int sql_param_lenghts[params_n];
 
     for(int i = 0; i < params_n; i++) {
         sql_param_lenghts[i] = strlen(params[i]);
@@ -351,10 +351,10 @@ inline void DB::_free_connection(unsigned char conn_id) {
 }
 
 bool DB::_init() {
-    // Innit the connection arrays
-    conn_ready[DB_CONNECTIONS_N] = {};
-    conn_busy[DB_CONNECTIONS_N] = {};
-    _connections[DB_CONNECTIONS_N] = {};
+    // Init the connection arrays
+    conn_ready[DB_CONNECTIONS_N];
+    conn_busy[DB_CONNECTIONS_N];
+    _connections[DB_CONNECTIONS_N];
 
     const char* const keywords[] = {"hostaddr", "port", "dbname", "user", "password", "application_name", "fallback_application_name", NULL};
 

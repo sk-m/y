@@ -178,7 +178,7 @@ std::tuple<User::User, Error> User::user_compare_passwords(const char* username,
         auto db_salt = hex_to_string(db_salt_hex);
 
         // Try to hash the password that was provided
-        unsigned char hash_out_raw[PASSWORD_KEY_SIZE_BYTES] = {0};
+        unsigned char hash_out_raw[PASSWORD_KEY_SIZE_BYTES];
 
         fastpbkdf2_hmac_sha512((const unsigned char*)password, strlen(password),
                             (const unsigned char*)db_salt.c_str(), db_salt.size(),
@@ -224,12 +224,12 @@ std::tuple<unsigned int, Error> User::user_create(const char* username, const ch
 
     // Generate a salt for the password
     // TODO @cleanup I think we can skip the initialization of the array
-    unsigned char salt_raw[PASSWORD_SALT_SIZE_BYTES] = { 0 };
+    unsigned char salt_raw[PASSWORD_SALT_SIZE_BYTES];
     RAND_bytes(salt_raw, PASSWORD_SALT_SIZE_BYTES);
 
     // Hash the password
     // TODO @cleanup I think we can skip the initialization of the array
-    unsigned char hash_out_raw[PASSWORD_KEY_SIZE_BYTES] = {0};
+    unsigned char hash_out_raw[PASSWORD_KEY_SIZE_BYTES];
 
     fastpbkdf2_hmac_sha512((const unsigned char*)password, password_len,
                            salt_raw, PASSWORD_SALT_SIZE_BYTES,
@@ -275,15 +275,15 @@ std::tuple<unsigned int, Error> User::user_create(const char* username, const ch
 
 std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, const drogon::HttpRequestPtr& req) {
     // Generate a session token & salt
-    unsigned char session_salt_raw[64] = { 0 };
+    unsigned char session_salt_raw[64];
     RAND_bytes(session_salt_raw, 64);
 
-    unsigned char session_token_raw[64] = { 0 };
+    unsigned char session_token_raw[64];
     RAND_bytes(session_token_raw, 64);
 
     // Hash the token
     // TODO @cleanup I think we can skip the initialization of the array
-    unsigned char session_token_hash_out_raw[64] = {0};
+    unsigned char session_token_hash_out_raw[64];
 
     fastpbkdf2_hmac_sha512(session_token_raw, 64,
                            session_salt_raw, 64,
