@@ -14,4 +14,7 @@ body {
 
 :root {
     --color-blackish: hsl(0, 0%, 5%);
+
+    --color-gray-04: rgba(0, 0, 0, 0.04);
+    --color-gray-7: rgba(0, 0, 0, 0.7);
 }

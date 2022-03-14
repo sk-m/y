@@ -1,0 +1,143 @@
+#mainroute-horizontal-container {
+    display: flex;
+}
+
+#mainroute-horizontal-container > div {
+    flex-shrink: 0;
+}
+
+#mainroute-aside-container {
+    width: 300px;
+}
+
+#mainroute-aside-container > .aside {
+
+}
+
+#mainroute-aside-container > .aside > .content {
+    
+}
+
+#mainroute-aside-container > .aside > .content > .userspace {
+    padding: 0.5em 0.75em;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left {
+    
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user {
+    display: flex;
+    align-items: center;
+
+    padding: 0.5em;
+
+    font-size: 0.85em;
+    font-weight: 500;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user:hover {
+    background-color: var(--color-gray-04);
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user > .user-avatar {
+    width: 30px;
+    height: 30px;
+
+    margin-right: 0.75em;
+
+    background-position: 50% 50%;
+    background-size: cover;
+
+    border-radius: 25%;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user > .user-username {
+    user-select: none;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right {
+    
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container {
+    display: flex;
+    align-items: center;
+
+    padding: 0.33em 0.5em;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container:hover {
+    background-color: var(--color-gray-04);
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-icon {
+
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-icon > span {
+    user-select: none;
+    color: var(--color-gray-7);
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container.has-unread > .notifications-icon > span {
+    transform: rotate(15deg);
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-count-container {
+    display: flex;
+    align-items: center;
+
+    padding: 0.25em 0.66em;
+
+    margin-right: 0.66em;
+
+    color: white;
+    font-size: 0.7em;
+    font-weight: 500;
+
+    background-color: red;
+    border-radius: 10px;
+
+    user-select: none;
+
+    /* Hidden by default */
+    opacity: 0;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-count-container > .icons {
+    display: flex;
+    align-items: center;
+
+    margin-left: 0.5em;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-count-container > .icons > span {
+    font-size: 1em;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container.has-unread > .notifications-count-container {
+    opacity: 1;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container.has-unread > .notifications-icon > span {
+    color: black;
+}
