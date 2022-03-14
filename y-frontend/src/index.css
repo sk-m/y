@@ -18,7 +18,9 @@ body {
     --color-red: #FC0015;
 
     --color-blue: #0017E6;
+    --color-blue-t-02: rgba(0, 23, 230, 0.02);
 
     --color-gray-04: rgba(0, 0, 0, 0.04);
+    --color-gray-1: rgba(0, 0, 0, 0.1);
     --color-gray-7: rgba(0, 0, 0, 0.7);
 }

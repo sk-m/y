@@ -62,6 +62,14 @@ const MainAsideMenu: Component = () => {
                             </div>
                         </div>
                     </div>
+                    <div className="misc">
+                        <div className="search-container">
+                            <div className="searchbar">
+                                <input type="text" placeholder="Quick search..." />
+                            </div>
+                            <div className="link"><span class="material-icons-round">travel_explore</span></div>
+                        </div>
+                    </div>
                     <div className="menu">
                         <div className="links">
                             <MenuLink
@@ -73,6 +81,9 @@ const MainAsideMenu: Component = () => {
                                 icon_name="dashboard"
                                 name="Dashboard"
                                 description="Instance status at a glance"
+
+                                needs_attention={true}
+                                is_selected={true}
                             />
                             <MenuLink
                                 icon_name="tune"

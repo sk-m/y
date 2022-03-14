@@ -158,8 +158,71 @@
     color: black;
 }
 
+#mainroute-aside-container > .aside > .content > .misc {
+    padding: 0.5em 0.75em;
+}
+
+#mainroute-aside-container > .aside > .content > .misc > .search-container {
+    display: flex;
+    align-items: center;
+}
+
+#mainroute-aside-container > .aside > .content > .misc > .search-container > .searchbar {
+    width: 100%;
+}
+
+#mainroute-aside-container > .aside > .content > .misc > .search-container > .searchbar > input {
+    box-sizing: border-box;
+
+    width: 100%;
+
+    padding: 0.4em 0.8em;
+
+    font-family: "Inter", sans-serif;
+    font-size: 0.8em;
+    font-weight: 450;
+
+    border: 0;
+    background-color: var(--color-gray-04);
+    border-radius: 6px;
+
+    outline: none;
+
+    transition: 0.15s;
+}
+
+#mainroute-aside-container > .aside > .content > .misc > .search-container > .link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 1.6em;
+    width: 1.6em;
+    flex-shrink: 0;
+
+    margin-left: 0.4em;
+
+    background-color: var(--color-gray-04);
+    border-radius: 6px;
+
+    user-select: none;
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+#mainroute-aside-container > .aside > .content > .misc > .search-container > .searchbar > input:hover,
+#mainroute-aside-container > .aside > .content > .misc > .search-container > .link:hover {
+    background-color: var(--color-gray-1);
+}
+
+#mainroute-aside-container > .aside > .content > .misc > .search-container > .link > span {
+    color: var(--color-gray-7);
+    font-size: 1em;
+}
+
 #mainroute-aside-container > .aside > .content > .menu > .links {
-    padding: 0.5em;
+    padding: 0.5em 0.75em;
 }
  
 #mainroute-aside-container > .aside > .content > .menu > .links > .link {
@@ -181,6 +244,10 @@
     background-color: var(--color-gray-04);
 }
 
+#mainroute-aside-container > .aside > .content > .menu > .links > .link.is-selected {
+    background-color: var(--color-blue-t-02);
+}
+
 #mainroute-aside-container > .aside > .content > .menu > .links > .link > .left {
     position: relative;
 
@@ -198,6 +265,7 @@
     border-radius: 1em;
 
     background-color: var(--color-blue);
+    opacity: 0.85;
 
     /* Default state */
     height: 0;
