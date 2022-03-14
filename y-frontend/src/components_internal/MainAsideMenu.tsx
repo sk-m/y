@@ -1,23 +1,27 @@
-import type { Component, PropsWithChildren } from "solid-js";
+import { Component, PropsWithChildren, Show } from "solid-js";
 
 const MenuLink: Component<{
     icon_name: string,
     name: string,
-    description: string,
+    description?: string,
+
+    is_small?: boolean;
 
     is_selected?: boolean,
     needs_attention?: boolean
 }> = props => {
     return (
         <div 
-            classList={{ link: true, "is-selected": props.is_selected, "needs-attention": props.needs_attention }}
+            classList={{ link: true, small: props.is_small, "is-selected": props.is_selected, "needs-attention": props.needs_attention }}
         >
             <div className="left">
                 <div className="selection-indicator"></div>
                 <div className="icon"><span class="material-icons-round">{ props.icon_name }</span></div>
                 <div className="text-container">
                     <div className="name">{ props.name }</div>
-                    <div className="description">{ props.description }</div>
+                    <Show when={ !props.is_small && props.description }>
+                        <div className="description">{ props.description }</div>
+                    </Show>
                 </div>
             </div>
             <div className="right">
@@ -90,6 +94,47 @@ const MainAsideMenu: Component = () => {
                                 name="Settings"
                                 description="Instance configuration centre"
                             />
+                            
+                            <div className="menu-section">
+                                <div className="section-header">
+                                    <div className="left">
+                                        <div className="menu-section-shape"></div>
+                                        <div className="name">Page actions</div>
+                                    </div>
+                                    <div className="right">
+                                        <div className="expand-icon">
+                                            <span class="material-icons-round">expand_more</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="section-contents">
+                                    <MenuLink
+                                        icon_name="show_chart"
+                                        name="Information"
+
+                                        is_selected={true}
+                                        is_small={true}
+                                    />
+                                    <MenuLink
+                                        icon_name="arrow_forward"
+                                        name="Rename"
+
+                                        is_small={true}
+                                    />
+                                    <MenuLink
+                                        icon_name="remove_moderator"
+                                        name="Manage access"
+
+                                        is_small={true}
+                                    />
+                                    <MenuLink
+                                        icon_name="delete"
+                                        name="Delete // archive"
+
+                                        is_small={true}
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
