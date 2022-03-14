@@ -45,6 +45,38 @@ const MainRoute: Component = () => {
                                     </div>
                                 </div>
                             </div>
+                            <div className="menu">
+                                <div className="links">
+                                    <div className="link is-selected needs-attention">
+                                        <div className="left">
+                                            <div className="selection-indicator"></div>
+                                            <div className="icon"><span class="material-icons-round">tune</span></div>
+                                            <div className="text-container">
+                                                <div className="name">Settings</div>
+                                                <div className="description">System settings</div>
+                                            </div>
+                                        </div>
+                                        <div className="right">
+                                            <div className="needs-attention-bubble"></div>
+                                            <span class="arrow-icon material-icons-round">navigate_next</span>
+                                        </div>
+                                    </div>
+                                    <div className="link">
+                                        <div className="left">
+                                            <div className="selection-indicator"></div>
+                                            <div className="icon"><span class="material-icons-round">tune</span></div>
+                                            <div className="text-container">
+                                                <div className="name">Settings</div>
+                                                <div className="description">System settings</div>
+                                            </div>
+                                        </div>
+                                        <div className="right">
+                                            <div className="needs-attention-bubble"></div>
+                                            <span class="arrow-icon material-icons-round">navigate_next</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -157,3 +157,132 @@
 #mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container.has-unread > .notifications-icon > span {
     color: black;
 }
+
+#mainroute-aside-container > .aside > .content > .menu > .links {
+    padding: 0.5em;
+}
+ 
+#mainroute-aside-container > .aside > .content > .menu > .links > .link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0.5em;
+
+    user-select: none;
+    cursor: pointer;
+
+    border-radius: 6px;
+
+    transition: 0.15s;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link:hover {
+    background-color: var(--color-gray-04);
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .left {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .left > .selection-indicator {
+    position: absolute;
+
+    top: 0;
+
+    width: 4px;
+
+    border-radius: 1em;
+
+    background-color: var(--color-blue);
+
+    /* Default state */
+    height: 0;
+    
+    transition: 0.25s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link.is-selected > .left > .selection-indicator {
+    height: 100%;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .left > .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: 0.8em;
+    margin-right: 1em;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .left > .icon > span {
+    font-size: 1.25em;
+    color: var(--color-gray-7);
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .left > .text-container {
+
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .left > .text-container > .name {
+    font-size: 0.9em;
+    font-weight: 580;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .left > .text-container > .description {
+    color: var(--color-gray-7);
+    font-size: 0.7em;
+    font-weight: 450;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .right {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .right > .needs-attention-bubble {
+    width: 0.5em;
+    height: 0.5em;
+
+    background-color: var(--color-red);
+    border-radius: 50%;
+
+    /* Default state */
+    opacity: 0;
+
+    transition: 0.15s ease-in-out;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link.needs-attention > .right > .needs-attention-bubble {
+    opacity: 1;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link.needs-attention:hover > .right > .needs-attention-bubble {
+    transform: translateX(-1em);
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link > .right > .arrow-icon {
+    position: absolute;
+
+    margin-left: 0em;
+
+    font-size: 1em;
+
+    user-select: none;
+
+    /* Default state */
+    opacity: 0;
+
+    transition: 0.15s ease-in-out;
+}
+
+#mainroute-aside-container > .aside > .content > .menu > .links > .link:hover > .right > .arrow-icon {
+    margin-left: -0.5em;
+
+    opacity: 1;
+}
