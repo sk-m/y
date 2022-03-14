@@ -90,7 +90,21 @@
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-icon {
+    position: relative;
+}
 
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-icon > .bubble {
+    position: absolute;
+    z-index: 1;
+
+    bottom: 0;
+    right: 0;
+
+    width: 0.45em;
+    height: 0.45em;
+    
+    background-color: var(--color-red);
+    border-radius: 50%;
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-icon > span {
@@ -106,7 +120,7 @@
     display: flex;
     align-items: center;
 
-    padding: 0.25em 0.66em;
+    padding: 0.2em 0.55em;
 
     margin-right: 0.66em;
 
@@ -114,7 +128,7 @@
     font-size: 0.7em;
     font-weight: 500;
 
-    background-color: red;
+    background-color: var(--color-red);
     border-radius: 10px;
 
     user-select: none;
@@ -126,12 +140,14 @@
 #mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-count-container > .icons {
     display: flex;
     align-items: center;
-
-    margin-left: 0.5em;
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-count-container > .icons > span {
     font-size: 1em;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container > .notifications-count-container > .icons > span:first-of-type {
+    margin-left: 0.5em;
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container.has-unread > .notifications-count-container {

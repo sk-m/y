@@ -30,7 +30,7 @@ const MainRoute: Component = () => {
                                     <div className="right">
                                         <div className="notifications-container has-unread">
                                             <div className="notifications-count-container">
-                                                <div className="count">13</div>
+                                                <div className="count">43</div>
                                                 <div className="icons">
                                                     <span class="material-icons">warning</span>
                                                     <span class="material-icons">question_mark</span>
@@ -38,6 +38,7 @@ const MainRoute: Component = () => {
                                                 </div>
                                             </div>
                                             <div className="notifications-icon">
+                                                <div className="bubble"></div>
                                                 <span class="material-icons-round">notifications</span>
                                             </div>
                                         </div>
