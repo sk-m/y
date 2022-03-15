@@ -1,4 +1,4 @@
-import { Component, PropsWithChildren, Show } from "solid-js";
+import { Component, createSignal, PropsWithChildren, Show } from "solid-js";
 
 const MenuLink: Component<{
     icon_name: string,
@@ -27,6 +27,35 @@ const MenuLink: Component<{
             <div className="right">
                 <div className="needs-attention-bubble"></div>
                 <span class="arrow-icon material-icons-round">navigate_next</span>
+            </div>
+        </div>
+    )
+}
+
+const MenuSection: Component<{
+    name: string,
+
+    is_expanded?: boolean
+}> = props => {
+    const [isExpanded, setIsExpanded] = createSignal(props.is_expanded || false);
+
+    const toggleSection = () => setIsExpanded(v => !v);
+
+    return (
+        <div classList={{ "menu-section": true, "is-expanded": isExpanded() }}>
+            <div className="section-header" onclick={ toggleSection }>
+                <div className="left">
+                    <div className="menu-section-shape"></div>
+                    <div className="name">{ props.name }</div>
+                </div>
+                <div className="right">
+                    <div className="expand-icon">
+                        <span class="material-icons-round">expand_more</span>
+                    </div>
+                </div>
+            </div>
+            <div classList={{ "section-contents": true }}>
+                { props.children }
             </div>
         </div>
     )
@@ -95,46 +124,89 @@ const MainAsideMenu: Component = () => {
                                 description="Instance configuration centre"
                             />
                             
-                            <div className="menu-section">
-                                <div className="section-header">
-                                    <div className="left">
-                                        <div className="menu-section-shape"></div>
-                                        <div className="name">Page actions</div>
-                                    </div>
-                                    <div className="right">
-                                        <div className="expand-icon">
-                                            <span class="material-icons-round">expand_more</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="section-contents">
-                                    <MenuLink
-                                        icon_name="show_chart"
-                                        name="Information"
+                            <MenuSection name="Page actions" is_expanded={ true } >
+                                <MenuLink
+                                    icon_name="show_chart"
+                                    name="Information"
 
-                                        is_selected={true}
-                                        is_small={true}
-                                    />
-                                    <MenuLink
-                                        icon_name="arrow_forward"
-                                        name="Rename"
+                                    is_selected={true}
+                                    is_small={true}
+                                />
+                                <MenuLink
+                                    icon_name="arrow_forward"
+                                    name="Rename"
 
-                                        is_small={true}
-                                    />
-                                    <MenuLink
-                                        icon_name="remove_moderator"
-                                        name="Manage access"
+                                    is_small={true}
+                                />
+                                <MenuLink
+                                    icon_name="remove_moderator"
+                                    name="Manage access"
 
-                                        is_small={true}
-                                    />
-                                    <MenuLink
-                                        icon_name="delete"
-                                        name="Delete // archive"
+                                    is_small={true}
+                                />
+                                <MenuLink
+                                    icon_name="delete"
+                                    name="Delete // archive"
 
-                                        is_small={true}
-                                    />
-                                </div>
-                            </div>
+                                    is_small={true}
+                                />
+                            </MenuSection>
+
+                            <MenuSection name="Another section">
+                                <MenuLink
+                                    icon_name="show_chart"
+                                    name="Information"
+
+                                    is_selected={true}
+                                    is_small={true}
+                                />
+                                <MenuLink
+                                    icon_name="arrow_forward"
+                                    name="Rename"
+
+                                    is_small={true}
+                                />
+                                <MenuLink
+                                    icon_name="remove_moderator"
+                                    name="Manage access"
+
+                                    is_small={true}
+                                />
+                                <MenuLink
+                                    icon_name="delete"
+                                    name="Delete // archive"
+
+                                    is_small={true}
+                                />
+                            </MenuSection>
+                            
+                            <MenuSection name="Section three">
+                                <MenuLink
+                                    icon_name="show_chart"
+                                    name="Information"
+
+                                    is_selected={true}
+                                    is_small={true}
+                                />
+                                <MenuLink
+                                    icon_name="arrow_forward"
+                                    name="Rename"
+
+                                    is_small={true}
+                                />
+                                <MenuLink
+                                    icon_name="remove_moderator"
+                                    name="Manage access"
+
+                                    is_small={true}
+                                />
+                                <MenuLink
+                                    icon_name="delete"
+                                    name="Delete // archive"
+
+                                    is_small={true}
+                                />
+                            </MenuSection>
                         </div>
                     </div>
                 </div>
