@@ -341,6 +341,7 @@
     height: 0.5em;
 
     background-color: var(--color-red);
+    box-shadow: 0 0 0 0.15em white;
     border-radius: 50%;
 
     /* Default state */

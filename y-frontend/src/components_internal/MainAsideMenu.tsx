@@ -108,8 +108,26 @@ const MainAsideMenu: Component = () => {
                             <MenuLink
                                 icon_name="home"
                                 name="Home"
-                                description="Main page"
+                                description="Main wiki page"
                             />
+                            <MenuLink
+                                icon_name="hotel_class"
+                                name="Welcome"
+                                description="About our company"
+                            />
+                            <MenuLink
+                                icon_name="gavel"
+                                name="Company rules"
+                                description="Obey your master(s)!"
+                            />
+                            <MenuLink
+                                icon_name="scatter_plot"
+                                name="Our network setup"
+                                description="For IT people"
+                            />
+
+                            <div className="menu-spacer"></div>
+
                             <MenuLink
                                 icon_name="dashboard"
                                 name="Dashboard"
