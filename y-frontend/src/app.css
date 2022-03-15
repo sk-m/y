@@ -353,7 +353,7 @@
     opacity: 1;
 }
 
-#mainroute-aside-container > .aside > .content > .menu > .links .link.needs-attention:hover > .right > .needs-attention-bubble {
+#mainroute-aside-container > .aside > .content > .menu > .links .link.needs-attention:not(.is-selected):hover > .right > .needs-attention-bubble {
     transform: translateX(-1em);
 }
 
@@ -372,7 +372,7 @@
     transition: 0.15s ease-in-out;
 }
 
-#mainroute-aside-container > .aside > .content > .menu > .links .link:hover > .right > .arrow-icon {
+#mainroute-aside-container > .aside > .content > .menu > .links .link:not(.is-selected):hover > .right > .arrow-icon {
     margin-left: -0.5em;
 
     opacity: 1;
