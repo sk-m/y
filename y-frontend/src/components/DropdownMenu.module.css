@@ -1,0 +1,100 @@
+.dropdown_menu_container {
+    position: absolute;
+    z-index: 10;
+
+    top: 100%;
+    left: 0;
+
+    cursor: default;
+
+    /* Default state */
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-0.5em);
+    
+    transition: 0.25s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.dropdown_menu_container.shown {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+}
+
+.dropdown_menu_container > .dropdown_menu {
+    padding: 0.4em;
+    margin-top: 0.4em;
+
+    background-color: white;
+    border: 2px solid var(--color-gray-1);
+    border-radius: 6px;
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0.25em 0.5em;
+    margin-top: 0.15em;
+
+    border-radius: 4px;
+
+    user-select: none;
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link:hover {
+    background-color: var(--color-gray-04);
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link.c_red:hover {
+    background-color: var(--color-red-t-04);
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link:first-child {
+    margin-top: 0;
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link > .left {
+    display: flex;
+    align-items: center;
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link > .left > .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    margin-right: 0.5em;
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link > .left > .icon > span {
+    color: var(--color-gray-7);
+    font-size: 0.9em;
+
+    transition: 0.15s;
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link.c_red:hover > .left > .icon > span {
+    color: var(--color-red-t-7);
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link > .left > .text {
+    white-space: nowrap;
+
+    font-size: 0.75em;
+    font-weight: 480;
+
+    transition: 0.15s;
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link.c_red:hover > .left > .text {
+    color: var(--color-red);
+}
+
+.dropdown_menu_container > .dropdown_menu > .links > .link:hover > .left > .text {
+    color: black;
+}

@@ -35,7 +35,7 @@
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .left {
-    
+    position: relative;
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user {
@@ -43,9 +43,6 @@
     align-items: center;
 
     padding: 0.5em;
-
-    font-size: 0.85em;
-    font-weight: 500;
 
     border-radius: 6px;
 
@@ -72,6 +69,35 @@
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user > .user-username {
     user-select: none;
+
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user > .expand-icon {
+    color: var(--color-gray-7);
+    font-size: 1em;
+
+    user-select: none;
+
+    /* Default state */
+    opacity: 0;
+    margin-left: 0;
+    width: 0;
+    transform: translateX(-0.25em);
+    
+    transition: 0.15s;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user > .expand-icon.shown {
+    opacity: 1;
+    margin-left: 0.5em;
+    width: auto;
+    transform: translateX(0);
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user:hover > .expand-icon.shown {
+    transform: translateX(0) translateY(-0.075em);
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .right {

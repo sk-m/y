@@ -1,4 +1,5 @@
 import { Component, createSignal, PropsWithChildren, Show } from "solid-js";
+import DropdownMenu, { DropdownMenuLink } from "../components/DropdownMenu";
 
 const MenuLink: Component<{
     icon_name: string,
@@ -62,6 +63,10 @@ const MenuSection: Component<{
 }
 
 const MainAsideMenu: Component = () => {
+    const [isUserDropdownShown, setIsUserDropdownShown] = createSignal(false);
+
+    const toggleUserDropdownMenu = () => setIsUserDropdownShown(v => !v);
+
     return (
         <div id="mainroute-aside-container">
             <div className="aside">
@@ -69,13 +74,31 @@ const MainAsideMenu: Component = () => {
                     <div className="userspace">
                         <div className="main">
                             <div className="left">
-                                <div className="user">
+                                <div className="user" onclick={ toggleUserDropdownMenu }>
                                     <div
                                         className="user-avatar"
                                         style={{ "background-image": "url(https://images.unsplash.com/photo-1604076913837-52ab5629fba9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80)" }}
                                     ></div>
                                     <div className="user-username">admin</div>
+                                    <span classList={{ "expand-icon": true, "material-icons-round": true, shown: isUserDropdownShown() }}>expand_less</span>
                                 </div>
+
+                                <DropdownMenu shown={ isUserDropdownShown() }>
+                                    <DropdownMenuLink
+                                        text="Profile"
+                                        to="/u/admin"
+                                    />
+                                    <DropdownMenuLink
+                                        text="User settings"
+                                        to="/user-settings"
+                                    />
+                                    <DropdownMenuLink
+                                        text="Log out"
+                                        is_red={true}
+
+                                        action={ () => alert("This will log us out") }
+                                    />
+                                </DropdownMenu>
                             </div>
                             <div className="right">
                                 <div className="notifications-container has-unread">
