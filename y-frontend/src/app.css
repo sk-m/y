@@ -11,11 +11,17 @@
 }
 
 #mainroute-aside-container > .aside {
-
+    height: 100vh;
+    overflow: auto;
 }
 
-#mainroute-aside-container > .aside > .content {
-    
+#mainroute-aside-container > .aside::-webkit-scrollbar {
+    width: 0.2em;
+}
+   
+#mainroute-aside-container > .aside::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-1);
+    border-radius: 0.2em;
 }
 
 #mainroute-aside-container > .aside > .content > .userspace {
