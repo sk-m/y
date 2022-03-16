@@ -7,12 +7,21 @@
 }
 
 #mainroute-aside-container {
+    /* TODO use `width: auto` with some max value? */
     width: 300px;
+}
+
+#mainroute-aside-container.small {
+    width: auto;
 }
 
 #mainroute-aside-container > .aside {
     height: 100vh;
     overflow: auto;
+}
+
+#mainroute-aside-container.small > .aside {
+    overflow: visible;
 }
 
 #mainroute-aside-container > .aside::-webkit-scrollbar {
@@ -28,10 +37,18 @@
     padding: 0.5em 0.75em;
 }
 
+#mainroute-aside-container.small > .aside > .content > .userspace {
+    padding-bottom: 0;
+}
+
 #mainroute-aside-container > .aside > .content > .userspace > .main {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+#mainroute-aside-container.small > .aside > .content > .userspace > .main {
+    justify-content: center;
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .left {
@@ -67,11 +84,19 @@
     border-radius: 25%;
 }
 
+#mainroute-aside-container.small > .aside > .content > .userspace > .main > .left > .user > .user-avatar {
+    margin-right: 0;
+}
+
 #mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user > .user-username {
     user-select: none;
 
     font-size: 0.85em;
     font-weight: 500;
+}
+
+#mainroute-aside-container.small > .aside > .content > .userspace > .main > .left > .user > .user-username {
+    display: none;
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user > .expand-icon {
@@ -87,6 +112,10 @@
     transform: translateX(-0.25em);
     
     transition: 0.15s;
+}
+
+#mainroute-aside-container.small > .aside > .content > .userspace > .main > .left > .user > .expand-icon {
+    display: none;
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user > .expand-icon.shown {
@@ -115,6 +144,10 @@
     cursor: pointer;
 
     transition: 0.15s;
+}
+
+#mainroute-aside-container.small > .aside > .content > .userspace > .main > .right > .notifications-container {
+    display: none;
 }
 
 #mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container:hover {
@@ -192,6 +225,10 @@
 
 #mainroute-aside-container > .aside > .content > .misc {
     padding: 0.5em 0.75em;
+}
+
+#mainroute-aside-container.small > .aside > .content > .misc {
+    display: none;
 }
 
 #mainroute-aside-container > .aside > .content > .misc > .search-container {
@@ -292,10 +329,16 @@
     align-items: center;
 }
 
+#mainroute-aside-container.small > .aside > .content > .menu > .links .link > .left {
+    width: 100%;
+    justify-content: center;
+}
+
 #mainroute-aside-container > .aside > .content > .menu > .links .link > .left > .selection-indicator {
     position: absolute;
 
     top: 0;
+    left: 0;
 
     width: 4px;
 
@@ -341,8 +384,8 @@
     font-size: 1em;
 }
 
-#mainroute-aside-container > .aside > .content > .menu > .links .link > .left > .text-container {
-
+#mainroute-aside-container.small > .aside > .content > .menu > .links .link > .left > .text-container {
+    display: none;
 }
 
 #mainroute-aside-container > .aside > .content > .menu > .links .link > .left > .text-container > .name {
@@ -366,6 +409,10 @@
 
     display: flex;
     align-items: center;
+}
+
+#mainroute-aside-container.small > .aside > .content > .menu > .links .link > .right {
+    display: none;
 }
 
 #mainroute-aside-container > .aside > .content > .menu > .links .link > .right > .needs-attention-bubble {
@@ -442,6 +489,11 @@
     transition: 0.15s;
 }
 
+#mainroute-aside-container.small > .aside > .content > .menu > .links .menu-section > .section-header {
+    pointer-events: none;
+}
+
+#mainroute-aside-container.small > .aside > .content > .menu > .links .menu-section > .section-header,
 #mainroute-aside-container > .aside > .content > .menu > .links .menu-section.is-expanded > .section-header {
     margin-bottom: 0.25em;
 }
@@ -455,6 +507,11 @@
     align-items: center;
 }
 
+#mainroute-aside-container.small > .aside > .content > .menu > .links .menu-section > .section-header > .left {
+    width: 100%;
+    justify-content: center;
+}
+
 #mainroute-aside-container > .aside > .content > .menu > .links .menu-section > .section-header > .left > .menu-section-shape {
     width: 12px;
     height: 3px;
@@ -463,6 +520,11 @@
     border-radius: 3px;
 
     margin-right: 0.5em;
+}
+
+#mainroute-aside-container.small > .aside > .content > .menu > .links .menu-section > .section-header > .left > .menu-section-shape {
+    background-color: var(--color-gray-04);
+    margin-right: 0;
 }
 
 #mainroute-aside-container > .aside > .content > .menu > .links .menu-section > .section-header > .left > .icon {
@@ -484,6 +546,10 @@
     font-weight: 500;
 }
 
+#mainroute-aside-container.small > .aside > .content > .menu > .links .menu-section > .section-header > .left > .name {
+    display: none;
+}
+
 #mainroute-aside-container > .aside > .content > .menu > .links .menu-section > .section-header > .right > .expand-icon {
     display: flex;
     align-items: center;
@@ -496,6 +562,11 @@
     transition: 0.15s;
 }
 
+#mainroute-aside-container.small > .aside > .content > .menu > .links .menu-section > .section-header > .right {
+    display: none;
+}
+
+#mainroute-aside-container.small > .aside > .content > .menu > .links .menu-section > .section-header > .right > .expand-icon,
 #mainroute-aside-container > .aside > .content > .menu > .links .menu-section.is-expanded > .section-header > .right > .expand-icon {
     transform: translateY(3px) rotate(180deg);
 }
@@ -505,6 +576,7 @@
     transform: translateY(0);
 }
 
+#mainroute-aside-container.small > .aside > .content > .menu > .links .menu-section > .section-header:hover > .right > .expand-icon,
 #mainroute-aside-container > .aside > .content > .menu > .links .menu-section.is-expanded > .section-header:hover > .right > .expand-icon {
     transform: translateY(0) rotate(180deg);
 }
@@ -525,6 +597,7 @@
     transition: 0.25s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
+#mainroute-aside-container.small > .aside > .content > .menu > .links .menu-section > .section-contents,
 #mainroute-aside-container > .aside > .content > .menu > .links .menu-section.is-expanded > .section-contents {
     height: unset;
     opacity: 1;

@@ -1,4 +1,4 @@
-import { Component, createSignal, PropsWithChildren, Show } from "solid-js";
+import { Component, createSignal, onMount, PropsWithChildren, Show } from "solid-js";
 import DropdownMenu, { DropdownMenuLink } from "../components/DropdownMenu";
 
 const MenuLink: Component<{
@@ -63,12 +63,25 @@ const MenuSection: Component<{
 }
 
 const MainAsideMenu: Component = () => {
+    const [isAsideSmall, setIsAsideSmall] = createSignal(false);
     const [isUserDropdownShown, setIsUserDropdownShown] = createSignal(false);
 
     const toggleUserDropdownMenu = () => setIsUserDropdownShown(v => !v);
+    const toggleAsideSmall = () => setIsAsideSmall(v => !v);
+
+    // Allow toggling the size of the aside menu by pressing ctrl + B anywhere
+    onMount(() => {
+        // Just to be extra sure
+        if((window as any)._y_aside_listener_added) return;
+        (window as any)._y_aside_listener_added = true;
+
+        window.document.body.addEventListener("keyup", e => {
+            if(e.ctrlKey && e.code === "KeyB") toggleAsideSmall()
+        })
+    });
 
     return (
-        <div id="mainroute-aside-container">
+        <div id="mainroute-aside-container" classList={{ small: isAsideSmall() }}>
             <div className="aside">
                 <div className="content">
                     <div className="userspace">
