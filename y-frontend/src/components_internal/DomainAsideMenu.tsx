@@ -40,7 +40,12 @@ const DomainAsideMenu: Component<{
                             </div>
                             <div className="subheader">{ props.subheader }</div>
                             <Show when={ props.target_name }>
-                                <div className="target-name">{ props.target_name }</div>
+                                <div className="target-name">
+                                    {/* <div className="icon">
+                                        <span class="material-icons-round">arrow_right</span>
+                                    </div> */}
+                                    <div className="text">{ props.target_name }</div>
+                                </div>
                             </Show>
                         </div>
                     </div>

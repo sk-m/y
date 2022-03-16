@@ -686,11 +686,27 @@
 }
 
 #domain-aside-container > .aside > .content > .domain-header > .content > .target-name {
+    display: flex;
+    align-items: center;
+    
     margin-top: 0.25em;
-
+    
     color: var(--color-blue);
+}
+
+#domain-aside-container > .aside > .content > .domain-header > .content > .target-name > .text {
     font-weight: 600;
     font-size: 0.9em;
+}
+
+#domain-aside-container > .aside > .content > .domain-header > .content > .target-name > .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#domain-aside-container > .aside > .content > .domain-header > .content > .target-name > .icon > span {
+    font-size: 1em;
 }
 
 #domain-aside-container > .aside > .content > .domain-target-info {
