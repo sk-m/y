@@ -643,6 +643,7 @@
     justify-content: space-between;
 
     padding: 0.5em 0.75em;
+    margin-right: 2em;
 }
 
 #domain-aside-container > .aside > .content > .domain-header > .left-line {
