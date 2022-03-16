@@ -12,7 +12,7 @@ const UserDomain: Component = () => {
 
                 target_info={[
                     { key: "Username", value: "max" },
-                    { key: "Blocked", value: false }
+                    { key: "Blocked", value: false, inverse_bool: true }
                 ]}
             >
                 <MenuLink

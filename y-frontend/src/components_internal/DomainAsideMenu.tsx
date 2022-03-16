@@ -38,8 +38,8 @@ const DomainAsideMenu: Component<{
                                                 <div className="key">{ item.key }:</div>
                                                 <div classList={{
                                                     value: true,
-                                                    "bool-true": item.value === true,
-                                                    "bool-false": item.value === false
+                                                    "bool-true": item.value === (true && !item.inverse_bool),
+                                                    "bool-false": item.value === (false || item.inverse_bool)
                                                 }}>{
                                                     (typeof item.value === "boolean")
                                                     ? (item.value ? "yes" : "no")
