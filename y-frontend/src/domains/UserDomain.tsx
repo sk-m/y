@@ -13,6 +13,7 @@ const UserDomain: Component = () => {
                 header="User management"
                 subheader="Control over a specific user"
 
+                target_name="max"
                 target_info={[
                     { key: "Username", value: "max" },
                     { key: "Blocked", value: false, inverse_bool: true }

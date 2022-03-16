@@ -5,7 +5,8 @@ const DomainAsideMenu: Component<{
 
     header: string,
     subheader: string,
-
+    
+    target_name?: string,
     target_info?: { [key: string]: string | number | boolean }[]
 }> = props => {
     // We store whether or not the target info panel for this specific domain is expanded, in the localStorage
@@ -38,6 +39,9 @@ const DomainAsideMenu: Component<{
                                 <div className="text">{ props.header }</div>
                             </div>
                             <div className="subheader">{ props.subheader }</div>
+                            <Show when={ props.target_name }>
+                                <div className="target-name">{ props.target_name }</div>
+                            </Show>
                         </div>
                     </div>
                     <Show when={ props.target_info }>

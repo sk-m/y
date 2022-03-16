@@ -680,11 +680,17 @@
 }
 
 #domain-aside-container > .aside > .content > .domain-header > .content > .subheader {
-    margin-top: 0.2em;
-
     color: var(--color-gray-7);
-    font-size: 0.8em;
+    font-size: 0.7em;
     font-weight: 450;
+}
+
+#domain-aside-container > .aside > .content > .domain-header > .content > .target-name {
+    margin-top: 0.25em;
+
+    color: var(--color-blue);
+    font-weight: 600;
+    font-size: 0.9em;
 }
 
 #domain-aside-container > .aside > .content > .domain-target-info {
