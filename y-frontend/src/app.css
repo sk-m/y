@@ -131,10 +131,6 @@
     transform: translateX(0) translateY(-0.075em);
 }
 
-#mainroute-aside-container > .aside > .content > .userspace > .main > .right {
-    
-}
-
 #mainroute-aside-container > .aside > .content > .userspace > .main > .right > .notifications-container {
     display: flex;
     align-items: center;
@@ -621,10 +617,6 @@
 .ui-aside-container > .aside > .content .aside-arrow-spacer > span {
     color: var(--color-gray-25);
     font-size: 0.9em;
-}
-
-#domain-aside-container {
-
 }
 
 #domain-aside-container > .aside {
