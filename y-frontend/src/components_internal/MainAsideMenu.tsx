@@ -1,67 +1,7 @@
 import { Component, createSignal, onMount, PropsWithChildren, Show } from "solid-js";
+import AsideMenuLink from "../components/AsideMenuLink";
+import AsideMenuSection from "../components/AsideMenuSection";
 import DropdownMenu, { DropdownMenuLink } from "../components/DropdownMenu";
-
-// TODO @cleanup move into a separate file
-export const MenuLink: Component<{
-    icon_name: string,
-    name: string,
-    description?: string,
-
-    is_small?: boolean;
-
-    is_selected?: boolean,
-    needs_attention?: boolean
-}> = props => {
-    return (
-        <div 
-            classList={{ link: true, small: props.is_small, "is-selected": props.is_selected, "needs-attention": props.needs_attention }}
-        >
-            <div className="left">
-                <div className="selection-indicator"></div>
-                <div className="icon"><span class="material-icons-round">{ props.icon_name }</span></div>
-                <div className="text-container">
-                    <div className="name">{ props.name }</div>
-                    <Show when={ !props.is_small && props.description }>
-                        <div className="description">{ props.description }</div>
-                    </Show>
-                </div>
-            </div>
-            <div className="right">
-                <div className="needs-attention-bubble"></div>
-                <span class="arrow-icon material-icons-round">navigate_next</span>
-            </div>
-        </div>
-    )
-}
-
-export const MenuSection: Component<{
-    name: string,
-
-    is_expanded?: boolean
-}> = props => {
-    const [isExpanded, setIsExpanded] = createSignal(props.is_expanded || false);
-
-    const toggleSection = () => setIsExpanded(v => !v);
-
-    return (
-        <div classList={{ "menu-section": true, "is-expanded": isExpanded() }}>
-            <div className="section-header" onclick={ toggleSection }>
-                <div className="left">
-                    <div className="menu-section-shape"></div>
-                    <div className="name">{ props.name }</div>
-                </div>
-                <div className="right">
-                    <div className="expand-icon">
-                        <span class="material-icons-round">expand_more</span>
-                    </div>
-                </div>
-            </div>
-            <div classList={{ "section-contents": true }}>
-                { props.children }
-            </div>
-        </div>
-    )
-}
 
 const MainAsideMenu: Component = () => {
     const [isAsideSmall, setIsAsideSmall] = createSignal(false);
@@ -142,22 +82,22 @@ const MainAsideMenu: Component = () => {
                     </div>
                     <div className="menu">
                         <div className="links">
-                            <MenuLink
+                            <AsideMenuLink
                                 icon_name="home"
                                 name="Home"
                                 description="Main wiki page"
                             />
-                            <MenuLink
+                            <AsideMenuLink
                                 icon_name="hotel_class"
                                 name="Welcome"
                                 description="About our company"
                             />
-                            <MenuLink
+                            <AsideMenuLink
                                 icon_name="gavel"
                                 name="Company rules"
                                 description="Obey your master(s)!"
                             />
-                            <MenuLink
+                            <AsideMenuLink
                                 icon_name="scatter_plot"
                                 name="Our network setup"
                                 description="For IT people"
@@ -165,7 +105,7 @@ const MainAsideMenu: Component = () => {
 
                             <div className="menu-spacer"></div>
 
-                            <MenuLink
+                            <AsideMenuLink
                                 icon_name="dashboard"
                                 name="Dashboard"
                                 description="Instance status at a glance"
@@ -173,95 +113,95 @@ const MainAsideMenu: Component = () => {
                                 needs_attention={true}
                                 is_selected={true}
                             />
-                            <MenuLink
+                            <AsideMenuLink
                                 icon_name="tune"
                                 name="Settings"
                                 description="Instance configuration centre"
                             />
                             
-                            <MenuSection name="Page actions" is_expanded={ true } >
-                                <MenuLink
+                            <AsideMenuSection name="Page actions" is_expanded={ true } >
+                                <AsideMenuLink
                                     icon_name="show_chart"
                                     name="Information"
 
                                     is_selected={true}
                                     is_small={true}
                                 />
-                                <MenuLink
+                                <AsideMenuLink
                                     icon_name="arrow_forward"
                                     name="Rename"
 
                                     is_small={true}
                                 />
-                                <MenuLink
+                                <AsideMenuLink
                                     icon_name="remove_moderator"
                                     name="Manage access"
 
                                     is_small={true}
                                 />
-                                <MenuLink
+                                <AsideMenuLink
                                     icon_name="delete"
                                     name="Delete // archive"
 
                                     is_small={true}
                                 />
-                            </MenuSection>
+                            </AsideMenuSection>
 
-                            <MenuSection name="Another section">
-                                <MenuLink
+                            <AsideMenuSection name="Another section">
+                                <AsideMenuLink
                                     icon_name="show_chart"
                                     name="Information"
 
                                     is_selected={true}
                                     is_small={true}
                                 />
-                                <MenuLink
+                                <AsideMenuLink
                                     icon_name="arrow_forward"
                                     name="Rename"
 
                                     is_small={true}
                                 />
-                                <MenuLink
+                                <AsideMenuLink
                                     icon_name="remove_moderator"
                                     name="Manage access"
 
                                     is_small={true}
                                 />
-                                <MenuLink
+                                <AsideMenuLink
                                     icon_name="delete"
                                     name="Delete // archive"
 
                                     is_small={true}
                                 />
-                            </MenuSection>
+                            </AsideMenuSection>
                             
-                            <MenuSection name="Section three">
-                                <MenuLink
+                            <AsideMenuSection name="Section three">
+                                <AsideMenuLink
                                     icon_name="show_chart"
                                     name="Information"
 
                                     is_selected={true}
                                     is_small={true}
                                 />
-                                <MenuLink
+                                <AsideMenuLink
                                     icon_name="arrow_forward"
                                     name="Rename"
 
                                     is_small={true}
                                 />
-                                <MenuLink
+                                <AsideMenuLink
                                     icon_name="remove_moderator"
                                     name="Manage access"
 
                                     is_small={true}
                                 />
-                                <MenuLink
+                                <AsideMenuLink
                                     icon_name="delete"
                                     name="Delete // archive"
 
                                     is_small={true}
                                 />
-                            </MenuSection>
+                            </AsideMenuSection>
                         </div>
                     </div>
                 </div>
