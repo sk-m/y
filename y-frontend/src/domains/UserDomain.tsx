@@ -8,6 +8,8 @@ const UserDomain: Component = () => {
     return (
         <div id="domain-user">
             <DomainAsideMenu
+                domain_id="user"
+
                 header="User management"
                 subheader="Control over a specific user"
 

@@ -1,14 +1,28 @@
 import { Component, createSignal, For, Show } from "solid-js";
 
 const DomainAsideMenu: Component<{
+    domain_id: string,
+
     header: string,
     subheader: string,
 
     target_info?: { [key: string]: string | number | boolean }[]
 }> = props => {
-    const [isTargetPanelExpanded, setIsTargetPanelExpanded] = createSignal(true);
+    // We store whether or not the target info panel for this specific domain is expanded, in the localStorage
+    const target_panel_localstorage_config_key = "y_domain_aside_target_panel_expanded_" + props.domain_id;
+    const y_domain_aside_target_panel_expanded_raw = window.localStorage.getItem(target_panel_localstorage_config_key);
 
-    const toggleTargetPanel = () => setIsTargetPanelExpanded(v => !v);
+    const target_panel_default_state = y_domain_aside_target_panel_expanded_raw === "1"
+                                    || y_domain_aside_target_panel_expanded_raw === null;
+    // --- --- ---
+
+    const [isTargetPanelExpanded, setIsTargetPanelExpanded] = createSignal(target_panel_default_state);
+
+    const toggleTargetPanel = () => setIsTargetPanelExpanded(v => {
+        window.localStorage.setItem(target_panel_localstorage_config_key, !v ? "1" : "0");
+
+        return !v;
+    });
 
     return (
         <div id="domain-aside-container" class="ui-aside-container">
