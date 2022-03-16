@@ -28,6 +28,8 @@ body {
 :root {
     --color-blackish: hsl(0, 0%, 5%);
 
+    --color-green: #26e600;
+
     --color-red: #FC0015;
     --color-red-t-04: rgba(252, 0, 21, 0.04);
     --color-red-t-7: rgba(252, 0, 21, 0.7);
@@ -36,10 +38,12 @@ body {
     --color-blue-lighter: hsl(234, 100%, 50%);
     --color-blue-t-02: rgba(0, 23, 230, 0.02);
 
+    --color-gray-02: rgba(0, 0, 0, 0.02);
     --color-gray-04: rgba(0, 0, 0, 0.04);
     --color-gray-1: rgba(0, 0, 0, 0.1);
     --color-gray-15: rgba(0, 0, 0, 0.15);
     --color-gray-2: rgba(0, 0, 0, 0.2);
     --color-gray-25: rgba(0, 0, 0, 0.25);
+    --color-gray-65: rgba(0, 0, 0, 0.65);
     --color-gray-7: rgba(0, 0, 0, 0.7);
 }

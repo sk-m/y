@@ -3,6 +3,7 @@ import { Route, Routes } from "solid-app-router";
 
 import "./app.css";
 import MainAsideMenu from "./components_internal/MainAsideMenu";
+import UserDomain from "./domains/UserDomain";
 
 const TestComponent: Component = () => {
     return (
@@ -18,6 +19,7 @@ const MainRoute: Component = () => {
 
                 <div>
                     <Routes>
+                        <Route path="/u/:user_name" component={ UserDomain } />
                         <Route path="/" component={ TestComponent } />
                     </Routes>
                 </div>

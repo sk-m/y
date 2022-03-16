@@ -1,7 +1,8 @@
 import { Component, createSignal, onMount, PropsWithChildren, Show } from "solid-js";
 import DropdownMenu, { DropdownMenuLink } from "../components/DropdownMenu";
 
-const MenuLink: Component<{
+// TODO @cleanup move into a separate file
+export const MenuLink: Component<{
     icon_name: string,
     name: string,
     description?: string,
@@ -33,7 +34,7 @@ const MenuLink: Component<{
     )
 }
 
-const MenuSection: Component<{
+export const MenuSection: Component<{
     name: string,
 
     is_expanded?: boolean
@@ -81,7 +82,7 @@ const MainAsideMenu: Component = () => {
     });
 
     return (
-        <div id="mainroute-aside-container" classList={{ small: isAsideSmall() }}>
+        <div id="mainroute-aside-container" classList={{ "ui-aside-container": true, small: isAsideSmall() }}>
             <div className="aside">
                 <div className="content">
                     <div className="userspace">
