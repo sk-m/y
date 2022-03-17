@@ -1,0 +1,81 @@
+#user-preferences-page > .user-profile-panel {
+    padding: 2.5em 1.5em;
+}
+
+#user-preferences-page > .user-profile-panel .sides {
+    display: flex;
+    align-items: flex-start;
+}
+
+#user-preferences-page > .user-profile-panel .sides > .left {
+    flex-shrink: 0;
+}
+
+#user-preferences-page > .user-profile-panel .sides > .left > .avatar-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    width: 300px;
+}
+
+#user-preferences-page > .user-profile-panel .sides > .left > .avatar-container > .avatar {
+    width: 200px;
+    height: 200px;
+
+    background-position: 50% 50%;
+    background-size: cover;
+
+    border-radius: 50%;
+}
+
+#user-preferences-page > .user-profile-panel .sides > .right {
+    width: 100%;
+}
+
+#user-preferences-page > .user-profile-panel .sides > .right > .username {
+    font-size: 2em;
+    font-weight: 800;
+}
+
+#user-preferences-page > .user-profile-panel .sides > .right > .email-address {
+    color: var(--color-gray-65);
+    font-size: 1em;
+    font-weight: 500;
+}
+
+#user-preferences-page > .user-profile-panel .sides > .right > .user-groups {
+    display: flex;
+    align-items: center;
+
+    margin: 0.8em 0;
+}
+
+#user-preferences-page > .user-profile-panel .sides > .right > .user-groups > .group {
+    margin-right: 0.4em;
+    
+    padding: 0.2em 0.4em;
+
+    color: var(--color-blue);
+    font-family: "SourceCodePro", monospace;
+    font-size: 0.9em;
+    font-weight: 480;
+
+    background-color: var(--color-blue-t-04);
+    border-radius: 4px;
+}
+
+#user-preferences-page > .user-profile-panel .sides > .right > .bio {
+    box-sizing: border-box;
+
+    width: 100%;
+    height: 9em;
+
+    padding: 0.66em 1em;
+
+    font-size: 0.95em;
+    font-weight: 420;
+
+    background-color: var(--color-gray-02);
+    border-radius: 4px;
+}

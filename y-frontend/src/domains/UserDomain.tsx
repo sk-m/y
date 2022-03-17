@@ -5,6 +5,8 @@ import AsideMenuLink from "../components/AsideMenuLink";
 import AsideMenuSection from "../components/AsideMenuSection";
 import UserDomainPreferencesPage from "./user/PreferencesPage";
 
+import "./UserDomain.css";
+
 const UserDomain: Component = () => {
     return (
         <div id="domain-user" className="ui-domain">
