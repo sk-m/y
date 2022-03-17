@@ -2,11 +2,9 @@
     display: flex;
 }
 
-#mainroute-horizontal-container > div {
-    flex-shrink: 0;
-}
-
 #mainroute-aside-container {
+    flex-shrink: 0;
+
     /* TODO use `width: auto` with some max value? */
     width: 300px;
 }
@@ -619,6 +617,10 @@
     font-size: 0.9em;
 }
 
+#domain-aside-container {
+    flex-shrink: 0;
+}
+
 #domain-aside-container > .aside {
     height: 100vh;
     overflow: auto;
@@ -791,4 +793,15 @@
 #domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .value.bool-true {
     color: var(--color-green);
     font-weight: 500;
+}
+
+.ui-domain {
+    display: flex;
+    align-items: flex-start;
+
+    width: 100%;
+}
+
+.ui-domain-page {
+    width: 100%;
 }

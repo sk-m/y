@@ -1,0 +1,15 @@
+/* Panel */
+.ui-panel {
+    margin: 1em auto;
+    padding: 1em 1.5em;
+
+    min-width: 800px;
+    width: 60%;
+    max-width: 1000px;
+
+    font-size: 0.85em;
+
+    border: 1px solid var(--color-gray-1);
+    box-shadow: 0 5px 15px 0 rgba(0, 0, 0, 0.04);
+    border-radius: 6px;
+}

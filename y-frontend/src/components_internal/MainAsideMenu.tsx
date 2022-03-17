@@ -110,72 +110,17 @@ const MainAsideMenu: Component = () => {
                                 name="Dashboard"
                                 description="Instance status at a glance"
 
-                                needs_attention={true}
                                 is_selected={true}
                             />
                             <AsideMenuLink
                                 icon_name="tune"
                                 name="Settings"
                                 description="Instance configuration centre"
+                                
+                                needs_attention={true}
                             />
                             
                             <AsideMenuSection name="Page actions" is_expanded={ true } >
-                                <AsideMenuLink
-                                    icon_name="show_chart"
-                                    name="Information"
-
-                                    is_selected={true}
-                                    is_small={true}
-                                />
-                                <AsideMenuLink
-                                    icon_name="arrow_forward"
-                                    name="Rename"
-
-                                    is_small={true}
-                                />
-                                <AsideMenuLink
-                                    icon_name="remove_moderator"
-                                    name="Manage access"
-
-                                    is_small={true}
-                                />
-                                <AsideMenuLink
-                                    icon_name="delete"
-                                    name="Delete // archive"
-
-                                    is_small={true}
-                                />
-                            </AsideMenuSection>
-
-                            <AsideMenuSection name="Another section">
-                                <AsideMenuLink
-                                    icon_name="show_chart"
-                                    name="Information"
-
-                                    is_selected={true}
-                                    is_small={true}
-                                />
-                                <AsideMenuLink
-                                    icon_name="arrow_forward"
-                                    name="Rename"
-
-                                    is_small={true}
-                                />
-                                <AsideMenuLink
-                                    icon_name="remove_moderator"
-                                    name="Manage access"
-
-                                    is_small={true}
-                                />
-                                <AsideMenuLink
-                                    icon_name="delete"
-                                    name="Delete // archive"
-
-                                    is_small={true}
-                                />
-                            </AsideMenuSection>
-                            
-                            <AsideMenuSection name="Section three">
                                 <AsideMenuLink
                                     icon_name="show_chart"
                                     name="Information"

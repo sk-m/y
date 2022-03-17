@@ -17,12 +17,10 @@ const MainRoute: Component = () => {
             <div id="mainroute-horizontal-container">
                 <MainAsideMenu />
 
-                <div>
-                    <Routes>
-                        <Route path="/u/:user_name" component={ UserDomain } />
-                        <Route path="/" component={ TestComponent } />
-                    </Routes>
-                </div>
+                <Routes>
+                    <Route path="/u/:user_name/*" component={ UserDomain } />
+                    <Route path="/" component={ TestComponent } />
+                </Routes>
             </div>
         </div>
     );

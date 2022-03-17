@@ -1,12 +1,13 @@
 import { Component } from "solid-js";
-import { Routes } from "solid-app-router";
+import { Route, Routes } from "solid-app-router";
 import DomainAsideMenu from "../components_internal/DomainAsideMenu";
 import AsideMenuLink from "../components/AsideMenuLink";
 import AsideMenuSection from "../components/AsideMenuSection";
+import UserDomainPreferencesPage from "./user/PreferencesPage";
 
 const UserDomain: Component = () => {
     return (
-        <div id="domain-user">
+        <div id="domain-user" className="ui-domain">
             <DomainAsideMenu
                 domain_id="user"
 
@@ -50,6 +51,7 @@ const UserDomain: Component = () => {
             </DomainAsideMenu>
             
             <Routes>
+                <Route path="/preferences" component={ UserDomainPreferencesPage }></Route>
             </Routes>
         </div>
     )
