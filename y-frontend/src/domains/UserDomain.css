@@ -115,3 +115,58 @@
     background-color: var(--color-gray-02);
     border-radius: 4px;
 }
+
+#user-preferences-page .user-sessions-panel .sessions-list {
+    margin-top: 1em;
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin: 0.2em 0;
+    padding: 0.5em;
+
+    border-radius: 6px;
+
+    transition: 0.15s;
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session:hover {
+    /* box-shadow: 0 0 0 1px var(--color-gray-04); */
+    background-color: var(--color-gray-04);
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session > .left {
+    margin-left: 0.5em;
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session > .left > .client-info {
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session > .left > .device-info {
+    font-weight: 450;
+    font-size: 0.95em;
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session > .left > .other-info {
+    margin-top: 0.5em;
+
+    color: var(--color-gray-7);
+    font-weight: 450;
+    font-size: 0.8em;
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session > .right {
+    /* Default state */
+    opacity: 0;
+
+    transition: 0.15s;
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session:hover > .right {
+    opacity: 1;
+}

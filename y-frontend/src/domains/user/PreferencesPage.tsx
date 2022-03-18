@@ -101,6 +101,50 @@ const UserDomainPreferencesPage: Component = () => {
                     </div>
                 </div>
             </Panel>
+
+            <Panel
+                classList={{ "user-sessions-panel": true }}
+            >
+                <div className="h1">
+                    <div className="line"></div>
+                    <div className="header">Active Sessions</div>
+                </div>
+
+                <p className="ui-text">This is a list of sessions that are currently active on your account. If you see something you don't recognize — immediately destroy the session and change your password.</p>
+
+                <div className="sessions-list">
+                    <div className="session">
+                        <div className="left">
+                            <div className="client-info">Google Chrome 99.1.1</div>
+                            <div className="device-info">Windows 10, 10.0</div>
+                            <div className="other-info">Ukraine · 11.22.33.143</div>
+                        </div>
+                        <div className="right">
+                            <button className="ui-button t-primary tc-red">Destroy</button>
+                        </div>
+                    </div>
+                    <div className="session">
+                        <div className="left">
+                            <div className="client-info">Google Chrome 99.1.1</div>
+                            <div className="device-info">Windows 10, 10.0</div>
+                            <div className="other-info">Ukraine · 11.22.33.143</div>
+                        </div>
+                        <div className="right">
+                            <button className="ui-button t-primary tc-red">Destroy</button>
+                        </div>
+                    </div>
+                    <div className="session">
+                        <div className="left">
+                            <div className="client-info">Google Chrome 99.1.1</div>
+                            <div className="device-info">Windows 10, 10.0</div>
+                            <div className="other-info">Ukraine · 11.22.33.143</div>
+                        </div>
+                        <div className="right">
+                            <button className="ui-button t-primary tc-red">Destroy</button>
+                        </div>
+                    </div>
+                </div>
+            </Panel>
         </div>
     )
 }

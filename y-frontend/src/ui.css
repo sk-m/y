@@ -64,6 +64,11 @@
     box-shadow: 0 0 0 1px var(--color-gray-1);
 }
 
+/* TODO @cleanup @refactor I do not like this */
+.ui-panel-container > .ui-panel > .content .ui-text {
+    font-size: 0.95em;
+}
+
 .ui-panel-container > .ui-panel > .content .h1 {
     position: relative;
     display: flex;
