@@ -68,18 +68,7 @@ const UserDomainPreferencesPage: Component = () => {
                 </PanelDrawer> */}
             </Panel>
 
-            <Panel
-                // panel_ref={ ref => { panel_ref = ref } }
-
-                // drawer_shown={ isProfilePanelDrawerShown() }
-                // panel_actions={[
-                //     {
-                //         name: "edit_profile",
-                //         text: "Edit profile",
-                //         action: () => { setIsProfilePanelDrawerShown(true); return false }
-                //     }
-                // ]}
-            >
+            <Panel>
                 <div className="h1">
                     <div className="line"></div>
                     <div className="header">Password</div>
@@ -94,19 +83,23 @@ const UserDomainPreferencesPage: Component = () => {
                         <button className="ui-button t-primary">Change password</button>
                     </div>
                 </div>
-                
-                {/* <PanelDrawer panel_ref={ panel_ref }>
-                    <div className="content between">
-                        <div className="info">
-                            <div className="ui-text w-500">You are currently editing your profile.</div>
-                            <div className="ui-text t-secondary">Don't forget to save your changes!</div>
-                        </div>
-                        <div className="drawer-buttons">
-                            <button className="ui-button t-primary">Save profile</button>
-                            <button className="ui-button t-primary tc-red">Discard</button>
-                        </div>
+            </Panel>
+
+            <Panel>
+                <div className="h1">
+                    <div className="line"></div>
+                    <div className="header">Email</div>
+                </div>
+
+                <div className="ui-between center">
+                    <div className="info">
+                        <div className="ui-text w-500">max@google.com</div>
+                        <div className="ui-text t-secondary">You can change your email address at any time</div>
                     </div>
-                </PanelDrawer> */}
+                    <div className="ui-buttons-container">
+                        <button className="ui-button t-primary">Change email address</button>
+                    </div>
+                </div>
             </Panel>
         </div>
     )
