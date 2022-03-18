@@ -17,7 +17,7 @@ const UserDomainPreferencesPage: Component = () => {
                 //     {
                 //         name: "edit_profile",
                 //         text: "Edit profile",
-                //         action: () => { setIsProfilePanelDrawerShown(true); return false }
+                //         action: () => { return false }
                 //     }
                 // ]}
             >
@@ -68,7 +68,11 @@ const UserDomainPreferencesPage: Component = () => {
                 </PanelDrawer> */}
             </Panel>
 
-            <Panel>
+            <Panel
+                panel_info_items={[
+                    { icon_name: "done_all", text: "No action required", color: "green" }
+                ]}
+            >
                 <div className="h1">
                     <div className="line"></div>
                     <div className="header">Password</div>
@@ -85,7 +89,11 @@ const UserDomainPreferencesPage: Component = () => {
                 </div>
             </Panel>
 
-            <Panel>
+            <Panel
+                panel_info_items={[
+                    { icon_name: "verified", text: "Email address verified", color: "green" }
+                ]}
+            >
                 <div className="h1">
                     <div className="line"></div>
                     <div className="header">Email</div>
@@ -104,6 +112,10 @@ const UserDomainPreferencesPage: Component = () => {
 
             <Panel
                 classList={{ "user-sessions-panel": true }}
+
+                panel_info_items={[
+                    { icon_name: "devices", text: "You currently have 3 active sessions" }
+                ]}
             >
                 <div className="h1">
                     <div className="line"></div>

@@ -26,8 +26,10 @@
     border-radius: 6px;
 }
 
-.ui-panel-container > .ui-panel > .actions-container {
+.ui-panel-container > .ui-panel > .misc-container {
     position: absolute;
+    display: flex;
+    align-items: center;
 
     top: 0;
     right: 0;
@@ -35,19 +37,56 @@
     padding: 1em 1em 0 0;
 }
 
-.ui-panel-container > .ui-panel > .actions-container > .ui-dropdown-menu-container {
+.ui-panel-container > .ui-panel > .misc-container > .info-container {
+    display: flex;
+    align-items: center;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item {
+    display: flex;
+    align-items: center;
+
+    padding: 0.6em 1em;
+
+    color: var(--color-blue);
+    font-size: 0.8em;
+    font-weight: 600;
+
+    background-color: var(--color-blue-t-04);
+    border-radius: 4px;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item > .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-right: 0.5em;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item > .icon > span {
+    font-size: 1rem;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item.green {
+    color: var(--color-green);
+    background-color: var(--color-green-t-04);
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .actions-container > .ui-dropdown-menu-container {
     left: unset;
     right: 0;
 
     margin-right: 1em;
 }
 
-.ui-panel-container > .ui-panel > .actions-container > .actions-dropdown-button {
+.ui-panel-container > .ui-panel > .misc-container > .actions-container > .actions-dropdown-button {
     display: flex;
     align-items: center;
     justify-content: center;
 
     padding: 0.3em 0.8em;
+    margin-left: 0.5em;
 
     color: var(--color-gray-7);
 
@@ -59,7 +98,7 @@
     transition: 0.15s;
 }
 
-.ui-panel-container > .ui-panel > .actions-container > .actions-dropdown-button:hover {
+.ui-panel-container > .ui-panel > .misc-container > .actions-container > .actions-dropdown-button:hover {
     background-color: var(--color-gray-04);
     box-shadow: 0 0 0 1px var(--color-gray-1);
 }
