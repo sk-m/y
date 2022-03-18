@@ -4,7 +4,13 @@ import Panel from "../../components/Panel";
 const UserDomainPreferencesPage: Component = () => {
     return (
         <div id="user-preferences-page" className="ui-domain-page">
-            <Panel classList={{ "user-profile-panel": true }}>
+            <Panel
+                classList={{ "user-profile-panel": true }}
+
+                panel_actions={[
+                    { name: "edit_profile", text: "Edit profile", action: () => alert("edit!") }
+                ]}
+            >
                 <div className="sides">
                     <div className="left">
                         <div className="avatar-container">
