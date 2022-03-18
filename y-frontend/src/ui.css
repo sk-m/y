@@ -2,7 +2,7 @@
 .ui-panel-container {
     position: relative;
 
-    margin: 1em auto;
+    margin: 1.5em auto;
 
     min-width: 800px;
     width: 60%;
@@ -127,10 +127,10 @@
 }
 
 .ui-panel-container > .ui-panel > .content .h1 > .header {
-    margin-left: 1.4rem;
+    margin-left: 1.2rem;
 
     font-weight: 800;
-    font-size: 1.7em;
+    font-size: 1.6em;
 }
 
 .ui-panel-container .ui-panel-drawer {

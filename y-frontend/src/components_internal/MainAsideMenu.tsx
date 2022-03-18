@@ -47,8 +47,8 @@ const MainAsideMenu: Component = () => {
                                         { ...user_dropdown_menu_props }
                                         />
                                     <DropdownMenuLink
-                                        text="User settings"
-                                        to="/user-settings"
+                                        text="User preferences"
+                                        to="/u/admin/preferences"
 
                                         { ...user_dropdown_menu_props }
                                         />
