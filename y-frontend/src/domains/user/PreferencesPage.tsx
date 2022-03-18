@@ -2,24 +2,24 @@ import { Component, createSignal } from "solid-js";
 import Panel, { PanelDrawer } from "../../components/Panel";
 
 const UserDomainPreferencesPage: Component = () => {
-    const [isProfilePanelDrawerShown, setIsProfilePanelDrawerShown] = createSignal(false);
+    // const [isProfilePanelDrawerShown, setIsProfilePanelDrawerShown] = createSignal(false);
 
-    let panel_ref;
+    // let panel_ref;
 
     return (
         <div id="user-preferences-page" className="ui-domain-page">
             <Panel
-                panel_ref={ ref => { panel_ref = ref } }
+                // panel_ref={ ref => { panel_ref = ref } }
                 classList={{ "user-profile-panel": true }}
 
-                drawer_shown={ isProfilePanelDrawerShown() }
-                panel_actions={[
-                    {
-                        name: "edit_profile",
-                        text: "Edit profile",
-                        action: () => { setIsProfilePanelDrawerShown(true); return false }
-                    }
-                ]}
+                // drawer_shown={ isProfilePanelDrawerShown() }
+                // panel_actions={[
+                //     {
+                //         name: "edit_profile",
+                //         text: "Edit profile",
+                //         action: () => { setIsProfilePanelDrawerShown(true); return false }
+                //     }
+                // ]}
             >
                 <div className="sides">
                     <div className="left">
@@ -40,22 +40,21 @@ const UserDomainPreferencesPage: Component = () => {
                             <div className="group">Clerk</div>
                         </div>
 
-                        <div className="section-name">
+                        {/* <div className="section-name">
                             <div className="text">Bio</div>
-                            {/* <div className="authority-bubble authority-user"></div> */}
                         </div>
                         <div className="bio">
-                            I'm just a guy. Hello!
+                            1
                             <br /><br />
-                            This is a bio, btw.
+                            2
                             <br /><br />
-                            🌌🌌🌌
+                            3
                             <br />
-                            🌕🌕🌕
-                        </div>
+                            4
+                        </div> */}
                     </div>
                 </div>
-                <PanelDrawer panel_ref={ panel_ref }>
+                {/* <PanelDrawer panel_ref={ panel_ref }>
                     <div className="content between">
                         <div className="info">
                             <div className="ui-text w-500">You are currently editing your profile.</div>
@@ -66,7 +65,48 @@ const UserDomainPreferencesPage: Component = () => {
                             <button className="ui-button t-primary tc-red">Discard</button>
                         </div>
                     </div>
-                </PanelDrawer>
+                </PanelDrawer> */}
+            </Panel>
+
+            <Panel
+                // panel_ref={ ref => { panel_ref = ref } }
+
+                // drawer_shown={ isProfilePanelDrawerShown() }
+                // panel_actions={[
+                //     {
+                //         name: "edit_profile",
+                //         text: "Edit profile",
+                //         action: () => { setIsProfilePanelDrawerShown(true); return false }
+                //     }
+                // ]}
+            >
+                <div className="h1">
+                    <div className="line"></div>
+                    <div className="header">Password</div>
+                </div>
+
+                <div className="ui-between center">
+                    <div className="info">
+                        <div className="ui-text w-500">Your password was last changed 3 years ago</div>
+                        <div className="ui-text t-secondary">You can change your password at any time</div>
+                    </div>
+                    <div className="ui-buttons-container">
+                        <button className="ui-button t-primary">Change password</button>
+                    </div>
+                </div>
+                
+                {/* <PanelDrawer panel_ref={ panel_ref }>
+                    <div className="content between">
+                        <div className="info">
+                            <div className="ui-text w-500">You are currently editing your profile.</div>
+                            <div className="ui-text t-secondary">Don't forget to save your changes!</div>
+                        </div>
+                        <div className="drawer-buttons">
+                            <button className="ui-button t-primary">Save profile</button>
+                            <button className="ui-button t-primary tc-red">Discard</button>
+                        </div>
+                    </div>
+                </PanelDrawer> */}
             </Panel>
         </div>
     )

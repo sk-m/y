@@ -15,7 +15,7 @@
     position: relative;
     z-index: 1;
     
-    padding: 1em 1.5em;
+    padding: 1.2em 1.5em;
     
     font-size: 0.85em;
     
@@ -62,6 +62,31 @@
 .ui-panel-container > .ui-panel > .actions-container > .actions-dropdown-button:hover {
     background-color: var(--color-gray-04);
     box-shadow: 0 0 0 1px var(--color-gray-1);
+}
+
+.ui-panel-container > .ui-panel > .content .h1 {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    margin-bottom: 1.2em;
+}
+
+.ui-panel-container > .ui-panel > .content .h1 > .line {
+    position: absolute;
+
+    width: 4px;
+    height: 90%;
+
+    background-color: var(--color-gray-1);
+    border-radius: 4px;
+}
+
+.ui-panel-container > .ui-panel > .content .h1 > .header {
+    margin-left: 1.4rem;
+
+    font-weight: 800;
+    font-size: 1.7em;
 }
 
 .ui-panel-container .ui-panel-drawer {
@@ -157,4 +182,24 @@
     color: var(--color-gray-7);
     font-size: 0.7rem;
     font-weight: 450;
+}
+
+/* Misc */
+.ui-between {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.ui-between.center {
+    align-items: center;
+}
+
+.ui-buttons-container {
+    display: flex;
+    align-items: center;
+}
+
+.ui-buttons-container > * {
+    margin-left: 0.5rem;
 }
