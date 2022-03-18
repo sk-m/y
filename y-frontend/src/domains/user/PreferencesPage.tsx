@@ -21,13 +21,19 @@ const UserDomainPreferencesPage: Component = () => {
                         <div className="username">max</div>
                         <div className="email-address">max@google.com</div>
 
-                        <div className="section-name">User groups</div>
+                        <div className="section-name">
+                            <div className="text">User groups</div>
+                            {/* <div className="authority-bubble authority-high"></div> */}
+                        </div>
                         <div className="user-groups">
                             <div className="group">Confirmed</div>
                             <div className="group">Clerk</div>
                         </div>
 
-                        <div className="section-name">Bio</div>
+                        <div className="section-name">
+                            <div className="text">Bio</div>
+                            {/* <div className="authority-bubble authority-user"></div> */}
+                        </div>
                         <div className="bio">
                             I'm just a guy. Hello!
                             <br /><br />
