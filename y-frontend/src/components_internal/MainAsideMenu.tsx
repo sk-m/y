@@ -10,6 +10,8 @@ const MainAsideMenu: Component = () => {
     const toggleUserDropdownMenu = () => setIsUserDropdownShown(v => !v);
     const toggleAsideSmall = () => setIsAsideSmall(v => !v);
 
+    const user_dropdown_menu_props = { request_close: () => setIsUserDropdownShown(false) };
+
     // Allow toggling the size of the aside menu by pressing ctrl + B anywhere
     onMount(() => {
         // Just to be extra sure
@@ -41,16 +43,22 @@ const MainAsideMenu: Component = () => {
                                     <DropdownMenuLink
                                         text="Profile"
                                         to="/u/admin"
-                                    />
+
+                                        { ...user_dropdown_menu_props }
+                                        />
                                     <DropdownMenuLink
                                         text="User settings"
                                         to="/user-settings"
-                                    />
+
+                                        { ...user_dropdown_menu_props }
+                                        />
                                     <DropdownMenuLink
                                         text="Log out"
                                         is_red={true}
-
+                                        
                                         action={ () => alert("This will log us out") }
+
+                                        { ...user_dropdown_menu_props }
                                     />
                                 </DropdownMenu>
                             </div>

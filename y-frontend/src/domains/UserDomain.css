@@ -1,17 +1,17 @@
-#user-preferences-page > .user-profile-panel {
+#user-preferences-page .user-profile-panel {
     padding: 2.5em 1.5em;
 }
 
-#user-preferences-page > .user-profile-panel .sides {
+#user-preferences-page .user-profile-panel .sides {
     display: flex;
     align-items: flex-start;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .left {
+#user-preferences-page .user-profile-panel .sides > .left {
     flex-shrink: 0;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .left > .avatar-container {
+#user-preferences-page .user-profile-panel .sides > .left > .avatar-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -19,7 +19,7 @@
     width: 300px;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .left > .avatar-container > .avatar {
+#user-preferences-page .user-profile-panel .sides > .left > .avatar-container > .avatar {
     width: 200px;
     height: 200px;
 
@@ -29,11 +29,11 @@
     border-radius: 50%;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right {
+#user-preferences-page .user-profile-panel .sides > .right {
     width: 100%;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .section-name {
+#user-preferences-page .user-profile-panel .sides > .right > .section-name {
     display: flex;
     align-items: center;
 
@@ -44,50 +44,50 @@
     border-radius: 3px;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .section-name[title] {
+#user-preferences-page .user-profile-panel .sides > .right > .section-name[title] {
     user-select: none;
     cursor: help;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .section-name > .text {
+#user-preferences-page .user-profile-panel .sides > .right > .section-name > .text {
     font-size: 0.8em;
     font-weight: 580;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .section-name > .authority-bubble {
+#user-preferences-page .user-profile-panel .sides > .right > .section-name > .authority-bubble {
     padding: 0.3em;
     margin-left: 0.4em;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .section-name > .authority-bubble.authority-user {
+#user-preferences-page .user-profile-panel .sides > .right > .section-name > .authority-bubble.authority-user {
     background-color: #ff6200;
     transform: rotate(45deg);
 
     margin-left: 0.5em;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .section-name > .authority-bubble.authority-high {
+#user-preferences-page .user-profile-panel .sides > .right > .section-name > .authority-bubble.authority-high {
     background-color: var(--color-blue-lighter);
     border-radius: 50%;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .username {
+#user-preferences-page .user-profile-panel .sides > .right > .username {
     font-size: 2em;
     font-weight: 800;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .email-address {
+#user-preferences-page .user-profile-panel .sides > .right > .email-address {
     color: var(--color-gray-65);
     font-size: 1em;
     font-weight: 500;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .user-groups {
+#user-preferences-page .user-profile-panel .sides > .right > .user-groups {
     display: flex;
     align-items: center;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .user-groups > .group {
+#user-preferences-page .user-profile-panel .sides > .right > .user-groups > .group {
     margin-right: 0.4em;
     
     padding: 0.2em 0.4em;
@@ -101,7 +101,7 @@
     border-radius: 4px;
 }
 
-#user-preferences-page > .user-profile-panel .sides > .right > .bio {
+#user-preferences-page .user-profile-panel .sides > .right > .bio {
     box-sizing: border-box;
 
     width: 100%;

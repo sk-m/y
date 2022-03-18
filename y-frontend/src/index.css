@@ -39,6 +39,7 @@ body {
     --color-blue-t-02: rgba(0, 23, 230, 0.02);
     --color-blue-t-04: rgba(0, 23, 230, 0.04);
 
+    --color-gray-01: rgba(0, 0, 0, 0.01);
     --color-gray-02: rgba(0, 0, 0, 0.02);
     --color-gray-04: rgba(0, 0, 0, 0.04);
     --color-gray-1: rgba(0, 0, 0, 0.1);

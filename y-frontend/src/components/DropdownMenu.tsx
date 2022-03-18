@@ -9,14 +9,30 @@ export const DropdownMenuLink: Component<{
     is_red?: boolean,
 
     to?: string,
-    action?: () => void
+
+    // TODO @cleanup I do not like this approach!
+    /**
+     * function that gets executed when the menu decides it wants to close
+     * 
+     * ex. ```
+     * <DropdownMenuLink on_close={ () => setIsDropdownMenuShown(false) } />
+     * ```
+     */
+    request_close: () => void,
+
+    /**
+     * return `false` to trigger on_close() event  
+     */
+    action?: () => void | boolean
 }> = props => {
     // TODO @performance is it ok that we do this for every Link?
     const navigate = useNavigate();
 
     const onLinkClick = () => {
-        if(props.to) navigate(props.to);
-        else { props.action && props.action() };
+        if(props.to) { navigate(props.to); props.request_close(); }
+        else if(props.action) {
+            if(props.action() === false) props.request_close();
+        }
     }
 
     return (

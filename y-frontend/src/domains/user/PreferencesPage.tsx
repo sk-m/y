@@ -1,14 +1,24 @@
-import { Component } from "solid-js";
-import Panel from "../../components/Panel";
+import { Component, createSignal } from "solid-js";
+import Panel, { PanelDrawer } from "../../components/Panel";
 
 const UserDomainPreferencesPage: Component = () => {
+    const [isProfilePanelDrawerShown, setIsProfilePanelDrawerShown] = createSignal(false);
+
+    let panel_ref;
+
     return (
         <div id="user-preferences-page" className="ui-domain-page">
             <Panel
+                panel_ref={ ref => { panel_ref = ref } }
                 classList={{ "user-profile-panel": true }}
 
+                drawer_shown={ isProfilePanelDrawerShown() }
                 panel_actions={[
-                    { name: "edit_profile", text: "Edit profile", action: () => alert("edit!") }
+                    {
+                        name: "edit_profile",
+                        text: "Edit profile",
+                        action: () => { setIsProfilePanelDrawerShown(true); return false }
+                    }
                 ]}
             >
                 <div className="sides">
@@ -45,6 +55,18 @@ const UserDomainPreferencesPage: Component = () => {
                         </div>
                     </div>
                 </div>
+                <PanelDrawer panel_ref={ panel_ref }>
+                    <div className="content between">
+                        <div className="info">
+                            <div className="ui-text w-500">You are currently editing your profile.</div>
+                            <div className="ui-text t-secondary">Don't forget to save your changes!</div>
+                        </div>
+                        <div className="drawer-buttons">
+                            <button className="ui-button t-primary">Save profile</button>
+                            <button className="ui-button t-primary tc-red">Discard</button>
+                        </div>
+                    </div>
+                </PanelDrawer>
             </Panel>
         </div>
     )
