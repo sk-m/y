@@ -94,21 +94,29 @@ const MainAsideMenu: Component = () => {
                                 icon_name="home"
                                 name="Home"
                                 description="Main wiki page"
+
+                                to="/p/Main"
                             />
                             <AsideMenuLink
                                 icon_name="hotel_class"
                                 name="Welcome"
                                 description="About our company"
+
+                                to="/p/About"
                             />
                             <AsideMenuLink
                                 icon_name="gavel"
                                 name="Company rules"
                                 description="Obey your master(s)!"
-                            />
+                                
+                                to="/p/Rules"
+                                />
                             <AsideMenuLink
                                 icon_name="scatter_plot"
                                 name="Our network setup"
                                 description="For IT people"
+
+                                to="/p/IT%20info"
                             />
 
                             <div className="menu-spacer"></div>
@@ -117,15 +125,16 @@ const MainAsideMenu: Component = () => {
                                 icon_name="dashboard"
                                 name="Dashboard"
                                 description="Instance status at a glance"
-
-                                is_selected={true}
-                            />
+                                
+                                needs_attention={true}
+                                to="/dashboard"
+                                />
                             <AsideMenuLink
                                 icon_name="tune"
                                 name="Settings"
                                 description="Instance configuration centre"
                                 
-                                needs_attention={true}
+                                to="/settings"
                             />
                             
                             <AsideMenuSection name="Page actions" is_expanded={ true } >
@@ -133,26 +142,32 @@ const MainAsideMenu: Component = () => {
                                     icon_name="show_chart"
                                     name="Information"
 
-                                    is_selected={true}
                                     is_small={true}
-                                />
+
+                                    to="/page-management/1/info"
+                                    />
                                 <AsideMenuLink
                                     icon_name="arrow_forward"
                                     name="Rename"
-
+                                    
                                     is_small={true}
-                                />
+                                    to="/page-management/1/rename"
+                                    />
                                 <AsideMenuLink
                                     icon_name="remove_moderator"
                                     name="Manage access"
-
+                                    
                                     is_small={true}
-                                />
+
+                                    to="/page-management/1/access"
+                                    />
                                 <AsideMenuLink
                                     icon_name="delete"
                                     name="Delete // archive"
-
+                                    
                                     is_small={true}
+
+                                    to="/page-management/1/delete"
                                 />
                             </AsideMenuSection>
                         </div>

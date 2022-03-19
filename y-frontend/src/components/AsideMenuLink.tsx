@@ -1,18 +1,31 @@
-import { Component, Show } from "solid-js";
+import { useLocation, useNavigate } from "solid-app-router";
+import { Component, createEffect, createSignal, Show } from "solid-js";
 
 const AsideMenuLink: Component<{
     icon_name: string,
     name: string,
     description?: string,
 
+    to: string,
+
     is_small?: boolean;
 
-    is_selected?: boolean,
     needs_attention?: boolean
 }> = props => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const [isRouteActive, setIsRouteActive] = createSignal(false);
+
+    // TODO @performance I think there is a better way of doing this
+    createEffect(() => {
+        setIsRouteActive(location.pathname.startsWith(props.to));
+    }, location.pathname);
+
     return (
         <div 
-            classList={{ link: true, small: props.is_small, "is-selected": props.is_selected, "needs-attention": props.needs_attention }}
+            classList={{ link: true, small: props.is_small, "is-selected": isRouteActive(), "needs-attention": props.needs_attention }}
+            onclick={[ navigate, props.to ]}
         >
             <div className="left">
                 <div className="selection-indicator"></div>

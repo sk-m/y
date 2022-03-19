@@ -26,11 +26,15 @@ const UserDomain: Component = () => {
                     icon_name="face"
                     name="Profile"
                     description="User's profile"
+
+                    to="/u/admin/profile"
                 />
                 <AsideMenuLink
                     icon_name="tune"
                     name="Preferences"
                     description="Set user's preferences"
+
+                    to="/u/admin/preferences"
                 />
 
                 <AsideMenuSection name="Admin actions" is_expanded={true} >
@@ -38,16 +42,22 @@ const UserDomain: Component = () => {
                         icon_name="badge"
                         name="Account management"
                         description="Edit user's account information"
-                    />
+
+                        to="/u/admin/account"
+                        />
                     <AsideMenuLink
                         icon_name="group"
                         name="Groups"
                         description="Manage user's groups"
+
+                        to="/u/admin/groups"
                     />
                     <AsideMenuLink
                         icon_name="block"
                         name="Block"
                         description="Block // unblock user"
+
+                        to="/u/admin/block"
                     />
                 </AsideMenuSection>
             </DomainAsideMenu>
