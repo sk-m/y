@@ -1,8 +1,11 @@
 import { Component, createSignal } from "solid-js";
+import Button from "../../components/Button";
 import Panel, { PanelDrawer } from "../../components/Panel";
 
+// TODO @cleanup Move panels into separate components
 const UserDomainPreferencesPage: Component = () => {
     const [isEmailPanelDrawerShown, setIsEmailPanelDrawerShown] = createSignal(false);
+    const [isNewEmailInputFocused, setIsNewEmailInputFocused] = createSignal(false);
 
     let email_panel_ref;
 
@@ -11,6 +14,13 @@ const UserDomainPreferencesPage: Component = () => {
     const showEmailPanelDrawer = () => {
         setIsEmailPanelDrawerShown(true);
         new_email_address_input_ref?.focus();
+    }
+
+    const onNewEmailAddressInputKeyUp = (e: KeyboardEvent) => {
+        if(e.key === "Escape") {
+            setIsEmailPanelDrawerShown(false);
+            new_email_address_input_ref?.blur();
+        }
     }
 
     return (
@@ -117,6 +127,11 @@ const UserDomainPreferencesPage: Component = () => {
                                     type="email"
                                     placeholder="new@email.com"
                                     ref={ new_email_address_input_ref }
+
+                                    onkeyup={ onNewEmailAddressInputKeyUp }
+
+                                    onFocus={[ setIsNewEmailInputFocused, true ]}
+                                    onBlur={[ setIsNewEmailInputFocused, false ]}
                                     
                                     className="ui-input"
                                 />
@@ -126,9 +141,14 @@ const UserDomainPreferencesPage: Component = () => {
                             <div className="info">
                                 <div className="ui-text">A confirmation email will be sent to the new address. The address will only be changed after you click a confirmation link in that email.</div>
                             </div>
-                            <div className="ui-buttons-container">
-                                <button className="ui-button t-primary">Submit</button>
-                                <button className="ui-button t-primary" onclick={[ setIsEmailPanelDrawerShown, false ]}>Cancel</button>
+                            <div classList={{ "ui-buttons-container": true, "w-button-hints": isNewEmailInputFocused() }}>
+                                <Button text="Submit" w_hint="submit" />
+                                <Button
+                                    text="Cancel"
+                                    onclick={[ setIsEmailPanelDrawerShown, false ]}
+                                
+                                    w_hint="cancel"
+                                />
                             </div>
                         </div>
                     </div>

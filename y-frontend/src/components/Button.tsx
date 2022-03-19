@@ -6,6 +6,7 @@ const Button: Component<{
     type?: "primary" | "secondary",
     w_hint?: "submit" | "cancel",
 
+    // TODO @cleanup use the ...spread operator to pass the rest of the props into the <button>?
     // TODO @any
     onclick?: any,
 
