@@ -1,8 +1,18 @@
 /* Panel */
+/* TODO @hack I'm not proud of it... In my defence, it works flawlessly! */
+.ui-panel-spacer {
+    position: relative;
+    z-index: 1;
+
+    background-color: white;
+
+    height: 1.5em;
+}
+
 .ui-panel-container {
     position: relative;
 
-    margin: 1.5em auto;
+    margin: 0 auto;
 
     min-width: 800px;
     width: 60%;
@@ -13,7 +23,7 @@
 
 .ui-panel-container > .ui-panel {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     
     padding: 1.2em 1.5em;
     
