@@ -2,17 +2,22 @@ import { Component, createSignal } from "solid-js";
 import Panel, { PanelDrawer } from "../../components/Panel";
 
 const UserDomainPreferencesPage: Component = () => {
-    // const [isProfilePanelDrawerShown, setIsProfilePanelDrawerShown] = createSignal(false);
+    const [isEmailPanelDrawerShown, setIsEmailPanelDrawerShown] = createSignal(false);
 
-    // let panel_ref;
+    let email_panel_ref;
+
+    let new_email_address_input_ref: HTMLInputElement | undefined;
+
+    const showEmailPanelDrawer = () => {
+        setIsEmailPanelDrawerShown(true);
+        new_email_address_input_ref?.focus();
+    }
 
     return (
         <div id="user-preferences-page" className="ui-domain-page">
             <Panel
-                // panel_ref={ ref => { panel_ref = ref } }
                 classList={{ "user-profile-panel": true }}
 
-                // drawer_shown={ isProfilePanelDrawerShown() }
                 // panel_actions={[
                 //     {
                 //         name: "edit_profile",
@@ -54,18 +59,6 @@ const UserDomainPreferencesPage: Component = () => {
                         </div> */}
                     </div>
                 </div>
-                {/* <PanelDrawer panel_ref={ panel_ref }>
-                    <div className="content between">
-                        <div className="info">
-                            <div className="ui-text w-500">You are currently editing your profile.</div>
-                            <div className="ui-text t-secondary">Don't forget to save your changes!</div>
-                        </div>
-                        <div className="drawer-buttons">
-                            <button className="ui-button t-primary">Save profile</button>
-                            <button className="ui-button t-primary tc-red">Discard</button>
-                        </div>
-                    </div>
-                </PanelDrawer> */}
             </Panel>
 
             <Panel
@@ -90,6 +83,9 @@ const UserDomainPreferencesPage: Component = () => {
             </Panel>
 
             <Panel
+                panel_ref={ ref => { email_panel_ref = ref } }
+                
+                drawer_shown={ isEmailPanelDrawerShown() }
                 panel_info_items={[
                     { icon_name: "verified", text: "Email address verified", color: "green" }
                 ]}
@@ -105,9 +101,38 @@ const UserDomainPreferencesPage: Component = () => {
                         <div className="ui-text t-secondary">You can change your email address at any time</div>
                     </div>
                     <div className="ui-buttons-container">
-                        <button className="ui-button t-primary">Change email address</button>
+                        <button
+                            classList={{ "ui-button": true, "t-primary": true, disabled: isEmailPanelDrawerShown() }}
+                            onclick={ showEmailPanelDrawer }
+                        >Change email address</button>
                     </div>
                 </div>
+
+                <PanelDrawer panel_ref={ email_panel_ref }>
+                    <div className="content">
+                        <div className="ui-form mb-1">
+                            <div className="ui-input-container">
+                                <div className="header">New email address</div>
+                                <input
+                                    type="email"
+                                    placeholder="new@email.com"
+                                    ref={ new_email_address_input_ref }
+                                    
+                                    className="ui-input"
+                                />
+                            </div>
+                        </div>
+                        <div className="ui-between center">
+                            <div className="info">
+                                <div className="ui-text">A confirmation email will be sent to the new address. The address will only be changed after you click a confirmation link in that email.</div>
+                            </div>
+                            <div className="ui-buttons-container">
+                                <button className="ui-button t-primary">Submit</button>
+                                <button className="ui-button t-primary" onclick={[ setIsEmailPanelDrawerShown, false ]}>Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </PanelDrawer>
             </Panel>
 
             <Panel

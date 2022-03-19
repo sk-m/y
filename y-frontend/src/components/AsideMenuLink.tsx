@@ -1,6 +1,8 @@
 import { useLocation, useNavigate } from "solid-app-router";
 import { Component, createEffect, createSignal, Show } from "solid-js";
 
+// TODO @improvement we require props.to to be an *absolute path* in order to determine whether or not it is active (blue line on the left
+// of the link). It would be much nicer to allow using relative paths in props.to
 const AsideMenuLink: Component<{
     icon_name: string,
     name: string,
