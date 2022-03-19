@@ -53,16 +53,10 @@ const UserDomainPreferencesPage: Component = () => {
                 </div>
             </Panel>
 
-            <div className="ui-panel-spacer"></div>
-
             <PasswordPanel />
 
-            <div className="ui-panel-spacer"></div>
-
             <EmailPanel />
-
-            <div className="ui-panel-spacer"></div>
-            
+           
             <Panel
                 classList={{ "user-sessions-panel": true }}
 
