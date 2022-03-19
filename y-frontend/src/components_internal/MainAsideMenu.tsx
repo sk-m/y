@@ -18,8 +18,8 @@ const MainAsideMenu: Component = () => {
         if((window as any)._y_aside_listener_added) return;
         (window as any)._y_aside_listener_added = true;
 
-        window.document.body.addEventListener("keyup", e => {
-            if(e.ctrlKey && e.code === "KeyB") toggleAsideSmall()
+        window.document.body.addEventListener("keydown", e => {
+            if(!e.repeat && e.ctrlKey && e.code === "KeyB") toggleAsideSmall()
         })
     });
 
