@@ -1,0 +1,45 @@
+import { Component, Match, Switch } from "solid-js";
+
+const Button: Component<{
+    text: string,
+
+    type?: "primary" | "secondary",
+    w_hint?: "submit" | "cancel",
+
+    // TODO @any
+    onclick?: any,
+
+    button_ref?: (ref: HTMLButtonElement) => void 
+}> = props => {
+    return (
+        <div className="ui-button-container">
+            <button
+                ref={ props.button_ref }
+                classList={{ "ui-button": true, ["t-" + (props.type || "primary")]: true }}
+                onclick={ props.onclick }
+            >
+                { props.text }
+            </button>
+            <Switch>
+                <Match when={ props.w_hint === "submit" }>
+                    <div className="button-hint">
+                        <div className="icon">
+                            <span class="material-icons-round">done</span>
+                        </div>
+                        <div className="text">ctrl+return</div>
+                    </div>
+                </Match>
+                <Match when={ props.w_hint === "cancel" }>
+                    <div className="button-hint">
+                        <div className="icon">
+                            <span class="material-icons-round">clear</span>
+                        </div>
+                        <div className="text">esc</div>
+                    </div>
+                </Match>
+            </Switch>
+        </div>
+    )
+}
+
+export default Button;

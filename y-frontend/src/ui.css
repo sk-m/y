@@ -169,6 +169,65 @@
 }
 
 /* Buttons */
+.ui-button-container {
+    position: relative;
+}
+
+.ui-button-container > .ui-button {
+    position: relative;
+    z-index: 1;
+}
+
+.ui-button-container > .button-hint {
+    position: absolute;
+    z-index: 0;
+
+    box-sizing: border-box;
+
+    bottom: 1;
+    left: 0;
+
+    padding: calc(0.1em + 5px) 0.4em 0.1em 0.4em;
+    margin-top: -5px;
+
+    width: 100%;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    color: var(--color-blue);
+    background-color: var(--color-blue-t-04);
+    border: 1px solid var(--color-blue-t-1);
+    border-radius: 0 0 6px 6px;
+
+    /* Default state */
+    transform: translateY(-100%);
+    
+    transition: 0.25s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.ui-buttons-container.w-button-hints .ui-button-container > .button-hint {
+    transform: translateY(0);
+}
+
+.ui-button-container > .button-hint .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-right: 0.3em;
+}
+
+.ui-button-container > .button-hint .icon > span {
+    font-size: 1em;
+}
+
+.ui-button-container > .button-hint .text {
+    font-weight: 450;
+    font-size: 0.7em;
+}
+
 .ui-button.t-primary {
     padding: 0.8em 1.6em;
 
@@ -269,6 +328,11 @@
 .mv-1,
 .mt-1 {
     margin-top: 1em;
+}
+
+.ui-flex {
+    display: flex;
+    align-items: center;
 }
 
 .ui-between {
