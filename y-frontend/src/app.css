@@ -804,6 +804,9 @@
 
 .ui-domain-page {
     width: 100%;
+    height: 100vh;
 
-    margin: 0 1.5em;
+    padding: 0 1.5em;
+
+    overflow: overlay;
 }
