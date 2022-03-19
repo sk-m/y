@@ -1,28 +1,10 @@
-import { Component, createSignal } from "solid-js";
-import Button from "../../components/Button";
-import Panel, { PanelDrawer } from "../../components/Panel";
+import { Component } from "solid-js";
+import Panel from "../../components/Panel";
+import EmailPanel from "./preferences-page/EmailPanel";
+import PasswordPanel from "./preferences-page/PasswordPanel";
 
 // TODO @cleanup Move panels into separate components
 const UserDomainPreferencesPage: Component = () => {
-    const [isEmailPanelDrawerShown, setIsEmailPanelDrawerShown] = createSignal(false);
-    const [isNewEmailInputFocused, setIsNewEmailInputFocused] = createSignal(false);
-
-    let email_panel_ref;
-
-    let new_email_address_input_ref: HTMLInputElement | undefined;
-
-    const showEmailPanelDrawer = () => {
-        setIsEmailPanelDrawerShown(true);
-        new_email_address_input_ref?.focus();
-    }
-
-    const onNewEmailAddressInputKeyUp = (e: KeyboardEvent) => {
-        if(e.key === "Escape") {
-            setIsEmailPanelDrawerShown(false);
-            new_email_address_input_ref?.blur();
-        }
-    }
-
     return (
         <div id="user-preferences-page" className="ui-domain-page">
             <Panel
@@ -71,89 +53,9 @@ const UserDomainPreferencesPage: Component = () => {
                 </div>
             </Panel>
 
-            <Panel
-                panel_info_items={[
-                    { icon_name: "done_all", text: "No action required", color: "green" }
-                ]}
-            >
-                <div className="h1">
-                    <div className="line"></div>
-                    <div className="header">Password</div>
-                </div>
+            <PasswordPanel />
 
-                <div className="ui-between center">
-                    <div className="info">
-                        <div className="ui-text w-500">Your password was last changed 3 years ago</div>
-                        <div className="ui-text t-secondary">You can change your password at any time</div>
-                    </div>
-                    <div className="ui-buttons-container">
-                        <button className="ui-button t-primary">Change password</button>
-                    </div>
-                </div>
-            </Panel>
-
-            <Panel
-                panel_ref={ ref => { email_panel_ref = ref } }
-                
-                drawer_shown={ isEmailPanelDrawerShown() }
-                panel_info_items={[
-                    { icon_name: "verified", text: "Email address verified", color: "green" }
-                ]}
-            >
-                <div className="h1">
-                    <div className="line"></div>
-                    <div className="header">Email</div>
-                </div>
-
-                <div className="ui-between center">
-                    <div className="info">
-                        <div className="ui-text w-500">max@google.com</div>
-                        <div className="ui-text t-secondary">You can change your email address at any time</div>
-                    </div>
-                    <div className="ui-buttons-container">
-                        <button
-                            classList={{ "ui-button": true, "t-primary": true, disabled: isEmailPanelDrawerShown() }}
-                            onclick={ showEmailPanelDrawer }
-                        >Change email address</button>
-                    </div>
-                </div>
-
-                <PanelDrawer panel_ref={ email_panel_ref }>
-                    <div className="content">
-                        <div className="ui-form mb-1">
-                            <div className="ui-input-container">
-                                <div className="header">New email address</div>
-                                <input
-                                    type="email"
-                                    placeholder="new@email.com"
-                                    ref={ new_email_address_input_ref }
-
-                                    onkeyup={ onNewEmailAddressInputKeyUp }
-
-                                    onFocus={[ setIsNewEmailInputFocused, true ]}
-                                    onBlur={[ setIsNewEmailInputFocused, false ]}
-                                    
-                                    className="ui-input"
-                                />
-                            </div>
-                        </div>
-                        <div className="ui-between center">
-                            <div className="info">
-                                <div className="ui-text">A confirmation email will be sent to the new address. The address will only be changed after you click a confirmation link in that email.</div>
-                            </div>
-                            <div classList={{ "ui-buttons-container": true, "w-button-hints": isNewEmailInputFocused() }}>
-                                <Button text="Submit" w_hint="submit" />
-                                <Button
-                                    text="Cancel"
-                                    onclick={[ setIsEmailPanelDrawerShown, false ]}
-                                
-                                    w_hint="cancel"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </PanelDrawer>
-            </Panel>
+            <EmailPanel />
 
             <Panel
                 classList={{ "user-sessions-panel": true }}

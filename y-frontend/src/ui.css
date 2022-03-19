@@ -276,6 +276,10 @@
 }
 
 /* Forms */
+.ui-input-container {
+    margin: 0.5em 0;
+}
+
 .ui-input-container > .header {
     margin-bottom: 0.2em;
 

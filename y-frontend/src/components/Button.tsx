@@ -6,6 +6,8 @@ const Button: Component<{
     type?: "primary" | "secondary",
     w_hint?: "submit" | "cancel",
 
+    disabled?: boolean,
+
     // TODO @cleanup use the ...spread operator to pass the rest of the props into the <button>?
     // TODO @any
     onclick?: any,
@@ -16,7 +18,7 @@ const Button: Component<{
         <div className="ui-button-container">
             <button
                 ref={ props.button_ref }
-                classList={{ "ui-button": true, ["t-" + (props.type || "primary")]: true }}
+                classList={{ "ui-button": true, ["t-" + (props.type || "primary")]: true, disabled: props.disabled }}
                 onclick={ props.onclick }
             >
                 { props.text }
