@@ -819,9 +819,12 @@
     box-sizing: border-box;
 
     padding: 0 1.5em;
-    padding-top: 2em;
 
     overflow: overlay;
 
     animation: ui-domain-page-show 0.5s cubic-bezier(0.33, 1, 0.68, 1) 0s;
+}
+
+.ui-domain-page > .ui-panel-spacer:first-child {
+    height: 2em;
 }

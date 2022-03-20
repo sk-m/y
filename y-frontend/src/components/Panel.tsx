@@ -43,6 +43,7 @@ const Panel: Component<{
 
     return (
         <>
+            <div className="ui-panel-spacer"></div>
             <div ref={ props.panel_ref } classList={{ "ui-panel-container": true, "drawer-shown": props.drawer_shown }}>
                 <div classList={{ "ui-panel": true, ...props.classList }}>
                     <div className="misc-container">
@@ -81,7 +82,6 @@ const Panel: Component<{
                     </div>
                 </div>
             </div>
-            <div className="ui-panel-spacer"></div>
         </>
     )
 }

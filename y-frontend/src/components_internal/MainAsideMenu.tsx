@@ -18,6 +18,7 @@ const MainAsideMenu: Component = () => {
         if((window as any)._y_aside_listener_added) return;
         (window as any)._y_aside_listener_added = true;
 
+        // TODO @improvement save the state to the localStorage?
         window.document.body.addEventListener("keydown", e => {
             if(!e.repeat && e.ctrlKey && e.code === "KeyB") toggleAsideSmall()
         })
