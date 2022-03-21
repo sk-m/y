@@ -115,6 +115,14 @@
     background-color: var(--color-blue-lighter);
 }
 
+#loginroute > .middle-container > .step > .buttons > .button.disabled:hover,
+#loginroute > .middle-container > .step > .buttons > .button.disabled {
+    color: var(--color-gray-7);
+    background-color: var(--color-gray-06);
+
+    pointer-events: none;
+}
+
 #loginroute > .middle-container > .step > .buttons > .button.secondary {
     box-sizing: border-box;
 

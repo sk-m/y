@@ -298,6 +298,18 @@
     font-weight: 500;
 }
 
+.ui-input-container > .input-message {
+    margin-top: 0.5em;
+
+    color: var(--color-gray-7);
+    font-size: 0.8em;
+    font-weight: 450;
+}
+
+.ui-input-container > .input-message.c-red {
+    color: var(--color-red);
+}
+
 .ui-input {
     box-sizing: border-box;
     
@@ -331,6 +343,21 @@
     color: var(--color-gray-7);
     font-size: 0.7rem;
     font-weight: 450;
+}
+
+/* Info panels */
+.ui-info-panel {
+    padding: 0.8em 1.2em;
+
+    font-size: 0.8em;
+    font-weight: 500;
+
+    border-radius: 6px;
+}
+
+.ui-info-panel.c-red {
+    color: var(--color-red);
+    background-color: var(--color-red-t-04);
 }
 
 /* Misc */
