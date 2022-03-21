@@ -25,6 +25,8 @@ namespace API_User {
                 json["error_message"] = "Some or all of required parameters were not provided - `username` and `password`.";
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                resp->setStatusCode(drogon::HttpStatusCode::k412PreconditionFailed);
+
                 api_callback(resp);
                 return;
             }
@@ -39,6 +41,15 @@ namespace API_User {
                 json["error_message"] = error.explanation_user;
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+
+                if(error.contextual_error_code == User::ErrorCode::PASSWORD_LENGTH
+                || error.contextual_error_code == User::ErrorCode::USERNAME_FORMAT
+                || error.contextual_error_code == User::ErrorCode::USERNAME_TAKEN) {
+                    resp->setStatusCode(drogon::HttpStatusCode::k412PreconditionFailed);
+                } else {
+                    resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
+                }
+
                 api_callback(resp);
                 return;
             }
@@ -69,6 +80,8 @@ namespace API_User {
                 json["error_message"] = "Some or all of required parameters were not provided - `username` and `password`.";
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                resp->setStatusCode(drogon::HttpStatusCode::k412PreconditionFailed);
+
                 api_callback(resp);
                 return;
             }
@@ -84,8 +97,22 @@ namespace API_User {
                 json["error_message"] = user_status.explanation_user;
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                api_callback(resp);
 
+                switch(user_status.contextual_error_code) {
+                    case User::ErrorCode::PASSWORD_INCORRECT: {
+                        resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
+                    } break;
+
+                    case User::ErrorCode::USER_NOT_FOUND: {
+                        resp->setStatusCode(drogon::HttpStatusCode::k401Unauthorized);
+                    } break;
+
+                    default: {
+                        resp->setStatusCode(drogon::HttpStatusCode::k400BadRequest);
+                    }
+                }
+
+                api_callback(resp);
                 return;
             }
 
@@ -100,6 +127,8 @@ namespace API_User {
                 json["error_message"] = user_session_status.explanation_user;
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                resp->setStatusCode(drogon::HttpStatusCode::k400BadRequest);
+
                 api_callback(resp);
 
                 PQclear(user._result);

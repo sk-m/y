@@ -140,6 +140,20 @@ bool User::is_username_taken(const char* username) {
     return is_taken;
 }
 
+/**
+ * @brief Check if provided password matches the password of the user with provided user_id
+ *
+ * ErrorCodes that can be returned:
+ * 
+ * \li USER_NOT_FOUND;
+ * \li PASSWORD_INCORRECT;
+ * \li PASSWORD_HASHING_ALGORITHM_UNSUPPORTED;
+ * 
+ * @param username Username of the target user
+ * @param password Password that will be hashed and compared to the password of the target user
+ * 
+ * @return std::tuple<User::User, Error>
+ */
 std::tuple<User::User, Error> User::user_compare_passwords(const char* username, const char* password) {
     // Get the user
     const char* const sql_params[1] = { username };
@@ -204,6 +218,23 @@ std::tuple<User::User, Error> User::user_compare_passwords(const char* username,
     });
 }
 
+/**
+ * @brief Create a new user
+ * 
+ * Username and password reqirements will be checked. Uniqueness of the username will be ensured, too
+ * 
+ * ErrorCodes that can be returned:
+ * 
+ * \li PASSWORD_LENGTH;
+ * \li USERNAME_FORMAT;
+ * \li USERNAME_TAKEN;
+ * \li INTERNAL;
+ * 
+ * @param username Username for a new user
+ * @param password Cleartext password for a new user. Will be hashed
+ *
+ * @return std::tuple<unsigned int, Error> unsigned int represents the user id of the new user
+ */
 std::tuple<unsigned int, Error> User::user_create(const char* username, const char* password) {
     // Check the data
     const auto password_len = strlen(password);
@@ -273,6 +304,18 @@ std::tuple<unsigned int, Error> User::user_create(const char* username, const ch
     return std::make_tuple(user_id, Error{ 0, nullptr });
 }
 
+/**
+ * @brief Create a session for a user
+ * 
+ * ErrorCodes that can be returned:
+ *
+ * \li INTERNAL;
+ *  
+ * @param user_id id of the user the new session will be created for
+ * @param req Drogon's req object
+ *
+ * @return std::tuple<User::UserSession, Error> 
+ */
 std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, const drogon::HttpRequestPtr& req) {
     // Generate a session token & salt
     unsigned char session_salt_raw[64];
