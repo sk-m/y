@@ -13,10 +13,21 @@ int main() {
     // Register the API routes
     API::_register_core_api_handlers();
 
-    // Start the web server
-    drogon::app().setLogPath("./")
+    // Configure and start the web server
+    auto app = &drogon::app();
+
+    app->setLogPath("./")
         .setLogLevel(trantor::Logger::kError)
         .addListener("0.0.0.0", 8083)
-        .setThreadNum(16)
-        .run();
+        .setThreadNum(16);
+
+    // CORS
+    // TODO @placeholder *
+    app->registerPostHandlingAdvice(
+        [](const drogon::HttpRequestPtr &req, const drogon::HttpResponsePtr &resp) {
+            resp->addHeader("Access-Control-Allow-Origin", "*");
+        });
+
+        
+    app->run();
 }
