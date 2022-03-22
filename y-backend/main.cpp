@@ -25,7 +25,11 @@ int main() {
     // TODO @placeholder *
     app->registerPostHandlingAdvice(
         [](const drogon::HttpRequestPtr &req, const drogon::HttpResponsePtr &resp) {
-            resp->addHeader("Access-Control-Allow-Origin", "*");
+            resp->addHeader("Access-Control-Allow-Credentials", "true");
+            resp->addHeader("Access-Control-Expose-Headers", "Set-Cookie");
+
+            // TODO @placeholder
+            resp->addHeader("Access-Control-Allow-Origin", "http://beta.local:3000");
         });
 
         
