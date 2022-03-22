@@ -27,6 +27,8 @@ namespace User {
         PASSWORD_INCORRECT = 5,
         PASSWORD_HASHING_ALGORITHM_UNSUPPORTED = 6,
 
+        SESSION_INVALID = 20,
+
         INTERNAL = 255
     } ErrorCode;
 
@@ -64,6 +66,7 @@ namespace User {
 
     bool is_username_taken(const char* username);
     std::tuple<User, Error> user_compare_passwords(const char* username, const char* password);
+    std::tuple<User, Error> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req);
 
     std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
     std::tuple<UserSession, Error> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
@@ -138,6 +141,117 @@ bool User::is_username_taken(const char* username) {
 
     PQclear(result);
     return is_taken;
+}
+
+/**
+ * @brief Get some basic info about the user, given a `y_session` cookie value.
+ * 
+ * If this function returns an OK status with a user_id and user_username - that means that the `y_session` cookie is correct and the user's
+ * browser holds a valid session for the user, the id of which will be stored in the User object.
+ * 
+ * If *anything* does not look right (there is no session with such id, the token is not valid, the session was destroyed. etc) - a
+ * SESSION_INVALID error code will be returned 
+ * 
+ * ErrorCodes that can be returned:
+ * 
+ * \li SESSION_INVALID;
+ * 
+ * @param session_cookie_value The value of the `y_session` cookie (format - `session_id[36]:session_token[128]`)
+ * @param req Drogon's req object
+ *
+ * @return std::tuple<User::User, Error> On success, the User object will have it's `id` and `username` fields set. `user._result` will
+ * actually be the session's Result object, not User's.
+ */
+std::tuple<User::User, Error> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req) {
+    User user{};
+    
+    // Make sure we have a cookie value and not just an empty string
+    if(strnlen(session_cookie_value, 256) < 128) {
+        return std::make_tuple(user, Error {
+            ErrorCode::SESSION_INVALID,
+            "Session token is invalid." 
+        });
+    }
+
+    // Extract the session_id and cleartext session_token from the `y_sessions` cookie
+    // TODO @cleanup @DRY move into util.cpp?
+    std::vector<std::string> session_cookie_parts;
+    std::string token;
+    std::istringstream parts_stream(session_cookie_value);
+
+    // TODO @performance we can do better than that. We know the exact lenght of both parts, so there is no reason to search for a delimiter
+    // and create a whole vector! That's wasteful and lazy.
+
+    while(std::getline(parts_stream, token, ':')) {
+        session_cookie_parts.push_back(token);
+    }
+
+    // Check for malformed cookie value. There should be exactly two parts - session_id & session_token
+    if(session_cookie_parts.size() != 2) {
+        return std::make_tuple(user, Error {
+            ErrorCode::SESSION_INVALID,
+            "Session is invalid." 
+        });
+    }
+
+    const auto session_id = session_cookie_parts[0];
+    const auto session_cleartext_token = session_cookie_parts[1];
+
+    // The token should be exactly 128 bytes long (64 byte-long token in a hex format)
+    if(session_cleartext_token.size() != 128) {
+        return std::make_tuple(user, Error {
+            ErrorCode::SESSION_INVALID,
+            "Session token is invalid." 
+        });
+    }
+
+    // Find the session by its session_id
+    const char* const sql_params[1] = { session_id.c_str() };
+    auto session_result = DB::exec_prepared("session_get_by_id", sql_params, 1);
+
+    UserSession session = session_from_db(session_result);
+
+    // Did we find a session with such session_id?
+    if(!session.ok) {
+        return std::make_tuple(user, Error {
+            ErrorCode::SESSION_INVALID,
+            "Session is invalid." 
+        });
+    }
+
+    // Transform hex strings into byte arrays
+    auto cleartext_token_buffer = hex_to_string(session_cleartext_token);
+    auto db_hash = hex_to_string(session.token_hash);
+    auto db_salt = hex_to_string(session.token_salt);
+
+    // Hash the cleartext token from the cookie
+    unsigned char session_token_hash_out_raw[64];
+
+    fastpbkdf2_hmac_sha512((const unsigned char*)cleartext_token_buffer.c_str(), 64,
+                           (const unsigned char*)db_salt.c_str(), 64,
+                           session.token_iterations,
+                           session_token_hash_out_raw, 64);
+
+    session_token_hash_out_raw[64] = '\0';
+
+    // Compare the hash we have just created to the hash in the database
+    const auto session_token_valid = strncmp(reinterpret_cast<const char*>(session_token_hash_out_raw), db_hash.c_str(), 64) == 0;
+
+    if(!session_token_valid) {
+        return std::make_tuple(user, Error {
+            ErrorCode::SESSION_INVALID,
+            "Session is invalid." 
+        });
+    } else {
+        user.id = session.user_id;
+        user.username = PQgetvalue(session._result, 0, PQfnumber(session._result, "user_username"));
+        user.ok = true;
+        
+        // TODO @hack
+        user._result = session._result;
+
+        return std::make_tuple(user, Error { 0, nullptr });
+    }
 }
 
 /**
@@ -325,7 +439,6 @@ std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, 
     RAND_bytes(session_token_raw, 64);
 
     // Hash the token
-    // TODO @cleanup I think we can skip the initialization of the array
     unsigned char session_token_hash_out_raw[64];
 
     fastpbkdf2_hmac_sha512(session_token_raw, 64,

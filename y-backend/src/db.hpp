@@ -297,6 +297,18 @@ bool DB::_prepare_core_statements(PGconn* connection) {
         NULL
     )) return false;
 
+    // Getting a user session by it's session_id
+    if(!_prepare_statement(
+        connection,
+        "session_get_by_id",
+        "SELECT public.user_sessions.*, public.users.user_username \
+FROM public.user_sessions \
+INNER JOIN public.users ON (public.user_sessions.session_user_id = public.users.user_id) \
+WHERE public.user_sessions.session_id = $1",
+        1,
+        NULL
+    )) return false;
+
     // Getting a user by it's id
     if(!_prepare_statement(
         connection,

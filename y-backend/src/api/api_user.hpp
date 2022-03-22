@@ -8,6 +8,39 @@
 
 namespace API_User {
     namespace Handler {
+        // GET /user/me
+        void user_me(API_HANDLER_ARGS) {
+            // Get the y_session cookie's value
+            auto session_cookie = req->getCookie("y_session");
+        
+            // Get some user info from the session
+            auto user_session_result = User::get_user_from_session(session_cookie.c_str(), req);
+            const auto user = std::get<0>(user_session_result);
+            const auto error = std::get<1>(user_session_result);
+
+            Json::Value json;
+
+            if(!error.is_ok()) {
+                json["error"] = true;
+                json["error_message"] = error.explanation_user;
+
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
+
+                api_callback(resp);
+                return;
+            }
+
+            json["success"] = true;
+            json["user_id"] = user.id;
+            json["user_username"] = user.username;
+
+            auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+            api_callback(resp);
+
+            PQclear(user._result);
+        }
+
         // POST /user/create
         void user_create(API_HANDLER_ARGS) {
             auto body = req->getParameters();
@@ -141,8 +174,11 @@ namespace API_User {
             // TODO @incomplete admins should be able to enable Secure flag
             // > session_cookie.setSecure(true);
 
+            // TODO @incomplete domain
+            // session_cookie.setDomain("something.local");
+            
             session_cookie.setKey("y_session");
-            session_cookie.setValue(user_session.token_cleartext);
+            session_cookie.setValue(fmt::format("{}:{}", user_session.session_id, user_session.token_cleartext));
             session_cookie.setExpiresDate(user_session.valid_until);
             session_cookie.setHttpOnly(true);
             session_cookie.setSameSite(drogon::Cookie::SameSite::kStrict);
