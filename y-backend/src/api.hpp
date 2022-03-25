@@ -13,5 +13,6 @@ namespace API {
         
         drogon::app().registerHandler("/user/create", &API_User::Handler::user_create, {drogon::Post});
         drogon::app().registerHandler("/user/login", &API_User::Handler::user_login, {drogon::Post});
+        drogon::app().registerHandler("/user/logout", &API_User::Handler::user_logout, {drogon::Post});
     }
 }

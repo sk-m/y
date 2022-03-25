@@ -70,6 +70,7 @@ namespace User {
 
     std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
     std::tuple<UserSession, Error> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
+    std::tuple<UserSession, Error> session_destroy(const char* session_id, const drogon::HttpRequestPtr& req,  const char* reason);
 }
 
 User::User User::from_db(PGresult* result) {
@@ -501,4 +502,33 @@ std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, 
     user_session.token_cleartext[128] = '\0';
 
     return std::make_tuple(user_session, Error{ 0, nullptr });
+}
+
+/**
+ * @brief Destroy a user session by its id
+ * 
+ * @param session_id Id (uuidv4) of a session that will be destroyed
+ * @param req Drogon's req object
+ * @param reason Internal reason for the removal, ex. `logout`, `manual_destroy`, etc.
+ * 
+ * @return std::tuple<User::UserSession, Error> on success returns the deleted user session
+ */
+std::tuple<User::UserSession, Error> User::session_destroy(const char* session_id, const drogon::HttpRequestPtr& req, const char* reason) {
+    // TODO @inclomplete We don't have a user log, so we do not use the reason anywhere
+
+    const char* const sql_params[1] = { session_id };
+    auto session_result = DB::exec_prepared("session_delete_by_id", sql_params, 1);
+
+    UserSession deleted_user_session = session_from_db(session_result);
+
+    if(!deleted_user_session.ok) {
+        return std::make_tuple(deleted_user_session, Error {
+            ErrorCode::INTERNAL,
+            "Could not delete the session." 
+        });
+    }
+
+    // TODO @incomplete create a user log entry
+
+    return std::make_tuple(deleted_user_session, Error {0, nullptr});
 }

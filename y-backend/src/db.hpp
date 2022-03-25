@@ -309,6 +309,15 @@ WHERE public.user_sessions.session_id = $1",
         NULL
     )) return false;
 
+    // Deleting a user session by its session_id
+    if(!_prepare_statement(
+        connection,
+        "session_delete_by_id",
+        "DELETE FROM public.user_sessions WHERE session_id = $1 RETURNING *",
+        1,
+        NULL
+    )) return false;
+
     // Getting a user by it's id
     if(!_prepare_statement(
         connection,

@@ -8,6 +8,61 @@
 
 namespace API_User {
     namespace Handler {
+        // POST /user/logout
+        void user_logout(API_HANDLER_ARGS) {
+            // This route always returns 200 OK and never errors out
+    
+            // If client sends us a valid session - we remove it from the database and send them an expired y_session cookie
+            // If client does not send us a valid session - there is nothing to remove, so we just send an expired y_session cookie
+            // In both these cases the actual "log out" takes place, because we send an expired cookie
+
+            // Get the y_session cookie's value
+            auto session_cookie = req->getCookie("y_session");
+
+            auto resp = drogon::HttpResponse::newHttpResponse();
+
+            // To log a user out, we replace the existing `y_session` cookie with a one that has already expired.
+            // The browser will just remove the cookie and the client will be "logged out"
+            auto session_destruction_cookie = drogon::Cookie();
+
+            session_destruction_cookie.setKey("y_session");
+            session_destruction_cookie.setValue("");
+            session_destruction_cookie.setExpiresDate(trantor::Date(0));
+            session_destruction_cookie.setHttpOnly(true);
+            session_destruction_cookie.setSameSite(drogon::Cookie::SameSite::kStrict);
+            session_destruction_cookie.setPath("/");
+
+            resp->addCookie(session_destruction_cookie);
+
+            // Get the user from the session. We do this to make sure the session is actually valid
+            auto user_session_result = User::get_user_from_session(session_cookie.c_str(), req);
+            const auto user = std::get<0>(user_session_result);
+            const auto get_session_error = std::get<1>(user_session_result);
+
+            if(!get_session_error.is_ok()) {
+                // User's session is not valid. Nothing to do here. We will just ask the browser to remove the session cookie
+                api_callback(resp);
+                return;
+            }
+
+            // The provided session is valid. Extract an id from it and remove from the database
+            char session_id[37];
+            strncpy(session_id, session_cookie.c_str(), 36);
+            session_id[36] = '\0';
+
+            const auto destroy_session_status = User::session_destroy(session_id, req, "logout");
+            const auto destroyed_session = std::get<0>(destroy_session_status);
+            const auto destroy_session_error = std::get<1>(destroy_session_status);
+
+            if(destroy_session_error.is_ok()) {
+                // We have successfully removed a session from the database
+                PQclear(destroyed_session._result);
+            }
+
+            PQclear(user._result);
+            api_callback(resp);
+        }
+
         // GET /user/me
         void user_me(API_HANDLER_ARGS) {
             // Get the y_session cookie's value
