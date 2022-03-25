@@ -17,6 +17,11 @@ type CurrentUserStore = [
     },
     {
         /**
+         * Perform logout
+         */
+        logout?: () => void,
+
+        /**
          * Call to /user/me and update info about currently logged in user. By doing this, we ensure that the user is really logged in
          * 
          * ! You probably will never need to use this function, so make sure you really know what you are doing before calling it.
@@ -41,6 +46,12 @@ export const UserProvider: Component<{ user: CurrentUser | undefined }> = props 
         store: CurrentUserStore = [
             state,
             {
+                logout() {
+                    API.logout()
+                    .then(() => setState("user", undefined))
+                    .catch(() => setState("user", undefined));
+                },
+
                 // TODO @cleanup @refactor DRY we use the same code in the `App.tsx`
                 _refresh_ensure() {
                     API.user_me()

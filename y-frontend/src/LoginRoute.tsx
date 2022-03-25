@@ -96,7 +96,8 @@ const LoginStep: Component<{
 }
 
 const AlreadyLoggedInStep: Component<{
-    user_username: string
+    user_username: string,
+    logout: (() => void) | undefined
 }> = props => {
     return (
         <div className="step">
@@ -112,7 +113,7 @@ const AlreadyLoggedInStep: Component<{
             </div>
 
             <div className="buttons">
-                <button className="button secondary">
+                <button className="button secondary" onclick={ props.logout }>
                     <div className="text">Log out</div>
                 </button>
             </div>
@@ -125,7 +126,7 @@ const LoginRoute: Component<{
 }> = props => {
     const navigate = useNavigate();
     // TODO @incomplete if already logged in - show an error message and a "log out" button
-    const [current_user, { _set_manual: set_current_user }] = useCurrentUser();
+    const [current_user, { _set_manual: set_current_user, logout }] = useCurrentUser();
 
     return (
         <div id="loginroute">
@@ -136,6 +137,7 @@ const LoginRoute: Component<{
                     <Match when={ current_user.user }>
                         <AlreadyLoggedInStep
                             user_username={ current_user.user!.user_username }
+                            logout={ logout }
                         />
                     </Match>
 

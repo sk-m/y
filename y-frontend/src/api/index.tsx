@@ -1,10 +1,19 @@
 // TODO @placeholder
+// TODO use /api for API routes
 const API_URL = "http://beta.local:8083";
 
+// TODO use xhr instead
 export default {
     user_me: async () => {
         return window.fetch(API_URL + "/user/me", {
             method: "GET",
+            credentials: "include",
+        });
+    },
+
+    logout: async () => {
+        return window.fetch(API_URL + "/user/logout", {
+            method: "POST",
             credentials: "include",
         });
     },

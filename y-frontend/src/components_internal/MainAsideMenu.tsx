@@ -7,7 +7,7 @@ import { useCurrentUser } from "../stores/current_user";
 
 const MainAsideMenu: Component = () => {
     const navigate = useNavigate();    
-    const [current_user] = useCurrentUser();
+    const [current_user, { logout }] = useCurrentUser();
     
     const [isAsideSmall, setIsAsideSmall] = createSignal(false);
     const [isUserDropdownShown, setIsUserDropdownShown] = createSignal(false);
@@ -75,7 +75,7 @@ const MainAsideMenu: Component = () => {
                                             text="Log out"
                                             is_red={true}
                                             
-                                            action={ () => alert("This will log us out") }
+                                            action={ logout }
 
                                             { ...user_dropdown_menu_props }
                                         />
