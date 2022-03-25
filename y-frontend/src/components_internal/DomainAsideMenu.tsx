@@ -34,7 +34,7 @@ const DomainAsideMenu: Component<{
                         <div className="content">
                             <div className="header">
                                 {/* <div className="icon">
-                                    <span class="material-icons">face</span>
+                                    <span class="material-icons-round">face</span>
                                 </div> */}
                                 <div className="text">{ props.header }</div>
                             </div>

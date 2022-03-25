@@ -52,7 +52,7 @@ const Panel: Component<{
                                 <For each={ props.panel_info_items }>{ info_item => (
                                     // TODO @cleanup not a fan of this approach with classList
                                     <div classList={{ item: true, [info_item.color || "blue"]: true }}>
-                                        <div className="icon"><span class="material-icons">{ info_item.icon_name }</span></div>
+                                        <div className="icon"><span class="material-icons-round">{ info_item.icon_name }</span></div>
                                         <div className="text">{ info_item.text }</div>
                                     </div>
                                 ) }</For>
@@ -61,7 +61,7 @@ const Panel: Component<{
                         <Show when={ props.panel_actions }>
                             <div className="actions-container">
                                 <div className="actions-dropdown-button" onclick={ toggleActionsDropdownShown }>
-                                    <span class="material-icons">{ isActionsDropdownShown() ? "expand_less" : "more_horiz" }</span>
+                                    <span class="material-icons-round">{ isActionsDropdownShown() ? "expand_less" : "more_horiz" }</span>
                                 </div>
 
                                 <DropdownMenu shown={ isActionsDropdownShown() }>

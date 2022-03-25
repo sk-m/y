@@ -86,9 +86,9 @@ const MainAsideMenu: Component = () => {
                                         <div className="notifications-count-container">
                                             <div className="count">43</div>
                                             <div className="icons">
-                                                <span class="material-icons">warning</span>
-                                                <span class="material-icons">question_mark</span>
-                                                <span class="material-icons">north_east</span>
+                                                <span class="material-icons-round">warning</span>
+                                                <span class="material-icons-round">question_mark</span>
+                                                <span class="material-icons-round">north_east</span>
                                             </div>
                                         </div>
                                         <div className="notifications-icon">

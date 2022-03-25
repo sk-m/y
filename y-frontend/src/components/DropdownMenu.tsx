@@ -39,7 +39,7 @@ export const DropdownMenuLink: Component<{
         <div onclick={ onLinkClick } classList={{ "link": true, "c-red": props.is_red || false }}>
             <div class="left">
                 {/* <div class={ styles.icon }>
-                    <span class="material-icons">{ props.icon_name }</span>
+                    <span class="material-icons-round">{ props.icon_name }</span>
                 </div> */}
                 <div class="text">{ props.text }</div>
             </div>
