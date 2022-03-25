@@ -4,7 +4,9 @@ import EmailPanel from "./preferences-page/EmailPanel";
 import PasswordPanel from "./preferences-page/PasswordPanel";
 
 // TODO @cleanup Move panels into separate components
-const UserDomainPreferencesPage: Component = () => {
+const UserDomainPreferencesPage: Component<{
+    user_username: string
+}> = props => {
     return (
         <div id="user-preferences-page" className="ui-domain-page">
             <Panel
@@ -25,7 +27,7 @@ const UserDomainPreferencesPage: Component = () => {
                         </div>
                     </div>
                     <div className="right">
-                        <div className="username">max</div>
+                        <div className="username">{ props.user_username }</div>
                         <div className="email-address">max@google.com</div>
 
                         <div className="section-name">

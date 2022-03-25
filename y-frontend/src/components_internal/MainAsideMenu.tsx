@@ -7,7 +7,7 @@ import { useCurrentUser } from "../stores/current_user";
 
 const MainAsideMenu: Component = () => {
     const navigate = useNavigate();    
-    const [logged_in_user] = useCurrentUser();
+    const [current_user] = useCurrentUser();
     
     const [isAsideSmall, setIsAsideSmall] = createSignal(false);
     const [isUserDropdownShown, setIsUserDropdownShown] = createSignal(false);
@@ -34,7 +34,7 @@ const MainAsideMenu: Component = () => {
             <div className="aside">
                 <div className="content">
                     <div className="userspace">
-                        <Show when={ logged_in_user.user } fallback={
+                        <Show when={ current_user.user } fallback={
                             <div className="main">
                                 <div className="left">
                                     <div className="log-in-text">
@@ -54,20 +54,20 @@ const MainAsideMenu: Component = () => {
                                             className="user-avatar"
                                             style={{ "background-image": "url(https://images.unsplash.com/photo-1604076913837-52ab5629fba9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80)" }}
                                         ></div>
-                                        <div className="user-username">{ logged_in_user.user!.user_username }</div>
+                                        <div className="user-username">{ current_user.user!.user_username }</div>
                                         <span classList={{ "expand-icon": true, "material-icons-round": true, shown: isUserDropdownShown() }}>expand_less</span>
                                     </div>
 
                                     <DropdownMenu shown={ isUserDropdownShown() }>
                                         <DropdownMenuLink
                                             text="Profile"
-                                            to="/u/admin"
+                                            to={`/u/${ current_user.user!.user_username }`}
 
                                             { ...user_dropdown_menu_props }
                                             />
                                         <DropdownMenuLink
                                             text="User preferences"
-                                            to="/u/admin/preferences"
+                                            to={`/u/${ current_user.user!.user_username }/preferences`}
 
                                             { ...user_dropdown_menu_props }
                                             />

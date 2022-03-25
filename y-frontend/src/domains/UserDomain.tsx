@@ -1,5 +1,5 @@
 import { Component } from "solid-js";
-import { Route, Routes } from "solid-app-router";
+import { Route, Routes, useParams } from "solid-app-router";
 import DomainAsideMenu from "../components_internal/DomainAsideMenu";
 import AsideMenuLink from "../components/AsideMenuLink";
 import AsideMenuSection from "../components/AsideMenuSection";
@@ -7,7 +7,9 @@ import UserDomainPreferencesPage from "./user/PreferencesPage";
 
 import "./UserDomain.css";
 
-const UserDomain: Component = () => {
+const UserDomain: Component = props => {
+    const params = useParams();
+
     return (
         <div id="domain-user" className="ui-domain">
             <DomainAsideMenu
@@ -16,9 +18,9 @@ const UserDomain: Component = () => {
                 header="User management"
                 subheader="Control over a specific user"
 
-                target_name="max"
+                target_name={ params.user_name }
                 target_info={[
-                    { key: "Username", value: "max" },
+                    { key: "Username", value: params.user_name },
                     { key: "Blocked", value: false, inverse_bool: true }
                 ]}
             >
@@ -27,14 +29,14 @@ const UserDomain: Component = () => {
                     name="Profile"
                     description="User's profile"
 
-                    to="/u/admin/profile"
+                    to={`/u/${ params.user_name }/profile`}
                 />
                 <AsideMenuLink
                     icon_name="tune"
                     name="Preferences"
                     description="Set user's preferences"
 
-                    to="/u/admin/preferences"
+                    to={`/u/${ params.user_name }/preferences`}
                 />
 
                 <AsideMenuSection name="Admin actions" is_expanded={true} >
@@ -43,27 +45,27 @@ const UserDomain: Component = () => {
                         name="Account management"
                         description="Edit user's account information"
 
-                        to="/u/admin/account"
-                        />
+                        to={`/u/${ params.user_name }/account`}
+                    />
                     <AsideMenuLink
                         icon_name="group"
                         name="Groups"
                         description="Manage user's groups"
 
-                        to="/u/admin/groups"
+                        to={`/u/${ params.user_name }/groups`}
                     />
                     <AsideMenuLink
                         icon_name="block"
                         name="Block"
                         description="Block // unblock user"
 
-                        to="/u/admin/block"
+                        to={`/u/${ params.user_name }/block`}
                     />
                 </AsideMenuSection>
             </DomainAsideMenu>
             
             <Routes>
-                <Route path="/preferences" component={ UserDomainPreferencesPage }></Route>
+                <Route path="/preferences" element={ <UserDomainPreferencesPage user_username={ params.user_name } /> }></Route>
             </Routes>
         </div>
     )
