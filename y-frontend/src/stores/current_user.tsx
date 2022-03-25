@@ -19,9 +19,16 @@ type CurrentUserStore = [
         /**
          * Call to /user/me and update info about currently logged in user. By doing this, we ensure that the user is really logged in
          * 
-         * You probably will never need to use this function, so make sure you really know what you are doing before calling it.
+         * ! You probably will never need to use this function, so make sure you really know what you are doing before calling it.
          */
-        refresh_ensure?: () => void
+        _refresh_ensure?: () => void,
+
+        /**
+         * Manually set the user info
+         * 
+         * ! You probably will never need to use this function, so make sure you really know what you are doing before calling it.
+         */
+        _set_manual?: (user: CurrentUser) => void
     }
 ];
 
@@ -35,7 +42,7 @@ export const UserProvider: Component<{ user: CurrentUser | undefined }> = props 
             state,
             {
                 // TODO @cleanup @refactor DRY we use the same code in the `App.tsx`
-                refresh_ensure() {
+                _refresh_ensure() {
                     API.user_me()
                     .then(resp => {
                         resp.json()
@@ -49,6 +56,10 @@ export const UserProvider: Component<{ user: CurrentUser | undefined }> = props 
                             } else setState("user", undefined);
                         }).catch(() => setState("user", undefined));
                     }).catch(() => setState("user", undefined));
+                },
+
+                _set_manual(user) {
+                    setState("user", user);
                 }
             }
         ];

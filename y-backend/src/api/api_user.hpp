@@ -187,6 +187,10 @@ namespace API_User {
             Json::Value json;
             json["success"] = true;
 
+            // Add some info about the user to the response
+            json["user_id"] = user.id;
+            json["user_username"] = user.username;
+
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             resp->addCookie(session_cookie);
 

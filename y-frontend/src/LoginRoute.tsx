@@ -8,7 +8,7 @@ import { useCurrentUser } from "./stores/current_user";
 const LoginRoute: Component = () => {
     const navigate = useNavigate();
     // TODO @incomplete if already logged in - show an error message and a "log out" button
-    const [current_user, { refresh_ensure: refresh_current_user }] = useCurrentUser();
+    const [current_user, { _set_manual: set_current_user }] = useCurrentUser();
 
     let username_input: HTMLInputElement | undefined;
     let password_input: HTMLInputElement | undefined;
@@ -53,8 +53,12 @@ const LoginRoute: Component = () => {
                     // Login successful
                     navigate("/", { replace: true });
 
-                    // TODO @performance @improvement We can just return the user_id and user_username from the /user/login API call
-                    if(refresh_current_user) refresh_current_user();
+                    // The /auth/login route will return some basic info about the user upon successfull log in
+                    // We could have just called `_refresh_ensure()` from the CurrentUserProvider, but that would have been wasteful
+                    if(set_current_user) set_current_user({
+                        user_id: json.user_id,
+                        user_username: json.user_username,
+                    });
                 }
             })
             .catch(() => {
