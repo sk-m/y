@@ -3,9 +3,12 @@ import { batch, Component, createSignal } from "solid-js";
 import API from "./api";
 
 import "./LoginRoute.css";
+import { useCurrentUser } from "./stores/current_user";
 
 const LoginRoute: Component = () => {
     const navigate = useNavigate();
+    // TODO @incomplete if already logged in - show an error message and a "log out" button
+    const [current_user, { refresh_ensure: refresh_current_user }] = useCurrentUser();
 
     let username_input: HTMLInputElement | undefined;
     let password_input: HTMLInputElement | undefined;
@@ -49,6 +52,9 @@ const LoginRoute: Component = () => {
                 } else {
                     // Login successful
                     navigate("/", { replace: true });
+
+                    // TODO @performance @improvement We can just return the user_id and user_username from the /user/login API call
+                    if(refresh_current_user) refresh_current_user();
                 }
             })
             .catch(() => {

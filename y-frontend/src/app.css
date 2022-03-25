@@ -68,6 +68,35 @@
     transition: 0.15s;
 }
 
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left > .log-in-text {
+    display: flex;
+    align-items: center;
+
+    font-size: 0.8em;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .left > .log-in-text > span.icon {
+    margin-right: 0.3em;
+
+    color: var(--color-gray-7);
+    font-size: 1.5em;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .log-in-button {
+    padding: 0.8em 1em;
+
+    font-size: 0.8em;
+    font-weight: 500;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+    user-select: none;
+
+    transition: 0.15s;
+}
+
+#mainroute-aside-container > .aside > .content > .userspace > .main > .right > .log-in-button:hover,
 #mainroute-aside-container > .aside > .content > .userspace > .main > .left > .user:hover {
     background-color: var(--color-gray-04);
 }

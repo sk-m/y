@@ -1,9 +1,14 @@
+import { useNavigate } from "solid-app-router";
 import { Component, createSignal, onMount, PropsWithChildren, Show } from "solid-js";
 import AsideMenuLink from "../components/AsideMenuLink";
 import AsideMenuSection from "../components/AsideMenuSection";
 import DropdownMenu, { DropdownMenuLink } from "../components/DropdownMenu";
+import { useCurrentUser } from "../stores/current_user";
 
 const MainAsideMenu: Component = () => {
+    const navigate = useNavigate();    
+    const [logged_in_user] = useCurrentUser();
+    
     const [isAsideSmall, setIsAsideSmall] = createSignal(false);
     const [isUserDropdownShown, setIsUserDropdownShown] = createSignal(false);
 
@@ -29,57 +34,71 @@ const MainAsideMenu: Component = () => {
             <div className="aside">
                 <div className="content">
                     <div className="userspace">
-                        <div className="main">
-                            <div className="left">
-                                <div className="user" onclick={ toggleUserDropdownMenu }>
-                                    <div
-                                        className="user-avatar"
-                                        style={{ "background-image": "url(https://images.unsplash.com/photo-1604076913837-52ab5629fba9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80)" }}
-                                    ></div>
-                                    <div className="user-username">admin</div>
-                                    <span classList={{ "expand-icon": true, "material-icons-round": true, shown: isUserDropdownShown() }}>expand_less</span>
+                        <Show when={ logged_in_user.user } fallback={
+                            <div className="main">
+                                <div className="left">
+                                    <div className="log-in-text">
+                                        <span className="icon material-icons-round">person</span>
+                                        <span className="text">You are not logged in</span>
+                                    </div>
                                 </div>
-
-                                <DropdownMenu shown={ isUserDropdownShown() }>
-                                    <DropdownMenuLink
-                                        text="Profile"
-                                        to="/u/admin"
-
-                                        { ...user_dropdown_menu_props }
-                                        />
-                                    <DropdownMenuLink
-                                        text="User preferences"
-                                        to="/u/admin/preferences"
-
-                                        { ...user_dropdown_menu_props }
-                                        />
-                                    <DropdownMenuLink
-                                        text="Log out"
-                                        is_red={true}
-                                        
-                                        action={ () => alert("This will log us out") }
-
-                                        { ...user_dropdown_menu_props }
-                                    />
-                                </DropdownMenu>
+                                <div className="right">
+                                    <div className="log-in-button" onclick={[ navigate, "/login" ]}>Log in</div>
+                                </div>
                             </div>
-                            <div className="right">
-                                <div className="notifications-container has-unread">
-                                    <div className="notifications-count-container">
-                                        <div className="count">43</div>
-                                        <div className="icons">
-                                            <span class="material-icons">warning</span>
-                                            <span class="material-icons">question_mark</span>
-                                            <span class="material-icons">north_east</span>
+                        }>
+                            <div className="main">
+                                <div className="left">
+                                    <div className="user" onclick={ toggleUserDropdownMenu }>
+                                        <div
+                                            className="user-avatar"
+                                            style={{ "background-image": "url(https://images.unsplash.com/photo-1604076913837-52ab5629fba9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80)" }}
+                                        ></div>
+                                        <div className="user-username">{ logged_in_user.user!.user_username }</div>
+                                        <span classList={{ "expand-icon": true, "material-icons-round": true, shown: isUserDropdownShown() }}>expand_less</span>
+                                    </div>
+
+                                    <DropdownMenu shown={ isUserDropdownShown() }>
+                                        <DropdownMenuLink
+                                            text="Profile"
+                                            to="/u/admin"
+
+                                            { ...user_dropdown_menu_props }
+                                            />
+                                        <DropdownMenuLink
+                                            text="User preferences"
+                                            to="/u/admin/preferences"
+
+                                            { ...user_dropdown_menu_props }
+                                            />
+                                        <DropdownMenuLink
+                                            text="Log out"
+                                            is_red={true}
+                                            
+                                            action={ () => alert("This will log us out") }
+
+                                            { ...user_dropdown_menu_props }
+                                        />
+                                    </DropdownMenu>
+                                </div>
+                                <div className="right">
+                                    <div className="notifications-container has-unread">
+                                        <div className="notifications-count-container">
+                                            <div className="count">43</div>
+                                            <div className="icons">
+                                                <span class="material-icons">warning</span>
+                                                <span class="material-icons">question_mark</span>
+                                                <span class="material-icons">north_east</span>
+                                            </div>
+                                        </div>
+                                        <div className="notifications-icon">
+                                            <div className="bubble"></div>
+                                            <span class="material-icons-round">notifications</span>
                                         </div>
                                     </div>
-                                    <div className="notifications-icon">
-                                        <div className="bubble"></div>
-                                        <span class="material-icons-round">notifications</span>
-                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </Show>
                     </div>
                     <div className="misc">
                         <div className="search-container">
