@@ -339,6 +339,18 @@
     font-weight: 500;
 }
 
+.ui-text.a-center {
+    text-align: center;
+}
+
+.ui-text.c-blue {
+    color: var(--color-blue);
+}
+
+.ui-text.s-small-1 {
+    font-size: 0.9em;
+}
+
 .ui-text.t-secondary {
     color: var(--color-gray-7);
     font-size: 0.7rem;

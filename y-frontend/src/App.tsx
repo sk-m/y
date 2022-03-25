@@ -41,7 +41,9 @@ const App: Component = () => {
             <UserProvider user={ currentUser() }>
                 <Router>
                     <Routes>
-                        <Route path="/login" component={ LoginRoute } />
+                        <Route path="/login" element={ <LoginRoute action="login" /> } />
+                        <Route path="/register" element={ <LoginRoute action="register" /> } />
+                        
                         <Route path="/*" component={ MainRoute } />
                     </Routes>
                 </Router>
