@@ -1,6 +1,7 @@
 import { NavigateOptions, useNavigate } from "solid-app-router";
 import { batch, Component, createSignal, Match, Switch } from "solid-js";
 import API from "./api";
+import { user_login } from "./api/user";
 
 import "./LoginRoute.css";
 import { CurrentUser, useCurrentUser } from "./stores/current_user";
@@ -15,15 +16,6 @@ const LoginStep: Component<{
     let username_input: HTMLInputElement | undefined;
     let password_input: HTMLInputElement | undefined;
 
-    const set_error = (message: string) => {
-        batch(() => {
-            setErrorMessage(message);
-            setIsAwaiting(false);
-        });
-
-        username_input?.focus();
-    }
-
     const onInputKeyDown = (e: KeyboardEvent) => {
         if(e.key === "Enter") {
             password_input?.blur();
@@ -37,35 +29,29 @@ const LoginStep: Component<{
 
         if(!username || !password) return;
 
+        // If for some reason we will not be able to set the currently logged in user - error out
+        if(!props.set_current_user) {
+            setErrorMessage("Internal error. Try reloading the page.");
+            return;
+        }
+
         batch(() => {
             setErrorMessage("");
             setIsAwaiting(true);
         });
 
-        API.login(username, password)
-        .then(resp => {
-            resp.json()
-            .then(json => {
-                if(json.error) {
-                    set_error(json.error_message || "Unknown error occured!");
-                } else {
-                    // Login successful
-                    props.navigate("/", { replace: true });
-
-                    // The /auth/login route will return some basic info about the user upon successfull log in
-                    // We could have just called `_refresh_ensure()` from the CurrentUserProvider, but that would have been wasteful
-                    if(props.set_current_user) props.set_current_user({
-                        user_id: json.user_id,
-                        user_username: json.user_username,
-                    });
-                }
-            })
-            .catch(() => {
-                set_error("Internal error occured! Please, try again later.");
-            });
+        // Perform the login
+        user_login(props.set_current_user, username, password)
+        .then(() => {
+            props.navigate("/", { replace: true });
         })
-        .catch(() => {
-            set_error("Internal error occured! Please, try again later.");
+        .catch(message => {
+            batch(() => {
+                setErrorMessage(message);
+                setIsAwaiting(false);
+            });
+    
+            username_input?.focus();
         });
     }
 
