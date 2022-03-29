@@ -17,13 +17,15 @@ const LoginStep: Component<{
     let password_input: HTMLInputElement | undefined;
 
     const onInputKeyDown = (e: KeyboardEvent) => {
-        if(e.key === "Enter") {
+        if(e.key === "Enter" && (e.target as any).value) {
             password_input?.blur();
             perform_login();
         }
     }
 
-    const perform_login = () => {
+    const perform_login = (e: MouseEvent | undefined = undefined) => {
+        e?.preventDefault();
+
         const username = username_input?.value;
         const password = password_input?.value;
 
@@ -56,28 +58,50 @@ const LoginStep: Component<{
     }
 
     return (
-        <div className="step">
+        <form className="step">
             <div className="ui-info-panel c-red" hidden={ !errorMessage() }>{ errorMessage() }</div>
             <div className="inputs">
                 <div className="input">
-                    <input ref={ username_input } type="text" placeholder="Username" onkeydown={ onInputKeyDown } autofocus />
+                    <input
+                        ref={ username_input }
+                        name="username"
+                        type="text"
+                        placeholder="Username"
+
+                        autofocus
+                        autocomplete="username"
+                        spellcheck={ false }
+                        required={ true }
+
+                        onkeydown={ onInputKeyDown }
+                    />
                 </div>
                 <div className="input">
-                    <input ref={ password_input } type="password" placeholder="Password" onkeydown={ onInputKeyDown } />
+                    <input
+                        ref={ password_input }
+                        name="password"
+                        type="password"
+                        placeholder="Password"
+
+                        autocomplete="current-password"
+                        required={ true }
+
+                        onkeydown={ onInputKeyDown }
+                    />
                 </div>
             </div>
             <div className="arrow-spacer">
                 <span class="material-icons">expand_more</span>
             </div>
             <div className="buttons">
-                <button classList={{ button: true, primary: true, disabled: isAwaiting() }} onclick={ perform_login }>
+                <button classList={{ button: true, primary: true, disabled: isAwaiting() }} onclick={ perform_login } type="submit">
                     <div className="text">Log In</div>
                 </button>
                 <button className="button secondary">
                     <div className="text">Create an account</div>
                 </button>
             </div>
-        </div>
+        </form>
     )
 }
 
