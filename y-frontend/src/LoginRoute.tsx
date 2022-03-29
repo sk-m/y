@@ -1,7 +1,7 @@
 import { NavigateOptions, useNavigate } from "solid-app-router";
 import { batch, Component, createSignal, Match, Switch } from "solid-js";
 import API from "./api";
-import { user_login } from "./api/user";
+import { _user_login } from "./api/user";
 
 import "./LoginRoute.css";
 import { CurrentUser, useCurrentUser } from "./stores/current_user";
@@ -41,7 +41,7 @@ const LoginStep: Component<{
         });
 
         // Perform the login
-        user_login(props.set_current_user, username, password)
+        _user_login(props.set_current_user, username, password)
         .then(() => {
             props.navigate("/", { replace: true });
         })

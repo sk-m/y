@@ -1,11 +1,14 @@
-import { Component, createContext, useContext } from "solid-js";
+import { Component, createContext, createEffect, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 
 import API from "../api";
+import { _user_get_current } from "../api/user";
 
 export interface CurrentUser {
     user_id: number;
     user_username: string;
+
+    authoritative: boolean;
 }
 
 type CurrentUserStore = [
@@ -23,6 +26,7 @@ type CurrentUserStore = [
 
         /**
          * Call to /user/me and update info about currently logged in user. By doing this, we ensure that the user is really logged in
+         * and the information about them is correct
          * 
          * ! You probably will never need to use this function, so make sure you really know what you are doing before calling it.
          */
@@ -47,26 +51,18 @@ export const UserProvider: Component<{ user: CurrentUser | undefined }> = props 
             state,
             {
                 logout() {
+                    // TODO @move move into a separate function?
+
+                    sessionStorage.removeItem("y_current_user");
+
                     API.logout()
                     .then(() => setState("user", undefined))
                     .catch(() => setState("user", undefined));
                 },
 
-                // TODO @cleanup @refactor DRY we use the same code in the `App.tsx`
                 _refresh_ensure() {
-                    API.user_me()
-                    .then(resp => {
-                        resp.json()
-                        .then(json => {
-                            if(json.success) {
-                                // The server has returned some info about the currently logged in user 
-                                setState("user", {
-                                    user_id: json.user_id,
-                                    user_username: json.user_username
-                                });
-                            } else setState("user", undefined);
-                        }).catch(() => setState("user", undefined));
-                    }).catch(() => setState("user", undefined));
+                    _user_get_current(user => setState("user", user), /* ensure: */ true)
+                    .catch(() => setState("user", undefined));
                 },
 
                 _set_manual(user) {
