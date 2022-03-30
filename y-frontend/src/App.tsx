@@ -24,7 +24,7 @@ const App: Component = () => {
                 <Router>
                     <Routes>
                         <Route path="/login" element={ <LoginRoute action="login" /> } />
-                        <Route path="/register" element={ <LoginRoute action="register" /> } />
+                        <Route path="/join" element={ <LoginRoute action="join" /> } />
                         
                         <Route path="/*" component={ MainRoute } />
                     </Routes>

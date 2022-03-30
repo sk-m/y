@@ -64,8 +64,8 @@ export function _user_get_current(set_current_user: (user: CurrentUser) => void,
                         console.debug("[y] [🔑 auth] Got the user info from the API call");
 
                         const basic_user_info = {
-                            user_id: json.user_id,
-                            user_username: json.user_username,
+                            user_id: json.current_user.user_id,
+                            user_username: json.current_user.user_username,
                         };
 
                         set_current_user({
@@ -106,11 +106,48 @@ export function _user_login(set_current_user: (user: CurrentUser) => void, usern
                     // Login successfull
                     resolve(true);
 
-                    // The /auth/login route will return some basic info about the user upon successfull log in
+                    // The /user/login route will return some basic info about the user upon successfull log in
                     // We could have just called `_refresh_ensure()` from the CurrentUserProvider, but that would have been wasteful
                     const basic_user_info = {
-                        user_id: json.user_id,
-                        user_username: json.user_username,
+                        user_id: json.current_user.user_id,
+                        user_username: json.current_user.user_username,
+                    };
+
+                    set_current_user({
+                        ...basic_user_info,
+                        authoritative: true
+                    });
+
+                    save_user_to_session_storage(basic_user_info);
+                }
+            })
+            .catch(() => {
+                reject("Internal error occured! Please, try again later.");
+            });
+        })
+        .catch(() => {
+            reject("Internal error occured! Please, try again later.");
+        });
+    });
+}
+
+export function _user_create(set_current_user: (user: CurrentUser) => void, username: string, password: string) {
+    return new Promise((resolve: (status: boolean) => void, reject: (message: string) => void) => {
+        API.user_create(username, password)
+        .then(resp => {
+            resp.json()
+            .then(json => {
+                if(json.error) {
+                    reject(json.error_message || "Unknown error occured!");
+                } else {
+                    // Successfully created the user
+                    resolve(true);
+
+                    // The /user/create route will return some basic info about the user upon successfull registration
+                    // We could have just called `_refresh_ensure()` from the CurrentUserProvider, but that would have been wasteful
+                    const basic_user_info = {
+                        user_id: json.new_user.user_id,
+                        user_username: json.new_user.user_username,
                     };
 
                     set_current_user({

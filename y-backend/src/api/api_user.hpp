@@ -87,8 +87,8 @@ namespace API_User {
             }
 
             json["success"] = true;
-            json["user_id"] = user.id;
-            json["user_username"] = user.username;
+            json["current_user"]["user_id"] = user.id;
+            json["current_user"]["user_username"] = user.username;
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
@@ -119,8 +119,10 @@ namespace API_User {
                 return;
             }
 
+            const auto user_username = p_username->second.c_str();
+
             // Create a new user
-            const auto new_user_results = User::user_create(p_username->second.c_str(), p_password->second.c_str());
+            const auto new_user_results = User::user_create(user_username, p_password->second.c_str());
             const auto error = std::get<1>(new_user_results);
 
             if(!error.is_ok()) {
@@ -145,7 +147,8 @@ namespace API_User {
             // Success
             Json::Value json;
             json["success"] = true;
-            json["new_user_id"] = std::get<0>(new_user_results);
+            json["new_user"]["user_id"] = std::get<0>(new_user_results);
+            json["new_user"]["user_username"] = user_username;
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
@@ -243,8 +246,8 @@ namespace API_User {
             json["success"] = true;
 
             // Add some info about the user to the response
-            json["user_id"] = user.id;
-            json["user_username"] = user.username;
+            json["current_user"]["user_id"] = user.id;
+            json["current_user"]["user_username"] = user.username;
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             resp->addCookie(session_cookie);

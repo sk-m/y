@@ -31,5 +31,20 @@ export default {
                 password
             })
         });
+    },
+
+    user_create: async (username: string, password: string) => {
+        return window.fetch(API_URL + "/user/create", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            credentials: "include",
+
+            body: new URLSearchParams({
+                username,
+                password
+            })
+        });
     }
 }
