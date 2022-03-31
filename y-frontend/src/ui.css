@@ -129,6 +129,7 @@
     margin-bottom: 1em;
 }
 
+.ui-panel-container > .ui-panel > .content .subheader + .subheader,
 .ui-panel-container > .ui-panel > .content .h1 + .subheader {
     margin-top: -0.8em;
 }
@@ -178,12 +179,15 @@
 .ui-panel-container > .ui-panel > .content .subheader > .text {
     margin-left: 1rem;
 
-    font-weight: 540;
+    color: var(--color-gray-65);
+    font-weight: 450;
     font-size: 0.8em;
+    /* font-size: 0.7rem; */
 }
 
 .ui-panel-container > .ui-panel > .content .subheader.green > .text {
     color: var(--color-green);
+    font-weight: 540;
 }
 
 .ui-panel-container > .ui-panel > .content .subheader.green > .line {
@@ -192,6 +196,7 @@
 
 .ui-panel-container > .ui-panel > .content .subheader.blue > .text {
     color: var(--color-blue);
+    font-weight: 540;
 }
 
 .ui-panel-container > .ui-panel > .content .subheader.blue > .line {
