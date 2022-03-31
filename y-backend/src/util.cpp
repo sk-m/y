@@ -70,3 +70,30 @@ std::string hex_to_string(const std::string& input) {
     }
     return output;
 }
+
+// (c) Karol Kuczmarski "Xion" (https://xion.org.pl/2012/02/04/checking-whether-ip-is-within-a-subnet/)
+bool is_ip_in_network(const char *addr, const char *net) {
+    struct in_addr ip_addr;
+    if(!inet_aton(addr, &ip_addr)) return false;
+
+    char network[32];
+    strncpy(network, net, strlen(net));
+
+    char *slash_pos = strstr(network, "/");
+    if(!slash_pos) return false;
+
+    int mask_len = atoi(slash_pos + 1);
+    *slash_pos = '\0';
+
+    struct in_addr net_addr;
+    if(!inet_aton(network, &net_addr)) return false;
+
+    unsigned int ip_bits = ip_addr.s_addr;
+    unsigned int net_bits = net_addr.s_addr;
+    unsigned int netmask = net_bits & ((1 << mask_len) - 1);
+
+    // TODO @hack allow /32
+    if(netmask == 0 && ip_bits == net_bits) return true;
+
+    return (ip_bits & netmask) == net_bits;
+}

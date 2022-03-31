@@ -69,6 +69,7 @@ namespace API_User {
             auto session_cookie = req->getCookie("y_session");
         
             // Get some user info from the session
+            // TODO? should we set skip_additional_checks to true in this case? Not quite sure
             auto user_session_result = User::get_user_from_session(session_cookie.c_str(), req);
             const auto user = std::get<0>(user_session_result);
             const auto error = std::get<1>(user_session_result);
@@ -76,6 +77,8 @@ namespace API_User {
             Json::Value json;
 
             if(!error.is_ok()) {
+                // TODO? Send an expired y_session cookie on error?
+
                 json["error"] = true;
                 json["error_message"] = error.explanation_user;
 
