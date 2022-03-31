@@ -77,6 +77,10 @@
     font-size: 0.8em;
 }
 
+#mainroute-aside-container.small > .aside > .content > .userspace > .main > .left > .log-in-text {
+    display: none;
+}
+
 #mainroute-aside-container > .aside > .content > .userspace > .main > .left > .log-in-text > span.icon {
     margin-right: 0.3em;
 
