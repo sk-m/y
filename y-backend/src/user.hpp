@@ -29,6 +29,7 @@ namespace User {
 
         SESSION_INVALID = 20,
         SESSION_IP_NOT_ALLOWED = 21,
+        SESSION_EXPIRED = 22,
 
         INTERNAL = 255
     } ErrorCode;
@@ -231,6 +232,7 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
     auto db_salt = hex_to_string(session.token_salt);
 
     // Hash the cleartext token from the cookie
+    // TODO @performance i think using pbkdf2 for session tokens is a bit too much, maybe just use hmac?
     unsigned char session_token_hash_out_raw[64];
 
     fastpbkdf2_hmac_sha512((const unsigned char*)cleartext_token_buffer.c_str(), 64,
@@ -252,8 +254,30 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
         const auto client_ip = req->getPeerAddr().toIp();
 
         // The session token is valid, lets check some other stuff now
-        // Check if client's ip address is in the allowed range for this session
         if(!skip_additional_checks) {
+            // Check if session is expired
+            if(trantor::Date::date() > session.valid_until) {
+                // The session has expired. Delete it from the database
+                // TODO @performance this should be async!
+                const char* const delete_session_sql_params[1] = { session.session_id };
+                auto delete_session_result = DB::exec_prepared("session_delete_by_id", delete_session_sql_params, 1);
+
+                if(PQresultStatus(delete_session_result) != ExecStatusType::PGRES_TUPLES_OK) {
+                    const auto error_message = PQresultErrorMessage(delete_session_result);
+
+                    // TODO @log
+                    std::cout << "ERROR! Could not delete an expired session!\n" << error_message << "\n";
+                }
+        
+                PQclear(delete_session_result);
+
+                return std::make_tuple(user, Error {
+                    ErrorCode::SESSION_EXPIRED,
+                    "Session has expired." 
+                });
+            }
+
+            // Check if client's ip address is in the allowed range for this session
             // TODO @performance I think we can skip the step of converting the sockaddr_in into a human-readable ip address string
             const auto client_ip_allowed = is_ip_in_network(client_ip.c_str(), session.ip_range);
 
@@ -497,10 +521,8 @@ std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, 
     const auto unix_timestamp_us = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
 
-    // TODO @improvement allow admins to set a custom session duration (instead of 1.5552e13 us)
-    long long session_duration_us = unix_timestamp_us + 1.5552e13;
-
-    auto session_expiration_date = trantor::Date(session_duration_us).toDbStringLocal();
+    // TODO @improvement allow admins to set a custom session duration (instead of 3 months)
+    auto session_expiration_date = trantor::Date::date().after(7890000).toDbStringLocal();
 
     // Create an expiration date string for the database
     char session_expiration_date_str[session_expiration_date.size() + 1];
