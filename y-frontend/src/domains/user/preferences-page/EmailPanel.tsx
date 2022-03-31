@@ -27,13 +27,21 @@ const EmailPanel: Component = () => {
             panel_ref={ ref => { panel_ref = ref } }
             
             drawer_shown={ isPanelDrawerShown() }
-            panel_info_items={[
-                { icon_name: "verified", text: "Email address verified", color: "green" }
-            ]}
+            // panel_info_items={[
+            //     { icon_name: "verified", text: "Email address verified", color: "green" }
+            // ]}
         >
             <div className="h1">
                 <div className="line"></div>
                 <div className="header">Email</div>
+            </div>
+
+            <div className="subheader green">
+                <div className="line"></div>
+                {/* <div className="line w-icon">
+                    <span class="material-icons-round">done</span>
+                </div> */}
+                <div className="text">Email address verified</div>
             </div>
 
             <div className="ui-between center">

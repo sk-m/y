@@ -26,13 +26,21 @@ const PasswordPanel: Component = () => {
             panel_ref={ ref => { panel_ref = ref } }
 
             drawer_shown={ isPanelDrawerShown() }
-            panel_info_items={[
-                { icon_name: "done_all", text: "No action required", color: "green" }
-            ]}
+            // panel_info_items={[
+            //     { icon_name: "done_all", text: "No action required", color: "green" }
+            // ]}
         >
             <div className="h1">
                 <div className="line"></div>
                 <div className="header">Password</div>
+            </div>
+            
+            <div className="subheader green">
+                <div className="line"></div>
+                {/* <div className="line w-icon">
+                    <span class="material-icons-round">done_all</span>
+                </div> */}
+                <div className="text">No action required</div>
             </div>
 
             <div className="ui-between center">

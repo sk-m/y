@@ -62,13 +62,21 @@ const UserDomainPreferencesPage: Component<{
             <Panel
                 classList={{ "user-sessions-panel": true }}
 
-                panel_info_items={[
-                    { icon_name: "devices", text: "You currently have 3 active sessions" }
-                ]}
+                // panel_info_items={[
+                //     { icon_name: "devices", text: "You currently have 3 active sessions" }
+                // ]}
             >
                 <div className="h1">
                     <div className="line"></div>
                     <div className="header">Active Sessions</div>
+                </div>
+
+                <div className="subheader blue">
+                    <div className="line"></div>
+                    {/* <div className="line w-icon">
+                        <span class="material-icons">lightbulb</span>
+                    </div> */}
+                    <div className="text">You currently have 3 active sessions</div>
                 </div>
 
                 <p className="ui-text">This is a list of sessions that are currently active on your account. If you see something you don't recognize — immediately destroy the session and change your password.</p>
