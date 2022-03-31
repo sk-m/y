@@ -35,7 +35,8 @@ namespace API_User {
             resp->addCookie(session_destruction_cookie);
 
             // Get the user from the session. We do this to make sure the session is actually valid
-            auto user_session_result = User::get_user_from_session(session_cookie.c_str(), req);
+            // TODO? should we set skip_additional_checks to true in this case? Not quite sure
+            auto user_session_result = User::get_user_from_session(session_cookie.c_str(), req, false, true);
             const auto user = std::get<0>(user_session_result);
             const auto get_session_error = std::get<1>(user_session_result);
 
@@ -69,7 +70,6 @@ namespace API_User {
             auto session_cookie = req->getCookie("y_session");
         
             // Get some user info from the session
-            // TODO? should we set skip_additional_checks to true in this case? Not quite sure
             auto user_session_result = User::get_user_from_session(session_cookie.c_str(), req);
             const auto user = std::get<0>(user_session_result);
             const auto error = std::get<1>(user_session_result);

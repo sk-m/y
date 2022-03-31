@@ -317,6 +317,15 @@ WHERE public.user_sessions.session_id = $1",
         1,
         NULL
     )) return false;
+    
+    // Updating session's current_ip
+    if(!_prepare_statement(
+        connection,
+        "session_update_ip_by_id",
+        "UPDATE public.user_sessions SET session_current_ip = $2 WHERE session_id = $1",
+        2,
+        NULL
+    )) return false;
 
     // Getting a user by it's id
     if(!_prepare_statement(

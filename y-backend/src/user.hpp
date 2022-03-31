@@ -67,7 +67,7 @@ namespace User {
 
     bool is_username_taken(const char* username);
     std::tuple<User, Error> user_compare_passwords(const char* username, const char* password);
-    std::tuple<User, Error> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks);
+    std::tuple<User, Error> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
 
     std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
     std::tuple<UserSession, Error> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
@@ -162,11 +162,13 @@ bool User::is_username_taken(const char* username) {
  * @param session_cookie_value The value of the `y_session` cookie (format - `session_id[36]:session_token[128]`)
  * @param req Drogon's req object
  * @param skip_additional_checks Set to true to *only* check the session token, skipping ip range checks and such.
+ * @param readonly Set to true to skip all database updates. If true, this function will just check the session and return you the user
+ * without doing any updating, like the current_ip, etc. Basically, we will not write anything to the database if true
  *
  * @return std::tuple<User::User, Error> On success, the User object will have it's `id` and `username` fields set. `user._result` will
  * actually be the session's Result object, not User's.
  */
-std::tuple<User::User, Error> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false) {
+std::tuple<User::User, Error> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false, bool readonly = false) {
     User user{};
     
     // Make sure we have a cookie value and not just an empty string
@@ -247,12 +249,12 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
             "Session is invalid." 
         });
     } else {
+        const auto client_ip = req->getPeerAddr().toIp();
+
         // The session token is valid, lets check some other stuff now
         // Check if client's ip address is in the allowed range for this session
         if(!skip_additional_checks) {
             // TODO @performance I think we can skip the step of converting the sockaddr_in into a human-readable ip address string
-            const auto client_ip = req->getPeerAddr().toIp();
-
             const auto client_ip_allowed = is_ip_in_network(client_ip.c_str(), session.ip_range);
 
             if(!client_ip_allowed) {
@@ -260,6 +262,24 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
                     ErrorCode::SESSION_IP_NOT_ALLOWED,
                     "Your ip address is not in the range of allowed addresses of this session." 
                 });
+            }
+        }
+
+        if(!readonly) {
+            // Update session's current ip
+            if(strncmp(client_ip.c_str(), session.current_ip, client_ip.size()) != 0) {
+                // TODO @performance async! There is no reason to wait for this to finish
+                const char* const session_update_sql_params[2] = { session.session_id, client_ip.c_str() };
+                auto session_update_result = DB::exec_prepared("session_update_ip_by_id", session_update_sql_params, 2);
+
+                if(PQresultStatus(session_update_result) != ExecStatusType::PGRES_COMMAND_OK) {
+                    const auto error_message = PQresultErrorMessage(session_update_result);
+
+                    // TODO @log
+                    std::cout << "ERROR! Could not update session's current_ip!\n" << error_message << "\n";
+                }
+        
+                PQclear(session_update_result);
             }
         }
 
