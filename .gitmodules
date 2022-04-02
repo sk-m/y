@@ -1,3 +1,12 @@
 [submodule "y-backend/third_party/drogon"]
 	path = y-backend/third_party/drogon
 	url = https://github.com/drogonframework/drogon.git
+[submodule "y-backend/third_party/fastpbkdf2"]
+	path = y-backend/third_party/fastpbkdf2
+	url = https://github.com/ctz/fastpbkdf2.git
+[submodule "y-backend/third_party/fmt"]
+	path = y-backend/third_party/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "y-backend/third_party/rapidjson"]
+	path = y-backend/third_party/rapidjson
+	url = https://github.com/Tencent/rapidjson.git

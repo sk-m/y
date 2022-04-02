@@ -8,21 +8,37 @@ set(CMAKE_BUILD_TYPE Debug)
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Boost REQUIRED context)
+find_package(PostgreSQL REQUIRED)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-include_directories(${OPENSSL_INCLUDE_DIR} third_party/ src/ src/api/)
-link_directories(third_party/libpq third_party/fmt third_party/rapidjson third_party/fastpbkdf2 src/ src/api/)
+include_directories(${OPENSSL_INCLUDE_DIR} ${PostgreSQL_INCLUDE_DIRS} third_party/ src/ src/api/)
+link_directories(third_party/fastpbkdf2 src/ src/api/)
 
-set(LIBS pq fmt fastpbkdf2 ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
-          ${OPENSSL_LIBRARIES})
+# Check if fastpbkdf2 lib is ready
+if(NOT EXISTS "third_party/fastpbkdf2/fastpbkdf2.o")
+    message(FATAL_ERROR "Please build the fastpbkdf2 package first (third_party/fastpbkdf2)") 
+endif()
 
 add_executable(main main.cpp)
 
-# Drogon build configuration
-set(BUILD_EXAMPLES OFF CACHE INTERNAL "Don't build examples")
+# fmt
+add_subdirectory(third_party/fmt)
+
+# rapidjson
+set(RAPIDJSON_BUILD_DOC OFF CACHE INTERNAL "Don't build rapidjson docs")
+set(RAPIDJSON_BUILD_EXAMPLES OFF CACHE INTERNAL "Don't build rapidjson examples")
+set(RAPIDJSON_BUILD_TESTS OFF CACHE INTERNAL "Don't build rapidjson tests")
+
+add_subdirectory(third_party/rapidjson)
+
+# drogon
+set(BUILD_EXAMPLES OFF CACHE INTERNAL "Don't build drogon examples")
 set(BUILD_CTL OFF CACHE INTERNAL "Don't build drogon ctl")
 set(BUILD_ORM OFF CACHE INTERNAL "Don't build drogon orm")
+set(BUILD_SQLITE OFF CACHE INTERNAL "Don't build drogon sqlite")
 
 add_subdirectory(third_party/drogon)
-target_link_libraries(main PRIVATE ${LIBS} drogon)
+
+target_link_libraries(main PRIVATE PostgreSQL::PostgreSQL fmt::fmt fastpbkdf2 drogon ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+${OPENSSL_LIBRARIES})

@@ -4,12 +4,12 @@
 #include <unordered_map>
 #include <assert.h>
 
-#include "../third_party/libpq/libpq-fe.h"
-#include "../third_party/fmt/format.h"
+#include <libpq-fe.h>
+#include <fmt/format.h>
 
-#include "../third_party/rapidjson/document.h"
-#include "../third_party/rapidjson/writer.h"
-#include "../third_party/rapidjson/stringbuffer.h"
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
 
 #include "./db_config.hpp"
 
