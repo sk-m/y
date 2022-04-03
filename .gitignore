@@ -28,4 +28,4 @@ y-backend/config/credentials.yaml
 y-backend/config/server.yaml
 
 # misc
-.vscode/
+.vscode/*.log
