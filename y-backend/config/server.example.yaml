@@ -1,0 +1,7 @@
+server:
+  host: "127.0.0.1"
+  port: 8080
+  threads_n: 16
+
+domain:
+  frontend_origin: "http://y.local:3000"

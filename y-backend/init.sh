@@ -17,6 +17,7 @@ read -n 1 -p "Press any key to start: "
 
 # Prepare config files
 cp -n config/credentials.example.yaml config/credentials.yaml
+cp -n config/server.example.yaml config/server.yaml
 
 # Get all the libraries we need
 git submodule update --recursive --init

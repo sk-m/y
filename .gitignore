@@ -25,6 +25,7 @@ y-backend/main
 
 # sensitive data
 y-backend/config/credentials.yaml
+y-backend/config/server.yaml
 
 # misc
 .vscode/
