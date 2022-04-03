@@ -15,6 +15,9 @@ echo
 
 read -n 1 -p "Press any key to start: "
 
+# Prepare config files
+cp -n config/credentials.example.yaml config/credentials.yaml
+
 # Get all the libraries we need
 git submodule update --recursive --init
 
@@ -28,5 +31,8 @@ cmake . && make
 
 echo
 echo "If there were no errors reported, the environment is now ready."
-echo "You can now start the server using it's executable."
+echo
+echo "Your next steps would be:"
+echo " 1. Visit the config folder and update the configuration and credential files."
+echo " 2. Import the database schema (dev/sql/y.sql). For example, by running 'psql -h host -d db -u user -L import.log -f y.sql'"
 echo

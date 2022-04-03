@@ -24,7 +24,7 @@ y-backend/*.log
 y-backend/main
 
 # sensitive data
-y-backend/src/db_config.hpp
+y-backend/config/credentials.yaml
 
 # misc
 .vscode/

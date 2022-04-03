@@ -11,7 +11,9 @@
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
 
-#include "./db_config.hpp"
+#include <yaml-cpp/yaml.h>
+
+#define DB_CONNECTIONS_N 10
 
 namespace DB {
     enum class QueryResultsType: unsigned char {
@@ -35,7 +37,7 @@ namespace DB {
          * @brief Indicates where the data is stored, in [data], [data_json] or just in the [_pgresult] object
          */
         QueryResultsType results_type = QueryResultsType::Hashmap;
-        
+
         std::vector<std::unordered_map<const char*, const char*> > data;
         rapidjson::Document* data_json;
 
@@ -56,7 +58,7 @@ namespace DB {
         ~Results() {
             if(!do_not_clear_results) {
                 if(_pgresult) PQclear(_pgresult);
-                
+
                 // TODO @cleanup I'm pretty sure we don't need to do this. It probably happns automatically
                 if(results_type == QueryResultsType::JSON) delete data_json;
             }
@@ -68,7 +70,7 @@ namespace DB {
 
     /**
      * @brief Query the database (blocking)
-     * 
+     *
      * @param query_str SQL
      * @param results_type save data as a vector of hashmaps, json or do not do anything with the results (raw)
      * @return query results
@@ -77,7 +79,7 @@ namespace DB {
 
     /**
      * @brief Execute a prepared statement. Do not forget to call PQclear() on the result
-     * 
+     *
      * @param statement_name name of the prepared statement
      * @param params parameters
      * @param params_n number of paramenters provided
@@ -109,7 +111,7 @@ DB::Results DB::query(const char* query_str, QueryResultsType results_type) {
 
     // Prepare the results object
     Results query_results;
-    
+
     // Check the status of the query
     const auto query_status = PQresultStatus(result);
 
@@ -287,7 +289,7 @@ bool DB::_prepare_core_statements(PGconn* connection) {
         2,
         NULL
     )) return false;
-    
+
     // Creating a new user session
     if(!_prepare_statement(
         connection,
@@ -317,7 +319,7 @@ WHERE public.user_sessions.session_id = $1",
         1,
         NULL
     )) return false;
-    
+
     // Updating session's current_ip
     if(!_prepare_statement(
         connection,
@@ -386,12 +388,23 @@ bool DB::_init() {
     conn_busy[DB_CONNECTIONS_N];
     _connections[DB_CONNECTIONS_N];
 
+    // Read the credentials config file
+    // TODO @robustness path, error messages
+    YAML::Node credentials_file = YAML::LoadFile("./config/credentials.yaml");
+    auto db_credentials = credentials_file["database"];
+
+    const auto db_host = db_credentials["host"].as<std::string>().c_str();
+    const auto db_port = db_credentials["port"].as<std::string>().c_str();
+    const auto db_database = db_credentials["database"].as<std::string>().c_str();
+    const auto db_user = db_credentials["user"].as<std::string>().c_str();
+    const auto db_pass = db_credentials["pass"].as<std::string>().c_str();
+
     const char* const keywords[] = {"hostaddr", "port", "dbname", "user", "password", "application_name", "fallback_application_name", NULL};
 
     // Open the database connections
     // TODO @incomplete get the number of connections from the config file
     for(unsigned int i = 0; i < DB_CONNECTIONS_N; i++) {
-        const char* const values[] = {DB_ADDR, DB_PORT, DB_DATABASE, DB_USER, DB_PASS, fmt::format("y conn {}", i).c_str(), "y", NULL};
+        const char* const values[] = {db_host, db_port, db_database, db_user, db_pass, fmt::format("y conn {}", i).c_str(), "y", NULL};
 
         // Open a connection and add it to the connections array. Also add this connection to the list of "ready" connections
         _connections[i] = PQconnectdbParams(keywords, values, 0);
@@ -399,7 +412,7 @@ bool DB::_init() {
 
         // Check the status of the connection
         const auto connection_status = PQstatus(_connections[i]);
-    
+
         if(connection_status != ConnStatusType::CONNECTION_OK) {
             std::cout << "Could not connect to the database!\n";
             return false;
