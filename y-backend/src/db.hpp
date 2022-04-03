@@ -393,18 +393,18 @@ bool DB::_init() {
     YAML::Node credentials_file = YAML::LoadFile("./config/credentials.yaml");
     auto db_credentials = credentials_file["database"];
 
-    const auto db_host = db_credentials["host"].as<std::string>().c_str();
-    const auto db_port = db_credentials["port"].as<std::string>().c_str();
-    const auto db_database = db_credentials["database"].as<std::string>().c_str();
-    const auto db_user = db_credentials["user"].as<std::string>().c_str();
-    const auto db_pass = db_credentials["pass"].as<std::string>().c_str();
+    const auto db_host = db_credentials["host"].as<std::string>();
+    const auto db_port = db_credentials["port"].as<std::string>();
+    const auto db_database = db_credentials["database"].as<std::string>();
+    const auto db_user = db_credentials["user"].as<std::string>();
+    const auto db_pass = db_credentials["pass"].as<std::string>();
 
     const char* const keywords[] = {"hostaddr", "port", "dbname", "user", "password", "application_name", "fallback_application_name", NULL};
 
     // Open the database connections
     // TODO @incomplete get the number of connections from the config file
     for(unsigned int i = 0; i < DB_CONNECTIONS_N; i++) {
-        const char* const values[] = {db_host, db_port, db_database, db_user, db_pass, fmt::format("y conn {}", i).c_str(), "y", NULL};
+        const char* const values[] = {db_host.c_str(), db_port.c_str(), db_database.c_str(), db_user.c_str(), db_pass.c_str(), fmt::format("y conn {}", i).c_str(), "y", NULL};
 
         // Open a connection and add it to the connections array. Also add this connection to the list of "ready" connections
         _connections[i] = PQconnectdbParams(keywords, values, 0);
