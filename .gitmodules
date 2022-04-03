@@ -14,3 +14,7 @@
 	path = y-backend/third_party/rapidjson
 	url = https://github.com/Tencent/rapidjson.git
 	ignore = dirty
+[submodule "y-backend/third_party/yaml-cpp"]
+	path = y-backend/third_party/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp
+	ignore = dirty
