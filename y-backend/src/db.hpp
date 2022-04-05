@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 #include <unordered_map>
 #include <assert.h>
@@ -14,6 +15,11 @@
 #include <yaml-cpp/yaml.h>
 
 #define DB_CONNECTIONS_N 10
+        
+#define ORM_ONE(object_type) inline DB::Record<object_type> one(PGresult* db_result) \
+    { return DB::Record<object_type>(db_result, _process_record); }
+
+#define DEFAULT_CLEANUP_FUNC(record_var) [record_var](){ if(record_var.ok && record_var._result) PQclear(record_var._result); }
 
 namespace DB {
     enum class QueryResultsType: unsigned char {
@@ -65,6 +71,29 @@ namespace DB {
         }
     };
 
+    struct _InternalRecordFields {
+        bool ok = false;
+
+        PGresult* _result;
+    };
+
+    template <typename T>
+    struct RecordsSet: _InternalRecordFields {
+        std::vector<T> items;
+    };
+    
+    template <typename T>
+    struct Record: _InternalRecordFields {
+        T item;
+
+        Record(PGresult* db_result, std::function<T(PGresult* db_result, int n)> process_record) {
+            _prepare_record<T>(this, db_result);
+            item = process_record(db_result, 0);
+        }
+
+        Record() = default;
+    };
+
     PGconn** conn_ready[DB_CONNECTIONS_N];
     PGconn** conn_busy[DB_CONNECTIONS_N];
 
@@ -94,11 +123,28 @@ namespace DB {
 
     bool _init();
 
+    // Records
+    template <typename T>
+    inline void _prepare_record(PGresult* db_result);
+
+    // Statements
     bool _prepare_statement(PGconn* connection, const char* statement_name, const char* query, int n_params, const Oid *param_types);
     bool _prepare_core_statements(PGconn* connection);
 
+    // Connections
     inline unsigned char _prepare_connection();
     inline void _free_connection(unsigned char conn_id);
+}
+
+template <typename T>
+inline void DB::_prepare_record(DB::Record<T>* record, PGresult* db_result) {
+    if(PQresultStatus(db_result) != ExecStatusType::PGRES_TUPLES_OK || PQnfields(db_result) == 0 || PQntuples(db_result) == 0) {
+        PQclear(db_result);
+        return;
+    }
+    
+    record->ok = true;
+    record->_result = std::move(db_result);
 }
 
 DB::Results DB::query(const char* query_str, QueryResultsType results_type) {

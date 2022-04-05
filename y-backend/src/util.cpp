@@ -5,6 +5,7 @@
 // TODO @cleanup the code in here
 
 // TODO this is probably completely ok, but I get a feeling that I'm thinking with the JS part of my brain here
+// TODO rename to Status
 struct Error {
     unsigned char contextual_error_code = 0;
     const char* explanation_user = nullptr;

@@ -4,11 +4,11 @@
 #include <openssl/rand.h>
 #include <regex>
 #include <drogon/drogon.h>
-
-#include "db.hpp"
-#include "util.cpp"
+#include <functional>
 
 #include "../third_party/fastpbkdf2/fastpbkdf2.h"
+
+#include "util.cpp"
 
 // TODO @check is this ok? Should we increase/decrease these numbers?
 #define PASSWORD_SALT_SIZE_BYTES 64
@@ -58,22 +58,21 @@ namespace User {
         char* device;
 
         char token_cleartext[129];
-
-        bool ok = false;
-        PGresult* _result;
     };
 
     User from_db(PGresult* result);
-    UserSession session_from_db(PGresult* result);
 
     bool is_username_taken(const char* username);
     std::tuple<User, Error> user_compare_passwords(const char* username, const char* password);
-    std::tuple<User, Error> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
+    std::tuple<User, Error, std::function<void()>> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
 
     std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
-    std::tuple<UserSession, Error> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
+    std::tuple<UserSession, Error, std::function<void()>> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
     std::tuple<UserSession, Error> session_destroy(const char* session_id, const drogon::HttpRequestPtr& req,  const char* reason);
 }
+
+// TODO @refactor @cleanup this is just not right...
+#include "orm/user_session.hpp"
 
 User::User User::from_db(PGresult* result) {
     User user;
@@ -95,45 +94,6 @@ User::User User::from_db(PGresult* result) {
     user.last_login = PQgetvalue(user._result, 0, PQfnumber(user._result, "user_last_login"));
 
     return user;
-}
-
-User::UserSession User::session_from_db(PGresult* result) {
-    UserSession session;
-
-    // Check the results first
-    if(PQresultStatus(result) != ExecStatusType::PGRES_TUPLES_OK || PQnfields(result) == 0 || PQntuples(result) == 0) {
-        PQclear(result);
-        return session;
-    }
-   
-    // Create the session object
-    session.ok = true;
-    session._result = std::move(result);
-
-    const auto valid_until_raw = std::string(PQgetvalue(session._result, 0, PQfnumber(session._result, "session_valid_until")));
-
-    // TODO @refactor @performance I'm sure this can be more elegant
-    session.session_id = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_id"));
-    session.user_id = std::stoi(PQgetvalue(session._result, 0, PQfnumber(session._result, "session_user_id")));
-    session.current_ip = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_current_ip"));
-    session.ip_range = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_ip_range"));
-    session.token_hash = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_token_hash"));
-    session.token_salt = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_token_salt"));
-    session.token_iterations = std::stoi(PQgetvalue(session._result, 0, PQfnumber(session._result, "session_token_iterations")));
-
-    // TODO* @performance @minor This is *extremely* minor, but sometimes we call this function right after creating a new session
-    // (from Postgres' INSERT INTO user_sessions ... RETURNING *). This means, that we already have a Date instance on our
-    // hands, but instead of using it, we rely on this function, which will *parse* the timestamp that we have just created
-    // and sent to the database.
-
-    // So, in other words, we create a new Date, *stringify it*, insert into the database, call this function and *parse the
-    // string timestamp back into Date*
-    // This has a pretty much non-existent impact on the performance, but it doesn't feel good...
-
-    session.valid_until = trantor::Date::fromDbStringLocal(valid_until_raw);
-    session.device = PQgetvalue(session._result, 0, PQfnumber(session._result, "session_device"));
-
-    return session;
 }
 
 bool User::is_username_taken(const char* username) {
@@ -166,10 +126,9 @@ bool User::is_username_taken(const char* username) {
  * @param readonly Set to true to skip all database updates. If true, this function will just check the session and return you the user
  * without doing any updating, like the current_ip, etc. Basically, we will not write anything to the database if true
  *
- * @return std::tuple<User::User, Error> On success, the User object will have it's `id` and `username` fields set. `user._result` will
- * actually be the session's Result object, not User's.
+ * @return On success, the User object will have it's `id` and `username` fields set.
  */
-std::tuple<User::User, Error> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false, bool readonly = false) {
+std::tuple<User::User, Error, std::function<void()>> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false, bool readonly = false) {
     User user{};
     
     // Make sure we have a cookie value and not just an empty string
@@ -177,7 +136,7 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
         return std::make_tuple(user, Error {
             ErrorCode::SESSION_INVALID,
             "Session token is invalid." 
-        });
+        }, nullptr);
     }
 
     // Extract the session_id and cleartext session_token from the `y_sessions` cookie
@@ -198,7 +157,7 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
         return std::make_tuple(user, Error {
             ErrorCode::SESSION_INVALID,
             "Session is invalid." 
-        });
+        }, nullptr);
     }
 
     const auto session_id = session_cookie_parts[0];
@@ -209,22 +168,24 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
         return std::make_tuple(user, Error {
             ErrorCode::SESSION_INVALID,
             "Session token is invalid." 
-        });
+        }, nullptr);
     }
 
     // Find the session by its session_id
     const char* const sql_params[1] = { session_id.c_str() };
     auto session_result = DB::exec_prepared("session_get_by_id", sql_params, 1);
 
-    UserSession session = session_from_db(session_result);
+    auto session_record = ORM::UserSession::one(session_result);
 
     // Did we find a session with such session_id?
-    if(!session.ok) {
+    if(!session_record.ok) {
         return std::make_tuple(user, Error {
             ErrorCode::SESSION_INVALID,
             "Session is invalid." 
-        });
+        }, nullptr);
     }
+
+    auto session = session_record.item;
 
     // Transform hex strings into byte arrays
     auto cleartext_token_buffer = hex_to_string(session_cleartext_token);
@@ -246,10 +207,12 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
     const auto session_token_valid = strncmp(reinterpret_cast<const char*>(session_token_hash_out_raw), db_hash.c_str(), 64) == 0;
 
     if(!session_token_valid) {
+        PQclear(session_record._result);
+
         return std::make_tuple(user, Error {
             ErrorCode::SESSION_INVALID,
             "Session is invalid." 
-        });
+        }, nullptr);
     } else {
         const auto client_ip = req->getPeerAddr().toIp();
 
@@ -269,12 +232,13 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
                     std::cout << "ERROR! Could not delete an expired session!\n" << error_message << "\n";
                 }
         
+                PQclear(session_record._result);
                 PQclear(delete_session_result);
 
                 return std::make_tuple(user, Error {
                     ErrorCode::SESSION_EXPIRED,
                     "Session has expired." 
-                });
+                }, nullptr);
             }
 
             // Check if client's ip address is in the allowed range for this session
@@ -282,10 +246,12 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
             const auto client_ip_allowed = is_ip_in_network(client_ip.c_str(), session.ip_range);
 
             if(!client_ip_allowed) {
+                PQclear(session_record._result);
+
                 return std::make_tuple(user, Error {
                     ErrorCode::SESSION_IP_NOT_ALLOWED,
                     "Your ip address is not in the range of allowed addresses of this session." 
-                });
+                }, nullptr);
             }
         }
 
@@ -308,13 +274,12 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
         }
 
         user.id = session.user_id;
-        user.username = PQgetvalue(session._result, 0, PQfnumber(session._result, "user_username"));
+        user.username = PQgetvalue(session_record._result, 0, PQfnumber(session_record._result, "user_username"));
         user.ok = true;
-        
-        // TODO @hack
-        user._result = session._result;
 
-        return std::make_tuple(user, Error { 0, nullptr });
+        return std::make_tuple(user, Error { 0, nullptr }, [session_record](){
+            if(session_record._result) PQclear(session_record._result);
+        });
     }
 }
 
@@ -329,8 +294,6 @@ std::tuple<User::User, Error> User::get_user_from_session(const char* session_co
  * 
  * @param username Username of the target user
  * @param password Password that will be hashed and compared to the password of the target user
- * 
- * @return std::tuple<User::User, Error>
  */
 std::tuple<User::User, Error> User::user_compare_passwords(const char* username, const char* password) {
     // Get the user
@@ -411,7 +374,7 @@ std::tuple<User::User, Error> User::user_compare_passwords(const char* username,
  * @param username Username for a new user
  * @param password Cleartext password for a new user. Will be hashed
  *
- * @return std::tuple<unsigned int, Error> unsigned int represents the user id of the new user
+ * unsigned int represents the user id of the new user
  */
 std::tuple<unsigned int, Error> User::user_create(const char* username, const char* password) {
     // Check the data
@@ -491,10 +454,8 @@ std::tuple<unsigned int, Error> User::user_create(const char* username, const ch
  *  
  * @param user_id id of the user the new session will be created for
  * @param req Drogon's req object
- *
- * @return std::tuple<User::UserSession, Error> 
  */
-std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, const drogon::HttpRequestPtr& req) {
+std::tuple<User::UserSession, Error, std::function<void()>> User::session_create(unsigned int user_id, const drogon::HttpRequestPtr& req) {
     // Generate a session token & salt
     unsigned char session_salt_raw[64];
     RAND_bytes(session_salt_raw, 64);
@@ -553,16 +514,18 @@ std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, 
         std::cout << "Could not create a new user session from User::session_create()\n" << error_message;
 
         PQclear(result);
-        return std::make_tuple(UserSession{}, Error{ ErrorCode::INTERNAL, "Error creating a new user session." });
+        return std::make_tuple(UserSession{}, Error{ ErrorCode::INTERNAL, "Error creating a new user session." }, nullptr);
     }
 
-    auto user_session = session_from_db(result);
-    
+    auto session_record = ORM::UserSession::one(result);
+    auto session = session_record.item;
+    // No need to check `ok` here, as we have checked for errors manually already
+        
     // Also save the cleartext token (the value that will reside in the user's y_session cookie)
-    strncpy(user_session.token_cleartext, token_cleartext_hex.c_str(), 128);
-    user_session.token_cleartext[128] = '\0';
+    strncpy(session.token_cleartext, token_cleartext_hex.c_str(), 128);
+    session.token_cleartext[128] = '\0';
 
-    return std::make_tuple(user_session, Error{ 0, nullptr });
+    return std::make_tuple(session, Error{ 0, nullptr }, DEFAULT_CLEANUP_FUNC(session_record));
 }
 
 /**
@@ -572,7 +535,7 @@ std::tuple<User::UserSession, Error> User::session_create(unsigned int user_id, 
  * @param req Drogon's req object
  * @param reason Internal reason for the removal, ex. `logout`, `manual_destroy`, etc.
  * 
- * @return std::tuple<User::UserSession, Error> on success returns the deleted user session
+ * On success returns the deleted user session
  */
 std::tuple<User::UserSession, Error> User::session_destroy(const char* session_id, const drogon::HttpRequestPtr& req, const char* reason) {
     // TODO @inclomplete We don't have a user log, so we do not use the reason anywhere
@@ -580,10 +543,11 @@ std::tuple<User::UserSession, Error> User::session_destroy(const char* session_i
     const char* const sql_params[1] = { session_id };
     auto session_result = DB::exec_prepared("session_delete_by_id", sql_params, 1);
 
-    UserSession deleted_user_session = session_from_db(session_result);
+    auto deleted_session_record = ORM::UserSession::one(session_result);
+    auto deleted_session = deleted_session_record.item;
 
-    if(!deleted_user_session.ok) {
-        return std::make_tuple(deleted_user_session, Error {
+    if(!deleted_session_record.ok) {
+        return std::make_tuple(deleted_session, Error {
             ErrorCode::INTERNAL,
             "Could not delete the session." 
         });
@@ -591,5 +555,5 @@ std::tuple<User::UserSession, Error> User::session_destroy(const char* session_i
 
     // TODO @incomplete create a user log entry
 
-    return std::make_tuple(deleted_user_session, Error {0, nullptr});
+    return std::make_tuple(deleted_session, Error {0, nullptr});
 }
