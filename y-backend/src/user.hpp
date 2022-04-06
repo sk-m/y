@@ -64,11 +64,11 @@ namespace User {
 
     bool is_username_taken(const char* username);
     std::tuple<User, Error> user_compare_passwords(const char* username, const char* password);
-    std::tuple<User, Error, std::function<void()>> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
+    CleanableResult<User> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
 
     std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
-    std::tuple<UserSession, Error, std::function<void()>> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
-    std::tuple<UserSession, Error> session_destroy(const char* session_id, const drogon::HttpRequestPtr& req,  const char* reason);
+    CleanableResult<UserSession> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
+    CleanableResult<UserSession> session_destroy(const char* session_id, const drogon::HttpRequestPtr& req,  const char* reason);
 }
 
 // TODO @refactor @cleanup this is just not right...
@@ -128,7 +128,7 @@ bool User::is_username_taken(const char* username) {
  *
  * @return On success, the User object will have it's `id` and `username` fields set.
  */
-std::tuple<User::User, Error, std::function<void()>> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false, bool readonly = false) {
+CleanableResult<User::User> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false, bool readonly = false) {
     User user{};
     
     // Make sure we have a cookie value and not just an empty string
@@ -455,7 +455,7 @@ std::tuple<unsigned int, Error> User::user_create(const char* username, const ch
  * @param user_id id of the user the new session will be created for
  * @param req Drogon's req object
  */
-std::tuple<User::UserSession, Error, std::function<void()>> User::session_create(unsigned int user_id, const drogon::HttpRequestPtr& req) {
+CleanableResult<User::UserSession> User::session_create(unsigned int user_id, const drogon::HttpRequestPtr& req) {
     // Generate a session token & salt
     unsigned char session_salt_raw[64];
     RAND_bytes(session_salt_raw, 64);
@@ -537,7 +537,7 @@ std::tuple<User::UserSession, Error, std::function<void()>> User::session_create
  * 
  * On success returns the deleted user session
  */
-std::tuple<User::UserSession, Error> User::session_destroy(const char* session_id, const drogon::HttpRequestPtr& req, const char* reason) {
+CleanableResult<User::UserSession> User::session_destroy(const char* session_id, const drogon::HttpRequestPtr& req, const char* reason) {
     // TODO @inclomplete We don't have a user log, so we do not use the reason anywhere
 
     const char* const sql_params[1] = { session_id };
@@ -550,10 +550,10 @@ std::tuple<User::UserSession, Error> User::session_destroy(const char* session_i
         return std::make_tuple(deleted_session, Error {
             ErrorCode::INTERNAL,
             "Could not delete the session." 
-        });
+        }, nullptr);
     }
 
     // TODO @incomplete create a user log entry
 
-    return std::make_tuple(deleted_session, Error {0, nullptr});
+    return std::make_tuple(deleted_session, Error {0, nullptr}, DEFAULT_CLEANUP_FUNC(deleted_session_record));
 }

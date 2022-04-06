@@ -20,6 +20,7 @@
     { return DB::Record<object_type>(db_result, _process_record); }
 
 #define DEFAULT_CLEANUP_FUNC(record_var) [record_var](){ if(record_var.ok && record_var._result) PQclear(record_var._result); }
+#define RESULTS_CLEANUP(results_var) std::function<void()> __cleanup_##results_var = std::get<2>(results_var); if(__cleanup_##results_var) __cleanup_##results_var();
 
 namespace DB {
     enum class QueryResultsType: unsigned char {

@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <string>
+#include <functional>
 
 // TODO @cleanup @refactor put all this in namespace Util?
 // TODO @cleanup the code in here
@@ -12,6 +13,9 @@ struct Error {
 
     inline bool is_ok() const { return contextual_error_code == 0; };
 };
+
+template <typename T>
+using CleanableResult = std::tuple<T, Error, std::function<void()>>;
 
 constexpr char _hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};

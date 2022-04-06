@@ -57,11 +57,10 @@ namespace API_User {
 
             if(destroy_session_error.is_ok()) {
                 // We have successfully removed a session from the database
-                // !!! PQclear(destroyed_session._result);
+                RESULTS_CLEANUP(destroy_session_status);
             }
 
-            const auto user_cleanup = std::get<2>(user_session_result);
-            if(user_cleanup) user_cleanup();
+            RESULTS_CLEANUP(user_session_result);
 
             api_callback(resp);
         }
@@ -98,8 +97,7 @@ namespace API_User {
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
 
-            const auto user_cleanup = std::get<2>(user_session_result);
-            if(user_cleanup) user_cleanup();
+            RESULTS_CLEANUP(user_session_result);
         }
 
         // POST /user/create
@@ -261,8 +259,7 @@ namespace API_User {
 
             // !!! PQclear(user._result);
 
-            const auto user_session_cleanup = std::get<2>(user_session_response);
-            if(user_session_cleanup) user_session_cleanup();
+            RESULTS_CLEANUP(user_session_response);
         }
     }
 }
