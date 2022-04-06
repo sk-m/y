@@ -1,6 +1,8 @@
+import CONFIG from "../../config/config.json";
+
 // TODO @placeholder
 // TODO use /api for API routes
-const API_URL = "http://beta.local:8083";
+const API_URL = CONFIG.api_url;
 
 // TODO use xhr instead
 export default {

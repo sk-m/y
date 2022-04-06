@@ -27,5 +27,7 @@ y-backend/main
 y-backend/config/credentials.yaml
 y-backend/config/server.yaml
 
+y-frontend/config/config.json
+
 # misc
 .vscode/*.log
