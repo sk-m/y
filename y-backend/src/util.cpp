@@ -6,8 +6,7 @@
 // TODO @cleanup the code in here
 
 // TODO this is probably completely ok, but I get a feeling that I'm thinking with the JS part of my brain here
-// TODO rename to Status
-struct Error {
+struct Status {
     unsigned char contextual_error_code = 0;
     const char* explanation_user = nullptr;
 
@@ -15,7 +14,51 @@ struct Error {
 };
 
 template <typename T>
-using CleanableResult = std::tuple<T, Error, std::function<void()>>;
+struct Result {
+    T data;
+    Status status;
+
+    inline bool is_ok() const { return status.is_ok(); };
+
+    // Constructors
+
+    Result(T p_data, Status p_status) {
+        data = p_data;
+        status = p_status;
+    }
+
+    Result() = default;
+};
+
+template <typename T>
+struct CleanableResult: Result<T> {
+    std::function<void()> _cleanup_func = nullptr;
+
+    inline void cleanup() {
+        if(_cleanup_func) _cleanup_func();
+    }
+
+    // Constructors
+
+    CleanableResult(T p_data, std::function<void()> p_cleanup_func) {
+        this->data = p_data;
+        this->status = Status { 0, nullptr };
+        _cleanup_func = p_cleanup_func;
+    }
+
+    CleanableResult(T p_data, Status p_status) {
+        this->data = p_data;
+        this->status = p_status;
+    }
+
+    CleanableResult(T p_data, Status p_status, std::function<void()> p_cleanup_func) {
+        this->data = p_data;
+        this->status = p_status;
+        _cleanup_func = p_cleanup_func;
+    }
+
+    CleanableResult() = default;
+};
 
 constexpr char _hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};

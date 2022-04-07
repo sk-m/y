@@ -64,7 +64,7 @@ namespace User {
     CleanableResult<User> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
     CleanableResult<std::vector<UserSession>> get_user_sessions(unsigned int user_id);
 
-    std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
+    Result<unsigned int> user_create(const char* username, const char* password);
     CleanableResult<UserSession> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
     CleanableResult<UserSession> session_destroy(const char* session_id, const drogon::HttpRequestPtr& req,  const char* reason);
 }
@@ -99,13 +99,13 @@ CleanableResult<User::User> User::get_by_username(const char* username) {
     auto user = user_record.item;
 
     if(!user_record.ok) {
-        return std::make_tuple(user, Error {
+        return CleanableResult(user, Status {
             ErrorCode::USER_NOT_FOUND,
             "Could not find the user." 
-        }, nullptr);
+        });
     }
 
-    return std::make_tuple(user, Error {0, nullptr}, DEFAULT_CLEANUP_FUNC(user_record));
+    return CleanableResult(user, DEFAULT_CLEANUP_FUNC(user_record));
 }
 
 /**
@@ -135,10 +135,10 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
     
     // Make sure we have a cookie value and not just an empty string
     if(strnlen(session_cookie_value, 256) < 128) {
-        return std::make_tuple(user, Error {
+        return CleanableResult(user, Status {
             ErrorCode::SESSION_INVALID,
             "Session token is invalid." 
-        }, nullptr);
+        });
     }
 
     // Extract the session_id and cleartext session_token from the `y_sessions` cookie
@@ -156,10 +156,10 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
 
     // Check for malformed cookie value. There should be exactly two parts - session_id & session_token
     if(session_cookie_parts.size() != 2) {
-        return std::make_tuple(user, Error {
+        return CleanableResult(user, Status {
             ErrorCode::SESSION_INVALID,
             "Session is invalid." 
-        }, nullptr);
+        });
     }
 
     const auto session_id = session_cookie_parts[0];
@@ -167,10 +167,10 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
 
     // The token should be exactly 128 bytes long (64 byte-long token in a hex format)
     if(session_cleartext_token.size() != 128) {
-        return std::make_tuple(user, Error {
+        return CleanableResult(user, Status {
             ErrorCode::SESSION_INVALID,
             "Session token is invalid." 
-        }, nullptr);
+        });
     }
 
     // Find the session by its session_id
@@ -181,10 +181,10 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
 
     // Did we find a session with such session_id?
     if(!session_record.ok) {
-        return std::make_tuple(user, Error {
+        return CleanableResult(user, Status {
             ErrorCode::SESSION_INVALID,
             "Session is invalid." 
-        }, nullptr);
+        });
     }
 
     auto session = session_record.item;
@@ -211,10 +211,10 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
     if(!session_token_valid) {
         PQclear(session_record._result);
 
-        return std::make_tuple(user, Error {
+        return CleanableResult(user, Status {
             ErrorCode::SESSION_INVALID,
             "Session is invalid." 
-        }, nullptr);
+        });
     } else {
         const auto client_ip = req->getPeerAddr().toIp();
 
@@ -237,10 +237,10 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
                 PQclear(session_record._result);
                 PQclear(delete_session_result);
 
-                return std::make_tuple(user, Error {
+                return CleanableResult(user, Status {
                     ErrorCode::SESSION_EXPIRED,
                     "Session has expired." 
-                }, nullptr);
+                });
             }
 
             // Check if client's ip address is in the allowed range for this session
@@ -250,10 +250,10 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
             if(!client_ip_allowed) {
                 PQclear(session_record._result);
 
-                return std::make_tuple(user, Error {
+                return CleanableResult(user, Status {
                     ErrorCode::SESSION_IP_NOT_ALLOWED,
                     "Your ip address is not in the range of allowed addresses of this session." 
-                }, nullptr);
+                });
             }
         }
 
@@ -278,7 +278,7 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
         user.id = session.user_id;
         user.username = PQgetvalue(session_record._result, 0, PQfnumber(session_record._result, "user_username"));
 
-        return std::make_tuple(user, Error { 0, nullptr }, [session_record](){
+        return CleanableResult(user, [session_record](){
             if(session_record._result) PQclear(session_record._result);
         });
     }
@@ -306,10 +306,10 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, c
 
     if(!user_record.ok) {
         // TODO @robustness !ok does not necessarily mean that the user was not found. Some other error might be the case
-        return std::make_tuple(user, Error {
+        return CleanableResult(user, Status {
             ErrorCode::USER_NOT_FOUND,
             "User was not found." 
-        }, nullptr);
+        });
     }
 
     // TODO @cleanup @DRY move into util.cpp?
@@ -346,23 +346,23 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, c
         const auto password_correct = strcmp(db_hash.c_str(), reinterpret_cast<char*>(hash_out_raw)) == 0;
         
         if(password_correct) {
-            return std::make_tuple(user, Error{ 0, nullptr }, DEFAULT_CLEANUP_FUNC(user_record));
+            return CleanableResult(user, DEFAULT_CLEANUP_FUNC(user_record));
         } else {
             PQclear(user_record._result);
             
-            return std::make_tuple(user, Error {
+            return CleanableResult(user, Status {
                 ErrorCode::PASSWORD_INCORRECT,
                 "Password is incorrect." 
-            }, nullptr);
+            });
         }
     }
 
     PQclear(user_record._result);
 
-    return std::make_tuple(user, Error {
+    return CleanableResult(user, Status {
         ErrorCode::PASSWORD_HASHING_ALGORITHM_UNSUPPORTED,
         "Password hashing algorithm is (no longer) supported. Please, contact administrators." 
-    }, nullptr);
+    });
 }
 
 /**
@@ -382,17 +382,17 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, c
  *
  * unsigned int represents the user id of the new user
  */
-std::tuple<unsigned int, Error> User::user_create(const char* username, const char* password) {
+Result<unsigned int> User::user_create(const char* username, const char* password) {
     // Check the data
     const auto password_len = strlen(password);
 
     if(password_len < 8 || password_len > 2048) {
-        return std::make_tuple(0, Error{ ErrorCode::PASSWORD_LENGTH, "Invalid password format." });
+        return Result((unsigned int)0, Status { ErrorCode::PASSWORD_LENGTH, "Invalid password format." });
     }
 
     std::cmatch username_m;
     if(!std::regex_match(username, username_m, std::regex("^[A-Za-z0-9_]{1,64}$"))) {
-        return std::make_tuple(0, Error{ ErrorCode::USERNAME_FORMAT, "Invalid username format." });
+        return Result((unsigned int)0, Status { ErrorCode::USERNAME_FORMAT, "Invalid username format." });
     }
 
     // TODO @cleanup @refactor @performance We do not check if the username is already taken
@@ -432,7 +432,7 @@ std::tuple<unsigned int, Error> User::user_create(const char* username, const ch
         // unique_violation (23505), username is probably taken 
         if(std::stoi(error_type) == 23505) {
             PQclear(result);
-            return std::make_tuple(0, Error{ ErrorCode::USERNAME_TAKEN, "Username is already taken." });
+            return Result((unsigned int)0, Status { ErrorCode::USERNAME_TAKEN, "Username is already taken." });
         } else {
             const auto error_message = PQresultErrorMessage(result);
 
@@ -441,14 +441,14 @@ std::tuple<unsigned int, Error> User::user_create(const char* username, const ch
         }
 
         PQclear(result);
-        return std::make_tuple(0, Error{ ErrorCode::INTERNAL, "Error creating a new user." });
+        return Result((unsigned int)0, Status { ErrorCode::INTERNAL, "Error creating a new user." });
     }
 
     // Get the user id
-    const auto user_id = std::stoi(PQgetvalue(result, 0, 0));
+    auto user_id = std::stoul(PQgetvalue(result, 0, 0));
 
     PQclear(result);
-    return std::make_tuple(user_id, Error{ 0, nullptr });
+    return Result((unsigned int)user_id, Status { 0, nullptr });
 }
 
 /**
@@ -520,7 +520,10 @@ CleanableResult<User::UserSession> User::session_create(unsigned int user_id, co
         std::cout << "Could not create a new user session from User::session_create()\n" << error_message;
 
         PQclear(result);
-        return std::make_tuple(UserSession{}, Error{ ErrorCode::INTERNAL, "Error creating a new user session." }, nullptr);
+        return CleanableResult(UserSession{}, Status {
+            ErrorCode::INTERNAL,
+            "Error creating a new user session."
+        });
     }
 
     auto session_record = ORM_UserSession::one(result);
@@ -531,7 +534,7 @@ CleanableResult<User::UserSession> User::session_create(unsigned int user_id, co
     strncpy(session.token_cleartext, token_cleartext_hex.c_str(), 128);
     session.token_cleartext[128] = '\0';
 
-    return std::make_tuple(session, Error{ 0, nullptr }, DEFAULT_CLEANUP_FUNC(session_record));
+    return CleanableResult(session, DEFAULT_CLEANUP_FUNC(session_record));
 }
 
 /**
@@ -553,15 +556,15 @@ CleanableResult<User::UserSession> User::session_destroy(const char* session_id,
     auto deleted_session = deleted_session_record.item;
 
     if(!deleted_session_record.ok) {
-        return std::make_tuple(deleted_session, Error {
+        return CleanableResult(deleted_session, Status {
             ErrorCode::INTERNAL,
             "Could not delete the session." 
-        }, nullptr);
+        });
     }
 
     // TODO @incomplete create a user log entry
 
-    return std::make_tuple(deleted_session, Error {0, nullptr}, DEFAULT_CLEANUP_FUNC(deleted_session_record));
+    return CleanableResult(deleted_session, DEFAULT_CLEANUP_FUNC(deleted_session_record));
 }
 
 /**
@@ -575,11 +578,11 @@ CleanableResult<std::vector<User::UserSession>> User::get_user_sessions(unsigned
     auto sessions_recods = ORM_UserSession::many(sessions_result);
 
     if(!sessions_recods.ok) {
-        return std::make_tuple(sessions_recods.items, Error {
+        return CleanableResult(sessions_recods.items, Status {
             ErrorCode::INTERNAL,
             "Could not get user's sessions." 
-        }, nullptr);
+        });
     }
 
-    return std::make_tuple(sessions_recods.items, Error {0, nullptr}, DEFAULT_CLEANUP_FUNC(sessions_recods));
+    return CleanableResult(sessions_recods.items, DEFAULT_CLEANUP_FUNC(sessions_recods));
 }
