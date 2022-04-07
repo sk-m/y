@@ -19,6 +19,9 @@
 #define ORM_ONE(object_type) inline DB::Record<object_type> one(PGresult* db_result) \
     { return DB::Record<object_type>(db_result, _process_record); }
 
+#define ORM_MANY(object_type) inline DB::RecordsSet<object_type> many(PGresult* db_result) \
+    { return DB::RecordsSet<object_type>(db_result, _process_record); }
+
 #define DEFAULT_CLEANUP_FUNC(record_var) [record_var](){ if(record_var.ok && record_var._result) PQclear(record_var._result); }
 #define RESULTS_CLEANUP(results_var) std::function<void()> __cleanup_##results_var = std::get<2>(results_var); if(__cleanup_##results_var) __cleanup_##results_var();
 
@@ -81,6 +84,21 @@ namespace DB {
     template <typename T>
     struct RecordsSet: _InternalRecordFields {
         std::vector<T> items;
+
+        RecordsSet(PGresult* db_result, std::function<T(PGresult* db_result, int n)> process_record) {
+            _prepare_record(this, db_result);
+
+            if(!ok) return;
+
+            const auto rows_n = PQntuples(db_result);
+            items.reserve(rows_n);
+
+            for(int i = 0; i < rows_n; i++) {
+                items.push_back(process_record(db_result, i));
+            }
+        }
+
+        RecordsSet() = default;
     };
     
     template <typename T>
@@ -88,7 +106,7 @@ namespace DB {
         T item;
 
         Record(PGresult* db_result, std::function<T(PGresult* db_result, int n)> process_record) {
-            _prepare_record<T>(this, db_result);
+            _prepare_record(this, db_result);
             item = process_record(db_result, 0);
         }
 
@@ -125,8 +143,7 @@ namespace DB {
     bool _init();
 
     // Records
-    template <typename T>
-    inline void _prepare_record(PGresult* db_result);
+    inline void _prepare_record(DB::_InternalRecordFields* record, PGresult* db_result);
 
     // Statements
     bool _prepare_statement(PGconn* connection, const char* statement_name, const char* query, int n_params, const Oid *param_types);
@@ -137,8 +154,7 @@ namespace DB {
     inline void _free_connection(unsigned char conn_id);
 }
 
-template <typename T>
-inline void DB::_prepare_record(DB::Record<T>* record, PGresult* db_result) {
+inline void DB::_prepare_record(DB::_InternalRecordFields* record, PGresult* db_result) {
     if(PQresultStatus(db_result) != ExecStatusType::PGRES_TUPLES_OK || PQnfields(db_result) == 0 || PQntuples(db_result) == 0) {
         PQclear(db_result);
         return;
@@ -354,6 +370,15 @@ bool DB::_prepare_core_statements(PGconn* connection) {
 FROM public.user_sessions \
 INNER JOIN public.users ON (public.user_sessions.session_user_id = public.users.user_id) \
 WHERE public.user_sessions.session_id = $1",
+        1,
+        NULL
+    )) return false;
+
+    // Getting all sessions of a particular user
+    if(!_prepare_statement(
+        connection,
+        "sessions_get_by_user_id",
+        "SELECT * FROM public.user_sessions WHERE session_user_id = $1",
         1,
         NULL
     )) return false;

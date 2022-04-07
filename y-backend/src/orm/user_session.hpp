@@ -33,4 +33,5 @@ namespace ORM_UserSession {
     }
 
     ORM_ONE(User::UserSession)
+    ORM_MANY(User::UserSession)
 }
