@@ -4,6 +4,7 @@
 #include <drogon/drogon.h>
 
 #include "../db.hpp"
+#include "../api.hpp"
 #include "../user.hpp"
 
 namespace API_User {
@@ -257,8 +258,7 @@ namespace API_User {
 
             api_callback(resp);
 
-            // !!! PQclear(user._result);
-
+            RESULTS_CLEANUP(password_cmp_result);
             RESULTS_CLEANUP(user_session_response);
         }
     }

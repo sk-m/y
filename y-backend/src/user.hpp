@@ -8,6 +8,7 @@
 
 #include "../third_party/fastpbkdf2/fastpbkdf2.h"
 
+#include "db.hpp"
 #include "util.cpp"
 
 // TODO @check is this ok? Should we increase/decrease these numbers?
@@ -40,9 +41,6 @@ namespace User {
         char* username;
         char* password;
         char* last_login;
-
-        bool ok = false;
-        PGresult* _result;
     };
 
     struct UserSession {
@@ -60,10 +58,8 @@ namespace User {
         char token_cleartext[129];
     };
 
-    User from_db(PGresult* result);
-
     bool is_username_taken(const char* username);
-    std::tuple<User, Error> user_compare_passwords(const char* username, const char* password);
+    CleanableResult<User> user_compare_passwords(const char* username, const char* password);
     CleanableResult<User> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
 
     std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
@@ -73,28 +69,7 @@ namespace User {
 
 // TODO @refactor @cleanup this is just not right...
 #include "orm/user_session.hpp"
-
-User::User User::from_db(PGresult* result) {
-    User user;
-
-    // Check the results first
-    if(PQresultStatus(result) != ExecStatusType::PGRES_TUPLES_OK || PQnfields(result) == 0 || PQntuples(result) == 0) {
-        PQclear(result);
-        return user;
-    }
-   
-    // Create the user object
-    user.ok = true;
-    user._result = std::move(result);
-
-    // TODO @refactor @performance I'm sure this can be more elegant
-    user.id = std::stoi(PQgetvalue(user._result, 0, PQfnumber(user._result, "user_id")));
-    user.username = PQgetvalue(user._result, 0, PQfnumber(user._result, "user_username"));
-    user.password = PQgetvalue(user._result, 0, PQfnumber(user._result, "user_password"));
-    user.last_login = PQgetvalue(user._result, 0, PQfnumber(user._result, "user_last_login"));
-
-    return user;
-}
+#include "orm/user.hpp"
 
 bool User::is_username_taken(const char* username) {
     const char* const sql_params[1] = { username };
@@ -175,7 +150,7 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
     const char* const sql_params[1] = { session_id.c_str() };
     auto session_result = DB::exec_prepared("session_get_by_id", sql_params, 1);
 
-    auto session_record = ORM::UserSession::one(session_result);
+    auto session_record = ORM_UserSession::one(session_result);
 
     // Did we find a session with such session_id?
     if(!session_record.ok) {
@@ -275,7 +250,6 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
 
         user.id = session.user_id;
         user.username = PQgetvalue(session_record._result, 0, PQfnumber(session_record._result, "user_username"));
-        user.ok = true;
 
         return std::make_tuple(user, Error { 0, nullptr }, [session_record](){
             if(session_record._result) PQclear(session_record._result);
@@ -295,19 +269,20 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
  * @param username Username of the target user
  * @param password Password that will be hashed and compared to the password of the target user
  */
-std::tuple<User::User, Error> User::user_compare_passwords(const char* username, const char* password) {
+CleanableResult<User::User> User::user_compare_passwords(const char* username, const char* password) {
     // Get the user
     const char* const sql_params[1] = { username };
     auto user_result = DB::exec_prepared("user_get_by_username", sql_params, 1);
 
-    User user = from_db(user_result);
+    auto user_record = ORM_User::one(user_result);
+    auto user = user_record.item;
 
-    if(!user.ok) {
+    if(!user_record.ok) {
         // TODO @robustness !ok does not necessarily mean that the user was not found. Some other error might be the case
         return std::make_tuple(user, Error {
             ErrorCode::USER_NOT_FOUND,
             "User was not found." 
-        });
+        }, nullptr);
     }
 
     // TODO @cleanup @DRY move into util.cpp?
@@ -344,19 +319,23 @@ std::tuple<User::User, Error> User::user_compare_passwords(const char* username,
         const auto password_correct = strcmp(db_hash.c_str(), reinterpret_cast<char*>(hash_out_raw)) == 0;
         
         if(password_correct) {
-            return std::make_tuple(user, Error{ 0, nullptr });
+            return std::make_tuple(user, Error{ 0, nullptr }, DEFAULT_CLEANUP_FUNC(user_record));
         } else {
+            PQclear(user_record._result);
+            
             return std::make_tuple(user, Error {
                 ErrorCode::PASSWORD_INCORRECT,
                 "Password is incorrect." 
-            });
+            }, nullptr);
         }
     }
+
+    PQclear(user_record._result);
 
     return std::make_tuple(user, Error {
         ErrorCode::PASSWORD_HASHING_ALGORITHM_UNSUPPORTED,
         "Password hashing algorithm is (no longer) supported. Please, contact administrators." 
-    });
+    }, nullptr);
 }
 
 /**
@@ -517,7 +496,7 @@ CleanableResult<User::UserSession> User::session_create(unsigned int user_id, co
         return std::make_tuple(UserSession{}, Error{ ErrorCode::INTERNAL, "Error creating a new user session." }, nullptr);
     }
 
-    auto session_record = ORM::UserSession::one(result);
+    auto session_record = ORM_UserSession::one(result);
     auto session = session_record.item;
     // No need to check `ok` here, as we have checked for errors manually already
         
@@ -543,7 +522,7 @@ CleanableResult<User::UserSession> User::session_destroy(const char* session_id,
     const char* const sql_params[1] = { session_id };
     auto session_result = DB::exec_prepared("session_delete_by_id", sql_params, 1);
 
-    auto deleted_session_record = ORM::UserSession::one(session_result);
+    auto deleted_session_record = ORM_UserSession::one(session_result);
     auto deleted_session = deleted_session_record.item;
 
     if(!deleted_session_record.ok) {
