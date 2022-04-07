@@ -59,8 +59,10 @@ namespace User {
     };
 
     bool is_username_taken(const char* username);
+    CleanableResult<User> get_by_username(const char* username);
     CleanableResult<User> user_compare_passwords(const char* username, const char* password);
     CleanableResult<User> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
+    CleanableResult<std::vector<UserSession>> get_user_sessions(unsigned int user_id);
 
     std::tuple<unsigned int, Error> user_create(const char* username, const char* password);
     CleanableResult<UserSession> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
@@ -79,6 +81,31 @@ bool User::is_username_taken(const char* username) {
 
     PQclear(result);
     return is_taken;
+}
+
+/**
+ * @brief Get the user by their username
+ * 
+ * ErrorCodes that can be returned:
+ * \li USER_NOT_FOUND;
+ * 
+ * @param username target user's username
+ */
+CleanableResult<User::User> User::get_by_username(const char* username) {
+    const char* const sql_params[1] = { username };
+    auto user_result = DB::exec_prepared("user_get_by_username", sql_params, 1);
+
+    auto user_record = ORM_User::one(user_result);
+    auto user = user_record.item;
+
+    if(!user_record.ok) {
+        return std::make_tuple(user, Error {
+            ErrorCode::USER_NOT_FOUND,
+            "Could not find the user." 
+        }, nullptr);
+    }
+
+    return std::make_tuple(user, Error {0, nullptr}, DEFAULT_CLEANUP_FUNC(user_record));
 }
 
 /**
@@ -535,4 +562,24 @@ CleanableResult<User::UserSession> User::session_destroy(const char* session_id,
     // TODO @incomplete create a user log entry
 
     return std::make_tuple(deleted_session, Error {0, nullptr}, DEFAULT_CLEANUP_FUNC(deleted_session_record));
+}
+
+/**
+ * @brief Get all user's sessions
+ * 
+ * @param user_id id of the target user
+ */
+CleanableResult<std::vector<User::UserSession>> User::get_user_sessions(unsigned int user_id) {
+    const char* const sql_params[1] = { std::to_string(user_id).c_str() };
+    auto sessions_result = DB::exec_prepared("sessions_get_by_user_id", sql_params, 1);
+    auto sessions_recods = ORM_UserSession::many(sessions_result);
+
+    if(!sessions_recods.ok) {
+        return std::make_tuple(sessions_recods.items, Error {
+            ErrorCode::INTERNAL,
+            "Could not get user's sessions." 
+        }, nullptr);
+    }
+
+    return std::make_tuple(sessions_recods.items, Error {0, nullptr}, DEFAULT_CLEANUP_FUNC(sessions_recods));
 }

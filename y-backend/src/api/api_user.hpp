@@ -101,6 +101,133 @@ namespace API_User {
             RESULTS_CLEANUP(user_session_result);
         }
 
+        // GET /user/preferences
+        void user_preferences(API_HANDLER_ARGS) {
+            // TODO @incomplete auth middleware
+            const auto target_username = req->getParameter("user_username");
+
+            Json::Value json;
+
+            if(target_username.empty()) {
+                json["error"] = true;
+                json["error_message"] = "Please, provide either target's `user_username` or `user_id`.";
+
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                resp->setStatusCode(drogon::HttpStatusCode::k412PreconditionFailed);
+
+                api_callback(resp);
+                return;
+            }
+
+            // Get the y_session cookie's value
+            auto session_cookie = req->getCookie("y_session");
+        
+            // Get the current user
+            auto user_session_result = User::get_user_from_session(session_cookie.c_str(), req);
+            const auto current_user = std::get<0>(user_session_result);
+            const auto current_user_error = std::get<1>(user_session_result);
+
+            if(!current_user_error.is_ok()) {
+                // TODO? Send an expired y_session cookie on error?
+
+                json["error"] = true;
+                json["error_message"] = current_user_error.explanation_user;
+
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
+
+                api_callback(resp);
+                return;
+            }
+
+            auto target_user_result = User::get_by_username(target_username.c_str());
+            const auto target_user = std::get<0>(target_user_result);
+            const auto target_user_error = std::get<1>(target_user_result);
+
+            if(!target_user_error.is_ok()) {
+                RESULTS_CLEANUP(user_session_result);
+
+                json["error"] = true;
+                json["error_message"] = target_user_error.explanation_user;
+
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                resp->setStatusCode(drogon::HttpStatusCode::k400BadRequest);
+
+                api_callback(resp);
+                return;
+            }
+
+            // You must have specific rights in order to view someone's preferences.
+            // Check if client is trying to query their own preferences, or someone else's
+            
+            if(target_user.id != current_user.id) {
+                RESULTS_CLEANUP(user_session_result);
+                RESULTS_CLEANUP(target_user_result);
+
+                json["error"] = true;
+                json["error_message"] = "You do not have permission to view someone else's preferences.";
+
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
+
+                api_callback(resp);
+                return;
+            }
+
+            // Client has permissions
+
+            // Get target user's sessions
+            auto user_sessions_result = User::get_user_sessions(current_user.id);
+            const auto user_sessions = std::get<0>(user_sessions_result);
+            const auto user_sessions_error = std::get<1>(user_sessions_result);
+
+            if(!user_sessions_error.is_ok()) {
+                RESULTS_CLEANUP(user_session_result);
+                RESULTS_CLEANUP(target_user_result);
+
+                // TODO @DRY
+                json["error"] = true;
+                json["error_message"] = user_sessions_error.explanation_user;
+
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                resp->setStatusCode(drogon::HttpStatusCode::k500InternalServerError);
+
+                api_callback(resp);
+                return;
+            }
+
+            // TODO @incomplete get the actual preferences
+
+            json["success"] = true;
+            Json::Value sessions_json;
+
+            int sessions_n = user_sessions.size();
+
+            int i = 0;
+            for(auto session : user_sessions) {
+                Json::Value session_json;
+
+                session_json["session_id"] = session.session_id;
+                session_json["device"] = session.device;
+                session_json["current_ip"] = session.current_ip;
+                session_json["ip_range"] = session.ip_range;
+                session_json["valid_until"] = session.valid_until.secondsSinceEpoch();
+
+                sessions_json[i] = session_json;
+
+                i++;
+            }
+
+            json["user_sessions"] = sessions_json;
+
+            auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+            api_callback(resp);
+
+            RESULTS_CLEANUP(user_sessions_result);
+            RESULTS_CLEANUP(target_user_result);
+            RESULTS_CLEANUP(user_session_result);
+        }
+
         // POST /user/create
         void user_create(API_HANDLER_ARGS) {
             auto body = req->getParameters();
