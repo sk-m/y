@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdexcept>
 #include <string>
 #include <functional>
@@ -13,12 +15,15 @@ struct Status {
     inline bool is_ok() const { return contextual_error_code == 0; };
 };
 
-template <typename T>
-struct Result {
-    T data;
+struct _InternalResultFields {
     Status status;
 
     inline bool is_ok() const { return status.is_ok(); };
+};
+
+template <typename T>
+struct Result: _InternalResultFields {
+    T data;
 
     // Constructors
 
@@ -58,6 +63,44 @@ struct CleanableResult: Result<T> {
     }
 
     CleanableResult() = default;
+};
+
+/**
+ * @brief (for use in an api handler) Respond with an error (non-200 status code)
+ * 
+ * @param result Result that has reported an error. We'll get the error message from it
+ * @param status_code HTTP status code that will be used in the response
+ * @param api_callback drogon's callback function, provided by the route handler
+ */
+void send_error(_InternalResultFields result, drogon::HttpStatusCode status_code, std::function<void (const drogon::HttpResponsePtr &)> &api_callback) {
+    Json::Value json;
+
+    json["error"] = true;
+    json["error_message"] = result.status.explanation_user;
+
+    auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+    resp->setStatusCode(status_code);
+
+    api_callback(resp);
+};
+
+/**
+ * @brief (for use in an api handler) Respond with an error (non-200 status code)
+ * 
+ * @param error_message Error message
+ * @param status_code HTTP status code that will be used in the response
+ * @param api_callback drogon's callback function, provided by the route handler
+ */
+void send_error(const char* error_message, drogon::HttpStatusCode status_code, std::function<void (const drogon::HttpResponsePtr &)> &api_callback) {
+    Json::Value json;
+
+    json["error"] = true;
+    json["error_message"] = error_message;
+
+    auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+    resp->setStatusCode(status_code);
+
+    api_callback(resp);
 };
 
 constexpr char _hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7',

@@ -11,6 +11,8 @@
 #include "db.hpp"
 #include "util.cpp"
 
+#define INSANELY_INSECURE_SCARY_FLAG_DO_NOT_EVER_ENABLE 0
+
 // TODO @check is this ok? Should we increase/decrease these numbers?
 #define PASSWORD_SALT_SIZE_BYTES 64
 #define PASSWORD_KEY_SIZE_BYTES 64
@@ -189,24 +191,29 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
 
     auto session = session_record.item;
 
-    // Transform hex strings into byte arrays
-    auto cleartext_token_buffer = hex_to_string(session_cleartext_token);
-    auto db_hash = hex_to_string(session.token_hash);
-    auto db_salt = hex_to_string(session.token_salt);
+    #if INSANELY_INSECURE_SCARY_FLAG_DO_NOT_EVER_ENABLE
+        const auto session_token_valid = true;
+        std::cout << "!!! Using INSANELY_INSECURE_SCARY_FLAG_DO_NOT_EVER_ENABLE !!!\n";
+    #else
+        // Transform hex strings into byte arrays
+        auto cleartext_token_buffer = hex_to_string(session_cleartext_token);
+        auto db_hash = hex_to_string(session.token_hash);
+        auto db_salt = hex_to_string(session.token_salt);
 
-    // Hash the cleartext token from the cookie
-    // TODO @performance i think using pbkdf2 for session tokens is a bit too much, maybe just use hmac?
-    unsigned char session_token_hash_out_raw[64];
+        // Hash the cleartext token from the cookie
+        // TODO @performance i think using pbkdf2 for session tokens is a bit too much, maybe just use hmac?
+        unsigned char session_token_hash_out_raw[64];
 
-    fastpbkdf2_hmac_sha512((const unsigned char*)cleartext_token_buffer.c_str(), 64,
-                           (const unsigned char*)db_salt.c_str(), 64,
-                           session.token_iterations,
-                           session_token_hash_out_raw, 64);
+        fastpbkdf2_hmac_sha512((const unsigned char*)cleartext_token_buffer.c_str(), 64,
+                            (const unsigned char*)db_salt.c_str(), 64,
+                            session.token_iterations,
+                            session_token_hash_out_raw, 64);
 
-    session_token_hash_out_raw[64] = '\0';
+        session_token_hash_out_raw[64] = '\0';
 
-    // Compare the hash we have just created to the hash in the database
-    const auto session_token_valid = strncmp(reinterpret_cast<const char*>(session_token_hash_out_raw), db_hash.c_str(), 64) == 0;
+        // Compare the hash we have just created to the hash in the database
+        const auto session_token_valid = strncmp(reinterpret_cast<const char*>(session_token_hash_out_raw), db_hash.c_str(), 64) == 0;
+    #endif
 
     if(!session_token_valid) {
         PQclear(session_record._result);

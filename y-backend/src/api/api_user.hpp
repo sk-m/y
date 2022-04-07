@@ -69,21 +69,12 @@ namespace API_User {
             // Get some user info from the session
             auto user_session_res = User::get_user_from_session(session_cookie.c_str(), req);
 
-            Json::Value json;
-
             if(!user_session_res.is_ok()) {
                 // TODO? Send an expired y_session cookie on error?
-
-                json["error"] = true;
-                json["error_message"] = user_session_res.status.explanation_user;
-
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
-
-                api_callback(resp);
-                return;
+                return send_error(user_session_res, drogon::HttpStatusCode::k403Forbidden, api_callback);
             }
 
+            Json::Value json;
             json["success"] = true;
             json["current_user"]["user_id"] = user_session_res.data.id;
             json["current_user"]["user_username"] = user_session_res.data.username;
@@ -99,17 +90,12 @@ namespace API_User {
             // TODO @incomplete auth middleware
             const auto target_username = req->getParameter("user_username");
 
-            Json::Value json;
-
             if(target_username.empty()) {
-                json["error"] = true;
-                json["error_message"] = "Please, provide either target's `user_username` or `user_id`.";
-
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                resp->setStatusCode(drogon::HttpStatusCode::k412PreconditionFailed);
-
-                api_callback(resp);
-                return;
+                return send_error(
+                    "Please, provide either target's `user_username` or `user_id`.",
+                    drogon::HttpStatusCode::k412PreconditionFailed,
+                    api_callback
+                );
             }
 
             // Get the y_session cookie's value
@@ -122,14 +108,7 @@ namespace API_User {
             if(!user_session_res.is_ok()) {
                 // TODO? Send an expired y_session cookie on error?
 
-                json["error"] = true;
-                json["error_message"] = user_session_res.status.explanation_user;
-
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
-
-                api_callback(resp);
-                return;
+                return send_error(user_session_res, drogon::HttpStatusCode::k403Forbidden, api_callback);
             }
 
             auto target_user_res = User::get_by_username(target_username.c_str());
@@ -138,14 +117,7 @@ namespace API_User {
             if(!target_user_res.is_ok()) {
                 user_session_res.cleanup();
 
-                json["error"] = true;
-                json["error_message"] = target_user_res.status.explanation_user;
-
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                resp->setStatusCode(drogon::HttpStatusCode::k400BadRequest);
-
-                api_callback(resp);
-                return;
+                return send_error(target_user_res, drogon::HttpStatusCode::k400BadRequest, api_callback);
             }
 
             // You must have specific rights in order to view someone's preferences.
@@ -155,14 +127,11 @@ namespace API_User {
                 user_session_res.cleanup();
                 target_user_res.cleanup();
 
-                json["error"] = true;
-                json["error_message"] = "You do not have permission to view someone else's preferences.";
-
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
-
-                api_callback(resp);
-                return;
+                return send_error(
+                    "You do not have permission to view someone else's preferences.",
+                    drogon::HttpStatusCode::k403Forbidden,
+                    api_callback
+                );
             }
 
             // Client has permissions
@@ -175,20 +144,14 @@ namespace API_User {
                 user_session_res.cleanup();
                 target_user_res.cleanup();
 
-                // TODO @DRY
-                json["error"] = true;
-                json["error_message"] = user_sessions_res.status.explanation_user;
-
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                resp->setStatusCode(drogon::HttpStatusCode::k500InternalServerError);
-
-                api_callback(resp);
-                return;
+                return send_error(user_sessions_res, drogon::HttpStatusCode::k500InternalServerError, api_callback);
             }
 
             // TODO @incomplete get the actual preferences
 
+            Json::Value json;
             json["success"] = true;
+
             Json::Value sessions_json;
 
             int sessions_n = user_sessions_vec.size();
@@ -230,15 +193,11 @@ namespace API_User {
                 p_username == body.end() ||
                 p_password == body.end()
             ) {
-                Json::Value json;
-                json["error"] = true;
-                json["error_message"] = "Some or all of required parameters were not provided - `username` and `password`.";
-
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                resp->setStatusCode(drogon::HttpStatusCode::k412PreconditionFailed);
-
-                api_callback(resp);
-                return;
+                return send_error(
+                    "Some or all of required parameters were not provided - `username` and `password`.",
+                    drogon::HttpStatusCode::k412PreconditionFailed,
+                    api_callback
+                );
             }
 
             const auto user_username = p_username->second.c_str();
@@ -288,15 +247,11 @@ namespace API_User {
                 p_username == body.end() ||
                 p_password == body.end()
             ) {
-                Json::Value json;
-                json["error"] = true;
-                json["error_message"] = "Some or all of required parameters were not provided - `username` and `password`.";
-
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                resp->setStatusCode(drogon::HttpStatusCode::k412PreconditionFailed);
-
-                api_callback(resp);
-                return;
+                return send_error(
+                    "Some or all of required parameters were not provided - `username` and `password`.",
+                    drogon::HttpStatusCode::k412PreconditionFailed,
+                    api_callback
+                );
             }
 
             // Compare the passwords
@@ -333,16 +288,7 @@ namespace API_User {
             auto user_session = user_session_res.data;
 
             if(!password_cmp_res.is_ok()) {
-                Json::Value json;
-                json["error"] = true;
-                json["error_message"] = user_session_res.status.explanation_user;
-
-                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-                resp->setStatusCode(drogon::HttpStatusCode::k400BadRequest);
-
-                api_callback(resp);
-
-                return;
+                return send_error(password_cmp_res, drogon::HttpStatusCode::k400BadRequest, api_callback);
             }
 
             // Create a session cookie
