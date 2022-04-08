@@ -662,6 +662,8 @@
     height: 100vh;
     overflow: auto;
 
+    max-width: 300px;
+
     border-right: 1px solid var(--color-gray-04);
 }
 
@@ -697,6 +699,8 @@
 
 #domain-aside-container > .aside > .content > .domain-header > .content {
     margin-left: 1em;
+    
+    word-break: break-word;
 }
 
 #domain-aside-container > .aside > .content > .domain-header > .content > .header {
@@ -795,14 +799,23 @@
 
 #domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
 
-    margin: 0.2em 0;
+    margin: 0.4em 0;
 
     font-size: 0.8em;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .dot {
+#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .key {
+    display: flex;
+    align-items: center;
+    
+    font-weight: 500;
+
+    margin-right: 0.4em;
+}
+
+#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .key > .dot {
     width: 4px;
     height: 4px;
 
@@ -812,14 +825,10 @@
     border-radius: 50%;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .key {
-    font-weight: 500;
-
-    margin-right: 0.4em;
-}
-
 #domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .value {
     font-weight: 350;
+
+    word-break: break-all;
 }
 
 #domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .value.bool-false {

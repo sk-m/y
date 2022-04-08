@@ -57,8 +57,10 @@ const DomainAsideMenu: Component<{
                                     <For each={ props.target_info }>
                                         { item => (
                                             <div className="item">
-                                                <div className="dot"></div>
-                                                <div className="key">{ item.key }:</div>
+                                                <div className="key">
+                                                    <div className="dot"></div>
+                                                    { item.key }:
+                                                </div>
                                                 <div classList={{
                                                     value: true,
                                                     "bool-true": item.value === (true && !item.inverse_bool),
