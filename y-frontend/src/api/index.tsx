@@ -6,6 +6,13 @@ const API_URL = CONFIG.api_url;
 
 // TODO use xhr instead
 export default {
+    user_preferences_by_username: async (user_username: string) => {
+        return window.fetch(API_URL + `/user/preferences?user_username=${ user_username }`, {
+            method: "GET",
+            credentials: "include",
+        });
+    },
+
     user_me: async () => {
         return window.fetch(API_URL + "/user/me", {
             method: "GET",

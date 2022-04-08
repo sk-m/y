@@ -1,120 +1,171 @@
-import { Component } from "solid-js";
+import { Component, createEffect, createResource, createSignal, Match, Show, Switch } from "solid-js";
 import Panel from "../../components/Panel";
 import EmailPanel from "./preferences-page/EmailPanel";
 import PasswordPanel from "./preferences-page/PasswordPanel";
 
+import API from "../../api";
+import PageObstructionScreen from "../../components/PageObstructionScreen";
+import { useParams } from "solid-app-router";
+
 // TODO @cleanup Move panels into separate components
-const UserDomainPreferencesPage: Component<{
-    user_username: string
-}> = props => {
+const UserDomainPreferencesPage: Component = () => {
+    const params = useParams();
+
+    const [isErrorRetryable, setIsErrorRetryable] = createSignal(true);
+
+    const userPreferencesFetcher = (user_username: string) => {
+        return new Promise((resolve, reject) => {
+            API.user_preferences_by_username(user_username)
+            .then(res => {
+                res.json()
+                .then(json => {
+                    if(json.success) {
+                        resolve(json.user_preferences);
+                    } else {
+                        // We do not set it back to true at the beginning of this function deliberately, this is not a bug!
+                        // As soon as it gets set to false - it should stay false.
+                        setIsErrorRetryable(false);
+
+                        reject(json.error_message);
+                    }
+                })
+                .catch(() => {
+                    reject("Some error occured. Please, try again in a moment.");
+                });
+            })
+            .catch(() => {
+                reject("Some error occured. Please, try again in a moment.");
+            });
+        });
+    }
+
+    const [userPreferences, { refetch: refetchUserPreferences }] = createResource(params.user_name, userPreferencesFetcher);
+   
     return (
-        <div id="user-preferences-page" className="ui-domain-page">
-            <Panel
-                classList={{ "user-profile-panel": true }}
+        <Switch>
+            <Match when={ userPreferences.loading }>
+                <PageObstructionScreen type="loading" />
+            </Match>
 
-                // panel_actions={[
-                //     {
-                //         name: "edit_profile",
-                //         text: "Edit profile",
-                //         action: () => { return false }
-                //     }
-                // ]}
-            >
-                <div className="sides">
-                    <div className="left">
-                        <div className="avatar-container">
-                            <div className="avatar" style={{ "background-image": "url(https://images.unsplash.com/photo-1604076913837-52ab5629fba9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80)" }}></div>
-                        </div>
-                    </div>
-                    <div className="right">
-                        <div className="username">{ props.user_username }</div>
-                        <div className="email-address">max@google.com</div>
+            <Match when={ userPreferences.error || userPreferences() === false }>
+                <PageObstructionScreen
+                    type="error"
 
-                        <div className="section-name">
-                            <div className="text">User groups</div>
-                            {/* <div className="authority-bubble authority-high"></div> */}
+                    error_text={ userPreferences.error }
+                    on_retry={ isErrorRetryable () ? refetchUserPreferences : undefined }
+                />
+            </Match>
+
+            <Match when={ userPreferences() }>
+                <div id="user-preferences-page" className="ui-domain-page">
+                    <Panel
+                        classList={{ "user-profile-panel": true }}
+
+                        // panel_actions={[
+                        //     {
+                        //         name: "edit_profile",
+                        //         text: "Edit profile",
+                        //         action: () => { return false }
+                        //     }
+                        // ]}
+                    >
+                        <div className="sides">
+                            <div className="left">
+                                <div className="avatar-container">
+                                    <div className="avatar" style={{ "background-image": "url(https://images.unsplash.com/photo-1604076913837-52ab5629fba9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80)" }}></div>
+                                </div>
+                            </div>
+                            <div className="right">
+                                <div className="username">{ params.user_name }</div>
+                                <div className="email-address">max@google.com</div>
+
+                                <div className="section-name">
+                                    <div className="text">User groups</div>
+                                    {/* <div className="authority-bubble authority-high"></div> */}
+                                </div>
+                                <div className="user-groups">
+                                    <div className="group">Confirmed</div>
+                                    <div className="group">Clerk</div>
+                                </div>
+
+                                {/* <div className="section-name">
+                                    <div className="text">Bio</div>
+                                </div>
+                                <div className="bio">
+                                    1
+                                    <br /><br />
+                                    2
+                                    <br /><br />
+                                    3
+                                    <br />
+                                    4
+                                </div> */}
+                            </div>
                         </div>
-                        <div className="user-groups">
-                            <div className="group">Confirmed</div>
-                            <div className="group">Clerk</div>
+                    </Panel>
+
+                    <PasswordPanel />
+
+                    <EmailPanel />
+                
+                    <Panel
+                        classList={{ "user-sessions-panel": true }}
+
+                        // panel_info_items={[
+                        //     { icon_name: "devices", text: "You currently have 3 active sessions" }
+                        // ]}
+                    >
+                        <div className="h1">
+                            <div className="line"></div>
+                            <div className="header">Active Sessions</div>
                         </div>
 
-                        {/* <div className="section-name">
-                            <div className="text">Bio</div>
+                        <div className="subheader blue">
+                            <div className="line"></div>
+                            {/* <div className="line w-icon">
+                                <span class="material-icons">lightbulb</span>
+                            </div> */}
+                            <div className="text">You currently have 3 active sessions</div>
                         </div>
-                        <div className="bio">
-                            1
-                            <br /><br />
-                            2
-                            <br /><br />
-                            3
-                            <br />
-                            4
-                        </div> */}
-                    </div>
+
+                        <p className="ui-text">This is a list of sessions that are currently active on your account. If you see something you don't recognize — immediately destroy the session and change your password.</p>
+
+                        <div className="sessions-list">
+                            <div className="session">
+                                <div className="left">
+                                    <div className="client-info">Google Chrome 99.1.1</div>
+                                    <div className="device-info">Windows 10, 10.0</div>
+                                    <div className="other-info">Ukraine · 11.22.33.143</div>
+                                </div>
+                                <div className="right">
+                                    <button className="ui-button t-primary tc-red">Destroy</button>
+                                </div>
+                            </div>
+                            <div className="session">
+                                <div className="left">
+                                    <div className="client-info">Google Chrome 99.1.1</div>
+                                    <div className="device-info">Windows 10, 10.0</div>
+                                    <div className="other-info">Ukraine · 11.22.33.143</div>
+                                </div>
+                                <div className="right">
+                                    <button className="ui-button t-primary tc-red">Destroy</button>
+                                </div>
+                            </div>
+                            <div className="session">
+                                <div className="left">
+                                    <div className="client-info">Google Chrome 99.1.1</div>
+                                    <div className="device-info">Windows 10, 10.0</div>
+                                    <div className="other-info">Ukraine · 11.22.33.143</div>
+                                </div>
+                                <div className="right">
+                                    <button className="ui-button t-primary tc-red">Destroy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </Panel>
                 </div>
-            </Panel>
-
-            <PasswordPanel />
-
-            <EmailPanel />
-           
-            <Panel
-                classList={{ "user-sessions-panel": true }}
-
-                // panel_info_items={[
-                //     { icon_name: "devices", text: "You currently have 3 active sessions" }
-                // ]}
-            >
-                <div className="h1">
-                    <div className="line"></div>
-                    <div className="header">Active Sessions</div>
-                </div>
-
-                <div className="subheader blue">
-                    <div className="line"></div>
-                    {/* <div className="line w-icon">
-                        <span class="material-icons">lightbulb</span>
-                    </div> */}
-                    <div className="text">You currently have 3 active sessions</div>
-                </div>
-
-                <p className="ui-text">This is a list of sessions that are currently active on your account. If you see something you don't recognize — immediately destroy the session and change your password.</p>
-
-                <div className="sessions-list">
-                    <div className="session">
-                        <div className="left">
-                            <div className="client-info">Google Chrome 99.1.1</div>
-                            <div className="device-info">Windows 10, 10.0</div>
-                            <div className="other-info">Ukraine · 11.22.33.143</div>
-                        </div>
-                        <div className="right">
-                            <button className="ui-button t-primary tc-red">Destroy</button>
-                        </div>
-                    </div>
-                    <div className="session">
-                        <div className="left">
-                            <div className="client-info">Google Chrome 99.1.1</div>
-                            <div className="device-info">Windows 10, 10.0</div>
-                            <div className="other-info">Ukraine · 11.22.33.143</div>
-                        </div>
-                        <div className="right">
-                            <button className="ui-button t-primary tc-red">Destroy</button>
-                        </div>
-                    </div>
-                    <div className="session">
-                        <div className="left">
-                            <div className="client-info">Google Chrome 99.1.1</div>
-                            <div className="device-info">Windows 10, 10.0</div>
-                            <div className="other-info">Ukraine · 11.22.33.143</div>
-                        </div>
-                        <div className="right">
-                            <button className="ui-button t-primary tc-red">Destroy</button>
-                        </div>
-                    </div>
-                </div>
-            </Panel>
-        </div>
+            </Match>
+        </Switch>
     )
 }
 

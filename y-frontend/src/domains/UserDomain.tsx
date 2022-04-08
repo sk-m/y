@@ -65,7 +65,7 @@ const UserDomain: Component = props => {
             </DomainAsideMenu>
             
             <Routes>
-                <Route path="/preferences" element={ <UserDomainPreferencesPage user_username={ params.user_name } /> }></Route>
+                <Route path="/preferences" component={ UserDomainPreferencesPage }></Route>
             </Routes>
         </div>
     )
