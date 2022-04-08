@@ -106,6 +106,9 @@ namespace DB {
 
         Record(PGresult* db_result, std::function<T(PGresult* db_result, int n)> process_record) {
             _prepare_record(this, db_result);
+
+            if(!ok) return;
+
             item = process_record(db_result, 0);
         }
 
