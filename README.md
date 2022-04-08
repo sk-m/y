@@ -4,13 +4,13 @@ An experimental [MediaWiki](https://www.mediawiki.org/wiki/MediaWiki)-like engin
 
 # Why?
 
-This question is at the heart of this project. I mean, just read it's name.
+This question is at the heart of the project. I mean, just read it's name.
 
-On a serious note, let's be honest - there is no reason for this project to exist, at least in it's current state. I'm just interested in the idea, so *why* not bring it to life? Who knows, maybe this will grow into something beautiful in the future.
+On a serious note, let's be honest - there is no reason for this project to exist, at least in it's current state. I'm just interested in the idea, so *why* not bring it to life? Who knows, maybe it will grow into something beautiful in the future.
 
 # Current state
 
-**This project is currently in the *very* early stages of development**. The only reason for running the project on your device would be research purposes. But if you do get an itch to try it - please, let me know how it goes, I would love to get some feedback.
+**This project is currently in the *very* early stages of development**. The only reason for running it on your device would be research purposes. But if you do get an itch to try it - please, let me know how it goes, I would love to get some feedback.
 
 Here's a non-exhaustive list of some major features I'd like to add:
 
@@ -20,7 +20,7 @@ Here's a non-exhaustive list of some major features I'd like to add:
 * App-wide logging & reporting (?).
 * ...
 
-Because this is not serious project, I do allow myself to add new ideas to this list. I am aware of [feature/scope creep](https://en.wikipedia.org/wiki/Feature_creep), don't worry ;).
+Because this is not a serious project, I do allow myself to add new ideas to this list. I am aware of [feature/scope creep](https://en.wikipedia.org/wiki/Feature_creep), don't worry ;).
 
 Here's a list of what this project will definitely *not* be, even though it might look like that's what I'm going for:
 
@@ -35,7 +35,7 @@ Please, visit the [Project](https://github.com/users/sk-m/projects/1) page to ge
 
 # Building and running
 
-Please, visit the `y-backend` and `y-frontend` folders for a guide on how to run this thing. It should be pretty straightforward, the frontend is just a simple Solid.js project , and, for the backend, we are using CMake without any crazy dependencies.
+Please, visit the `y-backend` and `y-frontend` folders for a guide on how to run this thing. It should be pretty straightforward - the frontend is just a simple Solid.js project and for the backend we are using CMake without any crazy dependencies.
 
 # Footnotes
 
