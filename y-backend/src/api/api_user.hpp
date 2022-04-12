@@ -8,6 +8,25 @@
 #include "../user.hpp"
 
 namespace API_User {
+    inline drogon::Cookie create_session_cookie(User::UserSession &user_session) {
+        auto session_cookie = drogon::Cookie();
+
+        // TODO @incomplete admins should be able to enable Secure flag
+        // > session_cookie.setSecure(true);
+
+        // TODO @incomplete domain
+        // session_cookie.setDomain("something.local");
+        
+        session_cookie.setKey("y_session");
+        session_cookie.setValue(fmt::format("{}:{}", user_session.session_id, user_session.token_cleartext));
+        session_cookie.setExpiresDate(user_session.valid_until);
+        session_cookie.setHttpOnly(true);
+        session_cookie.setSameSite(drogon::Cookie::SameSite::kStrict);
+        session_cookie.setPath("/");
+
+        return session_cookie;
+    }
+
     namespace Handler {
         // POST /user/logout
         void user_logout(API_HANDLER_ARGS) {
@@ -204,6 +223,7 @@ namespace API_User {
 
             // Create a new user
             const auto new_user_res = User::user_create(user_username, p_password->second.c_str());
+            const auto user_id = new_user_res.data;
 
             if(!new_user_res.is_ok()) {
                 Json::Value json;
@@ -225,14 +245,25 @@ namespace API_User {
                 return;
             }
 
-            // Success
+            // User created. Create a session for the new user
+            auto user_session_res = User::session_create(user_id, req);
+            auto user_session = user_session_res.data;
+
+            if(!user_session_res.is_ok()) {
+                return send_error(user_session_res, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+            }
+
             Json::Value json;
             json["success"] = true;
             json["new_user"]["user_id"] = new_user_res.data;
             json["new_user"]["user_username"] = user_username;
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+            resp->addCookie(create_session_cookie(user_session));
+
             api_callback(resp);
+
+            user_session_res.cleanup();
         }
 
         // POST /user/login
@@ -286,27 +317,7 @@ namespace API_User {
             // Login was successfull, create a new session for this user
             auto user_session_res = User::session_create(user.id, req);
             auto user_session = user_session_res.data;
-
-            if(!password_cmp_res.is_ok()) {
-                return send_error(password_cmp_res, drogon::HttpStatusCode::k400BadRequest, api_callback);
-            }
-
-            // Create a session cookie
-            auto session_cookie = drogon::Cookie();
-
-            // TODO @incomplete admins should be able to enable Secure flag
-            // > session_cookie.setSecure(true);
-
-            // TODO @incomplete domain
-            // session_cookie.setDomain("something.local");
-            
-            session_cookie.setKey("y_session");
-            session_cookie.setValue(fmt::format("{}:{}", user_session.session_id, user_session.token_cleartext));
-            session_cookie.setExpiresDate(user_session.valid_until);
-            session_cookie.setHttpOnly(true);
-            session_cookie.setSameSite(drogon::Cookie::SameSite::kStrict);
-            session_cookie.setPath("/");
-
+           
             Json::Value json;
             json["success"] = true;
 
@@ -315,7 +326,7 @@ namespace API_User {
             json["current_user"]["user_username"] = user.username;
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
-            resp->addCookie(session_cookie);
+            resp->addCookie(create_session_cookie(user_session));
 
             api_callback(resp);
 
