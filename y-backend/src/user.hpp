@@ -349,8 +349,10 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, c
                             std::stoi(db_iterations_str),
                             hash_out_raw, PASSWORD_KEY_SIZE_BYTES);
 
+        hash_out_raw[PASSWORD_KEY_SIZE_BYTES] = '\0';
+
         // Compare the hashes
-        const auto password_correct = strcmp(db_hash.c_str(), reinterpret_cast<char*>(hash_out_raw)) == 0;
+        const auto password_correct = strncmp(reinterpret_cast<char*>(hash_out_raw), db_hash.c_str(), PASSWORD_KEY_SIZE_BYTES) == 0;
         
         if(password_correct) {
             return CleanableResult(user, DEFAULT_CLEANUP_FUNC(user_record));
@@ -445,10 +447,10 @@ Result<unsigned int> User::user_create(const char* username, const char* passwor
 
             // TODO @log
             std::cout << "Could not create a user from User::user_create()\n" << error_message;
+        
+            PQclear(result);
+            return Result((unsigned int)0, Status { ErrorCode::INTERNAL, "Error creating a new user." });
         }
-
-        PQclear(result);
-        return Result((unsigned int)0, Status { ErrorCode::INTERNAL, "Error creating a new user." });
     }
 
     // Get the user id
