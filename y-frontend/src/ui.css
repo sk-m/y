@@ -21,6 +21,10 @@
     border-radius: 6px;
 }
 
+.ui-panel-container:last-child {
+    margin-bottom: 2em;
+}
+
 .ui-panel-container > .ui-panel {
     position: relative;
     z-index: 2;

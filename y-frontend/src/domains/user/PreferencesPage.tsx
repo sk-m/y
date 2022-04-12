@@ -1,4 +1,4 @@
-import { Component, createEffect, createResource, createSignal, Match, Show, Switch } from "solid-js";
+import { Component, createResource, createSignal, Match, Switch } from "solid-js";
 import Panel from "../../components/Panel";
 import EmailPanel from "./preferences-page/EmailPanel";
 import PasswordPanel from "./preferences-page/PasswordPanel";
@@ -6,14 +6,15 @@ import PasswordPanel from "./preferences-page/PasswordPanel";
 import API from "../../api";
 import PageObstructionScreen from "../../components/PageObstructionScreen";
 import { useParams } from "solid-app-router";
+import SessionsPanel from "./preferences-page/SessionsPanel";
+import { UserPreferences } from "../../interfaces/user";
 
-// TODO @cleanup Move panels into separate components
 const UserDomainPreferencesPage: Component = () => {
     const params = useParams();
 
     const [isErrorRetryable, setIsErrorRetryable] = createSignal(true);
 
-    const userPreferencesFetcher = (user_username: string) => {
+    const userPreferencesFetcher = (user_username: string): Promise<UserPreferences> => {
         return new Promise((resolve, reject) => {
             API.user_preferences_by_username(user_username)
             .then(res => {
@@ -40,14 +41,14 @@ const UserDomainPreferencesPage: Component = () => {
     }
 
     const [userPreferences, { refetch: refetchUserPreferences }] = createResource(params.user_name, userPreferencesFetcher);
-   
+
     return (
         <Switch>
             <Match when={ userPreferences.loading }>
                 <PageObstructionScreen type="loading" />
             </Match>
 
-            <Match when={ userPreferences.error || userPreferences() === false }>
+            <Match when={ userPreferences.error || userPreferences() === undefined }>
                 <PageObstructionScreen
                     type="error"
 
@@ -108,61 +109,9 @@ const UserDomainPreferencesPage: Component = () => {
 
                     <EmailPanel />
                 
-                    <Panel
-                        classList={{ "user-sessions-panel": true }}
-
-                        // panel_info_items={[
-                        //     { icon_name: "devices", text: "You currently have 3 active sessions" }
-                        // ]}
-                    >
-                        <div className="h1">
-                            <div className="line"></div>
-                            <div className="header">Active Sessions</div>
-                        </div>
-
-                        <div className="subheader blue">
-                            <div className="line"></div>
-                            {/* <div className="line w-icon">
-                                <span class="material-icons">lightbulb</span>
-                            </div> */}
-                            <div className="text">You currently have 3 active sessions</div>
-                        </div>
-
-                        <p className="ui-text">This is a list of sessions that are currently active on your account. If you see something you don't recognize — immediately destroy the session and change your password.</p>
-
-                        <div className="sessions-list">
-                            <div className="session">
-                                <div className="left">
-                                    <div className="client-info">Google Chrome 99.1.1</div>
-                                    <div className="device-info">Windows 10, 10.0</div>
-                                    <div className="other-info">Ukraine · 11.22.33.143</div>
-                                </div>
-                                <div className="right">
-                                    <button className="ui-button t-primary tc-red">Destroy</button>
-                                </div>
-                            </div>
-                            <div className="session">
-                                <div className="left">
-                                    <div className="client-info">Google Chrome 99.1.1</div>
-                                    <div className="device-info">Windows 10, 10.0</div>
-                                    <div className="other-info">Ukraine · 11.22.33.143</div>
-                                </div>
-                                <div className="right">
-                                    <button className="ui-button t-primary tc-red">Destroy</button>
-                                </div>
-                            </div>
-                            <div className="session">
-                                <div className="left">
-                                    <div className="client-info">Google Chrome 99.1.1</div>
-                                    <div className="device-info">Windows 10, 10.0</div>
-                                    <div className="other-info">Ukraine · 11.22.33.143</div>
-                                </div>
-                                <div className="right">
-                                    <button className="ui-button t-primary tc-red">Destroy</button>
-                                </div>
-                            </div>
-                        </div>
-                    </Panel>
+                    <SessionsPanel
+                        user_sessions={ userPreferences()!.user_sessions || [] }
+                    />
                 </div>
             </Match>
         </Switch>

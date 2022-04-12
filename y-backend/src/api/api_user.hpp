@@ -149,10 +149,9 @@ namespace API_User {
 
             // TODO @incomplete get the actual preferences
 
-            Json::Value json;
-            json["success"] = true;
+            Json::Value json, user_preferences_json, sessions_json;
 
-            Json::Value sessions_json;
+            json["success"] = true;
 
             int sessions_n = user_sessions_vec.size();
 
@@ -161,17 +160,18 @@ namespace API_User {
                 Json::Value session_json;
 
                 session_json["session_id"] = session.session_id;
-                session_json["device"] = session.device;
-                session_json["current_ip"] = session.current_ip;
-                session_json["ip_range"] = session.ip_range;
-                session_json["valid_until"] = session.valid_until.secondsSinceEpoch();
+                session_json["session_device"] = session.device;
+                session_json["session_current_ip"] = session.current_ip;
+                session_json["session_ip_range"] = session.ip_range;
+                session_json["session_valid_until"] = session.valid_until.secondsSinceEpoch();
 
                 sessions_json[i] = session_json;
 
                 i++;
             }
 
-            json["user_sessions"] = sessions_json;
+            user_preferences_json["user_sessions"] = sessions_json;
+            json["user_preferences"] = user_preferences_json;
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
