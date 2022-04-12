@@ -1,4 +1,4 @@
-import { Component, createResource, createSignal, Match, Switch } from "solid-js";
+import { Accessor, Component, createResource, createSignal, Match, ResourceFetcherInfo, Switch } from "solid-js";
 import Panel from "../../components/Panel";
 import EmailPanel from "./preferences-page/EmailPanel";
 import PasswordPanel from "./preferences-page/PasswordPanel";
@@ -8,39 +8,37 @@ import PageObstructionScreen from "../../components/PageObstructionScreen";
 import { useParams } from "solid-app-router";
 import SessionsPanel from "./preferences-page/SessionsPanel";
 import { UserPreferences } from "../../interfaces/user";
+import { cachedFetcher, CacheableDomainProps } from "../../util/domain_util";
 
-const UserDomainPreferencesPage: Component = () => {
+const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>> = props => {
     const params = useParams();
 
     const [isErrorRetryable, setIsErrorRetryable] = createSignal(true);
 
-    const userPreferencesFetcher = (user_username: string): Promise<UserPreferences> => {
+    const userPreferencesFetcher = async (user_username: string): Promise<UserPreferences> => {
         return new Promise((resolve, reject) => {
             API.user_preferences_by_username(user_username)
-            .then(res => {
-                res.json()
-                .then(json => {
-                    if(json.success) {
-                        resolve(json.user_preferences);
-                    } else {
-                        // We do not set it back to true at the beginning of this function deliberately, this is not a bug!
-                        // As soon as it gets set to false - it should stay false.
-                        setIsErrorRetryable(false);
+            .then(res => res.json())
+            .then(json => {
+                if(json.success) {
+                    resolve(json.user_preferences);
+                } else {
+                    // We deliberately do not set it back to true at the beginning of this function, this is not a bug!
+                    // As soon as it gets set to false - it should stay false.
+                    setIsErrorRetryable(false);
 
-                        reject(json.error_message);
-                    }
-                })
-                .catch(() => {
-                    reject("Some error occured. Please, try again in a moment.");
-                });
+                    reject(json.error_message || "Some error occured. Please, try again in a moment.");
+                }
             })
             .catch(() => {
                 reject("Some error occured. Please, try again in a moment.");
-            });
+            })
         });
     }
 
-    const [userPreferences, { refetch: refetchUserPreferences }] = createResource(params.user_name, userPreferencesFetcher);
+    // const [userPreferences, { refetch: refetchUserPreferences }] = createResource(params.user_name, userPreferencesFetcher);
+    const [userPreferences, { refetch: refetchUserPreferences }] =
+        createResource(params.user_name, cachedFetcher(props.cache, props.setCache, userPreferencesFetcher));
 
     return (
         <Switch>

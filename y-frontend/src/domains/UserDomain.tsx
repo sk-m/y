@@ -1,4 +1,4 @@
-import { Component } from "solid-js";
+import { Component, createSignal } from "solid-js";
 import { Route, Routes, useParams } from "solid-app-router";
 import DomainAsideMenu from "../components_internal/DomainAsideMenu";
 import AsideMenuLink from "../components/AsideMenuLink";
@@ -6,9 +6,12 @@ import AsideMenuSection from "../components/AsideMenuSection";
 import UserDomainPreferencesPage from "./user/PreferencesPage";
 
 import "./UserDomain.css";
+import { UserPreferences } from "../interfaces/user";
 
 const UserDomain: Component = props => {
     const params = useParams();
+
+    const [preferencesCache, setPreferencesCache] = createSignal<UserPreferences | null>(null);
 
     return (
         <div id="domain-user" className="ui-domain">
@@ -65,7 +68,12 @@ const UserDomain: Component = props => {
             </DomainAsideMenu>
             
             <Routes>
-                <Route path="/preferences" component={ UserDomainPreferencesPage }></Route>
+                <Route path="/preferences" element={
+                    <UserDomainPreferencesPage
+                        cache={ preferencesCache }
+                        setCache={ setPreferencesCache }
+                    />
+                }></Route>
             </Routes>
         </div>
     )
