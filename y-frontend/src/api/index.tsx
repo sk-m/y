@@ -10,21 +10,21 @@ export default {
         return window.fetch(API_URL + `/user/preferences?user_username=${ user_username }`, {
             method: "GET",
             credentials: "include",
-        });
+        }).then(res => res.json());
     },
 
     user_me: async () => {
         return window.fetch(API_URL + "/user/me", {
             method: "GET",
             credentials: "include",
-        });
+        }).then(res => res.json());
     },
 
     logout: async () => {
         return window.fetch(API_URL + "/user/logout", {
             method: "POST",
             credentials: "include",
-        });
+        }).then(res => res.json());
     },
 
     login: async (username: string, password: string) => {
@@ -39,7 +39,7 @@ export default {
                 username,
                 password
             })
-        });
+        }).then(res => res.json());
     },
 
     user_create: async (username: string, password: string) => {
@@ -54,6 +54,6 @@ export default {
                 username,
                 password
             })
-        });
+        }).then(res => res.json());
     }
 }

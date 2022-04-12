@@ -18,7 +18,6 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
     const userPreferencesFetcher = async (user_username: string): Promise<UserPreferences> => {
         return new Promise((resolve, reject) => {
             API.user_preferences_by_username(user_username)
-            .then(res => res.json())
             .then(json => {
                 if(json.success) {
                     resolve(json.user_preferences);
