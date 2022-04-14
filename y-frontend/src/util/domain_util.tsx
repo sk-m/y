@@ -1,4 +1,5 @@
-import { Accessor, createSignal, ResourceFetcherInfo } from "solid-js";
+import { Accessor, createSignal, ResourceFetcherInfo, createResource } from "solid-js";
+import { Resource, ResourceOptions, ResourceSource } from "solid-js/types/reactive/signal";
 
 export interface CacheableDomainProps<T> {
     cache: Accessor<T | null>,
@@ -7,26 +8,35 @@ export interface CacheableDomainProps<T> {
 
 type AsyncResourceFetcher<S, T> = (k: S, info: ResourceFetcherInfo<T>) => Promise<T>;
 
-// TODO @cleanup
 /**
- * Wrapper for a fetcher, used in solid's `createResource()`
+ * Identical to solid's `createResource()` but with a few additions
  * 
- * Use this function if you want to cache the results of the fetcher. `cache_accessor` and `cache_setter` should be recieved
- * from `createSignal()` that was run in the parent domain component.
+ * * If cache is empty, the provided fetcher function will be run. Data, that this fetcher resolves, will be automatically
+ * saved into the cache
+ * * If cache is NOT empty, the provided fetcher function will not even be run. Data from the cache will be used instead 
+ * * `mutate` function will automatically clear the cache
  * 
- * For example, if we are using this function inside the `PreferencesPage` component (user domain), these two parameters should be retrieved
- * from the `UserDomain` component via props.
- * 
- * * If cache does not exist yet, we will run the fetcher and save the object it resolves into the cache signal that should "live" in the
- * parent component.
- * * If cache does exists, we'll use it without even running the fetcher.
- * 
- * @param cache_accessor Cachce accessor (first element returned by `createSignal()`)
- * @param cache_setter Cache setter (second element returned by `createSignal()`)
- * @param fetcher Your fetcher function (what you would have provided for `createResource()`)
+ * @param source solid's `createResource()` `source` argument
+ * @param fetcher solid's `createResource()` `fetcher` argument
+ * @param cache_accessor cache signal accessor
+ * @param cache_setter cache signal setter
+ * @param options solid's `createResource()` `options` argument
  */
-export const cachedFetcher = <S, T>(cache_accessor: Accessor<T>, cache_setter: (p: T) => void, fetcher: AsyncResourceFetcher<S, T>): AsyncResourceFetcher<S, T> => {
-    return (source: S, info: ResourceFetcherInfo<T>) => {
+export const createCachedResource = <T,S>(
+    source: ResourceSource<S>,
+    fetcher: AsyncResourceFetcher<S, T>,
+    cache_accessor: Accessor<T | null>,
+    cache_setter: (p: T | null) => void,
+    options?: ResourceOptions<undefined>
+): [
+    // TODO @refactor align mutate with Setter<T>
+    Resource<T | undefined>,
+    { 
+        mutate: (setter: (prev: T | undefined) => T) => T;
+        refetch: (info?: unknown) => void;
+    }
+] => {
+    const wrapped_fetcher = (source: S, info: ResourceFetcherInfo<T>): T | Promise<T> => {
         return new Promise((resolve, reject) => {
             const cache = cache_accessor();
         
@@ -47,7 +57,16 @@ export const cachedFetcher = <S, T>(cache_accessor: Accessor<T>, cache_setter: (
                 .catch(reject);
             }
         })
+    };
+
+    const [resource, { mutate: _mutate, refetch: refetch }] = createResource(source, wrapped_fetcher, options);
+
+    const mutate = (setter: (prev: T | undefined) => T) => {
+        cache_setter(null);
+        return _mutate(setter);
     }
+
+    return [resource, { mutate, refetch }];
 }
 
 /**

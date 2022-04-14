@@ -8,7 +8,7 @@ import PageObstructionScreen from "../../components/PageObstructionScreen";
 import { useParams } from "solid-app-router";
 import SessionsPanel from "./preferences-page/SessionsPanel";
 import { UserPreferences, UserSession, UserSessionUIState } from "../../interfaces/user";
-import { cachedFetcher, CacheableDomainProps, appendUIStateFields } from "../../util/domain_util";
+import { CacheableDomainProps, appendUIStateFields, createCachedResource } from "../../util/domain_util";
 
 const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>> = props => {
     const params = useParams();
@@ -47,7 +47,7 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
     }
 
     const [userPreferences, { refetch: refetchUserPreferences }] =
-        createResource(params.user_name, cachedFetcher(props.cache, props.setCache, userPreferencesFetcher));
+        createCachedResource(params.user_name, userPreferencesFetcher, props.cache, props.setCache);
 
     return (
         <Switch>
