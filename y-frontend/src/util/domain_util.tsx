@@ -62,7 +62,10 @@ export const createCachedResource = <T,S extends string | number | undefined | n
                     cache_setter([source, d]);
                     resolve(d);
                 })
-                .catch(reject);
+                .catch(e => {
+                    cache_setter([null, undefined]);
+                    reject(e);
+                });
             }
         });
     };
