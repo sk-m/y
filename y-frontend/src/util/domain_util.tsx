@@ -2,9 +2,11 @@ import { Accessor, createSignal, ResourceFetcherInfo, createResource } from "sol
 import { Resource, ResourceOptions, ResourceSource } from "solid-js/types/reactive/signal";
 
 export interface CacheableDomainProps<T> {
-    cache: Accessor<T | null>,
-    setCache: (p: T | null) => void
+    cache: Accessor<DomainCache<T>>,
+    setCache: (c: DomainCache<T>) => void
 }
+
+export type DomainCache<T> = [string | number | undefined | null, T | undefined];
 
 type AsyncResourceFetcher<S, T> = (k: S, info: ResourceFetcherInfo<T>) => Promise<T>;
 
@@ -22,11 +24,11 @@ type AsyncResourceFetcher<S, T> = (k: S, info: ResourceFetcherInfo<T>) => Promis
  * @param cache_setter cache signal setter
  * @param options solid's `createResource()` `options` argument
  */
-export const createCachedResource = <T,S>(
+export const createCachedResource = <T,S extends string | number | undefined | null>(
     source: ResourceSource<S>,
     fetcher: AsyncResourceFetcher<S, T>,
-    cache_accessor: Accessor<T | null>,
-    cache_setter: (p: T | null) => void,
+    cache_accessor: Accessor<DomainCache<T>>,
+    cache_setter: (c: DomainCache<T>) => void,
     options?: ResourceOptions<undefined>
 ): [
     // TODO @refactor align mutate with Setter<T>
@@ -40,29 +42,35 @@ export const createCachedResource = <T,S>(
         return new Promise((resolve, reject) => {
             const cache = cache_accessor();
         
-            if(!info.refetching && cache) {
-                console.debug("[y] [💾 domain cache] 🔼 Using data from the cache");
+            if(!info.refetching && cache[1] && cache[0] === source) {
+                console.debug(`[y] [💾 domain cache] 🔼 Using data from the cache. Source: ${ source }`);
                 
-                resolve(cache);
+                resolve(cache[1]);
             } else {
-                console.debug("[y] [💾 domain cache] 🔃 Cache is empty, running the fetcher...");
+                if(info.refetching) {
+                    console.debug(`[y] [💾 domain cache] 🔃 Force refetching for ${ source } ...`);
+                } if(cache[1]) {
+                    console.debug(`[y] [💾 domain cache] 🔃 Cache exists, but the source differs (${ source } != ${ cache[0] }); running the fetcher...`);
+                } else {
+                    console.debug(`[y] [💾 domain cache] 🔃 Cache is empty, running the fetcher for ${ source } ...`);
+                }
                 
                 fetcher(source, info)
                 .then(d => {
                     console.debug("[y] [💾 domain cache] 🔽 Saving data into cache...");
 
-                    cache_setter(d);
+                    cache_setter([source, d]);
                     resolve(d);
                 })
                 .catch(reject);
             }
-        })
+        });
     };
 
     const [resource, { mutate: _mutate, refetch: refetch }] = createResource(source, wrapped_fetcher, options);
 
     const mutate = (setter: (prev: T | undefined) => T) => {
-        cache_setter(null);
+        cache_setter([null, undefined]);
         return _mutate(setter);
     }
 
@@ -75,7 +83,7 @@ export const createCachedResource = <T,S>(
  * @param defaultState default _ui_state value
  * @param setCache cache signal's setter (if you want to automatically clear cache each time you update _ui_state)
  */
-export const appendUIStateFields = <T,>(defaultState: T, setCache?: (c: null) => void):
+export const appendUIStateFields = <T,>(defaultState: T, setCache?: (c: DomainCache<any>) => void):
     { _ui_state: Accessor<T>, _ui_setState: (v: T) => void } => {
     const [_ui_state, ui_setState] = createSignal(defaultState);
 
@@ -84,7 +92,7 @@ export const appendUIStateFields = <T,>(defaultState: T, setCache?: (c: null) =>
         _ui_setState: setCache
             ? (p: T) => {
                 ui_setState(() => p);
-                setCache(null);
+                setCache([null, undefined]);
             }
             : ui_setState as (v: T) => void
     };

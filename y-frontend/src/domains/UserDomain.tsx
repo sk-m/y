@@ -7,11 +7,12 @@ import UserDomainPreferencesPage from "./user/PreferencesPage";
 
 import "./UserDomain.css";
 import { UserPreferences } from "../interfaces/user";
+import { DomainCache } from "../util/domain_util";
 
 const UserDomain: Component = props => {
     const params = useParams();
 
-    const [preferencesCache, setPreferencesCache] = createSignal<UserPreferences | null>(null);
+    const [preferencesCache, setPreferencesCache] = createSignal<DomainCache<UserPreferences>>([null, undefined]);
 
     return (
         <div id="domain-user" className="ui-domain">

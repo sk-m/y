@@ -1,4 +1,4 @@
-import { Accessor, Component, createResource, createSignal, Match, ResourceFetcherInfo, Switch } from "solid-js";
+import { Component, createSignal, Match, Switch } from "solid-js";
 import Panel from "../../components/Panel";
 import EmailPanel from "./preferences-page/EmailPanel";
 import PasswordPanel from "./preferences-page/PasswordPanel";
