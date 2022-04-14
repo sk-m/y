@@ -1,7 +1,10 @@
+import { Accessor } from "solid-js";
+
 export interface UserPreferences {
     user_sessions: UserSession[];
 }
 
+export type UserSessionUIState = "loading" | "destroyed" | undefined;
 export interface UserSession {
     session_id: string;
 
@@ -10,4 +13,7 @@ export interface UserSession {
     session_device: string;
 
     session_valid_until: number;
+
+    _ui_state: Accessor<UserSessionUIState>;
+    _ui_setState: (v: UserSessionUIState) => void
 }

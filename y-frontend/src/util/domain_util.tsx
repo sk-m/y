@@ -1,4 +1,4 @@
-import { Accessor, ResourceFetcherInfo } from "solid-js";
+import { Accessor, createSignal, ResourceFetcherInfo } from "solid-js";
 
 export interface CacheableDomainProps<T> {
     cache: Accessor<T | null>,
@@ -48,4 +48,25 @@ export const cachedFetcher = <S, T>(cache_accessor: Accessor<T>, cache_setter: (
             }
         })
     }
+}
+
+/**
+ * Returns _ui_state signal (accessor) and it's setter _ui_setState
+ * 
+ * @param defaultState default _ui_state value
+ * @param setCache cache signal's setter (if you want to automatically clear cache each time you update _ui_state)
+ */
+export const appendUIStateFields = <T,>(defaultState: T, setCache?: (c: null) => void):
+    { _ui_state: Accessor<T>, _ui_setState: (v: T) => void } => {
+    const [_ui_state, ui_setState] = createSignal(defaultState);
+
+    return {
+        _ui_state,
+        _ui_setState: setCache
+            ? (p: T) => {
+                ui_setState(() => p);
+                setCache(null);
+            }
+            : ui_setState as (v: T) => void
+    };
 }
