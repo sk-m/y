@@ -5,6 +5,7 @@ const Button: Component<{
 
     type?: "primary" | "secondary",
     w_hint?: "submit" | "cancel",
+    text_color?: "red",
 
     disabled?: boolean,
 
@@ -18,7 +19,12 @@ const Button: Component<{
         <div className="ui-button-container">
             <button
                 ref={ props.button_ref }
-                classList={{ "ui-button": true, ["t-" + (props.type || "primary")]: true, disabled: props.disabled }}
+                classList={{
+                    "ui-button": true,
+                    ["t-" + (props.type || "primary")]: true,
+                    ["tc-" + (props.text_color || "default")]: true,
+                    disabled: props.disabled
+                }}
                 onclick={ props.onclick }
             >
                 { props.text }
