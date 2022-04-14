@@ -7,8 +7,8 @@ import API from "../../api";
 import PageObstructionScreen from "../../components/PageObstructionScreen";
 import { useParams } from "solid-app-router";
 import SessionsPanel from "./preferences-page/SessionsPanel";
-import { UserPreferences } from "../../interfaces/user";
-import { cachedFetcher, CacheableDomainProps } from "../../util/domain_util";
+import { UserPreferences, UserSession, UserSessionUIState } from "../../interfaces/user";
+import { cachedFetcher, CacheableDomainProps, appendUIStateFields } from "../../util/domain_util";
 
 const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>> = props => {
     const params = useParams();
@@ -20,7 +20,18 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
             API.user_preferences_by_username(user_username)
             .then(json => {
                 if(json.success) {
-                    resolve(json.user_preferences);
+                    const user_preferences: UserPreferences = json.user_preferences;
+                    const user_sessions: UserSession[] = [];
+                    
+                    for(const raw_session of user_preferences.user_sessions) {
+                        user_sessions.push({ 
+                            ...raw_session,
+                            ...appendUIStateFields<UserSessionUIState>(undefined, props.setCache)
+                        });
+                    }
+
+                    user_preferences.user_sessions = user_sessions;
+                    resolve(user_preferences);
                 } else {
                     // We deliberately do not set it back to true at the beginning of this function, this is not a bug!
                     // As soon as it gets set to false - it should stay false.
@@ -35,7 +46,6 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
         });
     }
 
-    // const [userPreferences, { refetch: refetchUserPreferences }] = createResource(params.user_name, userPreferencesFetcher);
     const [userPreferences, { refetch: refetchUserPreferences }] =
         createResource(params.user_name, cachedFetcher(props.cache, props.setCache, userPreferencesFetcher));
 
@@ -107,7 +117,7 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
                     <EmailPanel />
                 
                     <SessionsPanel
-                        user_sessions={ userPreferences()!.user_sessions || [] }
+                        userPreferences={ userPreferences }
                     />
                 </div>
             </Match>

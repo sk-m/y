@@ -121,9 +121,13 @@
 }
 
 #user-preferences-page .user-sessions-panel .sessions-list > .session {
+    position: relative;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    overflow: hidden;
 
     margin: 0.2em 0;
     padding: 0.5em;
@@ -131,6 +135,16 @@
     border-radius: 6px;
 
     transition: 0.15s;
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session.destroyed {
+    color: var(--color-gray-65);
+}
+
+#user-preferences-page .user-sessions-panel .sessions-list > .session.destroyed > .left > .client-info {
+    color: var(--color-gray-65);
+    
+    text-decoration: line-through;
 }
 
 #user-preferences-page .user-sessions-panel .sessions-list > .session:hover {

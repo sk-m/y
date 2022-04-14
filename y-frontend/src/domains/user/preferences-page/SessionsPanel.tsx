@@ -1,10 +1,22 @@
-import { Component, For } from "solid-js";
+import { Accessor, Component, For, Show } from "solid-js";
+import Button from "../../../components/Button";
 import Panel from "../../../components/Panel";
-import { UserSession } from "../../../interfaces/user";
+import { UserPreferences } from "../../../interfaces/user";
 
 const SessionsPanel: Component<{
-    user_sessions: UserSession[]
+    userPreferences: Accessor<UserPreferences | null | undefined>,
 }> = props => {
+    const destroy_session = (session_i: Accessor<number>) => {
+        const session = props.userPreferences()!.user_sessions[session_i()];
+
+        session._ui_setState("loading");
+        
+        // TODO @placeholder
+        setTimeout(() => {
+            session._ui_setState("destroyed");
+        }, 2000);
+    }
+
     return (
         <Panel
             classList={{ "user-sessions-panel": true }}
@@ -18,26 +30,36 @@ const SessionsPanel: Component<{
                 <div className="header">Active Sessions</div>
             </div>
 
-            <div className="subheader blue">
-                <div className="line"></div>
-                {/* <div className="line w-icon">
+            {/* <div className="subheader blue">
+                <div className="line w-icon">
                     <span class="material-icons">lightbulb</span>
-                </div> */}
-                <div className="text">You currently have { (props.user_sessions || []).length } active sessions</div>
-            </div>
-
-            <p className="ui-text">This is a list of sessions that are currently active on your account. If you see something you don't recognize — immediately destroy the session and change your password.</p>
+                </div>
+                <div className="text">You currently have { (props.userPreferences()!.user_sessions || []).length } active session(s)</div>
+            </div> */}
 
             <div className="sessions-list">
-                <For each={ props.user_sessions }>{(session) => (
-                    <div className="session">
+                <For each={ props.userPreferences()!.user_sessions }>{(session, session_i) => (
+                    <div classList={{ session: true, "destroyed": session._ui_state() === "destroyed" }}>
                         <div className="left">
                             <div className="client-info">{ session.session_device }</div>
                             {/* <div className="device-info">{ session.session_device }</div> */}
-                            <div className="other-info">{ session.session_current_ip } · { session.session_ip_range }</div>
+                            <div className="other-info">
+                                { session.session_current_ip } · { session.session_ip_range }
+                                { session._ui_state() === "destroyed" ? " · destroyed" : "" }
+                            </div>
                         </div>
                         <div className="right">
-                            <button className="ui-button t-primary tc-red">Destroy</button>
+                            <Show
+                                when={ session._ui_state() !== "destroyed" }
+                            >
+                                <Button
+                                    text={ session._ui_state() === "loading" ? "Working..." : "Destroy" }
+                                    text_color="red"
+
+                                    disabled={ session._ui_state() !== undefined }
+                                    onclick={[ destroy_session, session_i ]}
+                                />
+                            </Show>
                         </div>
                     </div>
                 )}</For>
