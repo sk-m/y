@@ -1,4 +1,4 @@
-import { Accessor, Component, For, Show } from "solid-js";
+import { Accessor, Component, createMemo, For, Show } from "solid-js";
 import Button from "../../../components/Button";
 import Panel from "../../../components/Panel";
 import { UserPreferences } from "../../../interfaces/user";
@@ -17,6 +17,20 @@ const SessionsPanel: Component<{
         }, 2000);
     }
 
+    const active_sessions_num = createMemo(() => {
+        const preferences = props.userPreferences();
+
+        if(!preferences) return 0;
+        
+        let n = 0;
+
+        for(const session of preferences.user_sessions) {
+            if(session._ui_state() !== "destroyed") n++;
+        }
+
+        return n;
+    });
+
     return (
         <Panel
             classList={{ "user-sessions-panel": true }}
@@ -30,12 +44,13 @@ const SessionsPanel: Component<{
                 <div className="header">Active Sessions</div>
             </div>
 
-            {/* <div className="subheader blue">
-                <div className="line w-icon">
+            <div className="subheader blue">
+                {/* <div className="line w-icon">
                     <span class="material-icons">lightbulb</span>
-                </div>
-                <div className="text">You currently have { (props.userPreferences()!.user_sessions || []).length } active session(s)</div>
-            </div> */}
+                </div> */}
+                <div className="line"></div>
+                <div className="text">You currently have { active_sessions_num() } active session(s)</div>
+            </div>
 
             <div className="sessions-list">
                 <For each={ props.userPreferences()!.user_sessions }>{(session, session_i) => (
