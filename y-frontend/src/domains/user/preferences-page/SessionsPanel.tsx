@@ -2,6 +2,7 @@ import { Accessor, Component, createMemo, For, Show } from "solid-js";
 import Button from "../../../components/Button";
 import Panel from "../../../components/Panel";
 import { UserPreferences } from "../../../interfaces/user";
+import { plural } from "../../../util";
 
 const SessionsPanel: Component<{
     userPreferences: Accessor<UserPreferences | null | undefined>,
@@ -49,7 +50,7 @@ const SessionsPanel: Component<{
                     <span class="material-icons">lightbulb</span>
                 </div> */}
                 <div className="line"></div>
-                <div className="text">You currently have { active_sessions_num() } active session(s)</div>
+                <div className="text">You currently have { active_sessions_num() } active { plural("session", active_sessions_num()) }</div>
             </div>
 
             <div className="sessions-list">
