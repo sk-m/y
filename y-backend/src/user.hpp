@@ -63,7 +63,7 @@ namespace User {
     bool is_username_taken(const char* username);
     CleanableResult<User> get_by_username(const char* username);
     CleanableResult<User> user_compare_passwords(const char* username, const char* password);
-    CleanableResult<User> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
+    CleanableResult<std::tuple<User, UserSession>> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
     CleanableResult<std::vector<UserSession>> get_user_sessions(unsigned int user_id);
     bool destroy_session(const char* session_id, unsigned int session_user_id);
 
@@ -133,12 +133,12 @@ CleanableResult<User::User> User::get_by_username(const char* username) {
  *
  * @return On success, the User object will have it's `id` and `username` fields set.
  */
-CleanableResult<User::User> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false, bool readonly = false) {
+CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false, bool readonly = false) {
     User user{};
     
     // Make sure we have a cookie value and not just an empty string
     if(strnlen(session_cookie_value, 256) < 128) {
-        return CleanableResult(user, Status {
+        return CleanableResult(std::make_tuple(user, UserSession{}), Status {
             ErrorCode::SESSION_INVALID,
             "Session token is invalid." 
         });
@@ -159,7 +159,7 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
 
     // Check for malformed cookie value. There should be exactly two parts - session_id & session_token
     if(session_cookie_parts.size() != 2) {
-        return CleanableResult(user, Status {
+        return CleanableResult(std::make_tuple(user, UserSession{}), Status {
             ErrorCode::SESSION_INVALID,
             "Session is invalid." 
         });
@@ -170,7 +170,7 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
 
     // The token should be exactly 128 bytes long (64 byte-long token in a hex format)
     if(session_cleartext_token.size() != 128) {
-        return CleanableResult(user, Status {
+        return CleanableResult(std::make_tuple(user, UserSession{}), Status {
             ErrorCode::SESSION_INVALID,
             "Session token is invalid." 
         });
@@ -184,7 +184,7 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
 
     // Did we find a session with such session_id?
     if(!session_record.ok) {
-        return CleanableResult(user, Status {
+        return CleanableResult(std::make_tuple(user, UserSession{}), Status {
             ErrorCode::SESSION_INVALID,
             "Session is invalid." 
         });
@@ -219,7 +219,7 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
     if(!session_token_valid) {
         PQclear(session_record._result);
 
-        return CleanableResult(user, Status {
+        return CleanableResult(std::make_tuple(user, UserSession{}), Status {
             ErrorCode::SESSION_INVALID,
             "Session is invalid." 
         });
@@ -245,7 +245,7 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
                 PQclear(session_record._result);
                 PQclear(delete_session_result);
 
-                return CleanableResult(user, Status {
+                return CleanableResult(std::make_tuple(user, UserSession{}), Status {
                     ErrorCode::SESSION_EXPIRED,
                     "Session has expired." 
                 });
@@ -258,7 +258,7 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
             if(!client_ip_allowed) {
                 PQclear(session_record._result);
 
-                return CleanableResult(user, Status {
+                return CleanableResult(std::make_tuple(user, UserSession{}), Status {
                     ErrorCode::SESSION_IP_NOT_ALLOWED,
                     "Your ip address is not in the range of allowed addresses of this session." 
                 });
@@ -286,7 +286,7 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
         user.id = session.user_id;
         user.username = PQgetvalue(session_record._result, 0, PQfnumber(session_record._result, "user_username"));
 
-        return CleanableResult(user, [session_record](){
+        return CleanableResult(std::make_tuple(user, session), [session_record](){
             if(session_record._result) PQclear(session_record._result);
         });
     }

@@ -107,6 +107,7 @@ namespace API_User {
             }
 
             const auto current_user = req->getAttributes()->get<User::User>("current_user");
+            const auto current_session = req->getAttributes()->get<User::UserSession>("current_session");
 
             auto target_user_res = User::get_by_username(target_username.c_str());
             auto target_user = target_user_res.data;
@@ -149,6 +150,8 @@ namespace API_User {
             int sessions_n = user_sessions_vec.size();
 
             int i = 0;
+            bool current_session_found = false;
+
             for(auto session : user_sessions_vec) {
                 Json::Value session_json;
 
@@ -157,6 +160,13 @@ namespace API_User {
                 session_json["session_current_ip"] = session.current_ip;
                 session_json["session_ip_range"] = session.ip_range;
                 session_json["session_valid_until"] = session.valid_until.secondsSinceEpoch();
+
+                if(!current_session_found && strncmp(session.session_id, current_session.session_id, 36) == 0) {
+                    session_json["session_is_current"] = true;
+                    current_session_found = true;
+                } else {
+                    session_json["session_is_current"] = false;
+                }
 
                 sessions_json[i] = session_json;
 

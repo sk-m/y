@@ -38,7 +38,13 @@ void AuthFilter::doFilter(const drogon::HttpRequestPtr &req, drogon::FilterCallb
     }
 
     // All ok
-    req->getAttributes()->insert("current_user", user_session_res.data);
+    // TODO @refactor @cleanup @performance
+    const auto current_user = std::get<0>(user_session_res.data);
+    const auto current_session = std::get<1>(user_session_res.data);
+
+    req->getAttributes()->insert("current_user", current_user);
+    req->getAttributes()->insert("current_session", current_session);
+
     fccb();
 
     user_session_res.cleanup();
