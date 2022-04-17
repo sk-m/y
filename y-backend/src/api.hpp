@@ -9,12 +9,12 @@
 namespace API {
     void _register_core_api_handlers() {
         // User
-        drogon::app().registerHandler("/user/me", &API_User::Handler::user_me, {drogon::Get});
+        drogon::app().registerHandler("/api/user/me", &API_User::Handler::user_me, {drogon::Get});
         
-        drogon::app().registerHandler("/user/create", &API_User::Handler::user_create, {drogon::Post});
-        drogon::app().registerHandler("/user/login", &API_User::Handler::user_login, {drogon::Post});
-        drogon::app().registerHandler("/user/logout", &API_User::Handler::user_logout, {drogon::Post});
+        drogon::app().registerHandler("/api/user/create", &API_User::Handler::user_create, {drogon::Post});
+        drogon::app().registerHandler("/api/user/login", &API_User::Handler::user_login, {drogon::Post});
+        drogon::app().registerHandler("/api/user/logout", &API_User::Handler::user_logout, {drogon::Post});
 
-        drogon::app().registerHandler("/user/preferences", &API_User::Handler::user_preferences, {drogon::Get});
+        drogon::app().registerHandler("/api/user/preferences", &API_User::Handler::user_preferences, {drogon::Get});
     }
 }
