@@ -437,6 +437,10 @@
 }
 
 /* Misc */
+span[title] {
+    cursor: help;
+}
+
 .mv-1,
 .mb-1 {
     margin-bottom: 1em;

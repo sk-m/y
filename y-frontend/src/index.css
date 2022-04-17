@@ -36,8 +36,11 @@ body {
     --color-red-t-04: rgba(252, 0, 21, 0.04);
     --color-red-t-7: rgba(252, 0, 21, 0.7);
 
+    --color-yellow: #FAF200;
+
     --color-blue: #0017E6;
     --color-blue-lighter: hsl(234, 100%, 50%);
+    --color-blue-darker: hsl(234, 100%, 33%);
     --color-blue-t-02: rgba(0, 23, 230, 0.02);
     --color-blue-t-04: rgba(0, 23, 230, 0.04);
     --color-blue-t-1: rgba(0, 23, 230, 0.1);

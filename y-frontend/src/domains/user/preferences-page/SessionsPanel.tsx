@@ -60,7 +60,8 @@ const SessionsPanel: Component<{
                             <div className="client-info">{ session.session_device }</div>
                             {/* <div className="device-info">{ session.session_device }</div> */}
                             <div className="other-info">
-                                { session.session_current_ip } · { session.session_ip_range }
+                                <span title="Last IP address">{ session.session_current_ip }</span> · 
+                                <span title="Allowed IP range">{ session.session_ip_range }</span>
                                 { session._ui_state() === "destroyed" ? " · destroyed" : "" }
                             </div>
                         </div>
