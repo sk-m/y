@@ -39,10 +39,16 @@ int main() {
     // TODO? not sure this is the right stage to send the cors headers
     app->registerPreSendingAdvice(
         [&frontend_origin](const drogon::HttpRequestPtr &req, const drogon::HttpResponsePtr &resp) {
+            resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
             resp->addHeader("Access-Control-Allow-Credentials", "true");
             resp->addHeader("Access-Control-Expose-Headers", "Set-Cookie");
 
             resp->addHeader("Access-Control-Allow-Origin", frontend_origin.c_str());
+
+            // TODO? unsure. Check W3C
+            if(req->method() == drogon::HttpMethod::Options) {
+                resp->setStatusCode(drogon::HttpStatusCode::k200OK);
+            }
         });
 
     // Register the API routes

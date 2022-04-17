@@ -8,7 +8,7 @@
         "name": "Launch Backend Server",
         "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/y-backend/main",
+        "program": "${workspaceFolder}/y-backend/y_server",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}/y-backend",
