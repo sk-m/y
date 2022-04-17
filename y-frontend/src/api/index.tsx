@@ -5,6 +5,13 @@ const API_URL = CONFIG.api_url;
 
 // TODO use xhr instead
 export default {
+    user_destroy_session_by_id: async (session_id: string) => {
+        return window.fetch(API_URL + `/user/session/${ session_id }`, {
+            method: "DELETE",
+            credentials: "include",
+        }).then(res => res.json());
+    },
+
     user_preferences_by_username: async (user_username: string) => {
         return window.fetch(API_URL + `/user/preferences?user_username=${ user_username }`, {
             method: "GET",

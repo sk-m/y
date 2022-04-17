@@ -65,6 +65,7 @@ namespace User {
     CleanableResult<User> user_compare_passwords(const char* username, const char* password);
     CleanableResult<User> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
     CleanableResult<std::vector<UserSession>> get_user_sessions(unsigned int user_id);
+    bool destroy_session(const char* session_id, unsigned int session_user_id);
 
     Result<unsigned int> user_create(const char* username, const char* password);
     CleanableResult<UserSession> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
@@ -289,6 +290,40 @@ CleanableResult<User::User> User::get_user_from_session(const char* session_cook
             if(session_record._result) PQclear(session_record._result);
         });
     }
+}
+
+/**
+ * @brief Destroy (delete) a user session by it's session_id. Make sure that the session belongs to the provided user. If user_id's do not
+ * match -> fail
+ * 
+ * @param session_id Target session's id
+ * @param session_user_id User, the session belongs to
+ * 
+ * @return true success
+ * @return false fail
+ */
+bool User::destroy_session(const char* session_id, unsigned int session_user_id) {
+    const char* const delete_session_sql_params[2] = { session_id, std::to_string(session_user_id).c_str() };
+    auto delete_session_result = DB::exec_prepared("session_delete_by_id_and_user_id", delete_session_sql_params, 2);
+
+    if(PQresultStatus(delete_session_result) != ExecStatusType::PGRES_TUPLES_OK) {
+        const auto error_message = PQresultErrorMessage(delete_session_result);
+
+        // TODO @log
+        std::cout << "ERROR! Could not delete a session by it's id!\n" << error_message << "\n";
+
+        PQclear(delete_session_result);
+        return false;
+    }
+
+    if(PQntuples(delete_session_result) != 1) {
+        // Did not delete anything (either there is no session with such id, or user ids do not match)
+        PQclear(delete_session_result);
+        return false;
+    }
+
+    PQclear(delete_session_result);
+    return true;
 }
 
 /**

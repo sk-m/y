@@ -306,5 +306,26 @@ namespace API_User {
             password_cmp_res.cleanup();
             user_session_res.cleanup();
         }
+
+        // DELETE /user/session/{session_id}
+        void user_destroy_session(API_HANDLER_ARGS, std::string p_session_id) {
+            if(p_session_id.length() != 36) {
+                return send_error("Invalid session id.", drogon::HttpStatusCode::k412PreconditionFailed, api_callback);
+            }
+
+            const auto current_user = req->getAttributes()->get<User::User>("current_user");
+
+            auto destroy_session_ok = User::destroy_session(p_session_id.c_str(), current_user.id);
+
+            if(!destroy_session_ok) {
+                return send_error("Could not destroy the session.", drogon::HttpStatusCode::k500InternalServerError, api_callback);
+            }
+
+            Json::Value json;
+            json["success"] = true;
+
+            auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+            api_callback(resp);
+        }
     }
 }

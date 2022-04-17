@@ -394,6 +394,15 @@ WHERE public.user_sessions.session_id = $1",
         NULL
     )) return false;
 
+    // Deleting a user session by its session_id (w/ user_id safety check)
+    if(!_prepare_statement(
+        connection,
+        "session_delete_by_id_and_user_id",
+        "DELETE FROM public.user_sessions WHERE session_id = $1 AND session_user_id = $2 RETURNING *",
+        2,
+        NULL
+    )) return false;
+
     // Updating session's current_ip
     if(!_prepare_statement(
         connection,

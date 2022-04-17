@@ -54,5 +54,7 @@ namespace API {
         app->registerHandler("/api/user/logout", &API_User::Handler::user_logout, {drogon::Post});
 
         app->registerHandler("/api/user/preferences", &API_User::Handler::user_preferences, {drogon::Get, "AuthFilter"});
+
+        app->registerHandler("/api/user/session/{1:session_id}", &API_User::Handler::user_destroy_session, {drogon::Delete, "AuthFilter"});
     }
 }

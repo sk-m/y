@@ -4,6 +4,8 @@ import Panel from "../../../components/Panel";
 import { UserPreferences } from "../../../interfaces/user";
 import { plural } from "../../../util";
 
+import API from "../../../api";
+
 const SessionsPanel: Component<{
     userPreferences: Accessor<UserPreferences | null | undefined>,
 }> = props => {
@@ -12,10 +14,21 @@ const SessionsPanel: Component<{
 
         session._ui_setState("loading");
         
-        // TODO @placeholder
-        setTimeout(() => {
-            session._ui_setState("destroyed");
-        }, 2000);
+        API.user_destroy_session_by_id(session.session_id)
+        .then(json => {
+            if(json.success) {
+                session._ui_setState("destroyed");
+            } else {
+                // TODO show error
+                alert(json.error_message);
+                session._ui_setState(undefined);
+            }
+        })
+        .catch(json => {
+            // TODO show error
+            alert("Could not destroy the session");
+            session._ui_setState(undefined);
+        })
     }
 
     const active_sessions_num = createMemo(() => {
