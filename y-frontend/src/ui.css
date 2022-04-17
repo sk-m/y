@@ -399,6 +399,7 @@
 }
 
 /* Text */
+/* TODO @cleanup */
 .ui-text.w-500 {
     font-weight: 500;
 }
@@ -419,6 +420,10 @@
     color: var(--color-gray-7);
     font-size: 0.7rem;
     font-weight: 450;
+}
+
+.ui-tc-green {
+    color: var(--color-green);
 }
 
 /* Info panels */

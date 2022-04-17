@@ -13,6 +13,8 @@ export interface UserSession {
     session_device: string;
 
     session_valid_until: number;
+    
+    session_is_current?: boolean;
 
     _ui_state: Accessor<UserSessionUIState>;
     _ui_setState: (v: UserSessionUIState) => void

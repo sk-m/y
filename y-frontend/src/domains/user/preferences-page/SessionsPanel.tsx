@@ -5,10 +5,15 @@ import { UserPreferences } from "../../../interfaces/user";
 import { plural } from "../../../util";
 
 import API from "../../../api";
+import { useCurrentUser } from "../../../stores/current_user";
+import { useNavigate } from "solid-app-router";
 
 const SessionsPanel: Component<{
     userPreferences: Accessor<UserPreferences | null | undefined>,
 }> = props => {
+    const [_current_user, { logout }] = useCurrentUser();
+    const navigate = useNavigate();
+
     const destroy_session = (session_i: Accessor<number>) => {
         const session = props.userPreferences()!.user_sessions[session_i()];
 
@@ -17,7 +22,13 @@ const SessionsPanel: Component<{
         API.user_destroy_session_by_id(session.session_id)
         .then(json => {
             if(json.success) {
-                session._ui_setState("destroyed");
+                // Have we just destroyed our own session?
+                if(session.session_is_current && logout) {
+                    logout();
+                    navigate("/login");
+                } else {
+                    session._ui_setState("destroyed");
+                }
             } else {
                 // TODO show error
                 alert(json.error_message);
@@ -76,6 +87,13 @@ const SessionsPanel: Component<{
                                 <span title="Last IP address">{ session.session_current_ip }</span> · 
                                 <span title="Allowed IP range">{ session.session_ip_range }</span>
                                 { session._ui_state() === "destroyed" ? " · destroyed" : "" }
+                                { session.session_is_current
+                                    ? <>· <span
+                                        title="This is your current session. Destroying it will log you out"
+                                        className="ui-tc-green"
+                                    >this session</span></>
+                                    : ""
+                                }
                             </div>
                         </div>
                         <div className="right">
@@ -83,7 +101,11 @@ const SessionsPanel: Component<{
                                 when={ session._ui_state() !== "destroyed" }
                             >
                                 <Button
-                                    text={ session._ui_state() === "loading" ? "Working..." : "Destroy" }
+                                    text={
+                                        session._ui_state() === "loading"
+                                        ? "Working..."
+                                        : (session.session_is_current ? "Log out" : "Destroy")
+                                    }
                                     text_color="red"
 
                                     disabled={ session._ui_state() !== undefined }
