@@ -82,26 +82,15 @@ namespace API_User {
 
         // GET /user/me
         void user_me(API_HANDLER_ARGS) {
-            // Get the y_session cookie's value
-            auto session_cookie = req->getCookie("y_session");
-        
-            // Get some user info from the session
-            auto user_session_res = User::get_user_from_session(session_cookie.c_str(), req);
-
-            if(!user_session_res.is_ok()) {
-                // TODO? Send an expired y_session cookie on error?
-                return send_error(user_session_res, drogon::HttpStatusCode::k403Forbidden, api_callback);
-            }
+            const auto current_user = req->getAttributes()->get<User::User>("current_user");
 
             Json::Value json;
             json["success"] = true;
-            json["current_user"]["user_id"] = user_session_res.data.id;
-            json["current_user"]["user_username"] = user_session_res.data.username;
+            json["current_user"]["user_id"] = current_user.id;
+            json["current_user"]["user_username"] = current_user.username;
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
-
-            user_session_res.cleanup();
         }
 
         // GET /user/preferences
@@ -117,25 +106,12 @@ namespace API_User {
                 );
             }
 
-            // Get the y_session cookie's value
-            auto session_cookie = req->getCookie("y_session");
-        
-            // Get the current user
-            auto user_session_res = User::get_user_from_session(session_cookie.c_str(), req);
-            auto current_user = user_session_res.data;
-
-            if(!user_session_res.is_ok()) {
-                // TODO? Send an expired y_session cookie on error?
-
-                return send_error(user_session_res, drogon::HttpStatusCode::k403Forbidden, api_callback);
-            }
+            const auto current_user = req->getAttributes()->get<User::User>("current_user");
 
             auto target_user_res = User::get_by_username(target_username.c_str());
             auto target_user = target_user_res.data;
 
             if(!target_user_res.is_ok()) {
-                user_session_res.cleanup();
-
                 return send_error(target_user_res, drogon::HttpStatusCode::k400BadRequest, api_callback);
             }
 
@@ -143,7 +119,6 @@ namespace API_User {
             // Check if client is trying to query their own preferences, or someone else's
             
             if(target_user.id != current_user.id) {
-                user_session_res.cleanup();
                 target_user_res.cleanup();
 
                 return send_error(
@@ -160,7 +135,6 @@ namespace API_User {
             auto user_sessions_vec = user_sessions_res.data;
 
             if(!user_sessions_res.is_ok()) {
-                user_session_res.cleanup();
                 target_user_res.cleanup();
 
                 return send_error(user_sessions_res, drogon::HttpStatusCode::k500InternalServerError, api_callback);
@@ -196,7 +170,6 @@ namespace API_User {
             api_callback(resp);
 
             user_sessions_res.cleanup();
-            user_session_res.cleanup();
             target_user_res.cleanup();
         }
 

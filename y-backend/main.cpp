@@ -11,9 +11,6 @@ int main() {
     // Could not connect to the database. We can not continue
     if(!db_status) return 1;
 
-    // Register the API routes
-    API::_register_core_api_handlers();
-
     // Get the server configuration
     // TODO @robustness path, error messages
     YAML::Node server_config_file = YAML::LoadFile("./config/server.yaml");
@@ -39,13 +36,17 @@ int main() {
         .setThreadNum(server_threads_n);
 
     // CORS
-    app->registerPostHandlingAdvice(
+    // TODO? not sure this is the right stage to send the cors headers
+    app->registerPreSendingAdvice(
         [&frontend_origin](const drogon::HttpRequestPtr &req, const drogon::HttpResponsePtr &resp) {
             resp->addHeader("Access-Control-Allow-Credentials", "true");
             resp->addHeader("Access-Control-Expose-Headers", "Set-Cookie");
 
             resp->addHeader("Access-Control-Allow-Origin", frontend_origin.c_str());
         });
-        
+
+    // Register the API routes
+    API::_register_core_api_handlers(app);
+
     app->run();
 }
