@@ -1,8 +1,8 @@
 #include <drogon/drogon.h>
 #include <yaml-cpp/yaml.h>
 
-#include "src/db.hpp"
-#include "src/api.hpp"
+#include "db.hpp"
+#include "api.hpp"
 
 int main() {
     // Connect to the databse

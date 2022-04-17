@@ -20,7 +20,7 @@ if(NOT EXISTS "third_party/fastpbkdf2/fastpbkdf2.o")
     message(FATAL_ERROR "Please build the fastpbkdf2 package first (third_party/fastpbkdf2)") 
 endif()
 
-add_executable(main main.cpp)
+add_executable(y_server src/main.cpp)
 
 # fmt
 add_subdirectory(third_party/fmt)
@@ -43,5 +43,5 @@ set(BUILD_SQLITE OFF CACHE INTERNAL "Don't build drogon sqlite")
 
 add_subdirectory(third_party/drogon)
 
-target_link_libraries(main PRIVATE PostgreSQL::PostgreSQL fmt::fmt yaml-cpp fastpbkdf2 drogon ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+target_link_libraries(y_server PRIVATE PostgreSQL::PostgreSQL fmt::fmt yaml-cpp fastpbkdf2 drogon ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
 ${OPENSSL_LIBRARIES})
