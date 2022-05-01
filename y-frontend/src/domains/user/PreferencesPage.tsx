@@ -19,7 +19,7 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
         return new Promise((resolve, reject) => {
             API.user_preferences_by_username(user_username)
             .then(json => {
-                if(json.success) {
+                if(json.meta && json.meta.success) {
                     const user_preferences: UserPreferences = json.user_preferences;
                     const user_sessions: UserSession[] = [];
                     
@@ -37,7 +37,7 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
                     // As soon as it gets set to false - it should stay false.
                     setIsErrorRetryable(false);
 
-                    reject(json.error_message || "Some error occured. Please, try again in a moment.");
+                    reject(json.meta.error_message || "Some error occured. Please, try again in a moment.");
                 }
             })
             .catch(() => {

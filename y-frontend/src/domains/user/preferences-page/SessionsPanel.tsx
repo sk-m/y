@@ -21,7 +21,7 @@ const SessionsPanel: Component<{
         
         API.user_destroy_session_by_id(session.session_id)
         .then(json => {
-            if(json.success) {
+            if(json.meta && json.meta.success) {
                 // Have we just destroyed our own session?
                 if(session.session_is_current && logout) {
                     logout();
@@ -31,7 +31,7 @@ const SessionsPanel: Component<{
                 }
             } else {
                 // TODO show error
-                alert(json.error_message);
+                alert(json.meta.error_message);
                 session._ui_setState(undefined);
             }
         })

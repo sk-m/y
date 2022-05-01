@@ -18,9 +18,7 @@ void AuthFilter::doFilter(const drogon::HttpRequestPtr &req, drogon::FilterCallb
     auto session_cookie = req->getCookie("y_session");
 
     if(session_cookie.length() < 128) {
-        Json::Value json;
-        json["error"] = true;
-        json["error_message"] = "You are not authenticated.";
+        const auto json = make_error_json("You are not authenticated.", true);
 
         auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
         resp->setStatusCode(drogon::HttpStatusCode::k401Unauthorized);
@@ -33,7 +31,12 @@ void AuthFilter::doFilter(const drogon::HttpRequestPtr &req, drogon::FilterCallb
 
     if(!user_session_res.is_ok()) {
         // TODO? Send an expired y_session cookie on error?
-        send_error(user_session_res, drogon::HttpStatusCode::k403Forbidden, fcb);
+        const auto json = make_error_json(user_session_res.status.explanation_user, true);
+
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+        resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
+
+        fcb(resp);
         return;
     }
 

@@ -55,7 +55,7 @@ export function _user_get_current(set_current_user: (user: CurrentUser) => void,
         else {
             API.user_me()
             .then(json => {
-                if(json.success) {
+                if(json.meta && json.meta.success) {
                     // The server has returned some info about the currently logged in user 
                     resolve(true);
 
@@ -95,8 +95,8 @@ export function _user_login(set_current_user: (user: CurrentUser) => void, usern
     return new Promise((resolve: (status: boolean) => void, reject: (message: string) => void) => {
         API.login(username, password)
         .then(json => {
-            if(json.error) {
-                reject(json.error_message || "Unknown error occured!");
+            if(json.meta && json.meta.error) {
+                reject(json.meta.error_message || "Unknown error occured!");
             } else {
                 // Login successfull
                 resolve(true);
@@ -126,8 +126,8 @@ export function _user_create(set_current_user: (user: CurrentUser) => void, user
     return new Promise((resolve: (status: boolean) => void, reject: (message: string) => void) => {
         API.user_create(username, password)
         .then(json => {
-            if(json.error) {
-                reject(json.error_message || "Unknown error occured!");
+            if(json.meta && json.meta.error) {
+                reject(json.meta.error_message || "Unknown error occured!");
             } else {
                 // Successfully created the user
                 resolve(true);

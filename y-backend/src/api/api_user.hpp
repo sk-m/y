@@ -8,6 +8,7 @@
 #include "../user.hpp"
 
 namespace API_User {
+    // TODO @cleanup move out of this namespace 
     inline drogon::Cookie create_session_cookie(User::UserSession &user_session) {
         auto session_cookie = drogon::Cookie();
 
@@ -84,10 +85,11 @@ namespace API_User {
         void user_me(API_HANDLER_ARGS) {
             const auto current_user = req->getAttributes()->get<User::User>("current_user");
 
-            Json::Value json;
-            json["success"] = true;
-            json["current_user"]["user_id"] = current_user.id;
-            json["current_user"]["user_username"] = current_user.username;
+            Json::Value data_json;
+            data_json["user_id"] = current_user.id;
+            data_json["user_username"] = current_user.username;
+
+            const auto json = make_success_json("current_user", data_json);
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
@@ -143,9 +145,7 @@ namespace API_User {
 
             // TODO @incomplete get the actual preferences
 
-            Json::Value json, user_preferences_json, sessions_json;
-
-            json["success"] = true;
+            Json::Value user_preferences_json, sessions_json;
 
             int sessions_n = user_sessions_vec.size();
 
@@ -174,7 +174,8 @@ namespace API_User {
             }
 
             user_preferences_json["user_sessions"] = sessions_json;
-            json["user_preferences"] = user_preferences_json;
+
+            const auto json = make_success_json("user_preferences", user_preferences_json);
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
@@ -209,9 +210,7 @@ namespace API_User {
             const auto user_id = new_user_res.data;
 
             if(!new_user_res.is_ok()) {
-                Json::Value json;
-                json["error"] = true;
-                json["error_message"] = new_user_res.status.explanation_user;
+                const auto json = make_error_json(new_user_res.status.explanation_user);
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
 
@@ -236,10 +235,11 @@ namespace API_User {
                 return send_error(user_session_res, drogon::HttpStatusCode::k500InternalServerError, api_callback);
             }
 
-            Json::Value json;
-            json["success"] = true;
-            json["new_user"]["user_id"] = new_user_res.data;
-            json["new_user"]["user_username"] = user_username;
+            Json::Value data_json;
+            data_json["user_id"] = new_user_res.data;
+            data_json["user_username"] = user_username;
+
+            const auto json = make_success_json("new_user", data_json);
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             resp->addCookie(create_session_cookie(user_session));
@@ -273,9 +273,7 @@ namespace API_User {
             auto user = password_cmp_res.data;
 
             if(!password_cmp_res.is_ok()) {
-                Json::Value json;
-                json["error"] = true;
-                json["error_message"] = password_cmp_res.status.explanation_user;
+                const auto json = make_error_json(password_cmp_res.status.explanation_user);
 
                 auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
 
@@ -301,12 +299,11 @@ namespace API_User {
             auto user_session_res = User::session_create(user.id, req);
             auto user_session = user_session_res.data;
            
-            Json::Value json;
-            json["success"] = true;
+            Json::Value data_json;
+            data_json["user_id"] = user.id;
+            data_json["user_username"] = user.username;
 
-            // Add some info about the user to the response
-            json["current_user"]["user_id"] = user.id;
-            json["current_user"]["user_username"] = user.username;
+            const auto json = make_success_json("current_user", data_json);
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             resp->addCookie(create_session_cookie(user_session));
@@ -332,7 +329,7 @@ namespace API_User {
             }
 
             Json::Value json;
-            json["success"] = true;
+            json["meta"]["success"] = true;
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);

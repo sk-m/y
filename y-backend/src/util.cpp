@@ -5,7 +5,7 @@
 #include <functional>
 
 // TODO @cleanup @refactor put all this in namespace Util?
-// TODO @cleanup the code in here
+// TODO @cleanup the code in here, split into a couple of files
 
 // TODO this is probably completely ok, but I get a feeling that I'm thinking with the JS part of my brain here
 struct Status {
@@ -66,6 +66,44 @@ struct CleanableResult: Result<T> {
 };
 
 /**
+ * @brief Create a pre-populated Json::Value object for a successful response
+ * 
+ * @param route_name Name of the route from where you are responding
+ * @param results_json Your results json
+ */
+inline Json::Value make_success_json(const char* route_name, Json::Value results_json) {
+    Json::Value json;
+
+    json["meta"]["success"] = true;
+
+    json[route_name] = results_json;
+
+    return json;
+}
+
+/**
+ * @brief Create a pre-populated Json::Value object for an unsuccessful response
+ * 
+ * Please use [send_error] if you want to send an unsuccessful response. That function uses this one under the hood
+ * 
+ * @param error_message Error message
+ * @param is_unauthenticated @ignore! Set to true to indicate that the client is unauthenticated. I doubt you'll need to use this, as the
+ * authentication is already handled by a middleware
+ */
+inline Json::Value make_error_json(const char* error_message, bool is_unauthenticated = false) {
+    Json::Value json;
+
+    json["meta"]["error"] = true;
+    json["meta"]["error_message"] = error_message;
+
+    if(is_unauthenticated) {
+        json["meta"]["client_unauthenticated"] = true;
+    }
+
+    return json;
+}
+
+/**
  * @brief (for use in an api handler) Respond with an error (non-200 status code)
  * 
  * @param result Result that has reported an error. We'll get the error message from it
@@ -73,10 +111,7 @@ struct CleanableResult: Result<T> {
  * @param api_callback drogon's callback function, provided by the route handler
  */
 void send_error(_InternalResultFields result, drogon::HttpStatusCode status_code, std::function<void (const drogon::HttpResponsePtr &)> &api_callback) {
-    Json::Value json;
-
-    json["error"] = true;
-    json["error_message"] = result.status.explanation_user;
+    const auto json = make_error_json(result.status.explanation_user);
 
     auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
     resp->setStatusCode(status_code);
@@ -92,10 +127,7 @@ void send_error(_InternalResultFields result, drogon::HttpStatusCode status_code
  * @param api_callback drogon's callback function, provided by the route handler
  */
 void send_error(const char* error_message, drogon::HttpStatusCode status_code, std::function<void (const drogon::HttpResponsePtr &)> &api_callback) {
-    Json::Value json;
-
-    json["error"] = true;
-    json["error_message"] = error_message;
+    const auto json = make_error_json(error_message);
 
     auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
     resp->setStatusCode(status_code);
