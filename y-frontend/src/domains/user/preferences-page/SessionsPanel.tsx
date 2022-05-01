@@ -86,7 +86,11 @@ const SessionsPanel: Component<{
                             <div className="other-info">
                                 <span title="Last IP address">{ session.session_current_ip }</span> · 
                                 <span title="Allowed IP range">{ session.session_ip_range }</span>
-                                { session._ui_state() === "destroyed" ? " · destroyed" : "" }
+                                { session._ui_state() === "destroyed"
+                                    ? <>· <span
+                                        className="ui-tc-red"
+                                    >destroyed</span></>
+                                    : "" }
                                 { session.session_is_current
                                     ? <>· <span
                                         title="This is your current session. Destroying it will log you out"

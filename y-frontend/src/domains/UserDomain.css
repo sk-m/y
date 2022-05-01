@@ -138,13 +138,7 @@
 }
 
 #user-preferences-page .user-sessions-panel .sessions-list > .session.destroyed {
-    color: var(--color-gray-65);
-}
-
-#user-preferences-page .user-sessions-panel .sessions-list > .session.destroyed > .left > .client-info {
-    color: var(--color-gray-65);
-    
-    text-decoration: line-through;
+    color: var(--color-gray-50);
 }
 
 #user-preferences-page .user-sessions-panel .sessions-list > .session:hover {

@@ -426,6 +426,10 @@
     color: var(--color-green);
 }
 
+.ui-tc-red {
+    color: var(--color-red);
+}
+
 /* Info panels */
 .ui-info-panel {
     padding: 0.8em 1.2em;

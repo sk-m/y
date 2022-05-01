@@ -54,6 +54,7 @@ body {
     --color-gray-15: rgb(217, 217, 217);
     --color-gray-2: rgb(204, 204, 204);
     --color-gray-25: rgb(191, 191, 191);
+    --color-gray-50: rgb(128, 128, 128);
     --color-gray-65: rgb(89, 89, 89);
     --color-gray-7: rgb(77, 77, 77);
 }
