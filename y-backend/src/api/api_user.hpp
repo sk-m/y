@@ -322,7 +322,7 @@ namespace API_User {
 
             const auto current_user = req->getAttributes()->get<User::User>("current_user");
 
-            auto destroy_session_ok = User::destroy_session(p_session_id.c_str(), current_user.id);
+            auto destroy_session_ok = User::session_destroy_safe(p_session_id.c_str(), current_user.id);
 
             if(!destroy_session_ok) {
                 return send_error("Could not destroy the session.", drogon::HttpStatusCode::k500InternalServerError, api_callback);

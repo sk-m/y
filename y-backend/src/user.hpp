@@ -65,11 +65,11 @@ namespace User {
     CleanableResult<User> user_compare_passwords(const char* username, const char* password);
     CleanableResult<std::tuple<User, UserSession>> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
     CleanableResult<std::vector<UserSession>> get_user_sessions(unsigned int user_id);
-    bool destroy_session(const char* session_id, unsigned int session_user_id);
 
     Result<unsigned int> user_create(const char* username, const char* password);
     CleanableResult<UserSession> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
     CleanableResult<UserSession> session_destroy(const char* session_id, const drogon::HttpRequestPtr& req,  const char* reason);
+    bool session_destroy_safe(const char* session_id, unsigned int session_user_id);
 }
 
 // TODO @refactor @cleanup this is just not right...
@@ -293,6 +293,36 @@ CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_s
 }
 
 /**
+ * @brief Destroy a user session by its id
+ * 
+ * @param session_id Id (uuidv4) of a session that will be destroyed
+ * @param req Drogon's req object
+ * @param reason Internal reason for the removal, ex. `logout`, `manual_destroy`, etc.
+ * 
+ * On success returns the deleted user session
+ */
+CleanableResult<User::UserSession> User::session_destroy(const char* session_id, const drogon::HttpRequestPtr& req, const char* reason) {
+    // TODO @inclomplete We don't have a user log, so we do not use the reason anywhere
+
+    const char* const sql_params[1] = { session_id };
+    auto session_result = DB::exec_prepared("session_delete_by_id", sql_params, 1);
+
+    auto deleted_session_record = ORM_UserSession::one(session_result);
+    auto deleted_session = deleted_session_record.item;
+
+    if(!deleted_session_record.ok) {
+        return CleanableResult(deleted_session, Status {
+            ErrorCode::INTERNAL,
+            "Could not delete the session." 
+        });
+    }
+
+    // TODO @incomplete create a user log entry
+
+    return CleanableResult(deleted_session, DEFAULT_CLEANUP_FUNC(deleted_session_record));
+}
+
+/**
  * @brief Destroy (delete) a user session by it's session_id. Make sure that the session belongs to the provided user. If user_id's do not
  * match -> fail
  * 
@@ -302,7 +332,7 @@ CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_s
  * @return true success
  * @return false fail
  */
-bool User::destroy_session(const char* session_id, unsigned int session_user_id) {
+bool User::session_destroy_safe(const char* session_id, unsigned int session_user_id) {
     const char* const delete_session_sql_params[2] = { session_id, std::to_string(session_user_id).c_str() };
     auto delete_session_result = DB::exec_prepared("session_delete_by_id_and_user_id", delete_session_sql_params, 2);
 
@@ -579,36 +609,6 @@ CleanableResult<User::UserSession> User::session_create(unsigned int user_id, co
     session.token_cleartext[128] = '\0';
 
     return CleanableResult(session, DEFAULT_CLEANUP_FUNC(session_record));
-}
-
-/**
- * @brief Destroy a user session by its id
- * 
- * @param session_id Id (uuidv4) of a session that will be destroyed
- * @param req Drogon's req object
- * @param reason Internal reason for the removal, ex. `logout`, `manual_destroy`, etc.
- * 
- * On success returns the deleted user session
- */
-CleanableResult<User::UserSession> User::session_destroy(const char* session_id, const drogon::HttpRequestPtr& req, const char* reason) {
-    // TODO @inclomplete We don't have a user log, so we do not use the reason anywhere
-
-    const char* const sql_params[1] = { session_id };
-    auto session_result = DB::exec_prepared("session_delete_by_id", sql_params, 1);
-
-    auto deleted_session_record = ORM_UserSession::one(session_result);
-    auto deleted_session = deleted_session_record.item;
-
-    if(!deleted_session_record.ok) {
-        return CleanableResult(deleted_session, Status {
-            ErrorCode::INTERNAL,
-            "Could not delete the session." 
-        });
-    }
-
-    // TODO @incomplete create a user log entry
-
-    return CleanableResult(deleted_session, DEFAULT_CLEANUP_FUNC(deleted_session_record));
 }
 
 /**

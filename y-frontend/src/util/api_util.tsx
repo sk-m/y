@@ -1,5 +1,4 @@
 import CONFIG from "../../config/config.json";
-import { useCurrentUser } from "../stores/current_user";
 
 const API_URL = CONFIG.api_url;
 
