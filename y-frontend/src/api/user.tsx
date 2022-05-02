@@ -54,26 +54,24 @@ export function _user_get_current(set_current_user: (user: CurrentUser) => void,
         }
         else {
             API.user_me()
-            .then(json => {
-                if(json.meta && json.meta.success) {
-                    // The server has returned some info about the currently logged in user 
-                    resolve(true);
+            .then(data => {
+                // The server has returned some info about the currently logged in user 
+                resolve(true);
 
-                    console.debug("[y] [🔑 auth] Got the user info from the API call");
+                console.debug("[y] [🔑 auth] Got the user info from the API call");
 
-                    const basic_user_info = {
-                        user_id: json.current_user.user_id,
-                        user_username: json.current_user.user_username,
-                    };
+                const basic_user_info = {
+                    user_id: data.user_me.user_id,
+                    user_username: data.user_me.user_username,
+                };
 
-                    set_current_user({
-                        ...basic_user_info,
+                set_current_user({
+                    ...basic_user_info,
 
-                        authoritative: true
-                    });
+                    authoritative: true
+                });
 
-                    save_user_to_session_storage(basic_user_info);
-                } else reject(); // Make sure we reject with 0 parameters
+                save_user_to_session_storage(basic_user_info);
             })
             .catch(() => reject()); // Make sure we reject with 0 parameters
         }
@@ -94,30 +92,25 @@ export function _user_get_current(set_current_user: (user: CurrentUser) => void,
 export function _user_login(set_current_user: (user: CurrentUser) => void, username: string, password: string) {
     return new Promise((resolve: (status: boolean) => void, reject: (message: string) => void) => {
         API.login(username, password)
-        .then(json => {
-            if(json.meta && json.meta.error) {
-                reject(json.meta.error_message || "Unknown error occured!");
-            } else {
-                // Login successfull
-                resolve(true);
+        .then(data => {
+            resolve(true);
 
-                // The /user/login route will return some basic info about the user upon successfull log in
-                // We could have just called `_refresh_ensure()` from the CurrentUserProvider, but that would have been wasteful
-                const basic_user_info = {
-                    user_id: json.current_user.user_id,
-                    user_username: json.current_user.user_username,
-                };
+            // The /user/login route will return some basic info about the user upon successfull log in
+            // We could have just called `_refresh_ensure()` from the CurrentUserProvider, but that would have been wasteful
+            const basic_user_info = {
+                user_id: data.user_login.user_id,
+                user_username: data.user_login.user_username,
+            };
 
-                set_current_user({
-                    ...basic_user_info,
-                    authoritative: true
-                });
+            set_current_user({
+                ...basic_user_info,
+                authoritative: true
+            });
 
-                save_user_to_session_storage(basic_user_info);
-            }
+            save_user_to_session_storage(basic_user_info);
         })
-        .catch(() => {
-            reject("Internal error occured! Please, try again later.");
+        .catch((error: Error) => {
+            reject(error.message);
         });
     });
 }
@@ -125,30 +118,25 @@ export function _user_login(set_current_user: (user: CurrentUser) => void, usern
 export function _user_create(set_current_user: (user: CurrentUser) => void, username: string, password: string) {
     return new Promise((resolve: (status: boolean) => void, reject: (message: string) => void) => {
         API.user_create(username, password)
-        .then(json => {
-            if(json.meta && json.meta.error) {
-                reject(json.meta.error_message || "Unknown error occured!");
-            } else {
-                // Successfully created the user
-                resolve(true);
+        .then(data => {
+            resolve(true);
 
-                // The /user/create route will return some basic info about the user upon successfull registration
-                // We could have just called `_refresh_ensure()` from the CurrentUserProvider, but that would have been wasteful
-                const basic_user_info = {
-                    user_id: json.new_user.user_id,
-                    user_username: json.new_user.user_username,
-                };
+            // The /user/create route will return some basic info about the user upon successfull registration
+            // We could have just called `_refresh_ensure()` from the CurrentUserProvider, but that would have been wasteful
+            const basic_user_info = {
+                user_id: data.user_create.user_id,
+                user_username: data.user_create.user_username,
+            };
 
-                set_current_user({
-                    ...basic_user_info,
-                    authoritative: true
-                });
+            set_current_user({
+                ...basic_user_info,
+                authoritative: true
+            });
 
-                save_user_to_session_storage(basic_user_info);
-            }
+            save_user_to_session_storage(basic_user_info);
         })
-        .catch(() => {
-            reject("Internal error occured! Please, try again later.");
+        .catch((error: Error) => {
+            reject(error.message);
         });
     });
 }

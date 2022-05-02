@@ -1,6 +1,5 @@
 import { NavigateOptions, useNavigate } from "solid-app-router";
 import { batch, Component, createEffect, createSignal, Match, onMount, Switch } from "solid-js";
-import API from "./api";
 import { _user_create, _user_login } from "./api/user";
 
 import "./LoginRoute.css";

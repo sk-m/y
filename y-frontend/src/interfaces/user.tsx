@@ -1,5 +1,10 @@
 import { Accessor } from "solid-js";
 
+export interface BasicUserInfo {
+    user_id: number;
+    user_username: string;
+}
+
 export interface UserPreferences {
     user_sessions: UserSession[];
 }

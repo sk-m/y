@@ -18,30 +18,26 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
     const userPreferencesFetcher = async (user_username: string): Promise<UserPreferences> => {
         return new Promise((resolve, reject) => {
             API.user_preferences_by_username(user_username)
-            .then(json => {
-                if(json.meta && json.meta.success) {
-                    const user_preferences: UserPreferences = json.user_preferences;
-                    const user_sessions: UserSession[] = [];
-                    
-                    for(const raw_session of user_preferences.user_sessions) {
-                        user_sessions.push({ 
-                            ...raw_session,
-                            ...appendUIStateFields<UserSessionUIState>(undefined, props.setCache)
-                        });
-                    }
-
-                    user_preferences.user_sessions = user_sessions;
-                    resolve(user_preferences);
-                } else {
-                    // We deliberately do not set it back to true at the beginning of this function, this is not a bug!
-                    // As soon as it gets set to false - it should stay false.
-                    setIsErrorRetryable(false);
-
-                    reject(json.meta.error_message || "Some error occured. Please, try again in a moment.");
+            .then(data => {
+                const user_preferences: UserPreferences = data.user_preferences;
+                const user_sessions: UserSession[] = [];
+                
+                for(const raw_session of user_preferences.user_sessions) {
+                    user_sessions.push({ 
+                        ...raw_session,
+                        ...appendUIStateFields<UserSessionUIState>(undefined, props.setCache)
+                    });
                 }
+
+                user_preferences.user_sessions = user_sessions;
+                resolve(user_preferences);
             })
-            .catch(() => {
-                reject("Some error occured. Please, try again in a moment.");
+            .catch((error: Error) => {
+                // We deliberately do not set it back to true at the beginning of this function, this is not a bug!
+                // As soon as it gets set to false - it should stay false.
+                setIsErrorRetryable(false);
+    
+                reject(error.message);
             })
         });
     }

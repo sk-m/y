@@ -20,24 +20,18 @@ const SessionsPanel: Component<{
         session._ui_setState("loading");
         
         API.user_destroy_session_by_id(session.session_id)
-        .then(json => {
-            if(json.meta && json.meta.success) {
-                // Have we just destroyed our own session?
-                if(session.session_is_current && logout) {
-                    logout();
-                    navigate("/login");
-                } else {
-                    session._ui_setState("destroyed");
-                }
+        .then(() => {
+            // Have we just destroyed our own session?
+            if(session.session_is_current && logout) {
+                logout();
+                navigate("/login");
             } else {
-                // TODO show error
-                alert(json.meta.error_message);
-                session._ui_setState(undefined);
+                session._ui_setState("destroyed");
             }
         })
-        .catch(json => {
+        .catch((error: Error) => {
             // TODO show error
-            alert("Could not destroy the session");
+            alert(`Could not destroy the session. ${ error.message }`);
             session._ui_setState(undefined);
         })
     }

@@ -89,7 +89,7 @@ namespace API_User {
             data_json["user_id"] = current_user.id;
             data_json["user_username"] = current_user.username;
 
-            const auto json = make_success_json("current_user", data_json);
+            const auto json = make_success_json("user_me", data_json);
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             api_callback(resp);
@@ -239,7 +239,7 @@ namespace API_User {
             data_json["user_id"] = new_user_res.data;
             data_json["user_username"] = user_username;
 
-            const auto json = make_success_json("new_user", data_json);
+            const auto json = make_success_json("user_create", data_json);
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             resp->addCookie(create_session_cookie(user_session));
@@ -303,7 +303,7 @@ namespace API_User {
             data_json["user_id"] = user.id;
             data_json["user_username"] = user.username;
 
-            const auto json = make_success_json("current_user", data_json);
+            const auto json = make_success_json("user_login", data_json);
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
             resp->addCookie(create_session_cookie(user_session));
