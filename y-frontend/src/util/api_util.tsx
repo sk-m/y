@@ -1,4 +1,5 @@
 import CONFIG from "../../config/config.json";
+import { useCurrentUser } from "../stores/current_user";
 
 const API_URL = CONFIG.api_url;
 
@@ -24,6 +25,10 @@ export function api_fetch<TData = APIResponse>(route: string, options: RequestIn
                 }
                 
                 if(json.meta.error) {
+                    if(json.meta.client_unauthenticated) {
+                        sessionStorage.removeItem("y_current_user");
+                    }
+
                     return reject(new Error(json.meta.error_message))
                 }
     
