@@ -62,11 +62,12 @@ namespace User {
 
     bool is_username_taken(const char* username);
     CleanableResult<User> get_by_username(const char* username);
-    CleanableResult<User> user_compare_passwords(const char* username, const char* password);
+    CleanableResult<User> user_compare_passwords(const char* username, unsigned int user_id, const char* password);
     CleanableResult<std::tuple<User, UserSession>> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
     CleanableResult<std::vector<UserSession>> get_user_sessions(unsigned int user_id);
 
     Result<unsigned int> user_create(const char* username, const char* password);
+    bool user_update_password(unsigned int user_id, const char* current_password, const char* new_password);
     CleanableResult<UserSession> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
     CleanableResult<UserSession> session_destroy(const char* session_id, const drogon::HttpRequestPtr& req,  const char* reason);
     bool session_destroy_safe(const char* session_id, unsigned int session_user_id);
@@ -357,7 +358,7 @@ bool User::session_destroy_safe(const char* session_id, unsigned int session_use
 }
 
 /**
- * @brief Check if provided password matches the password of the user with provided user_id
+ * @brief Check if provided password matches the password of the user with provided user_id or username (username has higher priority)
  *
  * ErrorCodes that can be returned:
  * 
@@ -365,13 +366,24 @@ bool User::session_destroy_safe(const char* session_id, unsigned int session_use
  * \li PASSWORD_INCORRECT;
  * \li PASSWORD_HASHING_ALGORITHM_UNSUPPORTED;
  * 
- * @param username Username of the target user
+ * @param username Username of the target user (either provide this or user_id) (will be used first)
+ * @param user_id User id of the target user (either provide this or username) (will be used if username was not provided)
  * @param password Password that will be hashed and compared to the password of the target user
  */
-CleanableResult<User::User> User::user_compare_passwords(const char* username, const char* password) {
+CleanableResult<User::User> User::user_compare_passwords(const char* username, unsigned int user_id, const char* password) {
     // Get the user
-    const char* const sql_params[1] = { username };
-    auto user_result = DB::exec_prepared("user_get_by_username", sql_params, 1);
+    PGresult* user_result;
+    
+    // TODO @refactor
+    if(username == nullptr || strnlen(username, 1) == 0) {
+        // Use user_id
+        const char* const sql_params[1] = { std::to_string(user_id).c_str() };
+        user_result = DB::exec_prepared("user_get_by_id", sql_params, 1);
+    } else {
+        // Use user_username
+        const char* const sql_params[1] = { username };
+        user_result = DB::exec_prepared("user_get_by_username", sql_params, 1);
+    }
 
     auto user_record = ORM_User::one(user_result);
     auto user = user_record.item;
@@ -458,6 +470,7 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, c
  */
 Result<unsigned int> User::user_create(const char* username, const char* password) {
     // Check the data
+    // TODO @refactor @cleanup move the checks into the API handler
     const auto password_len = strlen(password);
 
     if(password_len < 8 || password_len > 2048) {
@@ -475,12 +488,10 @@ Result<unsigned int> User::user_create(const char* username, const char* passwor
     // In other words, we figure out if the username is okay only AFTER we have hashed the password
 
     // Generate a salt for the password
-    // TODO @cleanup I think we can skip the initialization of the array
     unsigned char salt_raw[PASSWORD_SALT_SIZE_BYTES];
     RAND_bytes(salt_raw, PASSWORD_SALT_SIZE_BYTES);
 
     // Hash the password
-    // TODO @cleanup I think we can skip the initialization of the array
     unsigned char hash_out_raw[PASSWORD_KEY_SIZE_BYTES];
 
     fastpbkdf2_hmac_sha512((const unsigned char*)password, password_len,
@@ -523,6 +534,62 @@ Result<unsigned int> User::user_create(const char* username, const char* passwor
 
     PQclear(result);
     return Result((unsigned int)user_id, Status { 0, nullptr });
+}
+
+/**
+ * @brief Update user's password. Current password must be correct
+ * 
+ * @param user_id Target user
+ * @param current_password User's current password (cleartext)
+ * @param new_password New password (cleartext)
+ */
+bool User::user_update_password(unsigned int user_id, const char* current_password, const char* new_password) {
+    // Check if provided password is correct
+    auto password_cmp_res = user_compare_passwords(nullptr, user_id, current_password);
+
+    if(!password_cmp_res.is_ok()) {
+        return false;
+    }
+
+    password_cmp_res.cleanup();
+
+    // We can change the password
+    // Generate a salt for the password
+    unsigned char salt_raw[PASSWORD_SALT_SIZE_BYTES];
+    RAND_bytes(salt_raw, PASSWORD_SALT_SIZE_BYTES);
+
+    // Hash the password
+    unsigned char hash_out_raw[PASSWORD_KEY_SIZE_BYTES];
+
+    fastpbkdf2_hmac_sha512((const unsigned char*)new_password, strlen(new_password),
+                           salt_raw, PASSWORD_SALT_SIZE_BYTES,
+                           PASSWORD_HASH_ITERATIONS,
+                           hash_out_raw, PASSWORD_KEY_SIZE_BYTES);
+
+    // Create a `password` string for the database
+    // `pbkdf2;*hash*;*salt*;*iterations_count*;`
+
+    auto hash_hex = string_to_hex(std::string(reinterpret_cast<char*>(hash_out_raw), PASSWORD_KEY_SIZE_BYTES));
+    auto salt_hex = string_to_hex(std::string(reinterpret_cast<char*>(salt_raw), PASSWORD_SALT_SIZE_BYTES));
+
+    const auto db_password_str = fmt::format("pbkdf2;{};{};{};", hash_hex, salt_hex, PASSWORD_HASH_ITERATIONS);
+
+    const char* const sql_params[2] = { std::to_string(user_id).c_str(), db_password_str.c_str() };
+    auto result = DB::exec_prepared("user_update_password", sql_params, 2);
+
+    // Check for errors
+    if(PQresultStatus(result) != PGRES_COMMAND_OK) {
+        const auto error_message = PQresultErrorMessage(result);
+
+        // TODO @log
+        std::cout << "Could not update user's password from User::user_update_password()\n" << error_message;
+
+        PQclear(result);
+        return false;
+    }
+
+    PQclear(result);
+    return true;
 }
 
 /**
@@ -587,7 +654,6 @@ CleanableResult<User::UserSession> User::session_create(unsigned int user_id, co
 
     // Check for errors
     if(PQresultStatus(result) != PGRES_TUPLES_OK) {
-        const auto error_type = PQresultErrorField(result, PG_DIAG_SQLSTATE);
         const auto error_message = PQresultErrorMessage(result);
 
         // TODO @log

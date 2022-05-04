@@ -269,7 +269,7 @@ namespace API_User {
             }
 
             // Compare the passwords
-            auto password_cmp_res = User::user_compare_passwords(p_username->second.c_str(), p_password->second.c_str());
+            auto password_cmp_res = User::user_compare_passwords(p_username->second.c_str(), 0, p_password->second.c_str());
             auto user = password_cmp_res.data;
 
             if(!password_cmp_res.is_ok()) {
@@ -312,6 +312,55 @@ namespace API_User {
 
             password_cmp_res.cleanup();
             user_session_res.cleanup();
+        }
+
+        // POST /user/preferences/update_password
+        void user_update_password(API_HANDLER_ARGS) {
+            auto body = req->getParameters();
+
+            const auto p_current_password = body.find("current_password");
+            const auto p_new_password = body.find("new_password");
+            
+            if(
+                p_current_password == body.end() ||
+                p_new_password == body.end()
+            ) {
+                return send_error(
+                    "Some or all of required parameters were not provided - `current_password` and `new_password`.",
+                    drogon::HttpStatusCode::k412PreconditionFailed,
+                    api_callback
+                );
+            }
+
+            const auto new_password = p_new_password->second.c_str();
+            const auto new_password_len = strnlen(new_password, 2049);
+
+            if(new_password_len < 8 || new_password_len > 2048) {
+                return send_error(
+                    "New password has an invalid format.",
+                    drogon::HttpStatusCode::k412PreconditionFailed,
+                    api_callback
+                );
+            }
+
+            // Update the password
+            const auto current_user = req->getAttributes()->get<User::User>("current_user");
+
+            const auto password_change_ok = User::user_update_password(current_user.id, p_current_password->second.c_str(), new_password);
+
+            if(password_change_ok) {
+                Json::Value json;
+                json["meta"]["success"] = true;
+
+                auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+                api_callback(resp);
+            } else {
+                return send_error(
+                    "Update failed. Please, check your current password.",
+                    drogon::HttpStatusCode::k400BadRequest,
+                    api_callback
+                );
+            }
         }
 
         // DELETE /user/session/{session_id}

@@ -411,6 +411,15 @@ WHERE public.user_sessions.session_id = $1",
         2,
         NULL
     )) return false;
+    
+    // Updating user's password
+    if(!_prepare_statement(
+        connection,
+        "user_update_password",
+        "UPDATE public.users SET user_password = $2 WHERE user_id = $1",
+        2,
+        NULL
+    )) return false;
 
     // Getting a user by it's id
     if(!_prepare_statement(
