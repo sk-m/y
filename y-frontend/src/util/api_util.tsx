@@ -16,7 +16,7 @@ export type APIResponse<TData = never, RouteName extends string | never = never>
 export function api_fetch<TData = APIResponse>(route: string, options: RequestInit | undefined): Promise<TData> {
     return new Promise((resolve, reject) => {
         window.fetch(API_URL + route, options)
-        .then(res => {
+        .then(res => (
             res.json()
             .then(json => {
                 if(!json.meta) {
@@ -33,7 +33,7 @@ export function api_fetch<TData = APIResponse>(route: string, options: RequestIn
     
                 return resolve(json);
             })
-        })
+        ))
         .catch(() => {
             return reject(new Error("Internal error. Try again in a second."))
         });

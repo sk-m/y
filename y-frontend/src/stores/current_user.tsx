@@ -62,7 +62,10 @@ export const UserProvider: Component<{ user: CurrentUser | undefined }> = props 
 
                 _refresh_ensure() {
                     _user_get_current(user => setState("user", user), /* ensure: */ true)
-                    .catch(() => setState("user", undefined));
+                    .catch(() => {
+                        sessionStorage.removeItem("y_current_user");
+                        setState("user", undefined);
+                    });
                 },
 
                 _set_manual(user) {
