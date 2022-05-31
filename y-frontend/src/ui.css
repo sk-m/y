@@ -362,7 +362,7 @@
     font-weight: 500;
 }
 
-.ui-input-container > .input-message {
+.ui-input-message {
     margin-top: 0.5em;
 
     color: var(--color-gray-7);
@@ -370,7 +370,7 @@
     font-weight: 450;
 }
 
-.ui-input-container > .input-message.c-red {
+.ui-input-message.c-red {
     color: var(--color-red);
 }
 

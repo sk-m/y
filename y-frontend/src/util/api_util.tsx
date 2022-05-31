@@ -2,7 +2,7 @@ import CONFIG from "../../config/config.json";
 
 const API_URL = CONFIG.api_url;
 
-export type APIResponse<TData = never, RouteName extends string | never = never> = {
+export type APIResponse<TData = void, RouteName extends string | void = void> = {
     meta: {
         success?: boolean;
         
@@ -13,8 +13,8 @@ export type APIResponse<TData = never, RouteName extends string | never = never>
     };
 } & (RouteName extends string ? {[R in RouteName]: TData} : {});
 
-export function api_fetch<TData = APIResponse>(route: string, options: RequestInit | undefined): Promise<TData> {
-    return new Promise((resolve, reject) => {
+export function api_fetch<TResponse = APIResponse<void>>(route: string, options: RequestInit | undefined): Promise<TResponse> {
+    return new Promise<TResponse>((resolve, reject) => {
         window.fetch(API_URL + route, options)
         .then(res => (
             res.json()
