@@ -445,6 +445,11 @@
     background-color: var(--color-red-t-04);
 }
 
+.ui-info-panel.c-green {
+    color: var(--color-green);
+    background-color: var(--color-green-t-04);
+}
+
 /* Misc */
 span[title] {
     cursor: help;
