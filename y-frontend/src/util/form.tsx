@@ -1,5 +1,5 @@
 import { batch, createSignal } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createStore, produce } from "solid-js/store";
 
 export type UseFormSubmitFunction = (
     values: {[field_name: string]: string | undefined},
@@ -70,9 +70,11 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
 
     const [formStore, setFormStore] = createStore<{
         fields: {[field_name: string]: UseFormInternalField},
+        fields_order: string[],
         form_ref: HTMLFormElement | undefined
     }>({
         fields: _fields,
+        fields_order: [],
         form_ref: undefined
     });
 
@@ -87,25 +89,54 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
     }
 
     const linkFieldHandler = (field_name: string, field_options: UseFormFieldLinkOptions = {}) => {
+        let field_index: number | undefined = undefined;
+
+        // TODO @performance
+        setFormStore("fields_order", order => {
+            field_index = order.length;
+            return [...order, field_name];
+        });
+
         return {
             name: field_name,
             ref: (ref: HTMLInputElement) => {
-                const default_value = formStore.fields[field_name]?.default_value;
-                if(default_value) ref.value = default_value;
-
                 // Just to be sure
+                // TODO @cleanup we might not need this check
                 if(!ref.hasAttribute("form-linked")) {
+                    ref.setAttribute("form-linked", "");
+
+                    const default_value = formStore.fields[field_name]?.default_value;
+                    if(default_value) ref.value = default_value;
+
                     ref.addEventListener("input", () => {
                         if(formStore.fields[field_name]?.error) {
                             setFormStore("fields", field_name as any, "error", undefined);
                         }
                     });
                     
-                    ref.addEventListener("keyup", (e) => {
-                        if(e.key === "Escape" && form_options.onCancel) {
+                    ref.addEventListener("keydown", (e) => {
+                        if(e.repeat) return;
+
+                        if(form_options.onCancel && e.key === "Escape") {
                             form_options.onCancel();
-                        } else if(field_options.last_field && e.ctrlKey && e.key === "Enter" && status() === "idle") {
-                            submitHandler();
+                        } else if(e.ctrlKey) {
+                            if(field_index !== undefined) {
+                                if(e.key === "ArrowUp") {
+                                    const prev_field_name = formStore.fields_order[field_index - 1];
+    
+                                    if(prev_field_name) formStore.fields[prev_field_name].ref.focus();
+                                }
+    
+                                else if(e.key === "ArrowDown") {
+                                    const prev_field_name = formStore.fields_order[field_index + 1];
+    
+                                    if(prev_field_name) formStore.fields[prev_field_name].ref.focus();
+                                }
+                            }
+
+                            else if(field_options.last_field && e.key === "Enter" && status() === "idle") {
+                                submitHandler();
+                            }
                         }
                     });
 
@@ -126,10 +157,8 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
                         }
                     });
 
-                    ref.setAttribute("form-linked", "");
+                    setFormStore("fields", field_name as any, "ref", ref);
                 }
-
-                setFormStore("fields", field_name as any, "ref", ref);
             }
         }
     }
