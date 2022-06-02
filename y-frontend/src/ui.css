@@ -281,7 +281,8 @@
     transition: 0.25s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-.ui-buttons-container.w-button-hints .ui-button-container > .button-hint {
+.ui-form.form-hint-submittable .ui-button-container > .button-hint.t-submit,
+.ui-form.form-hint-cancellable .ui-button-container > .button-hint.t-cancel {
     transform: translateY(0);
 }
 
@@ -463,6 +464,11 @@ span[title] {
 .mv-1,
 .mt-1 {
     margin-top: 1em;
+}
+
+.mv-15,
+.mt-15 {
+    margin-top: 1.5em;
 }
 
 .ui-flex {

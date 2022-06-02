@@ -31,7 +31,7 @@ const Button: Component<{
             </button>
             <Switch>
                 <Match when={ props.w_hint === "submit" }>
-                    <div className="button-hint">
+                    <div className="button-hint t-submit">
                         <div className="icon">
                             <span class="material-icons-round">done</span>
                         </div>
@@ -39,7 +39,7 @@ const Button: Component<{
                     </div>
                 </Match>
                 <Match when={ props.w_hint === "cancel" }>
-                    <div className="button-hint">
+                    <div className="button-hint t-cancel">
                         <div className="icon">
                             <span class="material-icons-round">clear</span>
                         </div>

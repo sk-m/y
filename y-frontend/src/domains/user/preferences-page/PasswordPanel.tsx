@@ -7,11 +7,10 @@ import FormFieldError from "../../../components/FormFieldError";
 
 const PasswordPanel: Component = () => {
     const [isPanelDrawerShown, setIsPanelDrawerShown] = createSignal(false);
-    const [isPasswordRepeatInputFocused, setIsPasswordRepeatInputFocused] = createSignal(false);
 
     let panel_ref;
 
-    const { fields, status, global_error, link, submit, error_out } = useForm({
+    const { fields, status, global_error, link, register_form, submit, error_out } = useForm({
         current_password: {
             max_length: 2028
         },
@@ -38,10 +37,6 @@ const PasswordPanel: Component = () => {
         setIsPanelDrawerShown(true);
 
         fields.current_password?.ref?.focus();
-    }
-
-    const onPasswordRepeatInputKeyUp = (e: KeyboardEvent) => {
-        // TODO @placeholder @incomplete on ctrl+return
     }
 
     return (
@@ -84,7 +79,7 @@ const PasswordPanel: Component = () => {
 
             <PanelDrawer panel_ref={ panel_ref }>
                 <div className="content">
-                    <form className="ui-form mb-1">
+                    <form {...register_form()}>
                         <div className="ui-info-panel c-green mb-1" hidden={ status() !== "success" }>Success!</div>
                         <div className="ui-info-panel c-red mb-1" hidden={ !global_error() }>{ global_error() }</div>
 
@@ -131,36 +126,32 @@ const PasswordPanel: Component = () => {
                                 type="password"
                                 placeholder="**************"
 
-                                onkeyup={ onPasswordRepeatInputKeyUp }
-
-                                onFocus={[ setIsPasswordRepeatInputFocused, true ]}
-                                onBlur={[ setIsPasswordRepeatInputFocused, false ]}
-
                                 className="ui-input"
 
                                 autocomplete="new-password"
 
-                                { ...link("new_password_repeat") }
+                                { ...link("new_password_repeat", { last_field: true }) }
                             />
                             <FormFieldError error={ fields.new_password_repeat.error } />
                         </div>
-                    </form>
-                    <div className="ui-between center">
-                        <div className="info">
-                        </div>
-                        <div classList={{ "ui-buttons-container": true, "w-button-hints": isPasswordRepeatInputFocused() }}>
-                            <Button
-                                text="Cancel"
-                                onclick={[ setIsPanelDrawerShown, false ]}
-                            />
-                            <Button
-                                text="Confirm"
-                                w_hint="submit"
+                        <div className="ui-between center mt-15">
+                            <div className="info"></div>
+                            <div className="ui-buttons-container">
+                                <Button
+                                    text="Cancel"
+                                    w_hint="cancel"
 
-                                onclick={submit}
-                            />
+                                    onclick={[ setIsPanelDrawerShown, false ]}
+                                />
+                                <Button
+                                    text="Confirm"
+                                    w_hint="submit"
+
+                                    onclick={submit}
+                                />
+                            </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </PanelDrawer>
         </Panel>

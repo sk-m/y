@@ -41,6 +41,13 @@ interface UseFormOptions {
     onError?: (error_message: string) => void;
 }
 
+interface UseFormFieldLinkOptions {
+    /**
+     * If true - focusing on this field will show the hint on the submit button
+     */
+    last_field?: boolean;
+}
+
 export function useForm(fields: { [field_name: string]: UseFormField }, options: UseFormOptions) {
     const _fields: {[field_name: string]: UseFormInternalField} = {};
 
@@ -58,12 +65,23 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
 
     const [formStore, setFormStore] = createStore<{
         fields: {[field_name: string]: UseFormInternalField},
+        form_ref: HTMLFormElement | undefined
     }>({
         fields: _fields,
+        form_ref: undefined
     });
 
     // Functions that we return
-    const linkFieldHandler = (field_name: string) => {
+    const registerFormHandler = (classList: {[className: string]: boolean} = { "ui-form": true }) => {
+        return {
+            classList,
+            ref: (ref: HTMLFormElement) => {
+                setFormStore("form_ref", ref as any);
+            }
+        }
+    }
+
+    const linkFieldHandler = (field_name: string, options: UseFormFieldLinkOptions = {}) => {
         return {
             name: field_name,
             ref: (ref: HTMLInputElement) => {
@@ -75,6 +93,23 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
                     ref.addEventListener("input", () => {
                         if(formStore.fields[field_name]?.error) {
                             setFormStore("fields", field_name as any, "error", undefined);
+                        }
+                    });
+
+                    ref.addEventListener("focus", () => {
+                        if(formStore.form_ref) {
+                            formStore.form_ref.classList.add("form-hint-cancellable");
+
+                            if(options.last_field) {
+                                formStore.form_ref.classList.add("form-hint-submittable");
+                            }
+                        }
+                    });
+
+                    ref.addEventListener("blur", () => {
+                        if(formStore.form_ref) {
+                            formStore.form_ref.classList.remove("form-hint-cancellable");
+                            formStore.form_ref.classList.remove("form-hint-submittable");
                         }
                     });
 
@@ -154,6 +189,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
         global_error: globalError,
         status,
 
+        register_form: registerFormHandler,
         link: linkFieldHandler,
 
         error_out: (error: string) => { setGlobalError(error) },
