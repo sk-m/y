@@ -19,6 +19,8 @@ const Button: Component<{
         <div className="ui-button-container">
             <button
                 ref={ props.button_ref }
+                type="button"
+
                 classList={{
                     "ui-button": true,
                     ["t-" + (props.type || "primary")]: true,

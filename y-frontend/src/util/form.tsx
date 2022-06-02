@@ -95,6 +95,12 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
                             setFormStore("fields", field_name as any, "error", undefined);
                         }
                     });
+                    
+                    ref.addEventListener("keyup", (e) => {
+                        if(options.last_field && e.ctrlKey && e.key === "Enter" && status() === "idle") {
+                            submitHandler();
+                        }
+                    });
 
                     ref.addEventListener("focus", () => {
                         if(formStore.form_ref) {
@@ -121,7 +127,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
         }
     }
 
-    const submitHandler = (e: MouseEvent | undefined, action_name: string = "submit") => {
+    const submitHandler = (e?: MouseEvent, action_name: string = "submit") => {
         const values: {[field_name: string]: string | undefined} = {};
         const errors: {[field_name: string]: string } = {};
 
