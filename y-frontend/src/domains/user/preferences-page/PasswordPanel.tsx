@@ -31,6 +31,8 @@ const PasswordPanel: Component = () => {
 
             return API.user_update_password(values.current_password!, values.new_password!);
         },
+
+        onCancel: () => setIsPanelDrawerShown(false)
     });
 
     const showPanelDrawer = () => {

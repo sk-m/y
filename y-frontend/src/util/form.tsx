@@ -39,6 +39,11 @@ interface UseFormOptions {
      * Will get called upon `onSubmit` rejection
      */
     onError?: (error_message: string) => void;
+
+    /**
+     * Will get called when user presses `Escape`
+     */
+    onCancel?: () => void;
 }
 
 interface UseFormFieldLinkOptions {
@@ -48,7 +53,7 @@ interface UseFormFieldLinkOptions {
     last_field?: boolean;
 }
 
-export function useForm(fields: { [field_name: string]: UseFormField }, options: UseFormOptions) {
+export function useForm(fields: { [field_name: string]: UseFormField }, form_options: UseFormOptions) {
     const _fields: {[field_name: string]: UseFormInternalField} = {};
 
     for(const field_name in fields) {
@@ -81,7 +86,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
         }
     }
 
-    const linkFieldHandler = (field_name: string, options: UseFormFieldLinkOptions = {}) => {
+    const linkFieldHandler = (field_name: string, field_options: UseFormFieldLinkOptions = {}) => {
         return {
             name: field_name,
             ref: (ref: HTMLInputElement) => {
@@ -97,7 +102,9 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
                     });
                     
                     ref.addEventListener("keyup", (e) => {
-                        if(options.last_field && e.ctrlKey && e.key === "Enter" && status() === "idle") {
+                        if(e.key === "Escape" && form_options.onCancel) {
+                            form_options.onCancel();
+                        } else if(field_options.last_field && e.ctrlKey && e.key === "Enter" && status() === "idle") {
                             submitHandler();
                         }
                     });
@@ -106,7 +113,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
                         if(formStore.form_ref) {
                             formStore.form_ref.classList.add("form-hint-cancellable");
 
-                            if(options.last_field) {
+                            if(field_options.last_field) {
                                 formStore.form_ref.classList.add("form-hint-submittable");
                             }
                         }
@@ -168,14 +175,14 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
             setStatus("fetching");
         });
 
-        const res = options.onSubmit(values, action_name, e);
+        const res = form_options.onSubmit(values, action_name, e);
 
         if(res) {
             res
             .then(data => {
                 setStatus("success");
 
-                if(options.onSuccess) options.onSuccess(data);
+                if(form_options.onSuccess) form_options.onSuccess(data);
             })
             .catch((error: Error) => {
                 batch(() => {
@@ -183,7 +190,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, options:
                     setGlobalError(error.message);
                 });
 
-                if(options.onError) options.onError(error.message);
+                if(form_options.onError) form_options.onError(error.message);
             });
         } else {
             setStatus("idle");
