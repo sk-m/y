@@ -13,12 +13,12 @@ const Button: Component<{
     // TODO @any
     onclick?: any,
 
-    button_ref?: (ref: HTMLButtonElement) => void 
+    ref?: (ref: HTMLButtonElement) => void 
 }> = props => {
     return (
         <div className="ui-button-container">
             <button
-                ref={ props.button_ref }
+                ref={ props.ref }
                 type="button"
 
                 classList={{
