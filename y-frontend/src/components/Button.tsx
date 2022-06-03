@@ -1,22 +1,36 @@
-import { Component, Match, Switch } from "solid-js";
+import { Component, JSX, Match, Switch } from "solid-js";
 
 const Button: Component<{
-    text: string,
+    text: string;
 
-    type?: "primary" | "secondary",
-    w_hint?: "submit" | "cancel",
-    text_color?: "red",
+    /**
+     * Only affects how the button looks
+     */
+    type?: "primary" | "secondary";
+    hint?: "submit" | "cancel";
+    text_color?: "default" | "red";
 
-    disabled?: boolean,
+    disabled?: boolean;
 
-    // TODO @cleanup use the ...spread operator to pass the rest of the props into the <button>?
-    // TODO @any
-    onclick?: any,
+    onclick?: any;
 
-    ref?: (ref: HTMLButtonElement) => void 
+    /**
+     * Props that will be passed to the underlying <button> element
+     */
+    button_props?: JSX.ButtonHTMLAttributes<HTMLButtonElement>;
+
+    /**
+     * This references the <button> element
+     */
+    ref?: (ref: HTMLButtonElement) => void;
+
+    /**
+     * This references the .ui-button-container div container
+     */
+    container_ref?: (ref: HTMLDivElement) => void;
 }> = props => {
     return (
-        <div className="ui-button-container">
+        <div ref={ props.container_ref } className="ui-button-container">
             <button
                 ref={ props.ref }
                 type="button"
@@ -27,12 +41,15 @@ const Button: Component<{
                     ["tc-" + (props.text_color || "default")]: true,
                     disabled: props.disabled
                 }}
+
                 onclick={ props.onclick }
+
+                {...props.button_props}
             >
                 { props.text }
             </button>
             <Switch>
-                <Match when={ props.w_hint === "submit" }>
+                <Match when={ props.hint === "submit" }>
                     <div className="button-hint t-submit">
                         <div className="icon">
                             <span class="material-icons-round">done</span>
@@ -40,7 +57,7 @@ const Button: Component<{
                         <div className="text">ctrl+return</div>
                     </div>
                 </Match>
-                <Match when={ props.w_hint === "cancel" }>
+                <Match when={ props.hint === "cancel" }>
                     <div className="button-hint t-cancel">
                         <div className="icon">
                             <span class="material-icons-round">clear</span>

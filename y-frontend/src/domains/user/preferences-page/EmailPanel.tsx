@@ -81,12 +81,12 @@ const EmailPanel: Component = () => {
                             <div className="ui-text">A confirmation email will be sent to the new address. The address will only be changed after you click a confirmation link in that email.</div>
                         </div>
                         <div classList={{ "ui-buttons-container": true, "w-button-hints": isNewEmailInputFocused() }}>
-                            <Button text="Submit" w_hint="submit" />
+                            <Button text="Submit" hint="submit" />
                             <Button
                                 text="Cancel"
                                 onclick={[ setIsPanelDrawerShown, false ]}
                             
-                                w_hint="cancel"
+                                hint="cancel"
                             />
                         </div>
                     </div>

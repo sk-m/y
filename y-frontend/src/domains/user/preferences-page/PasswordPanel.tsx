@@ -141,13 +141,13 @@ const PasswordPanel: Component = () => {
                             <div className="ui-buttons-container">
                                 <Button
                                     text="Cancel"
-                                    w_hint="cancel"
+                                    hint="cancel"
 
                                     onclick={[ setIsPanelDrawerShown, false ]}
                                 />
                                 <Button
                                     text="Confirm"
-                                    w_hint="submit"
+                                    hint="submit"
 
                                     onclick={submit}
                                 />
