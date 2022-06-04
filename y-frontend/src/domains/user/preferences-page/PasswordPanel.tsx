@@ -5,6 +5,7 @@ import API from "../../../api";
 import { useForm } from "../../../util/form";
 import FormFieldError from "../../../components/FormFieldError";
 import Input from "../../../components/Input";
+import ErrorInfoPanel from "../../../components/ErrorInfoPanel";
 
 const PasswordPanel: Component = () => {
     const [isPanelDrawerShown, setIsPanelDrawerShown] = createSignal(false);
@@ -81,8 +82,12 @@ const PasswordPanel: Component = () => {
             <PanelDrawer panel_ref={ panel_ref }>
                 <div className="content">
                     <form {...register_form()}>
-                        <div className="ui-info-panel c-green mb-1" hidden={ status() !== "success" }>Success!</div>
-                        <div className="ui-info-panel c-red mb-1" hidden={ !global_error() }>{ global_error() }</div>
+                        <div className="mb-1">
+                            <div className="ui-info-panel c-green" hidden={ status() !== "success" }>Success!</div>
+                            <ErrorInfoPanel
+                                message={ global_error()?.error_message }
+                            />
+                        </div>
 
                         {/* Accessibility */}
                         <input

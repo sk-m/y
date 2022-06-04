@@ -1,5 +1,6 @@
 import { batch, createSignal } from "solid-js";
 import { createStore, produce } from "solid-js/store";
+import { APIError } from "./api_util";
 
 export type UseFormSubmitFunction = (
     values: {[field_name: string]: string | undefined},
@@ -67,7 +68,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
     }
 
     // TODO @refactor move into the store
-    const [globalError, setGlobalError] = createSignal<string | undefined>();
+    const [globalError, setGlobalError] = createSignal<APIError | undefined>();
     const [status, setStatus] = createSignal<"idle" | "fetching" | "success" | "error">("idle");
 
     const [formStore, setFormStore] = createStore<{
@@ -254,7 +255,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
             .catch((error: Error) => {
                 batch(() => {
                     setStatus("error");
-                    setGlobalError(error.message);
+                    setGlobalError({ error_message: error.message });
                 });
 
                 if(form_options.onError) form_options.onError(error.message);
@@ -272,7 +273,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
         register_form: registerFormHandler,
         link: linkFieldHandler,
 
-        error_out: (error: string) => { setGlobalError(error) },
+        error_out: (error_message: string) => { setGlobalError({ error_message }) },
         submit: submitHandler,
     };
 }

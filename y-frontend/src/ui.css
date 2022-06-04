@@ -494,20 +494,49 @@
 .ui-info-panel {
     padding: 0.8em 1.2em;
 
-    font-size: 0.8em;
-    font-weight: 500;
+    font-size: 0.75rem;
+    font-weight: 450;
 
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 .ui-info-panel.c-red {
     color: var(--color-red);
     background-color: var(--color-red-t-04);
+    border: 1px solid var(--color-red-t-1);
 }
 
 .ui-info-panel.c-green {
     color: var(--color-green);
     background-color: var(--color-green-t-04);
+    border: 1px solid var(--color-green-t-1);
+}
+
+.ui-info-panel > .title {
+    display: flex;
+    align-items: center;
+
+    font-size: 1.2em;
+    font-weight: 600;
+
+    margin-bottom: 0.33rem;
+}
+
+.ui-info-panel > .title > span {
+    font-size: 1.5rem;
+    margin-right: 0.33rem;
+
+    user-select: none;
+}
+
+.ui-info-panel > .keyvalue {
+    display: flex;
+    align-items: flex-start;
+}
+
+.ui-info-panel > .keyvalue > .key {
+    font-weight: 600;
+    margin-right: 0.5em;
 }
 
 /* Misc */

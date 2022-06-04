@@ -30,10 +30,12 @@ body {
 
     --color-green: #22cc00;
     --color-green-t-04: rgba(34, 204, 0, 0.04);
+    --color-green-t-1: rgba(34, 204, 0, 0.1);
     --color-green-t-7: rgba(34, 204, 0, 0.7);
 
     --color-red: #FC0015;
     --color-red-t-04: rgba(252, 0, 21, 0.04);
+    --color-red-t-1: rgba(252, 0, 21, 0.1);
     --color-red-t-7: rgba(252, 0, 21, 0.7);
 
     --color-yellow: #FAF200;

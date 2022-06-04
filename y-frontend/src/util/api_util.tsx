@@ -2,6 +2,10 @@ import CONFIG from "../../config/config.json";
 
 const API_URL = CONFIG.api_url;
 
+export interface APIError {
+    error_message: string;
+}
+
 export type APIResponse<TData = void, RouteName extends string | void = void> = {
     meta: {
         success?: boolean;
