@@ -50,7 +50,7 @@ interface UseFormFieldLinkOptions {
     /**
      * If true - focusing on this field will show the hint on the submit button
      */
-    last_field?: boolean;
+    submittable_field?: boolean;
 }
 
 export function useForm(fields: { [field_name: string]: UseFormField }, form_options: UseFormOptions) {
@@ -89,21 +89,22 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
     }
 
     const linkFieldHandler = (field_name: string, field_options: UseFormFieldLinkOptions = {}) => {
-        let field_index: number | undefined = undefined;
-
-        // TODO @performance
-        setFormStore("fields_order", order => {
-            field_index = order.length;
-            return [...order, field_name];
-        });
-
         return {
             name: field_name,
+            error: formStore.fields[field_name].error,
             ref: (ref: HTMLInputElement) => {
                 // Just to be sure
                 // TODO @cleanup we might not need this check
                 if(!ref.hasAttribute("form-linked")) {
                     ref.setAttribute("form-linked", "");
+                    
+                    let field_index: number | undefined = undefined;
+
+                    // TODO @performance
+                    setFormStore("fields_order", order => {
+                        field_index = order.length;
+                        return [...order, field_name];
+                    });
 
                     const default_value = formStore.fields[field_name]?.default_value;
                     if(default_value) ref.value = default_value;
@@ -125,16 +126,20 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
                                     const prev_field_name = formStore.fields_order[field_index - 1];
     
                                     if(prev_field_name) formStore.fields[prev_field_name].ref.focus();
+
+                                    return;
                                 }
-    
-                                else if(e.key === "ArrowDown") {
+                                
+                                if(e.key === "ArrowDown") {
                                     const prev_field_name = formStore.fields_order[field_index + 1];
-    
+                                    
                                     if(prev_field_name) formStore.fields[prev_field_name].ref.focus();
+
+                                    return;
                                 }
                             }
 
-                            else if(field_options.last_field && e.key === "Enter" && status() === "idle") {
+                            if(field_options.submittable_field && e.key === "Enter" && status() === "idle") {
                                 submitHandler();
                             }
                         }
@@ -144,7 +149,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
                         if(formStore.form_ref) {
                             formStore.form_ref.classList.add("form-hint-cancellable");
 
-                            if(field_options.last_field) {
+                            if(field_options.submittable_field) {
                                 formStore.form_ref.classList.add("form-hint-submittable");
                             }
                         }
@@ -172,17 +177,17 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
         for(const field_name in formStore.fields) {
             const field = formStore.fields[field_name];
             const field_value = field.ref?.value;
- 
+            
             if(!field_value) {
                 if(!field.optional) errors[field_name] = "This field is required.";
             } else {
                 if(field.max_length !== undefined && field_value.length > field.max_length)
-                    errors[field_name] = `This field's maximum length is ${ field.max_length }.`;
+                errors[field_name] = `This field's maximum length is ${ field.max_length }.`;
                 
                 if(field.min_length !== undefined && field_value.length < field.min_length)
-                    errors[field_name] = `This field's minimum length is ${ field.min_length }.`;
+                errors[field_name] = `This field's minimum length is ${ field.min_length }.`;
             }
-
+            
             values[field_name] = field_value;
         }
         
@@ -190,6 +195,7 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
             for(const field_name in formStore.fields) {
                 if(errors[field_name]) {
                     setFormStore("fields", field_name as any, "error", errors[field_name]);
+
                     is_error = true;
                 } else {
                     setFormStore("fields", field_name as any, "error", undefined);

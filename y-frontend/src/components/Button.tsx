@@ -44,7 +44,7 @@ const Button: Component<{
 
                 onclick={ props.onclick }
 
-                {...props.button_props}
+                {...(props.button_props || {})}
             >
                 { props.text }
             </button>

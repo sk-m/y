@@ -4,6 +4,7 @@ import Panel, { PanelDrawer } from "../../../components/Panel";
 import API from "../../../api";
 import { useForm } from "../../../util/form";
 import FormFieldError from "../../../components/FormFieldError";
+import Input from "../../../components/Input";
 
 const PasswordPanel: Component = () => {
     const [isPanelDrawerShown, setIsPanelDrawerShown] = createSignal(false);
@@ -11,9 +12,7 @@ const PasswordPanel: Component = () => {
     let panel_ref;
 
     const { fields, status, global_error, link, register_form, submit, error_out } = useForm({
-        current_password: {
-            max_length: 2028
-        },
+        current_password: {},
         new_password: {
             min_length: 8,
             max_length: 2048
@@ -94,48 +93,36 @@ const PasswordPanel: Component = () => {
                             autocomplete="username"
                         />
 
-                        <div className="ui-input-container">
-                            <div className="header">Current password</div>
-                            <input
-                                type="password"
-                                placeholder="*******"
+                        <Input
+                            label="Current password"
 
-                                className="ui-input"
+                            type="password"
+                            placeholder="*******"
+                            autocomplete="current-password"
 
-                                autocomplete="current-password"
+                            { ...link("current_password") }
+                        />
 
-                                { ...link("current_password") }
-                            />
-                            <FormFieldError error={ fields.current_password.error } />
-                        </div>
-                        <div className="ui-input-container">
-                            <div className="header">New password</div>
-                            <input
-                                type="password"
-                                placeholder="**************"
+                        <Input
+                            label="New password"
 
-                                className="ui-input"
+                            type="password"
+                            placeholder="**************"
+                            autocomplete="new-password"
 
-                                autocomplete="new-password"
+                            { ...link("new_password") }
+                        />
+                        
+                        <Input
+                            label="Repeat new password"
 
-                                { ...link("new_password") }
-                            />
-                            <FormFieldError error={ fields.new_password.error } />
-                        </div>
-                        <div className="ui-input-container">
-                            <div className="header">Repeat new password</div>
-                            <input
-                                type="password"
-                                placeholder="**************"
+                            type="password"
+                            placeholder="**************"
+                            autocomplete="new-password"
 
-                                className="ui-input"
+                            { ...link("new_password_repeat", { submittable_field: true }) }
+                        />
 
-                                autocomplete="new-password"
-
-                                { ...link("new_password_repeat", { last_field: true }) }
-                            />
-                            <FormFieldError error={ fields.new_password_repeat.error } />
-                        </div>
                         <div className="ui-between center mt-15">
                             <div className="info"></div>
                             <div className="ui-buttons-container">
