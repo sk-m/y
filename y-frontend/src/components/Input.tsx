@@ -32,18 +32,28 @@ const Input: Component<{
     return (
         <div ref={ props.container_ref } className="ui-input-container">
             <div className="header">{ props.label }</div>
-            <input
-                ref={ props.ref }
-                className="ui-input"
+            <div className="input-wrapper">
+                <div className="nav-hints-container">
+                    <div className="item">
+                        <span class="material-icons">expand_less</span>
+                    </div>
+                    <div className="item">
+                        <span class="material-icons">expand_more</span>
+                    </div>
+                </div>
+                <input
+                    ref={ props.ref }
+                    className="ui-input"
 
-                name={ props.name }
-                type={ props.type || "text" }
-                placeholder={ props.placeholder }
+                    name={ props.name }
+                    type={ props.type || "text" }
+                    placeholder={ props.placeholder }
 
-                autocomplete={ props.autocomplete }
+                    autocomplete={ props.autocomplete }
 
-                { ...(props.input_props || {}) }
-            />
+                    { ...(props.input_props || {}) }
+                />
+            </div>
             <FormFieldError error={ props.error } />
         </div>
     )

@@ -9,6 +9,7 @@ export type UseFormSubmitFunction = (
 
 interface UseFormInternalField extends UseFormField {
     ref: any | undefined;
+    container_ref: any | undefined;
 
     error?: string;
 }
@@ -60,7 +61,8 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
         _fields[field_name] = {
             ...fields[field_name],
 
-            ref: undefined
+            ref: undefined,
+            container_ref: undefined
         }
     }
 
@@ -92,11 +94,17 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
         return {
             name: field_name,
             error: formStore.fields[field_name].error,
+            container_ref: (container_ref: HTMLDivElement) => {
+                setFormStore("fields", field_name as any, "container_ref", container_ref);
+            },
             ref: (ref: HTMLInputElement) => {
                 // Just to be sure
                 // TODO @cleanup we might not need this check
                 if(!ref.hasAttribute("form-linked")) {
                     ref.setAttribute("form-linked", "");
+                    
+                    const this_field_store = formStore.fields[field_name];
+                    if(!this_field_store) return;
                     
                     let field_index: number | undefined = undefined;
 
@@ -106,34 +114,56 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
                         return [...order, field_name];
                     });
 
-                    const default_value = formStore.fields[field_name]?.default_value;
+                    const default_value = this_field_store.default_value;
                     if(default_value) ref.value = default_value;
 
                     ref.addEventListener("input", () => {
-                        if(formStore.fields[field_name]?.error) {
+                        if(this_field_store.error) {
                             setFormStore("fields", field_name as any, "error", undefined);
                         }
+                    });
+
+                    ref.addEventListener("keyup", (e) => {
+                        if(e.key === "Control") this_field_store.container_ref.classList.remove("container-hints-nav");
                     });
                     
                     ref.addEventListener("keydown", (e) => {
                         if(e.repeat) return;
 
-                        if(form_options.onCancel && e.key === "Escape") {
+                        if(e.key === "Escape" && form_options.onCancel) {
                             form_options.onCancel();
                         } else if(e.ctrlKey) {
+                            this_field_store.container_ref.classList.add("container-hints-nav");
+
                             if(field_index !== undefined) {
                                 if(e.key === "ArrowUp") {
                                     const prev_field_name = formStore.fields_order[field_index - 1];
     
-                                    if(prev_field_name) formStore.fields[prev_field_name].ref.focus();
+                                    if(prev_field_name) {
+                                        const prev_field = formStore.fields[prev_field_name];
+
+                                        prev_field.ref.focus();
+
+                                        if(prev_field.container_ref) {
+                                            prev_field.container_ref.classList.add("container-hints-nav");
+                                        }
+                                    }
 
                                     return;
                                 }
                                 
                                 if(e.key === "ArrowDown") {
-                                    const prev_field_name = formStore.fields_order[field_index + 1];
+                                    const next_field_name = formStore.fields_order[field_index + 1];
                                     
-                                    if(prev_field_name) formStore.fields[prev_field_name].ref.focus();
+                                    if(next_field_name) {
+                                        const next_field = formStore.fields[next_field_name];
+
+                                        next_field.ref.focus();
+                                       
+                                        if(next_field.container_ref) {
+                                            next_field.container_ref.classList.add("container-hints-nav");
+                                        }
+                                    }
 
                                     return;
                                 }
@@ -156,6 +186,8 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
                     });
 
                     ref.addEventListener("blur", () => {
+                        this_field_store.container_ref.classList.remove("container-hints-nav");
+                        
                         if(formStore.form_ref) {
                             formStore.form_ref.classList.remove("form-hint-cancellable");
                             formStore.form_ref.classList.remove("form-hint-submittable");
