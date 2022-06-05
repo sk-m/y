@@ -12,6 +12,18 @@ import FeatureCard from "./features-page/FeatureCard";
 const FeaturesPage: Component = props => {
     return (
         <div id="config-features-page" className="ui-domain-page">
+            <div className="page-header">
+                <span className="title ui-text-w-icon-l">
+                    <span class="material-icons-round" style={{ color: "var(--color-gray-2)" }}>electric_bolt</span>
+                    Features
+                </span>
+                <div className="description">These are the features that come packaged with Y. Feel free to disable the ones you don't plan on using.</div>
+
+                <span className="description ui-text-w-icon-l">
+                    <span class="material-icons-round">lightbulb_outline</span>
+                    Keep in mind that disabling a feature will not result in any data loss.
+                </span>
+            </div>
             <div className="feature-cards-container">
                 <FeatureCard
                     icon_svg={ AutoStoriesWhiteSVG }
