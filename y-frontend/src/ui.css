@@ -14,6 +14,8 @@
 
     margin: 0 auto;
 
+    /* TODO @cleanup not sure we need max-width here */
+
     min-width: 800px;
     width: 60%;
     max-width: 1000px;
@@ -38,6 +40,10 @@
     box-shadow: 0 5px 15px 0 rgba(0, 0, 0, 0.04);
 
     border-radius: 6px;
+}
+
+.ui-panel-container > .ui-panel.padding-l {
+    padding: 2em 2.5em;
 }
 
 .ui-panel-container > .ui-panel > .misc-container {
@@ -87,6 +93,11 @@
 .ui-panel-container > .ui-panel > .misc-container > .info-container > .item.green {
     color: var(--color-green);
     background-color: var(--color-green-t-04);
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item.gray {
+    color: var(--color-gray-7);
+    background-color: var(--color-gray-04);
 }
 
 .ui-panel-container > .ui-panel > .misc-container > .actions-container > .ui-dropdown-menu-container {
@@ -460,6 +471,7 @@
 
 /* Text */
 /* TODO @cleanup */
+.ui-text .w-500,
 .ui-text.w-500 {
     font-weight: 500;
 }
@@ -488,6 +500,22 @@
 
 .ui-tc-red {
     color: var(--color-red);
+}
+
+.ui-text-w-icon-r,
+.ui-text-w-icon-l {
+    display: flex;
+    align-items: center;
+}
+
+.ui-text-w-icon-l > span:first-of-type {
+    font-size: 1em;
+    margin-right: 0.33em;
+}
+
+.ui-text-w-icon-r > span:last-of-type {
+    font-size: 1em;
+    margin-left: 0.33em;
 }
 
 /* Info panels */
@@ -537,6 +565,39 @@
 .ui-info-panel > .keyvalue > .key {
     font-weight: 600;
     margin-right: 0.5em;
+}
+
+/* Fliptext */
+.ui-fliptext {
+    position: relative;
+
+    height: 1.5em;
+
+    overflow: hidden;
+}
+
+.ui-fliptext > .main,
+.ui-fliptext > .alternate {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    height: 1.5em;
+
+    transition: 0.2s ease-in-out;
+}
+
+.ui-fliptext > .alternate {
+    transform: translateY(100%);
+}
+
+.ui-fliptext-alternator:hover .ui-fliptext > .main {
+    transform: translateY(-100%);
+}
+
+.ui-fliptext-alternator:hover .ui-fliptext > .alternate {
+    transform: translateY(0%);
 }
 
 /* Misc */

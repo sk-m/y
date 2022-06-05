@@ -13,7 +13,7 @@ export interface PanelInfoItem {
     icon_name: string,
     text: string,
 
-    color?: string
+    color?: "blue" | "red" | "gray"
 }
 
 export const PanelDrawer: Component<{
@@ -30,9 +30,12 @@ export const PanelDrawer: Component<{
 
 const Panel: Component<{
     classList?: any,
-
+    
     panel_ref?: (ref: HTMLDivElement) => void,
 
+    padding?: "default" | "large",
+    max_width?: string;
+    
     drawer_shown?: boolean,
     panel_actions?: PanelAction[],
     panel_info_items?: PanelInfoItem[]
@@ -44,8 +47,18 @@ const Panel: Component<{
     return (
         <>
             <div className="ui-panel-spacer"></div>
-            <div ref={ props.panel_ref } classList={{ "ui-panel-container": true, "drawer-shown": props.drawer_shown }}>
-                <div classList={{ "ui-panel": true, ...props.classList }}>
+            <div 
+                ref={ props.panel_ref }
+
+                classList={{ "ui-panel-container": true, "drawer-shown": props.drawer_shown }}
+                // TODO @cleanup not sure we even need max-width on the ui-panel-container in the first place.
+                // Let's try removing it altogether (from ui.css too)
+                style={ props.max_width && { "max-width": props.max_width }}
+            >
+                <div
+                    classList={{ "ui-panel": true, "padding-l": props.padding === "large", ...props.classList }}
+                    style={ props.max_width && { "max-width": props.max_width }}
+                >
                     <div className="misc-container">
                         <Show when={ props.panel_info_items }>
                             <div className="info-container">
