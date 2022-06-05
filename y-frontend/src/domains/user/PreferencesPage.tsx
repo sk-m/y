@@ -62,7 +62,7 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
 
             <Match when={ userPreferences() }>
                 <div id="user-preferences-page" className="ui-domain-page">
-                    <Panel
+                    {/* <Panel
                         classList={{ "user-profile-panel": true }}
 
                         // panel_actions={[
@@ -85,14 +85,14 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
 
                                 <div className="section-name">
                                     <div className="text">User groups</div>
-                                    {/* <div className="authority-bubble authority-high"></div> */}
+                                    {/* <div className="authority-bubble authority-high"></div>
                                 </div>
                                 <div className="user-groups">
                                     <div className="group">Confirmed</div>
                                     <div className="group">Clerk</div>
                                 </div>
 
-                                {/* <div className="section-name">
+                                <div className="section-name">
                                     <div className="text">Bio</div>
                                 </div>
                                 <div className="bio">
@@ -103,14 +103,14 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
                                     3
                                     <br />
                                     4
-                                </div> */}
+                                </div>
                             </div>
                         </div>
-                    </Panel>
+                    </Panel> */}
 
                     <PasswordPanel />
 
-                    <EmailPanel />
+                    {/* <EmailPanel /> */}
                 
                     <SessionsPanel
                         userPreferences={ userPreferences }

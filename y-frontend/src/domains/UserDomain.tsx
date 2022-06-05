@@ -28,17 +28,17 @@ const UserDomain: Component = props => {
                     { key: "Blocked", value: false, inverse_bool: true }
                 ]}
             >
-                <AsideMenuLink
+                {/* <AsideMenuLink
                     icon_name="face"
                     name="Profile"
                     description="User's profile"
 
                     to={`/u/${ params.user_name }/profile`}
-                />
+                /> */}
                 <AsideMenuLink
                     icon_name="tune"
                     name="Preferences"
-                    description="Set user's preferences"
+                    description="Manage user's preferences"
 
                     to={`/u/${ params.user_name }/preferences`}
                 />

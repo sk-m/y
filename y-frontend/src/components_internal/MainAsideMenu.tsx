@@ -151,10 +151,10 @@ const MainAsideMenu: Component = () => {
                                 />
                             <AsideMenuLink
                                 icon_name="tune"
-                                name="Settings"
+                                name="Config"
                                 description="Instance configuration centre"
                                 
-                                to="/settings"
+                                to="/config"
                             />
                             
                             <AsideMenuSection name="Page actions" is_expanded={ true } >
