@@ -202,10 +202,11 @@ export function useForm(fields: { [field_name: string]: UseFormField }, form_opt
     }
 
     const submitHandler = (e?: MouseEvent, action_name: string = "submit") => {
+        if(status() === "fetching") return;
+        let is_error = false;
+
         const values: {[field_name: string]: string | undefined} = {};
         const errors: {[field_name: string]: string } = {};
-
-        let is_error = false;
 
         for(const field_name in formStore.fields) {
             const field = formStore.fields[field_name];
