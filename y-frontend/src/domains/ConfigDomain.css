@@ -1,0 +1,105 @@
+#config-features-page > .feature-cards-container .feature-card {
+    cursor: pointer;
+
+    transition: background-color 0.2s ease-in-out;
+}
+
+#config-features-page > .feature-cards-container .feature-card:hover {
+    background-color: var(--color-gray-02);
+}
+
+#config-features-page > .feature-cards-container .feature-card .content {
+    height: 14rem;
+}
+
+#config-features-page > .feature-cards-container .feature-card .card-sides {
+    display: flex;
+    align-items: center;
+
+    height: 100%
+}
+
+#config-features-page > .feature-cards-container .feature-card .card-sides > .icon-container {
+    position: relative;
+
+    flex-shrink: 0;
+    user-select: none;
+
+    width: 14rem;
+    height: 14rem;
+
+    margin-right: 2.5em;
+}
+
+#config-features-page > .feature-cards-container .feature-card.feature-disabled .card-sides > .icon-container {
+    filter: saturate(0.15);
+}
+
+#config-features-page > .feature-cards-container .feature-card.feature-disabled:hover .card-sides > .icon-container {
+    filter: saturate(0.4);
+}
+
+#config-features-page > .feature-cards-container .feature-card .card-sides > .icon-container > .circle-bkg {
+    position: absolute;
+
+    width: 100%;
+    height: 100%;
+
+    border-radius: 50%;
+
+    overflow: hidden;
+
+    background-color: var(--color-blue-t-04);
+    box-shadow: 0 0 0 6px var(--color-blue-t-04);
+}
+
+#config-features-page > .feature-cards-container .feature-card .card-sides > .icon-container > .circle-bkg > .icon-repeat {
+    position: absolute;
+    z-index: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background-size: 7em;
+    background-position: 50% 50%;
+
+    transform: rotate(15deg);
+}
+
+#config-features-page > .feature-cards-container .feature-card .card-sides > .icon-container > .icon {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 100%;
+}
+
+#config-features-page > .feature-cards-container .feature-card .card-sides > .icon-container > .icon > span {
+    color: var(--color-blue-darker);
+    font-size: 7em;
+
+    transform: rotate(15deg);
+}
+
+#config-features-page > .feature-cards-container .feature-card .card-sides > .info-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    height: 100%;
+}
+
+#config-features-page > .feature-cards-container .feature-card .card-sides > .info-container > .text > .feature-name {
+    font-size: 2.25em;
+    font-weight: 800;
+}
+
+#config-features-page > .feature-cards-container .feature-card .card-sides > .info-container > .text > .feature-description {
+    color: var(--color-gray-7);
+
+    font-size: 0.95em;
+    font-weight: 450;
+}

@@ -4,6 +4,7 @@ import { Route, Routes } from "solid-app-router";
 import "./app.css";
 import MainAsideMenu from "./components_internal/MainAsideMenu";
 import UserDomain from "./domains/UserDomain";
+import ConfigDomain from "./domains/ConfigDomain";
 
 const TestComponent: Component = () => {
     return (
@@ -19,6 +20,7 @@ const MainRoute: Component = () => {
 
                 <Routes>
                     <Route path="/u/:user_name/*" component={ UserDomain } />
+                    <Route path="/config/*" component={ ConfigDomain } />
                     <Route path="/" component={ TestComponent } />
                 </Routes>
             </div>
