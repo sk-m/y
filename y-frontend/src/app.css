@@ -879,6 +879,29 @@
     height: 2em;
 }
 
+.ui-domain-page > .page-header {
+    max-width: 900px;
+    margin: 2em auto 1.5em auto;
+}
+
+.ui-domain-page > .page-header > .title {
+    font-size: 4em;
+    font-weight: 800;
+}
+
+.ui-domain-page > .page-header > .title > .material-icons-round {
+    color: var(--color-gray-2);
+}
+
+.ui-domain-page > .page-header > .description {
+    margin-top: 0.1em;
+
+    color: var(--color-gray-7);
+    /* font-size: 0.9em; */
+    font-weight: 400;
+}
+
+
 @keyframes page-obstruction-screen-logo-blink {
     0% {
         color: rgba(0, 0, 0, 0.01);

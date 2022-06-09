@@ -14,7 +14,7 @@ const FeaturesPage: Component = props => {
         <div id="config-features-page" className="ui-domain-page">
             <div className="page-header">
                 <span className="title ui-text-w-icon-l">
-                    <span class="material-icons-round" style={{ color: "var(--color-gray-2)" }}>electric_bolt</span>
+                    <span class="material-icons-round">electric_bolt</span>
                     Features
                 </span>
                 <div className="description">These are the features that come packaged with Y. Feel free to disable the ones you don't plan on using.</div>
