@@ -35,7 +35,8 @@ const Panel: Component<{
 
     padding?: "default" | "large",
     max_width?: string;
-    
+    is_list_item?: boolean;
+
     drawer_shown?: boolean,
     panel_actions?: PanelAction[],
     panel_info_items?: PanelInfoItem[]
@@ -46,7 +47,10 @@ const Panel: Component<{
 
     return (
         <>
-            <div className="ui-panel-spacer"></div>
+            <Show when={ !props.is_list_item }>
+                <div className="ui-panel-spacer"></div>
+            </Show>
+
             <div 
                 ref={ props.panel_ref }
 
@@ -56,7 +60,7 @@ const Panel: Component<{
                 style={ props.max_width && { "max-width": props.max_width }}
             >
                 <div
-                    classList={{ "ui-panel": true, "padding-l": props.padding === "large", ...props.classList }}
+                    classList={{ "ui-panel": true, "padding-l": props.padding === "large", "list-item": props.is_list_item, ...props.classList }}
                     style={ props.max_width && { "max-width": props.max_width }}
                 >
                     <div className="misc-container">

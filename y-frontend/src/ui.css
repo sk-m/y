@@ -46,6 +46,24 @@
     padding: 2em 2.5em;
 }
 
+.ui-panel-container > .ui-panel.list-item {
+    border-radius: 0;
+    border-bottom-style: none;
+}
+
+.ui-panel-container.drawer-shown > .ui-panel.list-item {
+    border-bottom-style: solid;
+}
+
+.ui-panel-container:first-of-type > .ui-panel.list-item {
+    border-radius: 6px 6px 0 0;
+}
+
+.ui-panel-container:last-of-type > .ui-panel.list-item {
+    border-radius: 0 0 6px 6px;
+    border-bottom-style: solid;
+}
+
 .ui-panel-container > .ui-panel > .misc-container {
     position: absolute;
     display: flex;
@@ -240,6 +258,16 @@
     transition: 0.25s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
+.ui-panel-container .ui-panel.list-item + div > .ui-panel-drawer {
+    border-radius: 0;
+    box-shadow: inset 0 1px 0 1px var(--color-gray-1);
+}
+
+.ui-panel-container:last-of-type .ui-panel.list-item + div > .ui-panel-drawer {
+    border-radius: 0 0 6px 6px;
+    box-shadow: inset 0 0 0 1px var(--color-gray-1);
+}
+
 .ui-panel-container.drawer-shown .ui-panel-drawer {
     padding: calc(1.5em + 6px) 1.5em 1.5em 1.5em;
     height: 100%;
@@ -251,6 +279,21 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+.ui-panel-container .ui-panel-drawer .drawer-spacer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 1.5em 0;
+
+    user-select: none;
+}
+
+.ui-panel-container .ui-panel-drawer .drawer-spacer > span {
+    color: var(--color-gray-25);
+    font-size: 1em;
 }
 
 /* Buttons */
@@ -361,6 +404,15 @@
     pointer-events: none;
 }
 
+.ui-button.adjacent {
+    padding: 0.5em 0.8em;
+
+    border-left: 0;
+
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
 /* Forms */
 .ui-input-container {
     margin: 0.5em 0;
@@ -420,8 +472,26 @@
     font-size: 1em;
 }
 
-.ui-input-container > .input-wrapper > .ui-input {
+.ui-input-container > .input-wrapper > .horizontal-container {
+    display: flex;
+    align-items: center;
+}
+
+.ui-input-container > .input-wrapper > .horizontal-container > * {
+    flex-shrink: 0;
+}
+
+.ui-input-container > .input-wrapper > .horizontal-container > *:first-child {
+    flex-shrink: unset;
+}
+
+.ui-input-container > .input-wrapper .ui-input {
     z-index: 1;
+}
+
+.ui-input-container.w-button .ui-input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 .ui-input-container > .header {
@@ -602,6 +672,10 @@
 
 /* Misc */
 span[title] {
+    cursor: help;
+}
+
+.ui-w-title {
     cursor: help;
 }
 

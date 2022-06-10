@@ -1,12 +1,13 @@
 import { Component, JSX, Match, Switch } from "solid-js";
 
-const Button: Component<{
+export interface ButtonProps {
     text: string;
 
     /**
      * Only affects how the button looks
      */
     type?: "primary" | "secondary";
+    is_adjacent?: boolean;
     hint?: "submit" | "cancel";
     text_color?: "default" | "red";
 
@@ -28,7 +29,9 @@ const Button: Component<{
      * This references the .ui-button-container div container
      */
     container_ref?: (ref: HTMLDivElement) => void;
-}> = props => {
+}
+
+const Button: Component<ButtonProps> = props => {
     return (
         <div ref={ props.container_ref } className="ui-button-container">
             <button
@@ -39,6 +42,7 @@ const Button: Component<{
                     "ui-button": true,
                     ["t-" + (props.type || "primary")]: true,
                     ["tc-" + (props.text_color || "default")]: true,
+                    adjacent: props.is_adjacent,
                     disabled: props.disabled
                 }}
 

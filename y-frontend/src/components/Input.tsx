@@ -1,13 +1,16 @@
-import { Component, JSX } from "solid-js";
+import { Component, JSX, Show } from "solid-js";
+import Button, { ButtonProps } from "./Button";
 import FormFieldError from "./FormFieldError";
 
 const Input: Component<{
-    label: string;
     name: string;
+    label?: string;
 
     type?: string;
     placeholder?: string;
     autocomplete?: string;
+
+    with_button?: ButtonProps;
 
     /**
      * If set, will include an <FormFieldError /> element that will display this error text underneath the input element
@@ -30,8 +33,8 @@ const Input: Component<{
     container_ref?: (ref: HTMLDivElement) => void;
 }> = props => {
     return (
-        <div ref={ props.container_ref } className="ui-input-container">
-            <div className="header">{ props.label }</div>
+        <div ref={ props.container_ref } classList={{ "ui-input-container": true, "w-button": !!props.with_button }}>
+            <div className="header" hidden={ !props.label }>{ props.label }</div>
             <div className="input-wrapper">
                 <div className="nav-hints-container">
                     <div className="item">
@@ -41,18 +44,27 @@ const Input: Component<{
                         <span class="material-icons">expand_more</span>
                     </div>
                 </div>
-                <input
-                    ref={ props.ref }
-                    className="ui-input"
+                <div className="horizontal-container">
+                    <input
+                        ref={ props.ref }
+                        className="ui-input"
 
-                    name={ props.name }
-                    type={ props.type || "text" }
-                    placeholder={ props.placeholder }
+                        name={ props.name }
+                        type={ props.type || "text" }
+                        placeholder={ props.placeholder }
 
-                    autocomplete={ props.autocomplete }
+                        autocomplete={ props.autocomplete }
 
-                    { ...(props.input_props || {}) }
-                />
+                        { ...(props.input_props || {}) }
+                    />
+                    <Show when={ props.with_button }>
+                        <Button
+                            is_adjacent={ true }
+
+                            { ...props.with_button! }
+                        />
+                    </Show>
+                </div>
             </div>
             <FormFieldError error={ props.error } />
         </div>
