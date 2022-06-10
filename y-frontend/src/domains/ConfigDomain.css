@@ -103,3 +103,230 @@
     font-size: 0.95em;
     font-weight: 450;
 }
+
+.ui-domain-page.config-items-page .config-items-container .config-section-header .panel-sides {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-section-header .icon-container {
+    position: relative;
+
+    flex-shrink: 0;
+    user-select: none;
+
+    width: 7rem;
+    height: 7rem;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-section-header .icon-container > .circle-bkg {
+    position: absolute;
+
+    width: 100%;
+    height: 100%;
+
+    border-radius: 50%;
+
+    overflow: hidden;
+
+    background-color: var(--color-blue-t-04);
+    box-shadow: 0 0 0 3px var(--color-blue-t-04);
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-section-header .icon-container > .circle-bkg > .icon-repeat {
+    position: absolute;
+    z-index: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background-size: 4.5em;
+    background-position: 50% 50%;
+
+    transform: rotate(15deg);
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-section-header .icon-container > .icon {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 100%;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-section-header .icon-container > .icon > span {
+    color: var(--color-blue-darker);
+    font-size: 4.5em;
+
+    transform: rotate(15deg);
+}
+
+
+.ui-domain-page.config-items-page .config-items-container .config-section-header .info-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    height: 100%;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-section-header .info-container > .section-title {
+    font-size: 2em;
+    font-weight: 800;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-section-header .info-container > .section-description {
+    color: var(--color-gray-7);
+
+    font-size: 0.95em;
+    font-weight: 450;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item {
+    cursor: pointer;
+
+    transition: 0.15s ease-in-out;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item:hover {
+    background-color: var(--color-gray-02);
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .panel-sides {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-title {
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-name {
+    color: var(--color-gray-50);
+    font-size: 0.9em;
+    font-weight: 400;
+    font-family: "SourceCodePro", monospace;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-description {
+    margin: 1em 0;
+
+    color: var(--color-gray-7);
+    font-size: 0.9em;
+    font-weight: 400;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items {
+    display: flex;
+    align-items: center;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item {
+    display: flex;
+    align-items: center;
+
+    user-select: none;
+
+    height: 1.5em;
+
+    padding: 0 0.66em;
+    margin-right: 0.5em;
+    
+    color: var(--color-gray-7);
+    background-color: var(--color-gray-04);
+   
+    border-radius: 1.5em;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item.c-green {
+    color: var(--color-green);
+    background-color: var(--color-green-t-1);
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item.c-red {
+    color: var(--color-red);
+    background-color: var(--color-red-t-04);
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item > .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item > .icon > span {
+    font-size: 1em;
+
+    margin-right: 0.5em;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item > .text {
+    font-weight: 500;
+    font-size: 0.85em;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-value-container {
+    position: relative;
+
+    padding: 0.5em 1em;
+
+    /* border: 1px solid var(--color-gray-15); */
+    border-radius: 5px;
+    background-color: var(--color-gray-04);
+
+    transition: 0.15s ease-in-out;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item:hover .config-value-container {
+    box-shadow: 0 0 0 1px var(--color-gray-15);
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-value-container > .edit-hint {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    z-index: -1;
+
+    top: 0;
+    right: 100%;
+
+    height: 100%;
+    width: fit-content;
+
+    margin-right: -0.25em;
+    padding: 0 1.05em 0 0.8em;
+
+    pointer-events: none;
+
+    /* box-shadow: 0 0 0 1px var(--color-blue-t-15);
+    background-color: var(--color-blue-t-1); */
+    box-shadow: 0 0 0 1px var(--color-gray-15);
+    background-color: var(--color-gray-1);
+    border-radius: 5px 0 0 5px;
+
+    /* Default state */
+    transform: translateX(15%);
+    opacity: 0;
+
+    transition: 0.15s ease-in-out;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item:hover .config-value-container > .edit-hint {
+    transform: translateX(0%);
+    opacity: 1;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-value-container > .edit-hint > span {
+    /* color: var(--color-blue-darker); */
+    font-size: 1.15em;
+}
+
+.ui-domain-page.config-items-page .config-items-container .config-item .config-value-container > .config-value {
+    font-weight: 450;
+}

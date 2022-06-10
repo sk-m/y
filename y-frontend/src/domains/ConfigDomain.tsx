@@ -3,6 +3,7 @@ import { Component } from "solid-js";
 import AsideMenuLink from "../components/AsideMenuLink";
 import DomainAsideMenu from "../components_internal/DomainAsideMenu";
 import FeaturesPage from "./config/FeaturesPage";
+import InstancePage from "./config/InstancePage";
 
 import "./ConfigDomain.css";
 
@@ -47,6 +48,9 @@ const ConfigDomain: Component = props => {
             </DomainAsideMenu>
             
             <Routes>
+                <Route path="/instance" element={
+                    <InstancePage />
+                }></Route>
                 <Route path="/features" element={
                     <FeaturesPage />
                 }></Route>
