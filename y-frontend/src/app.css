@@ -472,6 +472,19 @@
     transform: translateX(-1em);
 }
 
+.ui-aside-container > .aside > .content > .menu > .links .link.info-link {
+    pointer-events: none;
+
+    margin-top: 0.33em;
+
+    background-color: var(--color-blue-t-06);
+    color: var(--color-blue-darker);
+}
+
+.ui-aside-container > .aside > .content > .menu > .links .link.info-link .icon > span {
+    color: var(--color-blue-darker);
+}
+
 .ui-aside-container > .aside > .content > .menu > .links .link > .right > .arrow-icon {
     position: absolute;
 

@@ -45,6 +45,7 @@ body {
     --color-blue-darker: hsl(234, 100%, 33%);
     --color-blue-t-02: rgba(0, 23, 230, 0.02);
     --color-blue-t-04: rgba(0, 23, 230, 0.04);
+    --color-blue-t-06: rgba(0, 23, 230, 0.06);
     --color-blue-t-1: rgba(0, 23, 230, 0.1);
     --color-blue-t-15: rgba(0, 23, 230, 0.15);
     --color-blue-t-7: rgba(0, 23, 230, 0.7);
