@@ -6,9 +6,11 @@ export interface ButtonProps {
     /**
      * Only affects how the button looks
      */
-    type?: "primary" | "secondary";
+    type?: "primary" | "filled";
     is_adjacent?: boolean;
     hint?: "submit" | "cancel";
+
+    // TODO @refactor rename to `color`
     text_color?: "default" | "red";
 
     disabled?: boolean;

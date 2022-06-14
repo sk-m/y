@@ -86,12 +86,12 @@ const ConfigItem: Component<{
                     <div className="config-title">{ props.title }</div>
                     {/* <div className="config-name">{ props.name }</div> */}
                     <div className="config-description">{ props.description }</div>
-                    <div className="config-access-info-items">
+                    <div className="ui-pills-container">
                         <For each={ props.access_info_items }>
                             {item =>
                                 <div
                                     classList={{
-                                        item: true,
+                                        "ui-pill": true,
                                         "ui-w-title": true,
                                         [`c-${ item.type === "custom" ? item.color : ACCESS_INFO_ITEMS[item.type].color }`]: true
                                     }}
