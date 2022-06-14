@@ -88,5 +88,9 @@
         "variant": "cpp",
         "fastpbkdf2.h": "c",
         "charconv": "cpp"
-    }
+    },
+    "cSpell.words": [
+        "usergroup",
+        "usergroups"
+    ]
 }

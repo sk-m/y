@@ -222,55 +222,6 @@
     font-weight: 400;
 }
 
-.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items {
-    display: flex;
-    align-items: center;
-}
-
-.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item {
-    display: flex;
-    align-items: center;
-
-    user-select: none;
-
-    height: 1.5em;
-
-    padding: 0 0.66em;
-    margin-right: 0.5em;
-    
-    color: var(--color-gray-7);
-    background-color: var(--color-gray-04);
-   
-    border-radius: 1.5em;
-}
-
-.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item.c-green {
-    color: var(--color-green);
-    background-color: var(--color-green-t-1);
-}
-
-.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item.c-red {
-    color: var(--color-red);
-    background-color: var(--color-red-t-04);
-}
-
-.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item > .icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item > .icon > span {
-    font-size: 1em;
-
-    margin-right: 0.5em;
-}
-
-.ui-domain-page.config-items-page .config-items-container .config-item .config-access-info-items > .item > .text {
-    font-weight: 500;
-    font-size: 0.85em;
-}
-
 .ui-domain-page.config-items-page .config-items-container .config-item .config-value-container {
     position: relative;
 
@@ -329,4 +280,34 @@
 
 .ui-domain-page.config-items-page .config-items-container .config-item .config-value-container > .config-value {
     font-weight: 450;
+}
+
+#config-usergroup-page > .rights-container .user-right-item .right-header > .left,
+#config-usergroup-page > .rights-container .user-right-item .right-header {
+    display: flex;
+    align-items: center;
+}
+
+#config-usergroup-page > .rights-container .user-right-item .right-header {
+    justify-content: space-between;
+}
+
+#config-usergroup-page > .rights-container .user-right-item .right-header .right-display-name {
+    margin-left: 0.75em;
+
+    font-size: 1em;
+    font-weight: 500;
+}
+
+#config-usergroup-page > .rights-container .user-right-item .right-description {
+    margin: 1.5em 0;
+
+    color: var(--color-gray-7);
+    font-size: 0.9em;
+    font-weight: 450;
+}
+
+#config-usergroup-page > .rights-container .user-right-item .buttons-container {
+    display: flex;
+    align-items: center;
 }
