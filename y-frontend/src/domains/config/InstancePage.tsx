@@ -1,7 +1,7 @@
 import { Component } from "solid-js";
 import Panel from "../../components/Panel";
-import ConfigItem from "./features-page/ConfigItem";
-import ConfigSectionHeader from "./features-page/ConfigSectionHeader";
+import ConfigItem from "./common/ConfigItem";
+import ConfigSectionHeader from "./common/ConfigSectionHeader";
 import SettingsWhiteSVG from "../../assets/icons/settings_white.svg"
 import PaletteWhiteSVG from "../../assets/icons/palette_white.svg"
 

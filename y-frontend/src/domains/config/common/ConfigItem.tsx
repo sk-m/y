@@ -111,7 +111,7 @@ const ConfigItem: Component<{
                 <div className="right">
                     <div className="config-value-container">
                         <div className="edit-hint">
-                            <span class="material-icons-round">edit</span>
+                            <span class="material-icons-round">{ drawerShown() ? "expand_less" : "edit" }</span>
                         </div>
                         <div className="config-value">
                             { props.value }
