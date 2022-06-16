@@ -16,8 +16,8 @@
 
     /* TODO @cleanup not sure we need max-width here */
 
-    min-width: 800px;
-    width: 60%;
+    min-width: max(33vw, 500px);
+    width: 90%;
     max-width: 1000px;
 
     border-radius: 6px;
