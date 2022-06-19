@@ -1,4 +1,4 @@
-import { Component, createContext, createEffect, useContext } from "solid-js";
+import { Component, createContext, useContext } from "solid-js";
 import { createStore } from "solid-js/store";
 
 import API from "../api";
@@ -20,9 +20,12 @@ type CurrentUserStore = [
     },
     {
         /**
-         * Perform logout
+         * Perform logout.
+         * 
+         * Returns false if the logout request had an error, true otherwise. User will be logged out in any case, even if a server-side
+         * error ocurred. 
          */
-        logout?: () => void,
+        logout?: () => Promise<boolean>,
 
         /**
          * Call to /user/me and update info about currently logged in user. By doing this, we ensure that the user is really logged in
@@ -55,9 +58,9 @@ export const UserProvider: Component<{ user: CurrentUser | undefined }> = props 
 
                     sessionStorage.removeItem("y_current_user");
 
-                    API.logout()
-                    .then(() => setState("user", undefined))
-                    .catch(() => setState("user", undefined));
+                    return API.logout()
+                    .then(() => { setState("user", undefined); return true; })
+                    .catch(() => { setState("user", undefined); return false; });
                 },
 
                 _refresh_ensure() {

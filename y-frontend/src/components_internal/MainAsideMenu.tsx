@@ -1,5 +1,5 @@
 import { useNavigate } from "solid-app-router";
-import { Component, createSignal, onMount, PropsWithChildren, Show } from "solid-js";
+import { Component, createSignal, onMount, Show } from "solid-js";
 import AsideMenuLink from "../components/AsideMenuLink";
 import AsideMenuSection from "../components/AsideMenuSection";
 import DropdownMenu, { DropdownMenuLink } from "../components/DropdownMenu";
@@ -20,7 +20,9 @@ const MainAsideMenu: Component = () => {
     // Allow toggling the size of the aside menu by pressing ctrl + B anywhere
     onMount(() => {
         // Just to be extra sure
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
         if((window as any)._y_aside_listener_added) return;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
         (window as any)._y_aside_listener_added = true;
 
         // TODO @improvement save the state to the localStorage?
@@ -54,6 +56,7 @@ const MainAsideMenu: Component = () => {
                                             className="user-avatar"
                                             style={{ "background-image": "url(https://images.unsplash.com/photo-1604076913837-52ab5629fba9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80)" }}
                                         ></div>
+                                        { /* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */ }
                                         <div className="user-username">{ current_user.user!.user_username }</div>
                                         <span classList={{ "expand-icon": true, "material-icons-round": true, shown: isUserDropdownShown() }}>expand_less</span>
                                     </div>
@@ -61,12 +64,14 @@ const MainAsideMenu: Component = () => {
                                     <DropdownMenu shown={ isUserDropdownShown() }>
                                         <DropdownMenuLink
                                             text="Profile"
+                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                             to={`/u/${ current_user.user!.user_username }`}
-
+                                            
                                             { ...user_dropdown_menu_props }
                                             />
                                         <DropdownMenuLink
                                             text="User preferences"
+                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                             to={`/u/${ current_user.user!.user_username }/preferences`}
 
                                             { ...user_dropdown_menu_props }
@@ -75,7 +80,8 @@ const MainAsideMenu: Component = () => {
                                             text="Log out"
                                             is_red={true}
                                             
-                                            action={ logout }
+                                            // We do not wait for the logout process to be completed, async
+                                            action={ () => { logout ? void logout() : void 0 ; return false; } }
 
                                             { ...user_dropdown_menu_props }
                                         />

@@ -1,16 +1,22 @@
 import { CurrentUser } from "../stores/current_user";
 import API from ".";
 
+interface SessionStorageInfo extends Omit<CurrentUser, "authoritative"> {
+    valid_until: number;
+}
+
 function save_user_to_session_storage(user: Omit<CurrentUser, "authoritative">) {
-    // Save the user details in the browser's sessionStorage
-    // This is done to minimize the amount of /user/me calls
-    // TODO @doc better explanation needed. This is for hydration
-    window.sessionStorage.setItem("y_current_user", JSON.stringify({
+    const session_storage_info: SessionStorageInfo = {
         // For how long we will "trust" this information. If we get this info and the valid_until timestamp is < than
         // the current timestamp - call /user/me and update this info 
         valid_until: new Date().getTime() + 3600000, // One hour for now
         ...user
-    }));
+    };
+
+    // Save the user details in the browser's sessionStorage
+    // This is done to minimize the amount of /user/me calls
+    // TODO @doc better explanation needed. This is for hydration
+    window.sessionStorage.setItem("y_current_user", JSON.stringify(session_storage_info));
 
     console.debug("[y] [🔑 auth] Saved user info to the sessionStorage");
 }
@@ -29,7 +35,7 @@ export function _user_get_current(set_current_user: (user: CurrentUser) => void,
 
         if(session_storage_user_raw) {
             try {
-                const session_storage_user = JSON.parse(session_storage_user_raw);
+                const session_storage_user = JSON.parse(session_storage_user_raw) as SessionStorageInfo;
 
                 if(session_storage_user.valid_until > new Date().getTime()) {
                     // The browser holds a non-expired info about a currently logged in user, no API calls required

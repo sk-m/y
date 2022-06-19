@@ -7,7 +7,7 @@ const DomainAsideMenu: Component<{
     subheader: string,
     
     target_name?: string,
-    target_info?: { [key: string]: string | number | boolean }[]
+    target_info?: Record<string, string | number | boolean>[]
 }> = props => {
     // We store whether or not the target info panel for this specific domain is expanded, in the localStorage
     const target_panel_localstorage_config_key = "y_domain_aside_target_panel_expanded_" + props.domain_id;
@@ -63,8 +63,8 @@ const DomainAsideMenu: Component<{
                                                 </div>
                                                 <div classList={{
                                                     value: true,
-                                                    "bool-true": item.value === (true && !item.inverse_bool),
-                                                    "bool-false": item.value === (false || item.inverse_bool)
+                                                    "bool-true": item.value === (!item.inverse_bool),
+                                                    "bool-false": item.value === (item.inverse_bool)
                                                 }}>{
                                                     (typeof item.value === "boolean")
                                                     ? (item.value ? "yes" : "no")

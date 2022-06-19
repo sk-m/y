@@ -8,7 +8,7 @@ import UserGroupManagementPage from "./config/UserGroupManagementPage";
 
 import "./ConfigDomain.css";
 
-const ConfigDomain: Component = props => {
+const ConfigDomain: Component = () => {
     return (
         <div id="domain-config" className="ui-domain">
             <DomainAsideMenu

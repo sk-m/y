@@ -1,8 +1,8 @@
-import { Component } from "solid-js";
+import { Component, JSX } from "solid-js";
 
 const FlipText: Component<{
-    main_content: any;
-    alternate_content: any;
+    main_content: Element | JSX.Element;
+    alternate_content: Element | JSX.Element;
 }> = props => {
     return (
         <div className="ui-fliptext">

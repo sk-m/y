@@ -18,7 +18,7 @@ const PageObstructionScreen: Component<{
 
                     <Match when={ props.type === "error" }>
                         <div className="logo-text still">!!?</div>
-                        <div className="text">{ props.error_text || "Some error occured!" }</div>
+                        <div className="text">{ props.error_text ?? "Some error ocurred!" }</div>
 
                         <Show when={ props.on_retry }>
                             <Button text="Retry" onclick={ props.on_retry } />

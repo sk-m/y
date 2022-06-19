@@ -4,7 +4,7 @@
   "description": "Web client for y",
   "scripts": {
     "dev": "vite",
-    "build": "eslint . && vite build",
+    "build": "eslint . && rm -r dist/ && vite build",
     "build:force": "vite build",
     "build:sourcemap": "vite build --sourcemap",
     "lint": "eslint ."

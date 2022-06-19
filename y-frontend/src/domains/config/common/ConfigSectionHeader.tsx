@@ -1,4 +1,4 @@
-import { Component, For, Show } from "solid-js";
+import { Component, Show } from "solid-js";
 import Panel from "../../../components/Panel";
 
 const ConfigSectionHeader: Component<{
@@ -15,7 +15,7 @@ const ConfigSectionHeader: Component<{
             classList={{ "config-section-header": true }}
             is_list_item={ true }
             
-            max_width={ props.max_width || "900px" }
+            max_width={ props.max_width ?? "900px" }
         >
             <div className="panel-sides">
                 <div className="info-container">
@@ -25,7 +25,8 @@ const ConfigSectionHeader: Component<{
                 <Show when={ props.icon_name && props.icon_svg }>
                     <div className="icon-container">
                         <div className="circle-bkg">
-                            <div className="icon-repeat" style={{ "background-image": `url(${ props.icon_svg })` }}></div>
+                            { /* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */ }
+                            <div className="icon-repeat" style={{ "background-image": `url(${ props.icon_svg! })` }}></div>
                         </div>
                         <div className="icon">
                             <span class="material-icons-round">{ props.icon_name }</span>

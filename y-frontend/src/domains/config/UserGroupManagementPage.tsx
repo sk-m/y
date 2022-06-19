@@ -2,7 +2,7 @@ import { Component } from "solid-js";
 import ConfigSectionHeader from "./common/ConfigSectionHeader";
 import UserRightItem from "./usergroupmanagement-page/UserRightItem";
 
-const UserGroupManagementPage: Component = props => {
+const UserGroupManagementPage: Component = () => {
     return (
         <div id="config-usergroup-page" className="ui-domain-page config-items-page">
             <div className="rights-container config-items-container">

@@ -23,7 +23,7 @@ export const DropdownMenuLink: Component<{
     /**
      * return `false` to trigger on_close() event  
      */
-    action?: () => void | boolean
+    action?: () => boolean
 }> = props => {
     // TODO @performance is it ok that we do this for every Link?
     const navigate = useNavigate();
@@ -31,12 +31,12 @@ export const DropdownMenuLink: Component<{
     const onLinkClick = () => {
         if(props.to) { navigate(props.to); props.request_close(); }
         else if(props.action) {
-            if(props.action() === false) props.request_close();
+            if(!props.action()) props.request_close();
         }
     }
 
     return (
-        <div onclick={ onLinkClick } classList={{ "link": true, "c-red": props.is_red || false }}>
+        <div onclick={ onLinkClick } classList={{ "link": true, "c-red": props.is_red ?? false }}>
             <div class="left">
                 {/* <div class={ styles.icon }>
                     <span class="material-icons-round">{ props.icon_name }</span>

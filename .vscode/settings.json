@@ -92,5 +92,8 @@
     "cSpell.words": [
         "usergroup",
         "usergroups"
+    ],
+    "cSpell.enableFiletypes": [
+        "!css"
     ]
 }

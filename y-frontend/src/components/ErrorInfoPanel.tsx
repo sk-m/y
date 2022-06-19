@@ -9,7 +9,7 @@ const ErrorInfoPanel: Component<{
         <div className="ui-info-panel c-red" hidden={ !props.message }>
             <div className="title">
                 <span class="material-icons">report</span>
-                { props.title || "Error" }
+                { props.title ?? "Error" }
             </div>
             <div className="keyvalue">
                 <div className="key">Message:</div>

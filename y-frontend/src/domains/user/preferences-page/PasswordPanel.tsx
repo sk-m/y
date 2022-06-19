@@ -3,7 +3,6 @@ import Button from "../../../components/Button";
 import Panel, { PanelDrawer } from "../../../components/Panel";
 import API from "../../../api";
 import { useForm } from "../../../util/form";
-import FormFieldError from "../../../components/FormFieldError";
 import Input from "../../../components/Input";
 import ErrorInfoPanel from "../../../components/ErrorInfoPanel";
 
@@ -23,12 +22,13 @@ const PasswordPanel: Component = () => {
             max_length: 2048,
         },
     }, {
-        onSubmit: (values, _action_name, _e) => {
+        onSubmit: (values) => {
             if(values.new_password !== values.new_password_repeat) {
                 error_out("Your new password and it's repeat do not match.");
                 return;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             return API.user_update_password(values.current_password!, values.new_password!);
         },
 
@@ -38,7 +38,7 @@ const PasswordPanel: Component = () => {
     const showPanelDrawer = () => {
         setIsPanelDrawerShown(true);
 
-        fields.current_password?.ref?.focus();
+        fields.current_password.ref?.focus();
     }
 
     return (

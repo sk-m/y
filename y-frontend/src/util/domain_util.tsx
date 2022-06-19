@@ -43,15 +43,19 @@ export const createCachedResource = <T,S extends string | number | undefined | n
             const cache = cache_accessor();
         
             if(!info.refetching && cache[1] && cache[0] === source) {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 console.debug(`[y] [💾 domain cache] 🔼 Using data from the cache. Source: ${ source }`);
                 
                 resolve(cache[1]);
             } else {
                 if(info.refetching) {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     console.debug(`[y] [💾 domain cache] 🔃 Force refetching for ${ source } ...`);
                 } if(cache[1]) {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     console.debug(`[y] [💾 domain cache] 🔃 Cache exists, but the source differs (${ source } != ${ cache[0] }); running the fetcher...`);
                 } else {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     console.debug(`[y] [💾 domain cache] 🔃 Cache is empty, running the fetcher for ${ source } ...`);
                 }
                 
@@ -86,17 +90,17 @@ export const createCachedResource = <T,S extends string | number | undefined | n
  * @param defaultState default _ui_state value
  * @param setCache cache signal's setter (if you want to automatically clear cache each time you update _ui_state)
  */
-export const appendUIStateFields = <T,>(defaultState: T, setCache?: (c: DomainCache<any>) => void):
-    { _ui_state: Accessor<T>, _ui_setState: (v: T) => void } => {
+export const appendUIStateFields = <StateT, CacheT>(defaultState: StateT, setCache?: (c: DomainCache<CacheT>) => void):
+    { _ui_state: Accessor<StateT>, _ui_setState: (v: StateT) => void } => {
     const [_ui_state, ui_setState] = createSignal(defaultState);
 
     return {
         _ui_state,
         _ui_setState: setCache
-            ? (p: T) => {
+            ? (p: StateT) => {
                 ui_setState(() => p);
                 setCache([null, undefined]);
             }
-            : ui_setState as (v: T) => void
+            : ui_setState as (v: StateT) => void
     };
 }

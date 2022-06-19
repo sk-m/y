@@ -6,7 +6,7 @@ export interface PanelAction {
     name: string,
     text: string,
     
-    action: () => boolean | void
+    action: () => boolean
 }
 
 export interface PanelInfoItem {
@@ -29,7 +29,7 @@ export const PanelDrawer: Component<{
 } 
 
 const Panel: Component<{
-    classList?: any,
+    classList?: ClassList,
     
     panel_ref?: (ref: HTMLDivElement) => void,
 
@@ -68,7 +68,7 @@ const Panel: Component<{
                             <div className="info-container">
                                 <For each={ props.panel_info_items }>{ info_item => (
                                     // TODO @cleanup not a fan of this approach with classList
-                                    <div classList={{ item: true, [info_item.color || "blue"]: true }}>
+                                    <div classList={{ item: true, [info_item.color ?? "blue"]: true }}>
                                         <div className="icon"><span class="material-icons-round">{ info_item.icon_name }</span></div>
                                         <div className="text">{ info_item.text }</div>
                                     </div>

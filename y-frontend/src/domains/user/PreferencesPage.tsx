@@ -1,6 +1,4 @@
 import { Component, createSignal, Match, Switch } from "solid-js";
-import Panel from "../../components/Panel";
-import EmailPanel from "./preferences-page/EmailPanel";
 import PasswordPanel from "./preferences-page/PasswordPanel";
 
 import API from "../../api";
@@ -13,7 +11,7 @@ import { CacheableDomainProps, appendUIStateFields, createCachedResource } from 
 const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>> = props => {
     const params = useParams();
 
-    const [isErrorRetryable, setIsErrorRetryable] = createSignal(true);
+    const [isErrorRetryable, _setIsErrorRetryable] = createSignal(true);
 
     const userPreferencesFetcher = async (user_username: string): Promise<UserPreferences> => {
         return new Promise((resolve, reject) => {
@@ -25,7 +23,7 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
                 for(const raw_session of user_preferences.user_sessions) {
                     user_sessions.push({ 
                         ...raw_session,
-                        ...appendUIStateFields<UserSessionUIState>(undefined, props.setCache)
+                        ...appendUIStateFields<UserSessionUIState , UserPreferences>(undefined, props.setCache)
                     });
                 }
 
@@ -33,9 +31,10 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
                 resolve(user_preferences);
             })
             .catch((error: Error) => {
+                // TODO @placeholder We must check what kind of error occurred and decide if we allow retrying
                 // We deliberately do not set it back to true at the beginning of this function, this is not a bug!
                 // As soon as it gets set to false - it should stay false.
-                setIsErrorRetryable(false);
+                // setIsErrorRetryable(false);
     
                 reject(error.message);
             })
@@ -51,12 +50,12 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
                 <PageObstructionScreen type="loading" />
             </Match>
 
-            <Match when={ userPreferences.error || userPreferences() === undefined }>
+            <Match when={ !!userPreferences.error || userPreferences() === undefined }>
                 <PageObstructionScreen
                     type="error"
 
-                    error_text={ userPreferences.error }
-                    on_retry={ isErrorRetryable () ? refetchUserPreferences : undefined }
+                    error_text={ userPreferences.error as string }
+                    on_retry={ isErrorRetryable() ? refetchUserPreferences : undefined }
                 />
             </Match>
 

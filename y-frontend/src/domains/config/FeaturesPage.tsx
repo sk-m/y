@@ -1,15 +1,13 @@
 import { Component } from "solid-js";
-import Panel from "../../components/Panel";
 
 import AutoStoriesWhiteSVG from "../../assets/icons/auto_stories_white.svg"
 import FolderZipWhiteSVG from "../../assets/icons/folder_zip_white.svg"
 import LanWhiteSVG from "../../assets/icons/lan_white.svg"
 import ConfirmationNumberWhiteSVG from "../../assets/icons/confirmation_number_white.svg"
 
-import FlipText from "../../components/FilpText";
 import FeatureCard from "./features-page/FeatureCard";
 
-const FeaturesPage: Component = props => {
+const FeaturesPage: Component = () => {
     return (
         <div id="config-features-page" className="ui-domain-page">
             <div className="page-header" style={{ "max-width": "900px" }}>

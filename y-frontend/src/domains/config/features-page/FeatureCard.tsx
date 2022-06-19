@@ -1,4 +1,4 @@
-import { Component, createSignal } from "solid-js";
+import { Component, createSignal, JSX } from "solid-js";
 import Button from "../../../components/Button";
 import FlipText from "../../../components/FilpText";
 import Panel, { PanelDrawer } from "../../../components/Panel";
@@ -10,7 +10,7 @@ const FeatureCard: Component<{
     feature_enabled: boolean;
 
     feature_name: string;
-    feature_description: any;
+    feature_description: Element | JSX.Element | string;
 }> = props => {
     let panel_ref;
 
@@ -85,7 +85,9 @@ const FeatureCard: Component<{
             <PanelDrawer panel_ref={ panel_ref }>
                 <div className="content ui-between center">
                     <div className="info">
-                        <div className="ui-text">You are about to { props.feature_enabled ? "disable" : "enable" } the <span className="w-500">{ props.feature_name }</span> feature. Are you sure?</div>
+                        <div className="ui-text">
+                            You are about to { props.feature_enabled ? "disable" : "enable" } the <span className="w-500">{ props.feature_name }</span> feature. Are you sure?
+                        </div>
                     </div>
                     <Button text_color="red" text={ props.feature_enabled ? "Disable" : "Enable" } />
                 </div>

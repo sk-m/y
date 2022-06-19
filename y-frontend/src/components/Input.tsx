@@ -50,17 +50,18 @@ const Input: Component<{
                         className="ui-input"
 
                         name={ props.name }
-                        type={ props.type || "text" }
+                        type={ props.type ?? "text" }
                         placeholder={ props.placeholder }
 
                         autocomplete={ props.autocomplete }
 
-                        { ...(props.input_props || {}) }
+                        { ...(props.input_props ?? {}) }
                     />
                     <Show when={ props.with_button }>
                         <Button
                             is_adjacent={ true }
 
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                             { ...props.with_button! }
                         />
                     </Show>

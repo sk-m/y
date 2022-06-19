@@ -1,11 +1,10 @@
 import { Component } from "solid-js";
-import Panel from "../../components/Panel";
 import ConfigItem from "./common/ConfigItem";
 import ConfigSectionHeader from "./common/ConfigSectionHeader";
 import SettingsWhiteSVG from "../../assets/icons/settings_white.svg"
 import PaletteWhiteSVG from "../../assets/icons/palette_white.svg"
 
-const InstancePage: Component = props => {
+const InstancePage: Component = () => {
     return (
         <div id="config-instance-page" className="ui-domain-page config-items-page">
             <div className="page-header" style={{ "max-width": "900px" }}>

@@ -9,7 +9,7 @@ import "./UserDomain.css";
 import { UserPreferences } from "../interfaces/user";
 import { DomainCache } from "../util/domain_util";
 
-const UserDomain: Component = props => {
+const UserDomain: Component = () => {
     const params = useParams();
 
     const [preferencesCache, setPreferencesCache] = createSignal<DomainCache<UserPreferences>>([null, undefined]);

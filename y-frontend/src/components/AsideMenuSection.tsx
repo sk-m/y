@@ -5,7 +5,7 @@ const AsideMenuSection: Component<{
 
     is_expanded?: boolean
 }> = props => {
-    const [isExpanded, setIsExpanded] = createSignal(props.is_expanded || false);
+    const [isExpanded, setIsExpanded] = createSignal(props.is_expanded ?? false);
 
     const toggleSection = () => setIsExpanded(v => !v);
 

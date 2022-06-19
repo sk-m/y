@@ -1,5 +1,5 @@
 import { NavigateOptions, useNavigate } from "solid-app-router";
-import { batch, Component, createEffect, createSignal, Match, onMount, Switch } from "solid-js";
+import { batch, Component, createEffect, createSignal, Match, Switch } from "solid-js";
 import { _user_create, _user_login } from "./api/user";
 
 import "./LoginRoute.css";
@@ -23,9 +23,9 @@ const LoginStep: Component<AuthStepBaseProps> = props => {
     let username_input: HTMLInputElement | undefined;
     let password_input: HTMLInputElement | undefined;
 
-    const onInputKeyDown = (e: KeyboardEvent) => {
-        if(e.key === "Enter" && (e.target as any).value) {
-            (e.target as any).blur();
+    const onInputKeyDown: InputEventHandler = (e) => {
+        if(e.key === "Enter" && e.currentTarget.value) {
+            e.currentTarget.blur();
             perform_login();
         }
     }
@@ -124,9 +124,9 @@ const JoinStep: Component<AuthStepBaseProps> = props => {
     let password_input: HTMLInputElement | undefined;
     let password_repeat_input: HTMLInputElement | undefined;
 
-    const onInputKeyDown = (e: KeyboardEvent) => {
-        if(e.key === "Enter" && (e.target as any).value) {
-            (e.target as any).blur();
+    const onInputKeyDown: InputEventHandler = (e) => {
+        if(e.key === "Enter" && e.currentTarget.value) {
+            e.currentTarget.blur();
             perform_registration();
         }
     }
@@ -286,6 +286,7 @@ const LoginRoute: Component<{
                 <Switch>
                     <Match when={ current_user.user }>
                         <AlreadyLoggedInStep
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                             user_username={ current_user.user!.user_username }
                             logout={ logout }
                         />

@@ -1,24 +1,24 @@
 import { BasicUserInfo, UserPreferences } from "../interfaces/user";
-import { APIResponse, api_fetch } from "../util/api_util";
+import { api_fetch } from "../util/api_util";
 
 // TODO use xhr instead
 export default {
     user_destroy_session_by_id: (session_id: string) => (
-        api_fetch<APIResponse>(`/user/session/${ session_id }`, {
+        api_fetch(`/user/session/${ session_id }`, {
             method: "DELETE",
             credentials: "include",
         })
     ),
 
     user_preferences_by_username: (user_username: string) => (
-        api_fetch<APIResponse<UserPreferences, "user_preferences">>(`/user/preferences?user_username=${ user_username }`, {
+        api_fetch<UserPreferences, "user_preferences">(`/user/preferences?user_username=${ user_username }`, {
             method: "GET",
             credentials: "include",
         })
     ),
 
     user_me: () => (
-        api_fetch<APIResponse<BasicUserInfo, "user_me">>("/user/me", {
+        api_fetch<BasicUserInfo, "user_me">("/user/me", {
             method: "GET",
             credentials: "include",
         })
@@ -32,7 +32,7 @@ export default {
     ),
 
     login: (username: string, password: string) => (
-        api_fetch<APIResponse<BasicUserInfo, "user_login">>("/user/login", {
+        api_fetch<BasicUserInfo, "user_login">("/user/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -47,7 +47,7 @@ export default {
     ),
 
     user_create: (username: string, password: string) => (
-        api_fetch<APIResponse<BasicUserInfo, "user_create">>("/user/create", {
+        api_fetch<BasicUserInfo, "user_create">("/user/create", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -62,7 +62,7 @@ export default {
    ),
 
     user_update_password: (current_password: string, new_password: string) => (
-        api_fetch<APIResponse>("/user/preferences/update_password", {
+        api_fetch("/user/preferences/update_password", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"

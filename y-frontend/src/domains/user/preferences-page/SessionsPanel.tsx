@@ -15,7 +15,8 @@ const SessionsPanel: Component<{
     const navigate = useNavigate();
 
     const destroy_session = (session_i: Accessor<number>) => {
-        const session = props.userPreferences()!.user_sessions[session_i()];
+        const session = props.userPreferences()?.user_sessions[session_i()];
+        if(!session) return;
 
         session._ui_setState("loading");
         
@@ -23,7 +24,7 @@ const SessionsPanel: Component<{
         .then(() => {
             // Have we just destroyed our own session?
             if(session.session_is_current && logout) {
-                logout();
+                void logout();
                 navigate("/login");
             } else {
                 session._ui_setState("destroyed");
@@ -72,7 +73,7 @@ const SessionsPanel: Component<{
             </div>
 
             <div className="sessions-list">
-                <For each={ props.userPreferences()!.user_sessions }>{(session, session_i) => (
+                <For each={ props.userPreferences()?.user_sessions }>{(session, session_i) => (
                     <div classList={{ session: true, "destroyed": session._ui_state() === "destroyed" }}>
                         <div className="left">
                             <div className="client-info">{ session.session_device }</div>

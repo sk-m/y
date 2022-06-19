@@ -15,7 +15,7 @@ export interface ButtonProps {
 
     disabled?: boolean;
 
-    onclick?: any;
+    onclick?: MouseEventHandler;
 
     /**
      * Props that will be passed to the underlying <button> element
@@ -42,15 +42,15 @@ const Button: Component<ButtonProps> = props => {
 
                 classList={{
                     "ui-button": true,
-                    ["t-" + (props.type || "primary")]: true,
-                    ["tc-" + (props.text_color || "default")]: true,
+                    ["t-" + (props.type ?? "primary")]: true,
+                    ["tc-" + (props.text_color ?? "default")]: true,
                     adjacent: props.is_adjacent,
                     disabled: props.disabled
                 }}
 
                 onclick={ props.onclick }
 
-                {...(props.button_props || {})}
+                {...(props.button_props ?? {})}
             >
                 { props.text }
             </button>

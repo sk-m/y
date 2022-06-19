@@ -1,33 +1,9 @@
 import { Component, createSignal, For } from "solid-js";
-import Button from "../../../components/Button";
 import Input from "../../../components/Input";
 import Panel, { PanelDrawer } from "../../../components/Panel";
 import { useForm } from "../../../util/form";
 
 type AccessInfoItemTypes = "custom" | "readable" | "writeable" | "sensitive" | "dangerous";
-
-const ACCESS_INFO_ITEMS: {[type: string]: any} = {
-    "readable": {
-        icon: "visibility",
-        color: "green",
-        text: "You can view"
-    },
-    "writeable": {
-        icon: "edit",
-        color: "green",
-        text: "You can edit"
-    },
-    "sensitive": {
-        icon: "password",
-        color: "red",
-        text: "Sensitive info"
-    },
-    "dangerous": {
-        icon: "priority_high",
-        color: "red",
-        text: "Dangerous"
-    },
-}
 
 interface AccessInfoItem {
     type: AccessInfoItemTypes;
@@ -39,6 +15,29 @@ interface AccessInfoItem {
     color?: string;
     /** Only used when type == "custom" */
     text?: string;
+}
+
+const ACCESS_INFO_ITEMS: Record<string, Omit<AccessInfoItem, "type" | "title"> > = {
+    readable: {
+        icon: "visibility",
+        color: "green",
+        text: "You can view"
+    },
+    writeable: {
+        icon: "edit",
+        color: "green",
+        text: "You can edit"
+    },
+    sensitive: {
+        icon: "password",
+        color: "red",
+        text: "Sensitive info"
+    },
+    dangerous: {
+        icon: "priority_high",
+        color: "red",
+        text: "Dangerous"
+    },
 }
 
 const ConfigItem: Component<{
@@ -66,7 +65,7 @@ const ConfigItem: Component<{
             max_length: 4096,
         },
     }, {
-        onSubmit: (_values, _action_name, _e) => {
+        onSubmit: () => {
             return;
         },
     });
@@ -93,7 +92,10 @@ const ConfigItem: Component<{
                                     classList={{
                                         "ui-pill": true,
                                         "ui-w-title": true,
-                                        [`c-${ item.type === "custom" ? item.color : ACCESS_INFO_ITEMS[item.type].color }`]: true
+                                        [`c-${ item.type === "custom"
+                                        ? (item.color ?? "blue")
+                                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                            : ACCESS_INFO_ITEMS[item.type].color! }`]: true
                                     }}
                                     title={ item.title }
                                 >

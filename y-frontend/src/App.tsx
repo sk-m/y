@@ -1,4 +1,4 @@
-import { batch, Component, createSignal, onMount, Show } from "solid-js";
+import { Component, createSignal, onMount, Show } from "solid-js";
 import { Router, Routes, Route } from "solid-app-router";
 import MainRoute from "./MainRoute";
 import LoginRoute from "./LoginRoute";

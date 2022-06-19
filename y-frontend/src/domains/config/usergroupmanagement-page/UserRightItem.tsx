@@ -80,7 +80,7 @@ const UserRightItem: Component<{
                                     classList={{
                                         "ui-pill": true,
                                         "ui-w-title": !!item.title,
-                                        [`c-${item.color || "blue"}`]: true
+                                        [`c-${item.color ?? "blue"}`]: true
                                     }}
                                     title={ item.title }
                                 >
