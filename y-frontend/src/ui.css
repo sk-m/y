@@ -16,8 +16,12 @@
 
     /* TODO @cleanup not sure we need max-width here */
 
-    min-width: max(33vw, 500px);
-    width: 90%;
+    /* min-width: max(33vw, 500px);
+    width: 90%; */
+
+    min-width: 500px;
+    /* width: 100%; */
+
     max-width: 1000px;
 
     border-radius: 6px;
@@ -31,8 +35,11 @@
     position: relative;
     z-index: 2;
     
+    box-sizing: border-box;
+
     padding: 1.2em 1.5em;
-    
+    margin: 0 auto;
+
     font-size: 0.85em;
     
     background-color: white;
@@ -153,53 +160,13 @@
     font-size: 0.95em;
 }
 
-.ui-panel-container > .ui-panel > .content .subheader,
-.ui-panel-container > .ui-panel > .content .h1 {
-    position: relative;
-    display: flex;
-    align-items: center;
-
-    margin-bottom: 1em;
-}
-
-.ui-panel-container > .ui-panel > .content .subheader + .subheader,
-.ui-panel-container > .ui-panel > .content .h1 + .subheader {
+.ui-panel-container > .ui-panel > .content .ui-status-text + .ui-status-text,
+.ui-panel-container > .ui-panel > .content .h1 + .ui-status-text {
     margin-top: -0.8em;
 }
 
-.ui-panel-container > .ui-panel > .content .subheader > .line,
-.ui-panel-container > .ui-panel > .content .h1 > .line {
-    position: absolute;
-
-    width: 4px;
-    height: 90%;
-
-    user-select: none;
-
-    background-color: var(--color-gray-1);
-    border-radius: 4px;
-}
-
-.ui-panel-container > .ui-panel > .content .subheader > .line.w-icon,
-.ui-panel-container > .ui-panel > .content .h1 > .line.w-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 1rem;
-    height: 1rem;
-
-    margin-left: -0.7rem;
-}
-
-.ui-panel-container > .ui-panel > .content .subheader > .line.w-icon > span,
-.ui-panel-container > .ui-panel > .content .h1 > .line.w-icon > span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    color: white;
-    font-size: 0.75rem;
+.ui-panel-container > .ui-panel > .content .ui-status-text {
+    margin-bottom: 1em;
 }
 
 .ui-panel-container > .ui-panel > .content .h1 > .header {
@@ -207,33 +174,6 @@
 
     font-weight: 800;
     font-size: 1.6em;
-}
-
-.ui-panel-container > .ui-panel > .content .subheader > .text {
-    margin-left: 1rem;
-
-    color: var(--color-gray-65);
-    font-weight: 450;
-    font-size: 0.8em;
-    /* font-size: 0.7rem; */
-}
-
-.ui-panel-container > .ui-panel > .content .subheader.green > .text {
-    color: var(--color-green);
-    font-weight: 540;
-}
-
-.ui-panel-container > .ui-panel > .content .subheader.green > .line {
-    background-color: var(--color-green-t-7);
-}
-
-.ui-panel-container > .ui-panel > .content .subheader.blue > .text {
-    color: var(--color-blue);
-    font-weight: 540;
-}
-
-.ui-panel-container > .ui-panel > .content .subheader.blue > .line {
-    background-color: var(--color-blue-t-7);
 }
 
 .ui-panel-container .ui-panel-drawer {
@@ -544,6 +484,60 @@
     padding: 0 0.8em 0 1.1em;
 }
 
+/* Navigation tabs */
+.ui-navigation-tab {
+    position: relative;
+
+    padding: 0.8em 1em;
+    margin-right: 0.25em;
+
+    color: var(--color-blackish);
+    font-size: 0.9em;
+    font-weight: 520;
+    text-decoration: none;
+}
+
+.ui-navigation-tab > .label {
+    box-sizing: border-box;
+
+    padding: 0.25em 0.5em;
+
+    border-radius: 5px;
+}
+
+.ui-navigation-tab:hover > .line,
+.ui-navigation-tab:hover > .label {
+    background-color: var(--color-gray-04);
+}
+
+.ui-navigation-tab.active > .label {
+    background-color: var(--color-blue-t-06);
+}
+
+.ui-navigation-tab > .line {
+    position: absolute;
+
+    bottom: 0;
+    left: 0;
+
+    height: 2px;
+    width: 100%;
+
+    border-radius: 6px;
+
+    transition: 0.1s linear;
+}
+
+.ui-navigation-tab.active {
+    color: var(--color-blue);
+}
+
+.ui-navigation-tab.active > .line {
+    height: 3px;
+
+    background-color: var(--color-blue);
+}
+
 /* Pills */
 .ui-pills-container {
     display: flex;
@@ -773,14 +767,100 @@
     align-items: center;
 }
 
+.ui-text-w-icon-l.gray-icon > span:first-of-type,
+.ui-text-w-icon-r.gray-icon > span:last-of-type {
+    color: var(--color-gray-2);
+}
+
 .ui-text-w-icon-l > span:first-of-type {
+    user-select: none;
+    
     font-size: 1em;
     margin-right: 0.33em;
 }
 
 .ui-text-w-icon-r > span:last-of-type {
+    user-select: none;
+
     font-size: 1em;
     margin-left: 0.33em;
+}
+
+/* Status text */
+.ui-status-text {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    margin-bottom: 0.33em;
+}
+
+.ui-status-text > .line {
+    position: absolute;
+
+    width: 4px;
+    height: 90%;
+
+    user-select: none;
+
+    background-color: var(--color-gray-1);
+    border-radius: 4px;
+}
+
+.ui-status-text > .line.w-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 1rem;
+    height: 1rem;
+
+    margin-left: -0.7rem;
+}
+
+.ui-status-text > .line.w-icon > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: white;
+    font-size: 0.75rem;
+}
+
+.ui-status-text > .text {
+    margin-left: 1rem;
+
+    color: var(--color-gray-65);
+    font-weight: 450;
+    font-size: 0.8em;
+    /* font-size: 0.7rem; */
+}
+
+.ui-status-text.green > .text {
+    color: var(--color-green);
+    font-weight: 540;
+}
+
+.ui-status-text.green > .line {
+    background-color: var(--color-green-t-7);
+}
+
+.ui-status-text.blue > .text {
+    color: var(--color-blue);
+    font-weight: 540;
+}
+
+.ui-status-text.blue > .line {
+    background-color: var(--color-blue-t-7);
+}
+
+.ui-status-text.red > .text {
+    color: var(--color-red);
+    font-weight: 540;
+}
+
+.ui-status-text.red > .line {
+    background-color: var(--color-red-t-7);
 }
 
 /* Info panels */

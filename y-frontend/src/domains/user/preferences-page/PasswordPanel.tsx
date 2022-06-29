@@ -50,12 +50,12 @@ const PasswordPanel: Component = () => {
             //     { icon_name: "done_all", text: "No action required", color: "green" }
             // ]}
         >
-            <div className="h1">
+            <div className="h1 ui-status-text">
                 <div className="line"></div>
                 <div className="header">Password</div>
             </div>
             
-            <div className="subheader green">
+            <div className="ui-status-text green">
                 <div className="line"></div>
                 {/* <div className="line w-icon">
                     <span class="material-icons-round">done_all</span>

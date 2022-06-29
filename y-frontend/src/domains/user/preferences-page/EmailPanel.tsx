@@ -31,12 +31,12 @@ const EmailPanel: Component = () => {
             //     { icon_name: "verified", text: "Email address verified", color: "green" }
             // ]}
         >
-            <div className="h1">
+            <div className="h1 ui-status-text">
                 <div className="line"></div>
                 <div className="header">Email</div>
             </div>
 
-            <div className="subheader green">
+            <div className="ui-status-text green">
                 <div className="line"></div>
                 {/* <div className="line w-icon">
                     <span class="material-icons-round">done</span>

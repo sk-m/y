@@ -59,12 +59,12 @@ const SessionsPanel: Component<{
             //     { icon_name: "devices", text: "You currently have 3 active sessions" }
             // ]}
         >
-            <div className="h1">
+            <div className="h1 ui-status-text">
                 <div className="line"></div>
                 <div className="header">Active Sessions</div>
             </div>
 
-            <div className="subheader blue">
+            <div className="ui-status-text blue">
                 {/* <div className="line w-icon">
                     <span class="material-icons">lightbulb</span>
                 </div> */}

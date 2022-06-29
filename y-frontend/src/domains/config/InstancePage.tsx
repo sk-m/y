@@ -7,8 +7,8 @@ import PaletteWhiteSVG from "../../assets/icons/palette_white.svg"
 const InstancePage: Component = () => {
     return (
         <div id="config-instance-page" className="ui-domain-page config-items-page">
-            <div className="page-header" style={{ "max-width": "900px" }}>
-                <span className="title ui-text-w-icon-l">
+            <div className="ui-domain-page-header" style={{ "max-width": "900px" }}>
+                <span className="title ui-text-w-icon-l gray-icon">
                     <span class="material-icons-round">domain</span>
                     Instance
                 </span>

@@ -892,23 +892,19 @@
     height: 2em;
 }
 
-.ui-domain-page > .page-header {
+.ui-domain-page .ui-domain-page-header {
     /* max-width: 900px; */
     width: 90%;
 
     margin: 2em auto;
 }
 
-.ui-domain-page > .page-header > .title {
+.ui-domain-page .ui-domain-page-header > .title {
     font-size: 4em;
     font-weight: 800;
 }
 
-.ui-domain-page > .page-header > .title > .material-icons-round {
-    color: var(--color-gray-2);
-}
-
-.ui-domain-page > .page-header > .description {
+.ui-domain-page .ui-domain-page-header > .description {
     margin-top: 0.1em;
 
     color: var(--color-gray-7);
@@ -916,6 +912,92 @@
     font-weight: 400;
 }
 
+.ui-domain-page.two-sides {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.ui-domain-page.two-sides > .info-side {
+    position: relative;
+
+    flex-shrink: 0;
+}
+
+.ui-domain-page.two-sides > .info-side > .nav-links {
+    margin-bottom: 1em;
+}
+
+.ui-domain-page.two-sides > .info-side > .nav-links > .link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 1em 1em;
+
+    color: var(--color-blackish);
+    text-decoration: none;
+    font-weight: 520;
+    font-size: 0.9em;
+
+    background-color: var(--color-gray-04);
+    border-radius: 6px;
+}
+
+.ui-domain-page.two-sides > .info-side > .nav-links > .link > span {
+    font-size: 1em;
+
+    margin-right: 1em;
+}
+
+.ui-domain-page.two-sides > .splitter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    margin: 0 1em;
+
+    width: 1em;
+    height: 1em;
+    
+    padding: 1em 0;
+}
+
+.ui-domain-page.two-sides > .splitter > span {
+    position: fixed;
+    pointer-events: none;
+
+    color: var(--color-gray-2);
+    font-size: 1em;
+}
+
+.ui-domain-page.two-sides > .info-side > .panels {
+    position: fixed;
+}
+
+.ui-domain-page.two-sides > .info-side > .panels > .panel {
+    box-sizing: border-box;
+
+    padding: 1em 1.3em;
+    margin: 0 auto 1em auto;
+
+    font-size: 0.85em;
+
+    background-color: white;
+    
+    border: 1px solid var(--color-gray-1);
+    /* box-shadow: 0 5px 15px 0 rgb(0 0 0 / 4%); */
+    border-radius: 6px;
+}
+
+.ui-domain-page.two-sides > .info-side,
+.ui-domain-page.two-sides > .info-side > .panels,
+.ui-domain-page.two-sides > .info-side > .panels > .panel {
+    min-width: min(15vw, 300px);
+    width: min(15vw, 300px);
+}
 
 @keyframes page-obstruction-screen-logo-blink {
     0% {

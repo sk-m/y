@@ -282,24 +282,48 @@
     font-weight: 450;
 }
 
-#config-usergroup-page > .rights-container .user-right-item .right-header > .left,
-#config-usergroup-page > .rights-container .user-right-item .right-header {
+/* User group management page */
+#config-usergroup-page {
+    padding-top: 2em;
+}
+
+#config-usergroup-page .aside-usergroup-info .status-items {
+    margin-top: 1.5em;
+}
+
+#config-usergroup-page .aside-usergroup-info .status-items > div:last-of-type {
+    margin-bottom: 0;
+}
+
+#config-usergroup-page .aside-usergroup-info .group-display-name {
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+#config-usergroup-page .aside-usergroup-info .group-internal-name {
+    color: var(--color-gray-7);
+    font-size: 0.9em;
+    font-family: "SourceCodePro", monospace;
+}
+
+#config-usergroup-page .group-rights-container .user-right-item .right-header > .left,
+#config-usergroup-page .group-rights-container .user-right-item .right-header {
     display: flex;
     align-items: center;
 }
 
-#config-usergroup-page > .rights-container .user-right-item .right-header {
+#config-usergroup-page .group-rights-container .user-right-item .right-header {
     justify-content: space-between;
 }
 
-#config-usergroup-page > .rights-container .user-right-item .right-header .right-display-name {
+#config-usergroup-page .group-rights-container .user-right-item .right-header .right-display-name {
     margin-left: 0.75em;
 
     font-size: 1em;
     font-weight: 500;
 }
 
-#config-usergroup-page > .rights-container .user-right-item .right-description {
+#config-usergroup-page .group-rights-container .user-right-item .right-description {
     margin: 1.5em 0;
 
     color: var(--color-gray-7);
@@ -307,7 +331,7 @@
     font-weight: 450;
 }
 
-#config-usergroup-page > .rights-container .user-right-item .buttons-container {
+#config-usergroup-page .group-rights-container .user-right-item .buttons-container {
     display: flex;
     align-items: center;
 }

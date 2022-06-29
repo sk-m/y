@@ -10,8 +10,8 @@ import FeatureCard from "./features-page/FeatureCard";
 const FeaturesPage: Component = () => {
     return (
         <div id="config-features-page" className="ui-domain-page">
-            <div className="page-header" style={{ "max-width": "900px" }}>
-                <span className="title ui-text-w-icon-l">
+            <div className="ui-domain-page-header" style={{ "max-width": "900px" }}>
+                <span className="title ui-text-w-icon-l gray-icon">
                     <span class="material-icons-round">electric_bolt</span>
                     Features
                 </span>

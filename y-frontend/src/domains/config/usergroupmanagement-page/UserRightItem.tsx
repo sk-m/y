@@ -30,7 +30,7 @@ const UserRightItem: Component<{
 
             is_list_item={ true }
 
-            max_width="700px"
+            max_width="800px"
         >
             <div className="right-header">
                 <div className="left">
@@ -60,7 +60,7 @@ const UserRightItem: Component<{
                                     title="This right is inherited from the 'everyone' group. Everyone implicitly holds this right."
                                 >
                                     <div className="icon"><span class="material-icons-round">select_all</span></div>
-                                    <div className="text">Inherited - everyone</div>
+                                    <div className="text">Inherited from everyone</div>
                                 </div>
                             </Match>
                             <Match when={props.inherited_from === "user"}>
@@ -69,7 +69,7 @@ const UserRightItem: Component<{
                                     title="This right is inherited from the 'user' group. Every logged in user implicitly holds this right."
                                 >
                                     <div className="icon"><span class="material-icons-round">person</span></div>
-                                    <div className="text">Inherited - user</div>
+                                    <div className="text">Inherited from user</div>
                                 </div>
                             </Match>
                         </Switch>

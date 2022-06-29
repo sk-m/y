@@ -64,7 +64,7 @@ const ConfigDomain: Component = () => {
                 <Route path="/features" element={
                     <FeaturesPage />
                 }></Route>
-                <Route path="/user-groups/:group_name" element={
+                <Route path="/user-groups/:group_name/*" element={
                     <UserGroupManagementPage />
                 }></Route>
             </Routes>
