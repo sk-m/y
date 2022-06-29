@@ -1,0 +1,109 @@
+/* Text */
+/* TODO @cleanup */
+.ui-text .w-500,
+.ui-text.w-500 {
+    font-weight: 500;
+}
+
+.ui-text.a-center {
+    text-align: center;
+}
+
+.ui-text.c-blue {
+    color: var(--color-blue);
+}
+
+.ui-text.s-small-1 {
+    font-size: 0.9em;
+}
+
+.ui-text.t-secondary {
+    color: var(--color-gray-7);
+    font-size: 0.7rem;
+    font-weight: 450;
+}
+
+.ui-tc-green {
+    color: var(--color-green);
+}
+
+.ui-tc-red {
+    color: var(--color-red);
+}
+
+.ui-text-w-icon-r,
+.ui-text-w-icon-l {
+    display: flex;
+    align-items: center;
+}
+
+.ui-text-w-icon-l.gray-icon > span:first-of-type,
+.ui-text-w-icon-r.gray-icon > span:last-of-type {
+    color: var(--color-gray-2);
+}
+
+.ui-text-w-icon-l > span:first-of-type {
+    user-select: none;
+    
+    font-size: 1em;
+    margin-right: 0.33em;
+}
+
+.ui-text-w-icon-r > span:last-of-type {
+    user-select: none;
+
+    font-size: 1em;
+    margin-left: 0.33em;
+}
+
+/* Misc */
+span[title] {
+    cursor: help;
+}
+
+.ui-w-title {
+    cursor: help;
+}
+
+.mv-1,
+.mb-1 {
+    margin-bottom: 1em;
+}
+
+.mv-1,
+.mt-1 {
+    margin-top: 1em;
+}
+
+.mv-15,
+.mt-15 {
+    margin-top: 1.5em;
+}
+
+.ui-flex {
+    display: flex;
+    align-items: center;
+}
+
+.ui-between {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.ui-between.center {
+    align-items: center;
+}
+
+.ui-buttons-container {
+    display: flex;
+    align-items: center;
+}
+
+.ui-buttons-container.to-right {
+    justify-content: flex-end;
+}
+
+.ui-buttons-container > * {
+    margin-left: 0.5rem;
+}

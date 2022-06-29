@@ -1,8 +1,6 @@
 import { Component } from "solid-js";
 import { useNavigate } from "solid-app-router";
 
-import "./DropdownMenu.css";
-
 export const DropdownMenuLink: Component<{
     text: string,
 

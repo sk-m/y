@@ -3,8 +3,8 @@ import { Route, Routes } from "solid-app-router";
 
 import "./app.css";
 import MainAsideMenu from "./components_internal/MainAsideMenu";
-import UserDomain from "./domains/UserDomain";
-import ConfigDomain from "./domains/ConfigDomain";
+import UserDomain from "./domains/user/UserDomain";
+import ConfigDomain from "./domains/config/ConfigDomain";
 
 const TestComponent: Component = () => {
     return (

@@ -1,0 +1,145 @@
+/* Buttons */
+.ui-button-container {
+    position: relative;
+}
+
+.ui-button-container > .ui-button {
+    position: relative;
+    z-index: 1;
+}
+
+.ui-button-container > .button-hint {
+    position: absolute;
+    z-index: 0;
+
+    box-sizing: border-box;
+
+    bottom: 1;
+    left: 0;
+
+    padding: calc(0.1em + 5px) 0.4em 0.1em 0.4em;
+    margin-top: -5px;
+
+    width: 100%;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    color: var(--color-blue);
+    background-color: var(--color-blue-t-04);
+    border: 1px solid var(--color-blue-t-1);
+    border-radius: 0 0 6px 6px;
+
+    /* Default state */
+    transform: translateY(-100%);
+    
+    transition: 0.25s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.ui-form.form-hint-submittable .ui-button-container > .button-hint.t-submit,
+.ui-form.form-hint-cancellable .ui-button-container > .button-hint.t-cancel {
+    transform: translateY(0);
+}
+
+.ui-button-container > .button-hint .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-right: 0.3em;
+}
+
+.ui-button-container > .button-hint .icon > span {
+    font-size: 1em;
+}
+
+.ui-button-container > .button-hint .text {
+    font-weight: 450;
+    font-size: 0.7em;
+}
+
+.ui-button.t-primary {
+    padding: 0.8em 1.6em;
+
+    color: var(--color-blackish);
+    font-size: 0.8rem;
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+
+    border: 1px solid var(--color-gray-1);
+    background-color: white;
+    border-radius: 6px;
+
+    outline: none;
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+.ui-button.t-primary:hover {
+    background-color: var(--color-gray-01);
+    /* border-color: var(--color-gray-15); */
+}
+
+.ui-button.t-primary:active {
+    transition: 0s;
+
+    color: black;
+    background-color: var(--color-gray-04);
+    /* border-color: var(--color-gray-15); */
+}
+
+.ui-button.t-filled {
+    padding: 0.8em 1.6em;
+
+    color: var(--color-blue);
+    font-size: 0.8rem;
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+
+    background-color: var(--color-blue-t-06);
+    border: none;
+    border-radius: 6px;
+
+    outline: none;
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+.ui-button.t-filled:hover {
+    background-color: var(--color-blue-t-1);
+}
+
+.ui-button.t-filled:active {
+    transition: 0s;
+
+    color: var(--color-blue-darker);
+    background-color: var(--color-blue-t-15);
+}
+
+.ui-button.tc-red {
+    color: var(--color-red);
+}
+
+.ui-button.tc-red:active {
+    color: var(--color-red);
+}
+
+.ui-button.disabled {
+    color: var(--color-gray-7);
+    background-color: var(--color-gray-06);
+    border-color: transparent;
+
+    pointer-events: none;
+}
+
+.ui-button.adjacent {
+    padding: 0.5em 0.8em;
+
+    border-left: 0;
+
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}

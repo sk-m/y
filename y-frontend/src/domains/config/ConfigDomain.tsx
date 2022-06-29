@@ -1,10 +1,10 @@
 import { Route, Routes } from "solid-app-router";
 import { Component } from "solid-js";
-import AsideMenuLink from "../components/AsideMenuLink";
-import DomainAsideMenu from "../components_internal/DomainAsideMenu";
-import FeaturesPage from "./config/FeaturesPage";
-import InstancePage from "./config/InstancePage";
-import UserGroupManagementPage from "./config/UserGroupManagementPage";
+import AsideMenuLink from "../../components/AsideMenuLink";
+import DomainAsideMenu from "../../components_internal/DomainAsideMenu";
+import FeaturesPage from "./FeaturesPage";
+import InstancePage from "./InstancePage";
+import UserGroupManagementPage from "./UserGroupManagementPage";
 
 import "./ConfigDomain.css";
 

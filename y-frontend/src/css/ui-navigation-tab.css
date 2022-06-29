@@ -1,0 +1,53 @@
+/* Navigation tabs */
+.ui-navigation-tab {
+    position: relative;
+
+    padding: 0.8em 1em;
+    margin-right: 0.25em;
+
+    color: var(--color-blackish);
+    font-size: 0.9em;
+    font-weight: 520;
+    text-decoration: none;
+}
+
+.ui-navigation-tab > .label {
+    box-sizing: border-box;
+
+    padding: 0.25em 0.5em;
+
+    border-radius: 5px;
+}
+
+.ui-navigation-tab:hover > .line,
+.ui-navigation-tab:hover > .label {
+    background-color: var(--color-gray-04);
+}
+
+.ui-navigation-tab.active > .label {
+    background-color: var(--color-blue-t-06);
+}
+
+.ui-navigation-tab > .line {
+    position: absolute;
+
+    bottom: 0;
+    left: 0;
+
+    height: 2px;
+    width: 100%;
+
+    border-radius: 6px;
+
+    transition: 0.1s linear;
+}
+
+.ui-navigation-tab.active {
+    color: var(--color-blue);
+}
+
+.ui-navigation-tab.active > .line {
+    height: 3px;
+
+    background-color: var(--color-blue);
+}

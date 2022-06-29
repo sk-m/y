@@ -1,13 +1,13 @@
 import { Component, createSignal } from "solid-js";
 import { Route, Routes, useParams } from "solid-app-router";
-import DomainAsideMenu from "../components_internal/DomainAsideMenu";
-import AsideMenuLink from "../components/AsideMenuLink";
-import AsideMenuSection from "../components/AsideMenuSection";
-import UserDomainPreferencesPage from "./user/PreferencesPage";
+import DomainAsideMenu from "../../components_internal/DomainAsideMenu";
+import AsideMenuLink from "../../components/AsideMenuLink";
+import AsideMenuSection from "../../components/AsideMenuSection";
+import UserDomainPreferencesPage from "./PreferencesPage";
 
 import "./UserDomain.css";
-import { UserPreferences } from "../interfaces/user";
-import { DomainCache } from "../util/domain_util";
+import { UserPreferences } from "../../interfaces/user";
+import { DomainCache } from "../../util/domain_util";
 
 const UserDomain: Component = () => {
     const params = useParams();

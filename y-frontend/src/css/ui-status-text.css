@@ -1,0 +1,76 @@
+/* Status text */
+.ui-status-text {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    margin-bottom: 0.33em;
+}
+
+.ui-status-text > .line {
+    position: absolute;
+
+    width: 4px;
+    height: 90%;
+
+    user-select: none;
+
+    background-color: var(--color-gray-1);
+    border-radius: 4px;
+}
+
+.ui-status-text > .line.w-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 1rem;
+    height: 1rem;
+
+    margin-left: -0.7rem;
+}
+
+.ui-status-text > .line.w-icon > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: white;
+    font-size: 0.75rem;
+}
+
+.ui-status-text > .text {
+    margin-left: 1rem;
+
+    color: var(--color-gray-65);
+    font-weight: 450;
+    font-size: 0.8em;
+    /* font-size: 0.7rem; */
+}
+
+.ui-status-text.green > .text {
+    color: var(--color-green);
+    font-weight: 540;
+}
+
+.ui-status-text.green > .line {
+    background-color: var(--color-green-t-7);
+}
+
+.ui-status-text.blue > .text {
+    color: var(--color-blue);
+    font-weight: 540;
+}
+
+.ui-status-text.blue > .line {
+    background-color: var(--color-blue-t-7);
+}
+
+.ui-status-text.red > .text {
+    color: var(--color-red);
+    font-weight: 540;
+}
+
+.ui-status-text.red > .line {
+    background-color: var(--color-red-t-7);
+}

@@ -1,0 +1,125 @@
+/* Forms & input */
+.ui-input-container {
+    margin: 0.5em 0;
+}
+
+.ui-input-container > .input-wrapper {
+    position: relative;
+}
+
+.ui-input-container > .input-wrapper > .nav-hints-container {
+    position: absolute;
+    z-index: 0;
+
+    top: 0;
+    right: 100%;
+    
+    height: 100%;
+    width: 1em;
+    
+    margin-right: 0.2em;
+
+    /* Hidden state */
+    /* opacity: 0; */
+    transform: translateX(125%) scale(0.75);
+
+    transition: 0.15s ease-in-out;
+}
+
+.ui-input-container.container-hints-nav > .input-wrapper > .nav-hints-container {
+    opacity: 1;
+    transform: translateX(0%) scale(1);
+}
+
+.ui-input-container > .input-wrapper > .nav-hints-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.ui-input-container > .input-wrapper > .nav-hints-container > .item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 45%;
+    width: 100%;
+
+    user-select: none;
+
+    color: var(--color-blue);
+
+    background-color: var(--color-blue-t-1);
+    border-radius: 3px;
+}
+
+.ui-input-container > .input-wrapper > .nav-hints-container > .item > span {
+    font-size: 1em;
+}
+
+.ui-input-container > .input-wrapper > .horizontal-container {
+    display: flex;
+    align-items: center;
+}
+
+.ui-input-container > .input-wrapper > .horizontal-container > * {
+    flex-shrink: 0;
+}
+
+.ui-input-container > .input-wrapper > .horizontal-container > *:first-child {
+    flex-shrink: unset;
+}
+
+.ui-input-container > .input-wrapper .ui-input {
+    z-index: 1;
+}
+
+.ui-input-container.w-button .ui-input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.ui-input-container > .header {
+    margin-bottom: 0.2em;
+
+    color: var(--color-gray-7);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.ui-input-message {
+    margin-top: 0.5em;
+
+    color: var(--color-gray-7);
+    font-size: 0.8em;
+    font-weight: 450;
+}
+
+.ui-input-message.c-red {
+    color: var(--color-red);
+}
+
+.ui-input {
+    position: relative;
+    box-sizing: border-box;
+    
+    width: 100%;
+    
+    padding: 0.5em 0.8em;
+    
+    color: var(--color-blackish);
+    font-family: "Inter", sans-serif;
+    font-size: 0.8rem;
+    font-weight: 450;
+    
+    border: 1px solid var(--color-gray-15);
+    border-radius: 3px;
+
+    outline: none;
+    
+    transition: 0.15s;
+}
+
+.ui-input:focus {
+    border-color: var(--color-gray-25);
+}

@@ -1,0 +1,63 @@
+/* Pills */
+.ui-pills-container {
+    display: flex;
+    align-items: center;
+}
+
+.ui-pill {
+    display: flex;
+    align-items: center;
+
+    user-select: none;
+
+    height: 1.5em;
+
+    padding: 0 0.66em;
+    margin-right: 0.5em;
+    
+    color: var(--color-gray-7);
+    background-color: var(--color-gray-04);
+   
+    border-radius: 1.5em;
+}
+
+.ui-pill:last-of-type {
+    margin-right: 0;
+}
+
+.ui-pill.c-blue {
+    color: var(--color-blue);
+    background-color: var(--color-blue-t-1);
+}
+
+.ui-pill.c-green {
+    color: var(--color-green);
+    background-color: var(--color-green-t-1);
+}
+
+.ui-pill.c-yellow {
+    color: var(--color-yellow-darker);
+    background-color: var(--color-yellow-t-15);
+}
+
+.ui-pill.c-red {
+    color: var(--color-red);
+    background-color: var(--color-red-t-04);
+}
+
+.ui-pill > .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ui-pill > .icon > span {
+    font-size: 1em;
+
+    margin-right: 0.5em;
+}
+
+.ui-pill > .text {
+    font-weight: 500;
+    font-size: 0.85em;
+}

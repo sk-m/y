@@ -1,0 +1,32 @@
+/* Fliptext */
+.ui-fliptext {
+    position: relative;
+
+    height: 1.5em;
+
+    overflow: hidden;
+}
+
+.ui-fliptext > .main,
+.ui-fliptext > .alternate {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    height: 1.5em;
+
+    transition: 0.2s ease-in-out;
+}
+
+.ui-fliptext > .alternate {
+    transform: translateY(100%);
+}
+
+.ui-fliptext-alternator:hover .ui-fliptext > .main {
+    transform: translateY(-100%);
+}
+
+.ui-fliptext-alternator:hover .ui-fliptext > .alternate {
+    transform: translateY(0%);
+}

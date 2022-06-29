@@ -1,0 +1,238 @@
+/* Panel */
+
+/* TODO @hack I'm not proud of it... In my defence, it works flawlessly! */
+.ui-panel-spacer {
+    position: relative;
+    z-index: 1;
+
+    background-color: white;
+
+    height: 1.5em;
+}
+
+.ui-panel-container {
+    position: relative;
+
+    margin: 0 auto;
+
+    /* TODO @cleanup not sure we need max-width here */
+
+    /* min-width: max(33vw, 500px);
+    width: 90%; */
+
+    min-width: 500px;
+    /* width: 100%; */
+
+    max-width: 1000px;
+
+    border-radius: 6px;
+}
+
+.ui-panel-container:last-child {
+    margin-bottom: 2em;
+}
+
+.ui-panel-container > .ui-panel {
+    position: relative;
+    z-index: 2;
+    
+    box-sizing: border-box;
+
+    padding: 1.2em 1.5em;
+    margin: 0 auto;
+
+    font-size: 0.85em;
+    
+    background-color: white;
+    border: 1px solid var(--color-gray-1);
+    box-shadow: 0 5px 15px 0 rgba(0, 0, 0, 0.04);
+
+    border-radius: 6px;
+}
+
+.ui-panel-container > .ui-panel.padding-l {
+    padding: 2em 2.5em;
+}
+
+.ui-panel-container > .ui-panel.list-item {
+    border-radius: 0;
+    border-bottom-style: none;
+}
+
+.ui-panel-container.drawer-shown > .ui-panel.list-item {
+    border-bottom-style: solid;
+}
+
+.ui-panel-container:first-of-type > .ui-panel.list-item {
+    border-radius: 6px 6px 0 0;
+}
+
+.ui-panel-container:last-of-type > .ui-panel.list-item {
+    border-radius: 0 0 6px 6px;
+    border-bottom-style: solid;
+}
+
+.ui-panel-container > .ui-panel > .misc-container {
+    position: absolute;
+    display: flex;
+    align-items: center;
+
+    z-index: 2;
+
+    top: 0;
+    right: 0;
+
+    padding: 1.2em 1.5em 0 0;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container {
+    display: flex;
+    align-items: center;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item {
+    display: flex;
+    align-items: center;
+
+    padding: 0.6em 1em;
+
+    color: var(--color-blue);
+    font-size: 0.8em;
+    font-weight: 600;
+
+    background-color: var(--color-blue-t-04);
+    border-radius: 4px;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item > .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-right: 0.5em;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item > .icon > span {
+    font-size: 1rem;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item.green {
+    color: var(--color-green);
+    background-color: var(--color-green-t-04);
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .info-container > .item.gray {
+    color: var(--color-gray-7);
+    background-color: var(--color-gray-04);
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .actions-container > .ui-dropdown-menu-container {
+    left: unset;
+    right: 0;
+
+    margin-right: 1em;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .actions-container > .actions-dropdown-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0.3em 0.8em;
+    margin-left: 0.5em;
+
+    color: var(--color-gray-7);
+
+    border-radius: 6px;
+
+    user-select: none;
+    cursor: pointer;
+
+    transition: 0.15s;
+}
+
+.ui-panel-container > .ui-panel > .misc-container > .actions-container > .actions-dropdown-button:hover {
+    background-color: var(--color-gray-04);
+    box-shadow: 0 0 0 1px var(--color-gray-1);
+}
+
+/* TODO @cleanup @refactor I do not like this */
+.ui-panel-container > .ui-panel > .content .ui-text {
+    font-size: 0.95em;
+}
+
+.ui-panel-container > .ui-panel > .content .ui-status-text + .ui-status-text,
+.ui-panel-container > .ui-panel > .content .h1 + .ui-status-text {
+    margin-top: -0.8em;
+}
+
+.ui-panel-container > .ui-panel > .content .ui-status-text {
+    margin-bottom: 1em;
+}
+
+.ui-panel-container > .ui-panel > .content .h1 > .header {
+    margin-left: 1rem;
+
+    font-weight: 800;
+    font-size: 1.6em;
+}
+
+.ui-panel-container .ui-panel-drawer {
+    position: relative;
+    z-index: 0;
+
+    overflow: hidden;
+
+    margin-top: -6px;
+
+    font-size: 0.85em;
+
+    background-color: var(--color-gray-02);
+    border-radius: 0 0 6px 6px;
+    box-shadow: inset 0 0 0 1px var(--color-gray-1);
+
+    /* Default state */
+    transform: translateY(-100%);
+    height: 0;
+    padding: 0 1.5em 0 1.5em;
+    
+    transition: 0.25s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.ui-panel-container .ui-panel.list-item + div > .ui-panel-drawer {
+    border-radius: 0;
+    box-shadow: inset 0 1px 0 1px var(--color-gray-1);
+}
+
+.ui-panel-container:last-of-type .ui-panel.list-item + div > .ui-panel-drawer {
+    border-radius: 0 0 6px 6px;
+    box-shadow: inset 0 0 0 1px var(--color-gray-1);
+}
+
+.ui-panel-container.drawer-shown .ui-panel-drawer {
+    padding: calc(1.5em + 6px) 1.5em 1.5em 1.5em;
+    height: 100%;
+   
+    transform: translateY(0);
+}
+
+.ui-panel-container .ui-panel-drawer > .content.between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ui-panel-container .ui-panel-drawer .drawer-spacer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 1.5em 0;
+
+    user-select: none;
+}
+
+.ui-panel-container .ui-panel-drawer .drawer-spacer > span {
+    color: var(--color-gray-25);
+    font-size: 1em;
+}
