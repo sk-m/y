@@ -4,7 +4,6 @@ import AsideMenuLink from "../../components/AsideMenuLink";
 import DomainAsideMenu from "../../components_internal/DomainAsideMenu";
 import FeaturesPage from "./FeaturesPage";
 import InstancePage from "./InstancePage";
-import UserGroupManagementPage from "./UserGroupManagementPage";
 
 import "./ConfigDomain.css";
 
@@ -45,16 +44,6 @@ const ConfigDomain: Component = () => {
 
                     to="/config/security"
                 />
-
-                <div className="menu-spacer"></div>
-
-                <AsideMenuLink
-                    icon_name="groups"
-                    name="User groups"
-                    description="Manage user groups"
-
-                    to="/config/user-groups/test"
-                />
             </DomainAsideMenu>
             
             <Routes>
@@ -63,9 +52,6 @@ const ConfigDomain: Component = () => {
                 }></Route>
                 <Route path="/features" element={
                     <FeaturesPage />
-                }></Route>
-                <Route path="/user-groups/:group_name/*" element={
-                    <UserGroupManagementPage />
                 }></Route>
             </Routes>
         </div>

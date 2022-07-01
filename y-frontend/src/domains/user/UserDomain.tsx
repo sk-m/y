@@ -19,8 +19,8 @@ const UserDomain: Component = () => {
             <DomainAsideMenu
                 domain_id="user"
 
-                header="User management"
-                subheader="Control over a specific user"
+                header="User"
+                subheader="User management"
 
                 target_name={ params.user_name }
                 target_info={[

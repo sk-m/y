@@ -145,25 +145,42 @@ const MainAsideMenu: Component = () => {
                                 to="/p/IT%20info"
                             />
 
-                            <div className="menu-spacer"></div>
+                            {/* <div style={{ "margin-top": "1em" }}></div>
 
                             <AsideMenuLink
-                                icon_name="dashboard"
-                                name="Dashboard"
-                                description="Instance status at a glance"
-                                
-                                needs_attention={true}
-                                to="/dashboard"
+                                icon_name="star"
+                                name="Administration"
+                              
+                                is_info_only={true}
+                                is_small={true}
+                            /> */}
+
+                            <AsideMenuSection name="Administration" is_expanded={true} >
+                                <AsideMenuLink
+                                    icon_name="dashboard"
+                                    name="Dashboard"
+                                    description="Instance status at a glance"
+
+                                    needs_attention={true}
+                                    to="/dashboard"
                                 />
-                            <AsideMenuLink
-                                icon_name="tune"
-                                name="Config"
-                                description="Instance configuration centre"
-                                
-                                to="/config"
-                            />
+                                <AsideMenuLink
+                                    icon_name="tune"
+                                    name="Config"
+                                    description="Instance configuration centre"
+
+                                    to="/config"
+                                />
+                                <AsideMenuLink
+                                    icon_name="groups"
+                                    name="User groups"
+                                    description="Manage user groups"
+
+                                    to="/user-groups/test"
+                                />
+                            </AsideMenuSection>
                             
-                            <AsideMenuSection name="Page actions" is_expanded={ true } >
+                            {/* <AsideMenuSection name="Page actions" is_expanded={ true } >
                                 <AsideMenuLink
                                     icon_name="show_chart"
                                     name="Information"
@@ -195,7 +212,7 @@ const MainAsideMenu: Component = () => {
 
                                     to="/page-management/1/delete"
                                 />
-                            </AsideMenuSection>
+                            </AsideMenuSection> */}
                         </div>
                     </div>
                 </div>

@@ -25,6 +25,7 @@ const AsideMenuLink: Component<AsideMenuLinkProps> = props => {
     const [isRouteActive, setIsRouteActive] = createSignal(false);
 
     // TODO @performance I think there is a better way of doing this
+    // TODO @improvement @cleanup better use endswith
     createEffect(() => {
         if(props.to) {
             setIsRouteActive(location.pathname.startsWith(props.to));

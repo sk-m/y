@@ -1,7 +1,7 @@
 import { Component, createSignal, For, Match, Show, Switch } from "solid-js";
-import Button from "../../../components/Button";
-import Checkbox from "../../../components/Checkbox";
-import Panel from "../../../components/Panel";
+import Button from "../../components/Button";
+import Checkbox from "../../components/Checkbox";
+import Panel from "../../components/Panel";
 
 const UserRightItem: Component<{
     name: string;
