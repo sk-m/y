@@ -17,6 +17,11 @@ const UserGroupManagementDomain: Component = () => {
                 subheader="User group management"
 
                 target_name={ params.group_name }
+            
+                back_link={{
+                    text: "All groups",
+                    href: "/user-groups"
+                }}
             >
                 <AsideMenuLink
                     icon_name="checklist"

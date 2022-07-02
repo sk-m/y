@@ -323,11 +323,11 @@
     font-size: 1em;
 }
 
-#domain-aside-container {
+.ui-aside-container.domain-aside-container {
     flex-shrink: 0;
 }
 
-#domain-aside-container > .aside {
+.ui-aside-container.domain-aside-container > .aside {
     height: 100vh;
     overflow: auto;
 
@@ -336,16 +336,52 @@
     border-right: 1px solid var(--color-gray-04);
 }
 
-#domain-aside-container > .aside::-webkit-scrollbar {
+.ui-aside-container.domain-aside-container > .aside::-webkit-scrollbar {
     width: 0.2em;
 }
    
-#domain-aside-container > .aside::-webkit-scrollbar-thumb {
+.ui-aside-container.domain-aside-container > .aside::-webkit-scrollbar-thumb {
     background-color: var(--color-gray-1);
     border-radius: 0.2em;
 }
 
-#domain-aside-container > .aside > .content > .domain-header {
+.ui-aside-container.domain-aside-container > .aside > .content > .back-link-container {
+    padding: 0.5em 0.75em;
+}
+
+.ui-aside-container.domain-aside-container > .aside > .content > .back-link-container > .back-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    padding: 0.75em 1em;
+    width: 100%;
+
+    color: var(--color-blackish);
+    text-decoration: none;
+    font-weight: 520;
+    font-size: 0.8em;
+
+    background-color: var(--color-gray-04);
+    border-radius: 6px;
+    
+    transition: 0.15s ease-in-out;
+}
+
+.ui-aside-container.domain-aside-container > .aside > .content > .back-link-container > .back-link:hover {
+    background-color: var(--color-gray-1);
+}
+
+.ui-aside-container.domain-aside-container > .aside > .content > .back-link-container > .back-link > span {
+    font-size: 1em;
+
+    margin-right: 0.75em;
+}
+
+
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header {
     position: relative;
 
     display: flex;
@@ -356,7 +392,7 @@
     margin-right: 2em;
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .left-line {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .left-line {
     position: absolute;
 
     width: 4px;
@@ -366,38 +402,38 @@
     border-radius: 4px;
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content {
     margin-left: 1em;
     
     word-break: break-word;
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content > .header {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content > .header {
     display: flex;
     align-items: center;
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content > .header > .icon {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content > .header > .icon {
     margin-right: 0.5em;
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content > .header > .icon > span {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content > .header > .icon > span {
     font-size: 1.7em;
     color: var(--color-gray-7);
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content > .header > .text {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content > .header > .text {
     font-size: 1.5em;
     font-weight: 800;
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content > .subheader {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content > .subheader {
     color: var(--color-gray-7);
     font-size: 0.7em;
     font-weight: 450;
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content > .target-name {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content > .target-name {
     display: flex;
     align-items: center;
     
@@ -406,26 +442,26 @@
     color: var(--color-blue);
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content > .target-name > .text {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content > .target-name > .text {
     font-weight: 600;
     font-size: 0.9em;
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content > .target-name > .icon {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content > .target-name > .icon {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-#domain-aside-container > .aside > .content > .domain-header > .content > .target-name > .icon > span {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-header > .content > .target-name > .icon > span {
     font-size: 1em;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info {
     padding: 0.5em 0.75em;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel {
     padding: 0.4em 0.8em;
 
     background-color: var(--color-gray-02);
@@ -437,17 +473,17 @@
     transition: 0.15s;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel:hover {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel:hover {
     background-color: var(--color-gray-04);
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-header {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-header {
     color: var(--color-gray-65);
     font-size: 0.8em;
     font-weight: 580;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content {
     /* Default state */
     margin-top: 0;
     height: 0;
@@ -459,14 +495,14 @@
     transition: 0.25s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content.expanded {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content.expanded {
     margin-top: 0.4em;
     height: unset;
     opacity: 1;
     transform: translateY(0%);
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item {
     display: flex;
     align-items: flex-start;
 
@@ -475,7 +511,7 @@
     font-size: 0.8em;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .key {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .key {
     display: flex;
     align-items: center;
     
@@ -484,7 +520,7 @@
     margin-right: 0.4em;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .key > .dot {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .key > .dot {
     width: 4px;
     height: 4px;
 
@@ -494,18 +530,18 @@
     border-radius: 50%;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .value {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .value {
     font-weight: 350;
 
     word-break: break-all;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .value.bool-false {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .value.bool-false {
     color: var(--color-red);
     font-weight: 500;
 }
 
-#domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .value.bool-true {
+.ui-aside-container.domain-aside-container > .aside > .content > .domain-target-info > .panel > .panel-content > .item > .value.bool-true {
     color: var(--color-green);
     font-weight: 500;
 }

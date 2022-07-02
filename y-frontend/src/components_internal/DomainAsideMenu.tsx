@@ -1,4 +1,10 @@
+import { Link } from "solid-app-router";
 import { Component, createSignal, For, Show } from "solid-js";
+
+interface DomainAsideMenuBackLink {
+    text: string;
+    href: string;
+}
 
 const DomainAsideMenu: Component<{
     domain_id: string,
@@ -7,7 +13,9 @@ const DomainAsideMenu: Component<{
     subheader: string,
     
     target_name?: string,
-    target_info?: Record<string, string | number | boolean>[]
+    target_info?: Record<string, string | number | boolean>[],
+
+    back_link?: DomainAsideMenuBackLink,
 }> = props => {
     // We store whether or not the target info panel for this specific domain is expanded, in the localStorage
     const target_panel_localstorage_config_key = "y_domain_aside_target_panel_expanded_" + props.domain_id;
@@ -26,7 +34,7 @@ const DomainAsideMenu: Component<{
     });
 
     return (
-        <div id="domain-aside-container" class="ui-aside-container">
+        <div className="ui-aside-container domain-aside-container">
             <div className="aside">
                 <div className="content">
                     <div className="domain-header">
@@ -75,6 +83,16 @@ const DomainAsideMenu: Component<{
                                     </For>
                                 </div>
                             </div>
+                        </div>
+                    </Show>
+                    <Show when={props.back_link}>
+                        <div className="back-link-container">
+                            {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                            <Link href={ props.back_link!.href } className="back-link">
+                                <span class="material-icons-round">chevron_left</span>
+                                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                                { props.back_link!.text }
+                            </Link>
                         </div>
                     </Show>
                     <div className="aside-arrow-spacer">
