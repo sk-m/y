@@ -6,6 +6,7 @@ import FeaturesPage from "./FeaturesPage";
 import InstancePage from "./InstancePage";
 
 import "./ConfigDomain.css";
+import AsideMenuSection from "../../components/AsideMenuSection";
 
 const ConfigDomain: Component = () => {
     return (
@@ -24,13 +25,6 @@ const ConfigDomain: Component = () => {
                     to="/config/instance"
                 />
                 <AsideMenuLink
-                    icon_name="electric_bolt"
-                    name="Features"
-                    description="Toggle y features"
-
-                    to="/config/features"
-                />
-                <AsideMenuLink
                     icon_name="login"
                     name="Authentication"
                     description="Who can authenticate and how"
@@ -44,6 +38,28 @@ const ConfigDomain: Component = () => {
 
                     to="/config/security"
                 />
+
+                <div className="menu-spacer"></div>
+
+                <AsideMenuLink
+                    icon_name="electric_bolt"
+                    name="Features"
+                    description="Toggle y features"
+
+                    to="/config/features"
+                />
+
+                <AsideMenuSection name="Related pages" is_expanded={true}>
+                    <AsideMenuLink
+                        icon_name="groups"
+                        name="User groups"
+                        description="Manage user groups"
+
+                        to="/user-groups/test"
+
+                        is_external={ true }
+                    />
+                </AsideMenuSection>
             </DomainAsideMenu>
             
             <Routes>

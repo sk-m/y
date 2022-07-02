@@ -12,6 +12,7 @@ interface AsideMenuLinkProps {
     is_info_only?: boolean;
 
     needs_attention?: boolean;
+    is_external?: boolean;
 
     submenus?: AsideMenuLinkProps[]
 }
@@ -56,7 +57,7 @@ const AsideMenuLink: Component<AsideMenuLinkProps> = props => {
                 </div>
                 <div className="right">
                     <div className="needs-attention-bubble"></div>
-                    <span class="arrow-icon material-icons-round">navigate_next</span>
+                    <span class="arrow-icon material-icons-round">{ props.is_external ? "open_in_new" : "navigate_next" }</span>
                 </div>
             </div>
             <Show when={ props.submenus && isRouteActive() }>
