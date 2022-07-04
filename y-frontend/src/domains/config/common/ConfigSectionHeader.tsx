@@ -6,7 +6,7 @@ const ConfigSectionHeader: Component<{
     icon_name?: string;
 
     title: string;
-    description: string;
+    description?: string;
 
     max_width?: string;
 }> = props => {

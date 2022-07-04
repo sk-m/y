@@ -1,6 +1,14 @@
 /* Forms & input */
 .ui-input-container {
-    margin: 0.5em 0;
+    margin: 1em 0;
+}
+
+.ui-input-container:first-child {
+    margin-top: 0;
+}
+
+.ui-input-container:last-child {
+    margin-bottom: 0;
 }
 
 .ui-input-container > .input-wrapper {
