@@ -131,7 +131,7 @@ const ConfigItem: Component<{
                         { ...link("value") }
                     />
 
-                    <div className="drawer-spacer">
+                    <div className="ui-spacer">
                         <span class="material-icons-round">south</span>
                         <span class="material-icons-round">save</span>
                     </div>

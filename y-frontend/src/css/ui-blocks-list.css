@@ -1,0 +1,38 @@
+/* Blocks list */
+.ui-blocks-list > .list-item {
+    display: block;
+
+    margin: 0.7em 0;
+    padding: 0.7em 1em;
+
+    border-radius: 6px;
+
+    color: var(--color-blackish);
+    text-decoration: none;
+
+    box-shadow: 0 5px 15px 0 var(--color-gray-04), 0 0 0 1px var(--color-gray-04);
+
+    transition: 0.15s ease-in-out;
+}
+
+.ui-blocks-list > .list-item[onclick],
+.ui-blocks-list > .list-item[href] {
+    cursor: pointer;
+}
+
+.ui-blocks-list > .list-item[onclick]:hover,
+.ui-blocks-list > .list-item[href]:hover {
+    color: var(--color-blue);
+ 
+    background-color: var(--color-blue-t-02);
+    box-shadow: 0 5px 15px 0 var(--color-blue-t-04), 0 0 0 1px var(--color-blue-t-1);
+}
+
+.ui-blocks-list > .list-item > .item-label {
+    font-weight: 520;
+    font-size: 0.9em;
+}
+
+.ui-blocks-list > .list-item > .item-content {
+    margin-top: 0.5em;
+}

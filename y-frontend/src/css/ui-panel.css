@@ -224,26 +224,3 @@
     align-items: center;
     justify-content: space-between;
 }
-
-.ui-panel-container .ui-panel-spacer.drawer-spacer,
-.ui-panel-container .ui-panel-drawer .drawer-spacer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    margin: 1.5em 0;
-    
-    user-select: none;
-}
-
-
-.ui-panel-container .ui-panel-spacer.drawer-spacer.m-smaller,
-.ui-panel-container .ui-panel-drawer .drawer-spacer.m-smaller {
-    margin: 1em 0;
-}
-
-.ui-panel-container .ui-panel-spacer.drawer-spacer > span,
-.ui-panel-container .ui-panel-drawer .drawer-spacer > span {
-    color: var(--color-gray-25);
-    font-size: 1em;
-}

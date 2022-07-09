@@ -176,7 +176,7 @@ const MainAsideMenu: Component = () => {
                                     name="User groups"
                                     description="Manage user groups"
 
-                                    to="/user-groups/test"
+                                    to="/user-groups"
                                 />
                             </AsideMenuSection>
                             

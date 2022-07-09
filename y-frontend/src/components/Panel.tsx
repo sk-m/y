@@ -36,6 +36,7 @@ const Panel: Component<{
     padding?: "default" | "large",
     max_width?: string;
     is_list_item?: boolean;
+    no_spacer?: boolean;
 
     drawer_shown?: boolean,
     panel_actions?: PanelAction[],
@@ -47,7 +48,7 @@ const Panel: Component<{
 
     return (
         <>
-            <Show when={ !props.is_list_item }>
+            <Show when={ props.no_spacer ? false : !props.is_list_item }>
                 <div className="ui-panel-spacer"></div>
             </Show>
 

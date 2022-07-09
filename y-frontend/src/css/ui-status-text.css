@@ -7,6 +7,10 @@
     margin-bottom: 0.33em;
 }
 
+.ui-status-text:last-child {
+    margin-bottom: 0;
+}
+
 .ui-status-text > .line {
     position: absolute;
 

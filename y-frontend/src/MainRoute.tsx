@@ -5,7 +5,9 @@ import "./app.css";
 import MainAsideMenu from "./components_internal/MainAsideMenu";
 import UserDomain from "./domains/user/UserDomain";
 import ConfigDomain from "./domains/config/ConfigDomain";
+import UserGroupsListPage from "./pages/UserGroupsListPage";
 import UserGroupManagementDomain from "./domains/user-group/UserGroupManagementDomain";
+import CreateUserGroupPage from "./pages/CreateUserGroupPage";
 
 const TestComponent: Component = () => {
     return (
@@ -23,6 +25,10 @@ const MainRoute: Component = () => {
                     <Route path="/u/:user_name/*" component={ UserDomain } />
                     <Route path="/config/*" component={ ConfigDomain } />
                     <Route path="/user-groups/:group_name/*" component={ UserGroupManagementDomain }></Route>
+
+                    <Route path="/user-groups" component={ UserGroupsListPage }></Route>
+                    <Route path="/create-user-group" component={ CreateUserGroupPage }></Route>
+
                     <Route path="/" component={ TestComponent } />
                 </Routes>
             </div>

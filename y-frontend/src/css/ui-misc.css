@@ -75,6 +75,16 @@ span[title] {
     margin-top: 1em;
 }
 
+.mv-2,
+.mb-2 {
+    margin-bottom: 2em;
+}
+
+.mv-2,
+.mt-2 {
+    margin-top: 2em;
+}
+
 .mv-15,
 .mt-15 {
     margin-top: 1.5em;
@@ -91,6 +101,13 @@ span[title] {
     justify-content: space-between;
 }
 
+.ui-toright {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+}
+
+.ui-toright.center,
 .ui-between.center {
     align-items: center;
 }
@@ -107,4 +124,36 @@ span[title] {
 
 .ui-buttons-container > * {
     margin-left: 0.5rem;
+}
+
+.ui-spacer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+    
+    user-select: none;
+}
+
+.ui-spacer.m-smaller {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.ui-spacer.t-line {
+    width: 90%;
+    height: 3px;
+
+    background-color: var(--color-gray-04);
+    border-radius: 3px;
+
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.ui-spacer > span {
+    color: var(--color-gray-25);
+    font-size: 1em;
 }

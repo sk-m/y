@@ -48,7 +48,7 @@ const BasicInfoPanel: Component = () => {
                     {...link("group_display_name")}
                 />
 
-                <div className="ui-panel-spacer drawer-spacer">
+                <div className="ui-spacer">
                     <span class="material-icons-round">south</span>
                     <span class="material-icons-round">save</span>
                 </div>

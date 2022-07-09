@@ -55,7 +55,7 @@ const ConfigDomain: Component = () => {
                         name="User groups"
                         description="Manage user groups"
 
-                        to="/user-groups/test"
+                        to="/user-groups"
 
                         is_external={ true }
                     />
