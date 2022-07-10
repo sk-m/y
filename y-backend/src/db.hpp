@@ -20,107 +20,66 @@
 #define DEFAULT_CLEANUP_FUNC(result) [result](){ if(result) PQclear(result); }
 
 namespace DB {
-    enum class QueryResultsType: unsigned char {
-        Hashmap,
-        JSON,
-        Raw
-    };
+    // enum class QueryResultsType: unsigned char {
+    //     Hashmap,
+    //     JSON,
+    //     Raw
+    // };
 
-    struct Results {
-        /**
-         * @brief Indicates whether or not the query was successfull and the data can be accessed
-         */
-        bool ok = true;
+    // struct Results {
+    //     /**
+    //      * @brief Indicates whether or not the query was successfull and the data can be accessed
+    //      */
+    //     bool ok = true;
 
-        /**
-         * @brief If [ok] is false - will hold the error that was returned by the database
-         */
-        ExecStatusType error;
+    //     /**
+    //      * @brief If [ok] is false - will hold the error that was returned by the database
+    //      */
+    //     ExecStatusType error;
 
-        /**
-         * @brief Indicates where the data is stored, in [data], [data_json] or just in the [_pgresult] object
-         */
-        QueryResultsType results_type = QueryResultsType::Hashmap;
+    //     /**
+    //      * @brief Indicates where the data is stored, in [data], [data_json] or just in the [_pgresult] object
+    //      */
+    //     QueryResultsType results_type = QueryResultsType::Hashmap;
 
-        std::vector<std::unordered_map<const char*, const char*> > data;
-        rapidjson::Document* data_json;
+    //     std::vector<std::unordered_map<const char*, const char*> > data;
+    //     rapidjson::Document* data_json;
 
-        /**
-         * @brief How many rows were affected
-         */
-        unsigned int n_affected_rows = 0;
+    //     /**
+    //      * @brief How many rows were affected
+    //      */
+    //     unsigned int n_affected_rows = 0;
 
-        /**
-         * If false (default) - the results will be cleared from memory as soon as this Results object falls out of scope
-         * If true - the results will not be cleared at all. Please don't forget to clear manually with `PQclear(_pgresult)` when you
-         * need to
-         */
-        bool do_not_clear_results = false;
+    //     /**
+    //      * If false (default) - the results will be cleared from memory as soon as this Results object falls out of scope
+    //      * If true - the results will not be cleared at all. Please don't forget to clear manually with `PQclear(_pgresult)` when you
+    //      * need to
+    //      */
+    //     bool do_not_clear_results = false;
 
-        PGresult* _pgresult = nullptr;
+    //     PGresult* _pgresult = nullptr;
 
-        ~Results() {
-            if(!do_not_clear_results) {
-                if(_pgresult) PQclear(_pgresult);
+    //     ~Results() {
+    //         if(!do_not_clear_results) {
+    //             if(_pgresult) PQclear(_pgresult);
 
-                // TODO @cleanup I'm pretty sure we don't need to do this. It probably happns automatically
-                if(results_type == QueryResultsType::JSON) delete data_json;
-            }
-        }
-    };
-
-    struct _InternalRecordFields {
-        bool ok = false;
-
-        PGresult* _result;
-    };
-
-    template <typename T>
-    struct RecordsSet: _InternalRecordFields {
-        std::vector<T> items;
-
-        RecordsSet(PGresult* db_result, std::function<T(PGresult* db_result, int n)> process_record) {
-            _prepare_record(this, db_result);
-
-            if(!ok) return;
-
-            const auto rows_n = PQntuples(db_result);
-            items.reserve(rows_n);
-
-            for(int i = 0; i < rows_n; i++) {
-                items.push_back(process_record(db_result, i));
-            }
-        }
-
-        RecordsSet() = default;
-    };
-    
-    template <typename T>
-    struct Record: _InternalRecordFields {
-        T item;
-
-        Record(PGresult* db_result, std::function<T(PGresult* db_result, int n)> process_record) {
-            _prepare_record(this, db_result);
-
-            if(!ok) return;
-
-            item = process_record(db_result, 0);
-        }
-
-        Record() = default;
-    };
+    //             // TODO @cleanup I'm pretty sure we don't need to do this. It probably happns automatically
+    //             if(results_type == QueryResultsType::JSON) delete data_json;
+    //         }
+    //     }
+    // };
 
     PGconn** conn_ready[DB_CONNECTIONS_N];
     PGconn** conn_busy[DB_CONNECTIONS_N];
 
-    /**
-     * @brief Query the database (blocking)
-     *
-     * @param query_str SQL
-     * @param results_type save data as a vector of hashmaps, json or do not do anything with the results (raw)
-     * @return query results
-     */
-    Results query(const char* query_str, QueryResultsType results_type = QueryResultsType::Hashmap);
+    // /**
+    //  * @brief Query the database (blocking)
+    //  *
+    //  * @param query_str SQL
+    //  * @param results_type save data as a vector of hashmaps, json or do not do anything with the results (raw)
+    //  * @return query results
+    //  */
+    // Results query(const char* query_str, QueryResultsType results_type = QueryResultsType::Hashmap);
 
     /**
      * @brief Execute a prepared statement. Do not forget to call PQclear() on the result
@@ -141,9 +100,6 @@ namespace DB {
 
     // Util
     inline bool is_result_ok(PGresult* db_result);
-
-    // Records
-    inline void _prepare_record(DB::_InternalRecordFields* record, PGresult* db_result);
 
     // Statements
     bool _prepare_statement(PGconn* connection, const char* statement_name, const char* query, int n_params, const Oid *param_types);
@@ -175,149 +131,139 @@ inline bool DB::is_result_ok(PGresult* db_result) {
     return true;
 }
 
-inline void DB::_prepare_record(DB::_InternalRecordFields* record, PGresult* db_result) {
-    if(PQresultStatus(db_result) != ExecStatusType::PGRES_TUPLES_OK || PQnfields(db_result) == 0 || PQntuples(db_result) == 0) {
-        PQclear(db_result);
-        return;
-    }
-    
-    record->ok = true;
-    record->_result = std::move(db_result);
-}
+// DB::Results DB::query(const char* query_str, QueryResultsType results_type) {
+//     // Prepare and gather a connection to the database
+//     const auto conn_id = _prepare_connection();
+//     auto connection = _connections[conn_id];
 
-DB::Results DB::query(const char* query_str, QueryResultsType results_type) {
-    // Prepare and gather a connection to the database
-    const auto conn_id = _prepare_connection();
-    auto connection = _connections[conn_id];
+//     // Send a query to the database
+//     auto result = PQexec(connection, query_str);
 
-    // Send a query to the database
-    auto result = PQexec(connection, query_str);
+//     // Prepare the results object
+//     Results query_results;
 
-    // Prepare the results object
-    Results query_results;
+//     // Check the status of the query
+//     const auto query_status = PQresultStatus(result);
 
-    // Check the status of the query
-    const auto query_status = PQresultStatus(result);
+//     switch(query_status) {
+//         case PGRES_COMMAND_OK:
+//         case PGRES_TUPLES_OK:
+//             break;
 
-    switch(query_status) {
-        case PGRES_COMMAND_OK:
-        case PGRES_TUPLES_OK:
-            break;
+//         case PGRES_NONFATAL_ERROR: {
+//             query_results.error = query_status;
+//         } break;
 
-        case PGRES_NONFATAL_ERROR: {
-            query_results.error = query_status;
-        } break;
+//         default: {
+//             // Error
+//             query_results.ok = false;
+//             query_results.error = query_status;
 
-        default: {
-            // Error
-            query_results.ok = false;
-            query_results.error = query_status;
+//             return query_results;
+//         }
+//     }
 
-            return query_results;
-        }
-    }
+//     // Save the result object, so we can clean it when we need to
+//     query_results._pgresult = result;
 
-    // Save the result object, so we can clean it when we need to
-    query_results._pgresult = result;
+//     const auto affected_rows = PQcmdTuples(result);
+//     if(affected_rows) query_results.n_affected_rows += std::stoi(affected_rows);
 
-    const auto affected_rows = PQcmdTuples(result);
-    if(affected_rows) query_results.n_affected_rows += std::stoi(affected_rows);
+//     // Convert the data that we have got into a vector of hashmaps
+//     const auto rows_n = PQntuples(result);
+//     const auto cols_n = PQnfields(result);
 
-    // Convert the data that we have got into a vector of hashmaps
-    const auto rows_n = PQntuples(result);
-    const auto cols_n = PQnfields(result);
+//     switch(results_type) {
+//         case QueryResultsType::Hashmap: {
+//             // Save data as a vector of hashmaps
 
-    switch(results_type) {
-        case QueryResultsType::Hashmap: {
-            // Save data as a vector of hashmaps
+//             query_results.data = std::vector<std::unordered_map<const char*, const char*>>(rows_n, std::unordered_map<const char*, const char*>(cols_n));
 
-            query_results.data = std::vector<std::unordered_map<const char*, const char*>>(rows_n, std::unordered_map<const char*, const char*>(cols_n));
+//             for(int r = 0; r < rows_n; r++) {
+//                 for(int c = 0; c < cols_n; c++) {
+//                     query_results.data[r].insert(std::make_pair<const char*, const char*>(PQfname(result, c), PQgetvalue(result, r, c)));
+//                 }
+//             }
+//         } break;
 
-            for(int r = 0; r < rows_n; r++) {
-                for(int c = 0; c < cols_n; c++) {
-                    query_results.data[r].insert(std::make_pair<const char*, const char*>(PQfname(result, c), PQgetvalue(result, r, c)));
-                }
-            }
-        } break;
+//         case QueryResultsType::JSON: {
+//             // Save data as json
+//             // TODO @performance there are a lot of optimization that can take place here
 
-        case QueryResultsType::JSON: {
-            // Save data as json
-            // TODO @performance there are a lot of optimization that can take place here
+//             auto d = new rapidjson::Document();
+//             auto d_allocator = d->GetAllocator();
 
-            auto d = new rapidjson::Document();
-            auto d_allocator = d->GetAllocator();
+//             d->SetArray();
 
-            d->SetArray();
+//             for(int r = 0; r < rows_n; r++) {
+//                 rapidjson::Value row(rapidjson::kObjectType);
 
-            for(int r = 0; r < rows_n; r++) {
-                rapidjson::Value row(rapidjson::kObjectType);
+//                 for(int c = 0; c < cols_n; c++) {
+//                     const auto name = PQfname(result, c);
+//                     const auto value_raw = PQgetvalue(result, r, c);
+//                     rapidjson::Value value;
 
-                for(int c = 0; c < cols_n; c++) {
-                    const auto name = PQfname(result, c);
-                    const auto value_raw = PQgetvalue(result, r, c);
-                    rapidjson::Value value;
+//                     if(PQgetisnull(result, r, c)) {
+//                         value.SetNull();
+//                     } else {
+//                         // TODO @hack @incomplete Use pg_type table
+//                         switch(PQftype(result, c)) {
+//                             // Boolean
+//                             case 16: {
+//                                 value.SetBool(value_raw[0] == 't');
+//                             } break;
 
-                    if(PQgetisnull(result, r, c)) {
-                        value.SetNull();
-                    } else {
-                        // TODO @hack @incomplete Use pg_type table
-                        switch(PQftype(result, c)) {
-                            // Boolean
-                            case 16: {
-                                value.SetBool(value_raw[0] == 't');
-                            } break;
+//                             // Number
+//                             // TODO @incomplete
+//                             case 20: {
+//                                 value.SetInt64(std::stoll(value_raw));
+//                             } break;
 
-                            // Number
-                            // TODO @incomplete
-                            case 20: {
-                                value.SetInt64(std::stoll(value_raw));
-                            } break;
+//                             case 21: {
+//                                 value.SetInt(std::stoi(value_raw));
+//                             } break;
 
-                            case 21: {
-                                value.SetInt(std::stoi(value_raw));
-                            } break;
+//                             case 23:{
+//                                 value.SetInt(std::stol(value_raw));
+//                             } break;
 
-                            case 23:{
-                                value.SetInt(std::stol(value_raw));
-                            } break;
+//                             case 700: {
+//                                 value.SetFloat(std::stof(value_raw));
+//                             } break;
 
-                            case 700: {
-                                value.SetFloat(std::stof(value_raw));
-                            } break;
+//                             case 701: {
+//                                 value.SetDouble(std::stod(value_raw));
+//                             } break;
 
-                            case 701: {
-                                value.SetDouble(std::stod(value_raw));
-                            } break;
+//                             default:
+//                                 value.SetString(value_raw, strlen(value_raw), d_allocator);
+//                         }
+//                     }
 
-                            default:
-                                value.SetString(value_raw, strlen(value_raw), d_allocator);
-                        }
-                    }
+//                     row.AddMember(
+//                         rapidjson::Value().SetString(name, strlen(name), d_allocator),
+//                         value,
+//                         d_allocator
+//                     );
+//                 }
 
-                    row.AddMember(
-                        rapidjson::Value().SetString(name, strlen(name), d_allocator),
-                        value,
-                        d_allocator
-                    );
-                }
+//                 d->PushBack(row, d_allocator);
+//             }
 
-                d->PushBack(row, d_allocator);
-            }
+//             query_results.data_json = std::move(d);
+//         } break;
 
-            query_results.data_json = std::move(d);
-        } break;
+//         case QueryResultsType::Raw:
+//             break;
+//     }
 
-        case QueryResultsType::Raw:
-            break;
-    }
+//     query_results.results_type = results_type;
 
-    query_results.results_type = results_type;
+//     // TODO we might be ok with moving a connection to the "ready" array earlier
+//     _free_connection(conn_id);
 
-    // TODO we might be ok with moving a connection to the "ready" array earlier
-    _free_connection(conn_id);
-
-    return query_results;
-}
+//     return query_results;
+// }
 
 PGresult* DB::exec_prepared(const char* statement_name, const char* const* params, unsigned int params_n, const int* param_formats, int result_format) {
     const auto conn_id = DB::_prepare_connection();
