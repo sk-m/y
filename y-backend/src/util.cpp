@@ -15,14 +15,9 @@ struct Status {
     inline bool is_ok() const { return contextual_error_code == 0; };
 };
 
-struct _InternalResultFields {
-    Status status;
-
-    inline bool is_ok() const { return status.is_ok(); };
-};
-
 template <typename T>
-struct Result: _InternalResultFields {
+struct Result {
+    Status status;
     T data;
 
     // Constructors
@@ -106,12 +101,12 @@ inline Json::Value make_error_json(const char* error_message, bool is_unauthenti
 /**
  * @brief (for use in an api handler) Respond with an error (non-200 status code)
  * 
- * @param result Result that has reported an error. We'll get the error message from it
+ * @param status Non-OK status
  * @param status_code HTTP status code that will be used in the response
  * @param api_callback drogon's callback function, provided by the route handler
  */
-void send_error(_InternalResultFields result, drogon::HttpStatusCode status_code, std::function<void (const drogon::HttpResponsePtr &)> &api_callback) {
-    const auto json = make_error_json(result.status.explanation_user);
+void send_error(Status status, drogon::HttpStatusCode status_code, std::function<void (const drogon::HttpResponsePtr &)> &api_callback) {
+    const auto json = make_error_json(status.explanation_user);
 
     auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
     resp->setStatusCode(status_code);

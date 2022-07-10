@@ -58,7 +58,7 @@ namespace API_User {
         // TODO? should we set skip_additional_checks to true in this case? Not quite sure
         auto user_session_res = user_get_from_session(session_cookie.c_str(), req, false, true);
 
-        if(!user_session_res.is_ok()) {
+        if(!user_session_res.status.is_ok()) {
             // User's session is not valid. Nothing to do here. We will just ask the browser to remove the session cookie
             api_callback(resp);
             return;
@@ -71,7 +71,7 @@ namespace API_User {
 
         auto destroy_session_res = user_session_destroy(session_id, req, "logout");
 
-        if(destroy_session_res.is_ok()) {
+        if(destroy_session_res.status.is_ok()) {
             // We have successfully removed a session from the database
             destroy_session_res.cleanup();
         }
@@ -113,8 +113,8 @@ namespace API_User {
         auto target_user_res = user_get_by_username(target_username.c_str());
         auto target_user = target_user_res.data;
 
-        if(!target_user_res.is_ok()) {
-            return send_error(target_user_res, drogon::HttpStatusCode::k400BadRequest, api_callback);
+        if(!target_user_res.status.is_ok()) {
+            return send_error(target_user_res.status, drogon::HttpStatusCode::k400BadRequest, api_callback);
         }
 
         // You must have specific rights in order to view someone's preferences.
@@ -136,10 +136,10 @@ namespace API_User {
         auto user_sessions_res = user_get_all_sessions(current_user.id);
         auto user_sessions_vec = user_sessions_res.data;
 
-        if(!user_sessions_res.is_ok()) {
+        if(!user_sessions_res.status.is_ok()) {
             target_user_res.cleanup();
 
-            return send_error(user_sessions_res, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+            return send_error(user_sessions_res.status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
         }
 
         // TODO @incomplete get the actual preferences
@@ -208,7 +208,7 @@ namespace API_User {
         const auto new_user_res = user_create(user_username, p_password->second.c_str());
         const auto user_id = new_user_res.data;
 
-        if(!new_user_res.is_ok()) {
+        if(!new_user_res.status.is_ok()) {
             const auto json = make_error_json(new_user_res.status.explanation_user);
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
@@ -230,8 +230,8 @@ namespace API_User {
         auto user_session_res = user_session_create(user_id, req);
         auto user_session = user_session_res.data;
 
-        if(!user_session_res.is_ok()) {
-            return send_error(user_session_res, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+        if(!user_session_res.status.is_ok()) {
+            return send_error(user_session_res.status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
         }
 
         Json::Value data_json;
@@ -271,7 +271,7 @@ namespace API_User {
         auto password_cmp_res = user_compare_passwords(p_username->second.c_str(), 0, p_password->second.c_str());
         auto user = password_cmp_res.data;
 
-        if(!password_cmp_res.is_ok()) {
+        if(!password_cmp_res.status.is_ok()) {
             const auto json = make_error_json(password_cmp_res.status.explanation_user);
 
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);

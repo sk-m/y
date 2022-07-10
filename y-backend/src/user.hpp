@@ -50,6 +50,9 @@ struct UserSession {
     char* device;
 
     char token_cleartext[129];
+
+    static UserSession from_result(PGresult* result, int row);
+    static std::vector<UserSession> from_result_many(PGresult* result);
 };
 
 struct User {
@@ -60,11 +63,9 @@ struct User {
     char* password;
 
     char* last_login;
-};
 
-// TODO @refactor @cleanup this is just not right...
-#include "orm/user_session.hpp"
-#include "orm/user.hpp"
+    static User from_result(PGresult* result, int row);
+};
 
 // bool user_is_username_taken(const char* username) {
 //     const char* const sql_params[1] = { username };
@@ -75,6 +76,60 @@ struct User {
 //     PQclear(result);
 //     return is_taken;
 // }
+
+[[nodiscard]] User User::from_result(PGresult* result, int row = 0) {
+    User user;
+
+    // TODO @refactor @performance I'm sure this can be more elegant
+    user.id = std::stoi(PQgetvalue(result, row, PQfnumber(result, "user_id")));
+    user.username = PQgetvalue(result, row, PQfnumber(result, "user_username"));
+    user.password = PQgetvalue(result, row, PQfnumber(result, "user_password"));
+    user.last_login = PQgetvalue(result, row, PQfnumber(result, "user_last_login"));
+
+    return user;
+}
+
+[[nodiscard]] UserSession UserSession::from_result(PGresult* result, int row = 0) {
+    UserSession session;
+
+    const auto valid_until_raw = std::string(PQgetvalue(result, row, PQfnumber(result, "session_valid_until")));
+
+    // TODO @refactor @performance I'm sure this can be more elegant
+    session.session_id = PQgetvalue(result, row, PQfnumber(result, "session_id"));
+    session.user_id = std::stoi(PQgetvalue(result, row, PQfnumber(result, "session_user_id")));
+    session.current_ip = PQgetvalue(result, row, PQfnumber(result, "session_current_ip"));
+    session.ip_range = PQgetvalue(result, row, PQfnumber(result, "session_ip_range"));
+    session.token_hash = PQgetvalue(result, row, PQfnumber(result, "session_token_hash"));
+    session.token_salt = PQgetvalue(result, row, PQfnumber(result, "session_token_salt"));
+    session.token_iterations = std::stoi(PQgetvalue(result, row, PQfnumber(result, "session_token_iterations")));
+
+    // TODO* @performance @minor This is *extremely* minor, but sometimes we call this function right after creating a new session
+    // (from Postgres' INSERT INTO user_sessions ... RETURNING *). This means, that we already have a Date instance on our
+    // hands, but instead of using it, we rely on this function, which will *parse* the timestamp that we have just created
+    // and sent to the database.
+
+    // So, in other words, we create a new Date, *stringify it*, insert into the database, call this function and *parse the
+    // string timestamp back into Date*
+    // This has a pretty much non-existent impact on the performance, but it doesn't feel good...
+
+    session.valid_until = trantor::Date::fromDbStringLocal(valid_until_raw);
+    session.device = PQgetvalue(result, row, PQfnumber(result, "session_device"));
+
+    return session;
+}
+
+[[nodiscard]] std::vector<UserSession> UserSession::from_result_many(PGresult* result) {
+    std::vector<UserSession> sessions;
+
+    const auto rows_n = PQntuples(result);
+    sessions.reserve(rows_n);
+
+    for(int i = 0; i < rows_n; i++) {
+        sessions.push_back(UserSession::from_result(result, i));
+    }
+
+    return sessions;
+}
 
 /**
  * @brief Get the user by their username
@@ -88,17 +143,16 @@ CleanableResult<User> user_get_by_username(const char* username) {
     const char* const sql_params[1] = { username };
     auto user_result = DB::exec_prepared("user_get_by_username", sql_params, 1);
 
-    auto user_record = ORM_User::one(user_result);
-    auto user = user_record.item;
-
-    if(!user_record.ok) {
-        return CleanableResult(user, Status {
+    if(!DB::is_result_ok(user_result)) {
+        return CleanableResult(User {}, Status {
             UserError::USER_NOT_FOUND,
             "Could not find the user." 
         });
     }
 
-    return CleanableResult(user, DEFAULT_CLEANUP_FUNC(user_record));
+    auto user = User::from_result(user_result);
+
+    return CleanableResult(user, DEFAULT_CLEANUP_FUNC(user_result));
 }
 
 /**
@@ -170,17 +224,15 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
     const char* const sql_params[1] = { session_id.c_str() };
     auto session_result = DB::exec_prepared("session_get_by_id", sql_params, 1);
 
-    auto session_record = ORM_UserSession::one(session_result);
-
     // Did we find a session with such session_id?
-    if(!session_record.ok) {
+    if(!DB::is_result_ok(session_result)) {
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
             UserError::SESSION_INVALID,
             "Session is invalid." 
         });
     }
 
-    auto session = session_record.item;
+    auto session = UserSession::from_result(session_result);
 
     #if INSANELY_INSECURE_SCARY_FLAG_DO_NOT_EVER_ENABLE
         const auto session_token_valid = true;
@@ -207,7 +259,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
     #endif
 
     if(!session_token_valid) {
-        PQclear(session_record._result);
+        PQclear(session_result);
 
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
             UserError::SESSION_INVALID,
@@ -232,7 +284,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
                     std::cout << "ERROR! Could not delete an expired session!\n" << error_message << "\n";
                 }
         
-                PQclear(session_record._result);
+                PQclear(session_result);
                 PQclear(delete_session_result);
 
                 return CleanableResult(std::make_tuple(user, UserSession{}), Status {
@@ -246,7 +298,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
             const auto client_ip_allowed = is_ip_in_network(client_ip.c_str(), session.ip_range);
 
             if(!client_ip_allowed) {
-                PQclear(session_record._result);
+                PQclear(session_result);
 
                 return CleanableResult(std::make_tuple(user, UserSession{}), Status {
                     UserError::SESSION_IP_NOT_ALLOWED,
@@ -274,10 +326,10 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
         }
 
         user.id = session.user_id;
-        user.username = PQgetvalue(session_record._result, 0, PQfnumber(session_record._result, "user_username"));
+        user.username = PQgetvalue(session_result, 0, PQfnumber(session_result, "user_username"));
 
-        return CleanableResult(std::make_tuple(user, session), [session_record](){
-            if(session_record._result) PQclear(session_record._result);
+        return CleanableResult(std::make_tuple(user, session), [session_result](){
+            if(session_result) PQclear(session_result);
         });
     }
 }
@@ -297,19 +349,18 @@ CleanableResult<UserSession> user_session_destroy(const char* session_id, const 
     const char* const sql_params[1] = { session_id };
     auto session_result = DB::exec_prepared("session_delete_by_id", sql_params, 1);
 
-    auto deleted_session_record = ORM_UserSession::one(session_result);
-    auto deleted_session = deleted_session_record.item;
-
-    if(!deleted_session_record.ok) {
-        return CleanableResult(deleted_session, Status {
+    if(!DB::is_result_ok(session_result)) {
+        return CleanableResult(UserSession {}, Status {
             UserError::INTERNAL,
             "Could not delete the session." 
         });
     }
 
+    auto deleted_session = UserSession::from_result(session_result);
+
     // TODO @incomplete create a user log entry
 
-    return CleanableResult(deleted_session, DEFAULT_CLEANUP_FUNC(deleted_session_record));
+    return CleanableResult(deleted_session, DEFAULT_CLEANUP_FUNC(session_result));
 }
 
 /**
@@ -374,16 +425,15 @@ CleanableResult<User> user_compare_passwords(const char* username, unsigned int 
         user_result = DB::exec_prepared("user_get_by_username", sql_params, 1);
     }
 
-    auto user_record = ORM_User::one(user_result);
-    auto user = user_record.item;
-
-    if(!user_record.ok) {
+    if(!DB::is_result_ok(user_result)) {
         // TODO @robustness !ok does not necessarily mean that the user was not found. Some other error might be the case
-        return CleanableResult(user, Status {
+        return CleanableResult(User {}, Status {
             UserError::USER_NOT_FOUND,
             "User was not found." 
         });
     }
+
+    auto user = User::from_result(user_result);
 
     // TODO @cleanup @DRY move into util.cpp?
     std::vector<std::string> password_parts;
@@ -421,23 +471,25 @@ CleanableResult<User> user_compare_passwords(const char* username, unsigned int 
         const auto password_correct = strncmp(reinterpret_cast<char*>(hash_out_raw), db_hash.c_str(), PASSWORD_KEY_SIZE_BYTES) == 0;
         
         if(password_correct) {
-            return CleanableResult(user, DEFAULT_CLEANUP_FUNC(user_record));
+            return CleanableResult(user, DEFAULT_CLEANUP_FUNC(user_result));
         } else {
-            PQclear(user_record._result);
+            PQclear(user_result);
             
             return CleanableResult(user, Status {
                 UserError::PASSWORD_INCORRECT,
                 "Password is incorrect." 
             });
         }
+    } else {
+        // Not a supported hashing algorithm
+
+        PQclear(user_result);
+
+        return CleanableResult(user, Status {
+            UserError::PASSWORD_HASHING_ALGORITHM_UNSUPPORTED,
+            "Password hashing algorithm is (no longer) supported. Please, contact administrators." 
+        });
     }
-
-    PQclear(user_record._result);
-
-    return CleanableResult(user, Status {
-        UserError::PASSWORD_HASHING_ALGORITHM_UNSUPPORTED,
-        "Password hashing algorithm is (no longer) supported. Please, contact administrators." 
-    });
 }
 
 /**
@@ -536,7 +588,7 @@ bool user_update_password(unsigned int user_id, const char* current_password, co
     // Check if provided password is correct
     auto password_cmp_res = user_compare_passwords(nullptr, user_id, current_password);
 
-    if(!password_cmp_res.is_ok()) {
+    if(!password_cmp_res.status.is_ok()) {
         return false;
     }
 
@@ -655,15 +707,13 @@ CleanableResult<UserSession> user_session_create(unsigned int user_id, const dro
         });
     }
 
-    auto session_record = ORM_UserSession::one(result);
-    auto session = session_record.item;
-    // No need to check `ok` here, as we have checked for errors manually already
-        
+    auto session = UserSession::from_result(result);
+
     // Also save the cleartext token (the value that will reside in the user's y_session cookie)
     strncpy(session.token_cleartext, token_cleartext_hex.c_str(), 128);
     session.token_cleartext[128] = '\0';
 
-    return CleanableResult(session, DEFAULT_CLEANUP_FUNC(session_record));
+    return CleanableResult(session, DEFAULT_CLEANUP_FUNC(result));
 }
 
 /**
@@ -674,14 +724,17 @@ CleanableResult<UserSession> user_session_create(unsigned int user_id, const dro
 CleanableResult<std::vector<UserSession>> user_get_all_sessions(unsigned int user_id) {
     const char* const sql_params[1] = { std::to_string(user_id).c_str() };
     auto sessions_result = DB::exec_prepared("sessions_get_by_user_id", sql_params, 1);
-    auto sessions_recods = ORM_UserSession::many(sessions_result);
 
-    if(!sessions_recods.ok) {
-        return CleanableResult(sessions_recods.items, Status {
+    std::vector<UserSession> user_sessions;
+
+    if(!DB::is_result_ok(sessions_result)) {
+        return CleanableResult(user_sessions, Status {
             UserError::INTERNAL,
             "Could not get user's sessions." 
         });
     }
 
-    return CleanableResult(sessions_recods.items, DEFAULT_CLEANUP_FUNC(sessions_recods));
+    user_sessions = UserSession::from_result_many(sessions_result);
+
+    return CleanableResult(user_sessions, DEFAULT_CLEANUP_FUNC(sessions_result));
 }

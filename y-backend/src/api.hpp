@@ -29,7 +29,7 @@ void AuthFilter::doFilter(const drogon::HttpRequestPtr &req, drogon::FilterCallb
 
     auto user_session_res = user_get_from_session(session_cookie.c_str(), req);
 
-    if(!user_session_res.is_ok()) {
+    if(!user_session_res.status.is_ok()) {
         // TODO? Send an expired y_session cookie on error?
         const auto json = make_error_json(user_session_res.status.explanation_user, true);
 

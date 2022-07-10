@@ -17,13 +17,7 @@
 // TODO @placeholder move into a config file
 #define DB_CONNECTIONS_N 10
 
-#define ORM_ONE(object_type) inline DB::Record<object_type> one(PGresult* db_result) \
-    { return DB::Record<object_type>(db_result, _process_record); }
-
-#define ORM_MANY(object_type) inline DB::RecordsSet<object_type> many(PGresult* db_result) \
-    { return DB::RecordsSet<object_type>(db_result, _process_record); }
-
-#define DEFAULT_CLEANUP_FUNC(record_var) [record_var](){ if(record_var.ok && record_var._result) PQclear(record_var._result); }
+#define DEFAULT_CLEANUP_FUNC(result) [result](){ if(result) PQclear(result); }
 
 namespace DB {
     enum class QueryResultsType: unsigned char {
@@ -145,6 +139,9 @@ namespace DB {
 
     bool _init();
 
+    // Util
+    inline bool is_result_ok(PGresult* db_result);
+
     // Records
     inline void _prepare_record(DB::_InternalRecordFields* record, PGresult* db_result);
 
@@ -155,6 +152,27 @@ namespace DB {
     // Connections
     inline unsigned char _prepare_connection();
     inline void _free_connection(unsigned char conn_id);
+}
+
+/**
+ * @brief Check if a database query was successful. Will automatically PQclear the db_result object if not (on return false)
+ * 
+ * @param db_result Result, returned by the database
+ */
+inline bool DB::is_result_ok(PGresult* db_result) {
+    const auto status = PQresultStatus(db_result);
+
+    // No data returned from query
+    if(status == ExecStatusType::PGRES_COMMAND_OK) true;
+
+    if(status != ExecStatusType::PGRES_TUPLES_OK || PQnfields(db_result) == 0 || PQntuples(db_result) == 0) {
+        // Data should have been returned by query, but something went wrong
+        PQclear(db_result);
+
+        return false;
+    }
+
+    return true;
 }
 
 inline void DB::_prepare_record(DB::_InternalRecordFields* record, PGresult* db_result) {
