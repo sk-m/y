@@ -28,5 +28,7 @@ y-backend/config/server.yaml
 
 y-frontend/config/config.json
 
+y-backend/dev/sql/dump_db.sh
+
 # misc
 .vscode/*.log
