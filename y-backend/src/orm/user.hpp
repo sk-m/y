@@ -3,8 +3,8 @@
 #include "../user.hpp"
 
 namespace ORM_User {
-    [[nodiscard]] User::User _process_record(PGresult* db_result, int n) {
-        User::User user;
+    [[nodiscard]] User _process_record(PGresult* db_result, int n) {
+        User user;
 
         // TODO @refactor @performance I'm sure this can be more elegant
         user.id = std::stoi(PQgetvalue(db_result, 0, PQfnumber(db_result, "user_id")));
@@ -15,5 +15,5 @@ namespace ORM_User {
         return user;
     }
 
-    ORM_ONE(User::User)
+    ORM_ONE(User)
 }

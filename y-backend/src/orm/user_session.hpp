@@ -3,8 +3,8 @@
 #include "../user.hpp"
 
 namespace ORM_UserSession {
-    User::UserSession _process_record(PGresult* db_result, int n) {
-        User::UserSession session;
+    UserSession _process_record(PGresult* db_result, int n) {
+        UserSession session;
 
         const auto valid_until_raw = std::string(PQgetvalue(db_result, n, PQfnumber(db_result, "session_valid_until")));
 
@@ -32,6 +32,6 @@ namespace ORM_UserSession {
         return session;
     }
 
-    ORM_ONE(User::UserSession)
-    ORM_MANY(User::UserSession)
+    ORM_ONE(UserSession)
+    ORM_MANY(UserSession)
 }

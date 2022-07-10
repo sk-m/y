@@ -19,83 +19,72 @@
 #define PASSWORD_HASH_ITERATIONS 200000
 #define USER_SESSION_TOKEN_ITERATIONS 10000
 
-namespace User {
-    typedef enum: unsigned char {
-        OK = 0,
+typedef enum: unsigned char {
+    OK = 0,
 
-        USERNAME_TAKEN = 1,
-        PASSWORD_LENGTH = 2,
-        USERNAME_FORMAT = 3,
-        USER_NOT_FOUND = 4,
-        PASSWORD_INCORRECT = 5,
-        PASSWORD_HASHING_ALGORITHM_UNSUPPORTED = 6,
+    USERNAME_TAKEN = 1,
+    PASSWORD_LENGTH = 2,
+    USERNAME_FORMAT = 3,
+    USER_NOT_FOUND = 4,
+    PASSWORD_INCORRECT = 5,
+    PASSWORD_HASHING_ALGORITHM_UNSUPPORTED = 6,
 
-        SESSION_INVALID = 20,
-        SESSION_IP_NOT_ALLOWED = 21,
-        SESSION_EXPIRED = 22,
+    SESSION_INVALID = 20,
+    SESSION_IP_NOT_ALLOWED = 21,
+    SESSION_EXPIRED = 22,
 
-        INTERNAL = 255
-    } ErrorCode;
+    INTERNAL = 255
+} UserError;
 
-    struct User {
-        unsigned int id;
+// TODO @move to a separate file
+struct UserSession {
+    char* session_id;
 
-        char* username;
-        char* password;
-        char* last_login;
-    };
+    unsigned int user_id;
+    char* current_ip;
+    char* ip_range;
+    char* token_hash;
+    char* token_salt;
+    unsigned int token_iterations;
+    trantor::Date valid_until;
+    char* device;
 
-    struct UserSession {
-        char* session_id;
+    char token_cleartext[129];
+};
 
-        unsigned int user_id;
-        char* current_ip;
-        char* ip_range;
-        char* token_hash;
-        char* token_salt;
-        unsigned int token_iterations;
-        trantor::Date valid_until;
-        char* device;
+struct User {
+    // TODO @rename to user_id
+    unsigned int id;
 
-        char token_cleartext[129];
-    };
+    char* username;
+    char* password;
 
-    bool is_username_taken(const char* username);
-    CleanableResult<User> get_by_username(const char* username);
-    CleanableResult<User> user_compare_passwords(const char* username, unsigned int user_id, const char* password);
-    CleanableResult<std::tuple<User, UserSession>> get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks, bool readonly);
-    CleanableResult<std::vector<UserSession>> get_user_sessions(unsigned int user_id);
-
-    Result<unsigned int> user_create(const char* username, const char* password);
-    bool user_update_password(unsigned int user_id, const char* current_password, const char* new_password);
-    CleanableResult<UserSession> session_create(unsigned int user_id, const drogon::HttpRequestPtr& req);
-    CleanableResult<UserSession> session_destroy(const char* session_id, const drogon::HttpRequestPtr& req,  const char* reason);
-    bool session_destroy_safe(const char* session_id, unsigned int session_user_id);
-}
+    char* last_login;
+};
 
 // TODO @refactor @cleanup this is just not right...
 #include "orm/user_session.hpp"
 #include "orm/user.hpp"
 
-bool User::is_username_taken(const char* username) {
-    const char* const sql_params[1] = { username };
-    auto result = DB::exec_prepared("user_is_username_taken", sql_params, 1);
+// bool user_is_username_taken(const char* username) {
+//     const char* const sql_params[1] = { username };
+//     auto result = DB::exec_prepared("user_is_username_taken", sql_params, 1);
     
-    const bool is_taken = PQgetvalue(result, 0, 0)[0] != '0';
+//     const bool is_taken = PQgetvalue(result, 0, 0)[0] != '0';
 
-    PQclear(result);
-    return is_taken;
-}
+//     PQclear(result);
+//     return is_taken;
+// }
 
 /**
  * @brief Get the user by their username
  * 
- * ErrorCodes that can be returned:
+ * UserErrors that can be returned:
  * \li USER_NOT_FOUND;
  * 
  * @param username target user's username
  */
-CleanableResult<User::User> User::get_by_username(const char* username) {
+CleanableResult<User> user_get_by_username(const char* username) {
     const char* const sql_params[1] = { username };
     auto user_result = DB::exec_prepared("user_get_by_username", sql_params, 1);
 
@@ -104,7 +93,7 @@ CleanableResult<User::User> User::get_by_username(const char* username) {
 
     if(!user_record.ok) {
         return CleanableResult(user, Status {
-            ErrorCode::USER_NOT_FOUND,
+            UserError::USER_NOT_FOUND,
             "Could not find the user." 
         });
     }
@@ -121,7 +110,7 @@ CleanableResult<User::User> User::get_by_username(const char* username) {
  * If *anything* does not look right (there is no session with such id, the token is not valid, the session was destroyed. etc) - a
  * SESSION_INVALID error code will be returned 
  * 
- * ErrorCodes that can be returned:
+ * UserErrors that can be returned:
  * 
  * \li SESSION_INVALID;
  * \li SESSION_IP_NOT_ALLOWED;
@@ -134,13 +123,13 @@ CleanableResult<User::User> User::get_by_username(const char* username) {
  *
  * @return On success, the User object will have it's `id` and `username` fields set.
  */
-CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false, bool readonly = false) {
+CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char* session_cookie_value, const drogon::HttpRequestPtr& req, bool skip_additional_checks = false, bool readonly = false) {
     User user{};
     
     // Make sure we have a cookie value and not just an empty string
     if(strnlen(session_cookie_value, 256) < 128) {
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            ErrorCode::SESSION_INVALID,
+            UserError::SESSION_INVALID,
             "Session token is invalid." 
         });
     }
@@ -161,7 +150,7 @@ CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_s
     // Check for malformed cookie value. There should be exactly two parts - session_id & session_token
     if(session_cookie_parts.size() != 2) {
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            ErrorCode::SESSION_INVALID,
+            UserError::SESSION_INVALID,
             "Session is invalid." 
         });
     }
@@ -172,7 +161,7 @@ CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_s
     // The token should be exactly 128 bytes long (64 byte-long token in a hex format)
     if(session_cleartext_token.size() != 128) {
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            ErrorCode::SESSION_INVALID,
+            UserError::SESSION_INVALID,
             "Session token is invalid." 
         });
     }
@@ -186,7 +175,7 @@ CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_s
     // Did we find a session with such session_id?
     if(!session_record.ok) {
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            ErrorCode::SESSION_INVALID,
+            UserError::SESSION_INVALID,
             "Session is invalid." 
         });
     }
@@ -221,7 +210,7 @@ CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_s
         PQclear(session_record._result);
 
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            ErrorCode::SESSION_INVALID,
+            UserError::SESSION_INVALID,
             "Session is invalid." 
         });
     } else {
@@ -247,7 +236,7 @@ CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_s
                 PQclear(delete_session_result);
 
                 return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-                    ErrorCode::SESSION_EXPIRED,
+                    UserError::SESSION_EXPIRED,
                     "Session has expired." 
                 });
             }
@@ -260,7 +249,7 @@ CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_s
                 PQclear(session_record._result);
 
                 return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-                    ErrorCode::SESSION_IP_NOT_ALLOWED,
+                    UserError::SESSION_IP_NOT_ALLOWED,
                     "Your ip address is not in the range of allowed addresses of this session." 
                 });
             }
@@ -302,7 +291,7 @@ CleanableResult<std::tuple<User::User, User::UserSession>> User::get_user_from_s
  * 
  * On success returns the deleted user session
  */
-CleanableResult<User::UserSession> User::session_destroy(const char* session_id, const drogon::HttpRequestPtr& req, const char* reason) {
+CleanableResult<UserSession> user_session_destroy(const char* session_id, const drogon::HttpRequestPtr& req, const char* reason) {
     // TODO @inclomplete We don't have a user log, so we do not use the reason anywhere
 
     const char* const sql_params[1] = { session_id };
@@ -313,7 +302,7 @@ CleanableResult<User::UserSession> User::session_destroy(const char* session_id,
 
     if(!deleted_session_record.ok) {
         return CleanableResult(deleted_session, Status {
-            ErrorCode::INTERNAL,
+            UserError::INTERNAL,
             "Could not delete the session." 
         });
     }
@@ -333,7 +322,7 @@ CleanableResult<User::UserSession> User::session_destroy(const char* session_id,
  * @return true success
  * @return false fail
  */
-bool User::session_destroy_safe(const char* session_id, unsigned int session_user_id) {
+bool user_session_destroy_safe(const char* session_id, unsigned int session_user_id) {
     const char* const delete_session_sql_params[2] = { session_id, std::to_string(session_user_id).c_str() };
     auto delete_session_result = DB::exec_prepared("session_delete_by_id_and_user_id", delete_session_sql_params, 2);
 
@@ -360,7 +349,7 @@ bool User::session_destroy_safe(const char* session_id, unsigned int session_use
 /**
  * @brief Check if provided password matches the password of the user with provided user_id or username (username has higher priority)
  *
- * ErrorCodes that can be returned:
+ * UserErrors that can be returned:
  * 
  * \li USER_NOT_FOUND;
  * \li PASSWORD_INCORRECT;
@@ -370,7 +359,7 @@ bool User::session_destroy_safe(const char* session_id, unsigned int session_use
  * @param user_id User id of the target user (either provide this or username) (will be used if username was not provided)
  * @param password Password that will be hashed and compared to the password of the target user
  */
-CleanableResult<User::User> User::user_compare_passwords(const char* username, unsigned int user_id, const char* password) {
+CleanableResult<User> user_compare_passwords(const char* username, unsigned int user_id, const char* password) {
     // Get the user
     PGresult* user_result;
     
@@ -391,7 +380,7 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, u
     if(!user_record.ok) {
         // TODO @robustness !ok does not necessarily mean that the user was not found. Some other error might be the case
         return CleanableResult(user, Status {
-            ErrorCode::USER_NOT_FOUND,
+            UserError::USER_NOT_FOUND,
             "User was not found." 
         });
     }
@@ -437,7 +426,7 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, u
             PQclear(user_record._result);
             
             return CleanableResult(user, Status {
-                ErrorCode::PASSWORD_INCORRECT,
+                UserError::PASSWORD_INCORRECT,
                 "Password is incorrect." 
             });
         }
@@ -446,7 +435,7 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, u
     PQclear(user_record._result);
 
     return CleanableResult(user, Status {
-        ErrorCode::PASSWORD_HASHING_ALGORITHM_UNSUPPORTED,
+        UserError::PASSWORD_HASHING_ALGORITHM_UNSUPPORTED,
         "Password hashing algorithm is (no longer) supported. Please, contact administrators." 
     });
 }
@@ -456,7 +445,7 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, u
  * 
  * Username and password reqirements will be checked. Uniqueness of the username will be ensured, too
  * 
- * ErrorCodes that can be returned:
+ * UserErrors that can be returned:
  * 
  * \li PASSWORD_LENGTH;
  * \li USERNAME_FORMAT;
@@ -468,18 +457,18 @@ CleanableResult<User::User> User::user_compare_passwords(const char* username, u
  *
  * unsigned int represents the user id of the new user
  */
-Result<unsigned int> User::user_create(const char* username, const char* password) {
+Result<unsigned int> user_create(const char* username, const char* password) {
     // Check the data
     // TODO @refactor @cleanup move the checks into the API handler
     const auto password_len = strlen(password);
 
     if(password_len < 8 || password_len > 2048) {
-        return Result((unsigned int)0, Status { ErrorCode::PASSWORD_LENGTH, "Invalid password format." });
+        return Result((unsigned int)0, Status { UserError::PASSWORD_LENGTH, "Invalid password format." });
     }
 
     std::cmatch username_m;
     if(!std::regex_match(username, username_m, std::regex("^[A-Za-z0-9_]{1,64}$"))) {
-        return Result((unsigned int)0, Status { ErrorCode::USERNAME_FORMAT, "Invalid username format." });
+        return Result((unsigned int)0, Status { UserError::USERNAME_FORMAT, "Invalid username format." });
     }
 
     // TODO @cleanup @refactor @performance We do not check if the username is already taken
@@ -517,15 +506,15 @@ Result<unsigned int> User::user_create(const char* username, const char* passwor
         // unique_violation (23505), username is probably taken 
         if(std::stoi(error_type) == 23505) {
             PQclear(result);
-            return Result((unsigned int)0, Status { ErrorCode::USERNAME_TAKEN, "Username is already taken." });
+            return Result((unsigned int)0, Status { UserError::USERNAME_TAKEN, "Username is already taken." });
         } else {
             const auto error_message = PQresultErrorMessage(result);
 
             // TODO @log
-            std::cout << "Could not create a user from User::user_create()\n" << error_message;
+            std::cout << "Could not create a user from user_create()\n" << error_message;
         
             PQclear(result);
-            return Result((unsigned int)0, Status { ErrorCode::INTERNAL, "Error creating a new user." });
+            return Result((unsigned int)0, Status { UserError::INTERNAL, "Error creating a new user." });
         }
     }
 
@@ -543,7 +532,7 @@ Result<unsigned int> User::user_create(const char* username, const char* passwor
  * @param current_password User's current password (cleartext)
  * @param new_password New password (cleartext)
  */
-bool User::user_update_password(unsigned int user_id, const char* current_password, const char* new_password) {
+bool user_update_password(unsigned int user_id, const char* current_password, const char* new_password) {
     // Check if provided password is correct
     auto password_cmp_res = user_compare_passwords(nullptr, user_id, current_password);
 
@@ -582,7 +571,7 @@ bool User::user_update_password(unsigned int user_id, const char* current_passwo
         const auto error_message = PQresultErrorMessage(result);
 
         // TODO @log
-        std::cout << "Could not update user's password from User::user_update_password()\n" << error_message;
+        std::cout << "Could not update user's password from user_update_password()\n" << error_message;
 
         PQclear(result);
         return false;
@@ -595,14 +584,14 @@ bool User::user_update_password(unsigned int user_id, const char* current_passwo
 /**
  * @brief Create a session for a user
  * 
- * ErrorCodes that can be returned:
+ * UserErrors that can be returned:
  *
  * \li INTERNAL;
  *  
  * @param user_id id of the user the new session will be created for
  * @param req Drogon's req object
  */
-CleanableResult<User::UserSession> User::session_create(unsigned int user_id, const drogon::HttpRequestPtr& req) {
+CleanableResult<UserSession> user_session_create(unsigned int user_id, const drogon::HttpRequestPtr& req) {
     // Generate a session token & salt
     unsigned char session_salt_raw[64];
     RAND_bytes(session_salt_raw, 64);
@@ -657,11 +646,11 @@ CleanableResult<User::UserSession> User::session_create(unsigned int user_id, co
         const auto error_message = PQresultErrorMessage(result);
 
         // TODO @log
-        std::cout << "Could not create a new user session from User::session_create()\n" << error_message;
+        std::cout << "Could not create a new user session from user_session_create()\n" << error_message;
 
         PQclear(result);
         return CleanableResult(UserSession{}, Status {
-            ErrorCode::INTERNAL,
+            UserError::INTERNAL,
             "Error creating a new user session."
         });
     }
@@ -682,14 +671,14 @@ CleanableResult<User::UserSession> User::session_create(unsigned int user_id, co
  * 
  * @param user_id id of the target user
  */
-CleanableResult<std::vector<User::UserSession>> User::get_user_sessions(unsigned int user_id) {
+CleanableResult<std::vector<UserSession>> user_get_all_sessions(unsigned int user_id) {
     const char* const sql_params[1] = { std::to_string(user_id).c_str() };
     auto sessions_result = DB::exec_prepared("sessions_get_by_user_id", sql_params, 1);
     auto sessions_recods = ORM_UserSession::many(sessions_result);
 
     if(!sessions_recods.ok) {
         return CleanableResult(sessions_recods.items, Status {
-            ErrorCode::INTERNAL,
+            UserError::INTERNAL,
             "Could not get user's sessions." 
         });
     }

@@ -27,7 +27,7 @@ void AuthFilter::doFilter(const drogon::HttpRequestPtr &req, drogon::FilterCallb
         return;
     }
 
-    auto user_session_res = User::get_user_from_session(session_cookie.c_str(), req);
+    auto user_session_res = user_get_from_session(session_cookie.c_str(), req);
 
     if(!user_session_res.is_ok()) {
         // TODO? Send an expired y_session cookie on error?
@@ -56,15 +56,15 @@ void AuthFilter::doFilter(const drogon::HttpRequestPtr &req, drogon::FilterCallb
 namespace API {
     void _register_core_api_handlers(drogon::HttpAppFramework* app) {
         // User
-        app->registerHandler("/api/user/me", &API_User::Handler::user_me, {drogon::Get, "AuthFilter"});
+        app->registerHandler("/api/user/me", &API_User::handle_user_me, {drogon::Get, "AuthFilter"});
         
-        app->registerHandler("/api/user/create", &API_User::Handler::user_create, {drogon::Post});
-        app->registerHandler("/api/user/login", &API_User::Handler::user_login, {drogon::Post});
-        app->registerHandler("/api/user/logout", &API_User::Handler::user_logout, {drogon::Post});
+        app->registerHandler("/api/user/create", &API_User::handle_user_create, {drogon::Post});
+        app->registerHandler("/api/user/login", &API_User::handle_user_login, {drogon::Post});
+        app->registerHandler("/api/user/logout", &API_User::handle_user_logout, {drogon::Post});
 
-        app->registerHandler("/api/user/preferences", &API_User::Handler::user_preferences, {drogon::Get, "AuthFilter"});
-        app->registerHandler("/api/user/preferences/update_password", &API_User::Handler::user_update_password, {drogon::Post, "AuthFilter"});
+        app->registerHandler("/api/user/preferences", &API_User::handle_user_preferences, {drogon::Get, "AuthFilter"});
+        app->registerHandler("/api/user/preferences/update_password", &API_User::handle_user_update_password, {drogon::Post, "AuthFilter"});
 
-        app->registerHandler("/api/user/session/{1:session_id}", &API_User::Handler::user_destroy_session, {drogon::Delete, "AuthFilter"});
+        app->registerHandler("/api/user/session/{1:session_id}", &API_User::handle_user_destroy_session, {drogon::Delete, "AuthFilter"});
     }
 }

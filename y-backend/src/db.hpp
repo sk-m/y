@@ -14,8 +14,9 @@
 
 #include <yaml-cpp/yaml.h>
 
+// TODO @placeholder move into a config file
 #define DB_CONNECTIONS_N 10
-        
+
 #define ORM_ONE(object_type) inline DB::Record<object_type> one(PGresult* db_result) \
     { return DB::Record<object_type>(db_result, _process_record); }
 
