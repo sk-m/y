@@ -77,18 +77,25 @@ export default {
         })
    ),
 
-   usergroup_create: (group_name: string, group_display_name: string) => (
-    api_fetch<UserGroup, "usergroup_create">("/usergroup/create", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-        },
-        credentials: "include",
+    usergroup_create: (group_name: string, group_display_name: string) => (
+        api_fetch<UserGroup, "usergroup_create">("/usergroup/create", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            credentials: "include",
 
-        body: new URLSearchParams({
-            group_name,
-            group_display_name
+            body: new URLSearchParams({
+                group_name,
+                group_display_name
+            })
         })
-    })
-),
+    ),
+
+    usergroup_get_all: () => (
+        api_fetch<UserGroup[], "usergroup">("/usergroup", {
+            method: "GET",
+            credentials: "include",
+        })
+    ),
 }

@@ -1,12 +1,33 @@
 import { Link, useNavigate } from "solid-app-router";
-import { Component } from "solid-js";
+import { Component, createResource, createSignal, For } from "solid-js";
 import Button from "../components/Button";
 import Panel from "../components/Panel";
+import API from "../api";
 
 import "./UserGroupsListPage.css";
+import { APIResponse } from "../util/api_util";
+import { UserGroup } from "../interfaces/usergroup";
+import ErrorInfoPanel from "../components/ErrorInfoPanel";
 
 const UserGroupsListPage: Component = () => {
     const navigate = useNavigate();
+
+    const fetch_all_groups = () => {
+        return API.usergroup_get_all()
+        .then((data: APIResponse<UserGroup[], "usergroup">) => {
+            return data.usergroup;
+        })
+        .catch((error: Error) => {
+            // TODO @placeholder it would be better to return more info about the error, not just the message. Also, the Error
+            // object does not fit well here
+            setError(error.message);
+            
+            return [];
+        })
+    };
+
+    const [allUserGroups] = createResource("1", fetch_all_groups);
+    const [error, setError] = createSignal<string | undefined>();
 
     return (
         <div className="ui-domain-page" id="usergroups-list-page">
@@ -38,25 +59,24 @@ const UserGroupsListPage: Component = () => {
             <div className="ui-spacer m-smaller"></div>
 
             <div className="ui-blocks-list usergroups-list">
-                <div className="ui-text t-secondary">Defined groups:</div>
+                <div className="ui-text t-secondary mb-1">Defined groups:</div>
 
-                <Link href="admin" className="list-item">
-                    <div className="item-label">Administrator</div>
-                    <div className="item-content">
-                        <div className="ui-status-text">
-                            <div className="line"></div>
-                            <div className="text">5 users</div>
-                        </div>
-                        <div className="ui-status-text red">
-                            <div className="line"></div>
-                            <div className="text">Dangerous rights</div>
-                        </div>
-                    </div>
-                </Link>
+                <ErrorInfoPanel title="Could not load groups" message={ error() } />        
 
-                <div className="ui-spacer"></div>
+                <For each={ allUserGroups() ?? [] }>
+                    { usergroup => (
+                        <Link href={ usergroup.group_name } className="list-item">
+                            <div className="item-label">{ usergroup.group_display_name }</div>
+                            <div className="item-content">
+                                <div className="ui-text t-secondary">{ usergroup.group_name }</div>
+                            </div>
+                        </Link>
+                    ) }
+                </For>
 
-                <div className="ui-text t-secondary">System groups:</div>
+                <div className="ui-spacer m-smaller"></div>
+
+                <div className="ui-text t-secondary mb-1">System groups:</div>
 
                 <Link href="everyone" className="list-item">
                     <div className="item-label">Everyone</div>

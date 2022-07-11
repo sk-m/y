@@ -7,6 +7,41 @@
 #include "../user_group.hpp"
 
 namespace API_UserGroup {
+    // GET /usergroup
+    void handle_usergroup_all(API_HANDLER_ARGS) {
+        auto all_usergroups_res = usergroup_get_all();
+
+        if(!all_usergroups_res.status.is_ok()) {
+            return send_error(all_usergroups_res.status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+        }
+
+        const auto all_usergroups = all_usergroups_res.data;
+
+        Json::Value groups_json;
+        int i = 0;
+
+        for(auto usergroup : all_usergroups) {
+            Json::Value group_json;
+
+            group_json["group_id"] = usergroup.group_id;
+            group_json["group_name"] = usergroup.group_name;
+            group_json["group_display_name"] = usergroup.group_display_name;
+            group_json["group_is_system"] = usergroup.group_is_system;
+
+            groups_json[i] = group_json;
+
+            i++;
+        }
+
+        const auto json = make_success_json("usergroup", groups_json);
+
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+
+        api_callback(resp);
+
+        all_usergroups_res.cleanup();
+    }
+
     // POST /usergroup/create
     void handle_usergroup_create(API_HANDLER_ARGS) {
         auto body = req->getParameters();

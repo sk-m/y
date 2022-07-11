@@ -69,6 +69,7 @@ namespace API {
         app->registerHandler("/api/user/session/{1:session_id}", &API_User::handle_user_destroy_session, {drogon::Delete, "AuthFilter"});
 
         // User group
-        app->registerHandler("/api/usergroup/create", &API_UserGroup::handle_usergroup_create, {drogon::Post});
+        app->registerHandler("/api/usergroup/create", &API_UserGroup::handle_usergroup_create, {drogon::Post, "AuthFilter"});
+        app->registerHandler("/api/usergroup", &API_UserGroup::handle_usergroup_all, {drogon::Get});
     }
 }

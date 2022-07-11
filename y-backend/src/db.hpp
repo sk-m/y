@@ -404,12 +404,23 @@ WHERE public.user_sessions.session_id = $1",
         NULL
     )) return false;
 
+    // ----- User groups -----
+
     // Creating a new user group
     if(!_prepare_statement(
         connection,
         "usergroup_create",
         "INSERT INTO public.usergroups (group_name, group_display_name) VALUES ($1::varchar, $2::varchar) RETURNING *",
         2,
+        NULL
+    )) return false;
+
+    // Getting all user groups
+    if(!_prepare_statement(
+        connection,
+        "usergroup_get_all",
+        "SELECT * FROM public.usergroups",
+        0,
         NULL
     )) return false;
 
