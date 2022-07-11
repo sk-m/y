@@ -214,9 +214,9 @@ namespace API_User {
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
 
             const auto error_code = new_user_res.status.contextual_error_code;
-            if(error_code == UserError::PASSWORD_LENGTH
-            || error_code == UserError::USERNAME_FORMAT
-            || error_code == UserError::USERNAME_TAKEN) {
+            if(error_code == Y_E_USER_PASSWORD_LENGTH
+            || error_code == Y_E_USER_USERNAME_FORMAT
+            || error_code == Y_E_USER_USERNAME_TAKEN) {
                 resp->setStatusCode(drogon::HttpStatusCode::k412PreconditionFailed);
             } else {
                 resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
@@ -277,11 +277,11 @@ namespace API_User {
             auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
 
             switch(password_cmp_res.status.contextual_error_code) {
-                case UserError::PASSWORD_INCORRECT: {
+                case Y_E_USER_PASSWORD_INCORRECT: {
                     resp->setStatusCode(drogon::HttpStatusCode::k403Forbidden);
                 } break;
 
-                case UserError::USER_NOT_FOUND: {
+                case Y_E_USER_USER_NOT_FOUND: {
                     resp->setStatusCode(drogon::HttpStatusCode::k401Unauthorized);
                 } break;
 

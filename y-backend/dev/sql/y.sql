@@ -3,9 +3,7 @@
 --
 
 -- Dumped from database version 13.4
--- Dumped by pg_dump version 13.3
-
--- Started on 2022-03-09 01:32:02
+-- Dumped by pg_dump version 13.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -19,7 +17,6 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- TOC entry 2 (class 3079 OID 30835)
 -- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -27,8 +24,6 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 
 
 --
--- TOC entry 3014 (class 0 OID 0)
--- Dependencies: 2
 -- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
 --
 
@@ -40,7 +35,48 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- TOC entry 203 (class 1259 OID 30825)
+-- Name: usergroups; Type: TABLE; Schema: public; Owner: y_user
+--
+
+CREATE TABLE public.usergroups (
+    group_id integer NOT NULL,
+    group_name character varying(64) NOT NULL,
+    group_display_name character varying(128) NOT NULL
+);
+
+
+ALTER TABLE public.usergroups OWNER TO y_user;
+
+--
+-- Name: TABLE usergroups; Type: COMMENT; Schema: public; Owner: y_user
+--
+
+COMMENT ON TABLE public.usergroups IS 'User groups that exist on the instance';
+
+
+--
+-- Name: user_groups_group_id_seq; Type: SEQUENCE; Schema: public; Owner: y_user
+--
+
+CREATE SEQUENCE public.user_groups_group_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.user_groups_group_id_seq OWNER TO y_user;
+
+--
+-- Name: user_groups_group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: y_user
+--
+
+ALTER SEQUENCE public.user_groups_group_id_seq OWNED BY public.usergroups.group_id;
+
+
+--
 -- Name: user_sessions; Type: TABLE; Schema: public; Owner: y_user
 --
 
@@ -60,7 +96,6 @@ CREATE TABLE public.user_sessions (
 ALTER TABLE public.user_sessions OWNER TO y_user;
 
 --
--- TOC entry 202 (class 1259 OID 22603)
 -- Name: users; Type: TABLE; Schema: public; Owner: y_user
 --
 
@@ -75,7 +110,6 @@ CREATE TABLE public.users (
 ALTER TABLE public.users OWNER TO y_user;
 
 --
--- TOC entry 201 (class 1259 OID 22601)
 -- Name: users_user_id_seq; Type: SEQUENCE; Schema: public; Owner: y_user
 --
 
@@ -91,8 +125,6 @@ CREATE SEQUENCE public.users_user_id_seq
 ALTER TABLE public.users_user_id_seq OWNER TO y_user;
 
 --
--- TOC entry 3015 (class 0 OID 0)
--- Dependencies: 201
 -- Name: users_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: y_user
 --
 
@@ -100,7 +132,13 @@ ALTER SEQUENCE public.users_user_id_seq OWNED BY public.users.user_id;
 
 
 --
--- TOC entry 2870 (class 2604 OID 22606)
+-- Name: usergroups group_id; Type: DEFAULT; Schema: public; Owner: y_user
+--
+
+ALTER TABLE ONLY public.usergroups ALTER COLUMN group_id SET DEFAULT nextval('public.user_groups_group_id_seq'::regclass);
+
+
+--
 -- Name: users user_id; Type: DEFAULT; Schema: public; Owner: y_user
 --
 
@@ -108,7 +146,22 @@ ALTER TABLE ONLY public.users ALTER COLUMN user_id SET DEFAULT nextval('public.u
 
 
 --
--- TOC entry 2877 (class 2606 OID 30829)
+-- Name: usergroups user_groups_group_name_key; Type: CONSTRAINT; Schema: public; Owner: y_user
+--
+
+ALTER TABLE ONLY public.usergroups
+    ADD CONSTRAINT user_groups_group_name_key UNIQUE (group_name);
+
+
+--
+-- Name: usergroups user_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: y_user
+--
+
+ALTER TABLE ONLY public.usergroups
+    ADD CONSTRAINT user_groups_pkey PRIMARY KEY (group_id);
+
+
+--
 -- Name: user_sessions user_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: y_user
 --
 
@@ -117,7 +170,6 @@ ALTER TABLE ONLY public.user_sessions
 
 
 --
--- TOC entry 2873 (class 2606 OID 22611)
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: y_user
 --
 
@@ -126,7 +178,6 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 2875 (class 2606 OID 22625)
 -- Name: users users_user_username_key; Type: CONSTRAINT; Schema: public; Owner: y_user
 --
 
@@ -135,15 +186,12 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 2878 (class 2606 OID 30830)
 -- Name: user_sessions user_sessions_session_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: y_user
 --
 
 ALTER TABLE ONLY public.user_sessions
     ADD CONSTRAINT user_sessions_session_user_id_fkey FOREIGN KEY (session_user_id) REFERENCES public.users(user_id);
 
-
--- Completed on 2022-03-09 01:32:07
 
 --
 -- PostgreSQL database dump complete

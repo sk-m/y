@@ -1,4 +1,5 @@
 import { BasicUserInfo, UserPreferences } from "../interfaces/user";
+import { UserGroup } from "../interfaces/usergroup";
 import { api_fetch } from "../util/api_util";
 
 // TODO use xhr instead
@@ -74,5 +75,20 @@ export default {
                 new_password
             })
         })
-   )
+   ),
+
+   usergroup_create: (group_name: string, group_display_name: string) => (
+    api_fetch<UserGroup, "usergroup_create">("/usergroup/create", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        credentials: "include",
+
+        body: new URLSearchParams({
+            group_name,
+            group_display_name
+        })
+    })
+),
 }

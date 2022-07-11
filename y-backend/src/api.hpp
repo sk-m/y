@@ -5,6 +5,7 @@
 #include <drogon/drogon.h>
 
 #include "api/api_user.hpp"
+#include "api/api_usergroup.hpp"
 
 /**
  * @brief User authentication filter middleware
@@ -66,5 +67,8 @@ namespace API {
         app->registerHandler("/api/user/preferences/update_password", &API_User::handle_user_update_password, {drogon::Post, "AuthFilter"});
 
         app->registerHandler("/api/user/session/{1:session_id}", &API_User::handle_user_destroy_session, {drogon::Delete, "AuthFilter"});
+
+        // User group
+        app->registerHandler("/api/usergroup/create", &API_UserGroup::handle_usergroup_create, {drogon::Post});
     }
 }

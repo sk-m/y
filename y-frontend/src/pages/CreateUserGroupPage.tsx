@@ -3,16 +3,20 @@ import { Component } from "solid-js";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { useForm } from "../util/form";
+import API from "../api";
 
 import "./CreateUserGroupPage.css";
+import ErrorInfoPanel from "../components/ErrorInfoPanel";
+import { APIResponse } from "../util/api_util";
+import { UserGroup } from "../interfaces/usergroup";
 
 const CreateUserGroupPage: Component = () => {
     const navigate = useNavigate();
 
-    const { link, register_form, submit } = useForm({
+    const { link, register_form, submit, global_error, status } = useForm({
         group_name: {
             min_length: 1,
-            max_length: 128
+            max_length: 64
         },
         group_display_name: {
             min_length: 1,
@@ -23,9 +27,14 @@ const CreateUserGroupPage: Component = () => {
             max_length: 4096,
         },
     }, {
-        onSubmit: () => {
-            return;
+        onSubmit: (values) => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return API.usergroup_create(values.group_name!, values.group_display_name!);
         },
+
+        onSuccess: (data: APIResponse<UserGroup, "usergroup_create">) => {
+            navigate(`/user-groups/${ data.usergroup_create.group_name }`);
+        }
     });
 
     return (
@@ -41,6 +50,12 @@ const CreateUserGroupPage: Component = () => {
             <div className="ui-spacer"></div>
 
             <form {...register_form()}>
+                <div className="mb-1">
+                    <ErrorInfoPanel
+                        message={ global_error()?.error_message }
+                    />
+                </div>
+
                 <Input
                     label="Internal group name"
 
@@ -77,6 +92,8 @@ const CreateUserGroupPage: Component = () => {
                     <Button 
                         text="Create new group"
                         hint="submit"
+
+                        disabled={ status() === "fetching" }
 
                         onclick={ submit }
                     />

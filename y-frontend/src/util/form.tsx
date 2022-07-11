@@ -35,7 +35,7 @@ interface UseFormOptions {
     /**
      * Will get called upon successful `onSubmit` resolve
      */
-    onSuccess?: (data: unknown) => void;
+    onSuccess?: (data: any) => void;
 
     /**
      * Will get called upon `onSubmit` rejection

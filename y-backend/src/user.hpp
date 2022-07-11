@@ -20,20 +20,20 @@
 #define USER_SESSION_TOKEN_ITERATIONS 10000
 
 typedef enum: unsigned char {
-    OK = 0,
-
-    USERNAME_TAKEN = 1,
-    PASSWORD_LENGTH = 2,
-    USERNAME_FORMAT = 3,
-    USER_NOT_FOUND = 4,
-    PASSWORD_INCORRECT = 5,
-    PASSWORD_HASHING_ALGORITHM_UNSUPPORTED = 6,
-
-    SESSION_INVALID = 20,
-    SESSION_IP_NOT_ALLOWED = 21,
-    SESSION_EXPIRED = 22,
-
-    INTERNAL = 255
+    Y_E_USER_OK = 0,
+    
+    Y_E_USER_USERNAME_TAKEN = 1,
+    Y_E_USER_PASSWORD_LENGTH = 2,
+    Y_E_USER_USERNAME_FORMAT = 3,
+    Y_E_USER_USER_NOT_FOUND = 4,
+    Y_E_USER_PASSWORD_INCORRECT = 5,
+    Y_E_USER_PASSWORD_HASHING_ALGORITHM_UNSUPPORTED = 6,
+    
+    Y_E_USER_SESSION_INVALID = 20,
+    Y_E_USER_SESSION_IP_NOT_ALLOWED = 21,
+    Y_E_USER_SESSION_EXPIRED = 22,
+    
+    Y_E_USER_INTERNAL = 255
 } UserError;
 
 // TODO @move to a separate file
@@ -145,7 +145,7 @@ CleanableResult<User> user_get_by_username(const char* username) {
 
     if(!DB::is_result_ok(user_result)) {
         return CleanableResult(User {}, Status {
-            UserError::USER_NOT_FOUND,
+            Y_E_USER_USER_NOT_FOUND,
             "Could not find the user." 
         });
     }
@@ -183,7 +183,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
     // Make sure we have a cookie value and not just an empty string
     if(strnlen(session_cookie_value, 256) < 128) {
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            UserError::SESSION_INVALID,
+            Y_E_USER_SESSION_INVALID,
             "Session token is invalid." 
         });
     }
@@ -204,7 +204,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
     // Check for malformed cookie value. There should be exactly two parts - session_id & session_token
     if(session_cookie_parts.size() != 2) {
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            UserError::SESSION_INVALID,
+            Y_E_USER_SESSION_INVALID,
             "Session is invalid." 
         });
     }
@@ -215,7 +215,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
     // The token should be exactly 128 bytes long (64 byte-long token in a hex format)
     if(session_cleartext_token.size() != 128) {
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            UserError::SESSION_INVALID,
+            Y_E_USER_SESSION_INVALID,
             "Session token is invalid." 
         });
     }
@@ -227,7 +227,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
     // Did we find a session with such session_id?
     if(!DB::is_result_ok(session_result)) {
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            UserError::SESSION_INVALID,
+            Y_E_USER_SESSION_INVALID,
             "Session is invalid." 
         });
     }
@@ -262,7 +262,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
         PQclear(session_result);
 
         return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-            UserError::SESSION_INVALID,
+            Y_E_USER_SESSION_INVALID,
             "Session is invalid." 
         });
     } else {
@@ -288,7 +288,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
                 PQclear(delete_session_result);
 
                 return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-                    UserError::SESSION_EXPIRED,
+                    Y_E_USER_SESSION_EXPIRED,
                     "Session has expired." 
                 });
             }
@@ -301,7 +301,7 @@ CleanableResult<std::tuple<User, UserSession>> user_get_from_session(const char*
                 PQclear(session_result);
 
                 return CleanableResult(std::make_tuple(user, UserSession{}), Status {
-                    UserError::SESSION_IP_NOT_ALLOWED,
+                    Y_E_USER_SESSION_IP_NOT_ALLOWED,
                     "Your ip address is not in the range of allowed addresses of this session." 
                 });
             }
@@ -351,7 +351,7 @@ CleanableResult<UserSession> user_session_destroy(const char* session_id, const 
 
     if(!DB::is_result_ok(session_result)) {
         return CleanableResult(UserSession {}, Status {
-            UserError::INTERNAL,
+            Y_E_USER_INTERNAL,
             "Could not delete the session." 
         });
     }
@@ -428,7 +428,7 @@ CleanableResult<User> user_compare_passwords(const char* username, unsigned int 
     if(!DB::is_result_ok(user_result)) {
         // TODO @robustness !ok does not necessarily mean that the user was not found. Some other error might be the case
         return CleanableResult(User {}, Status {
-            UserError::USER_NOT_FOUND,
+            Y_E_USER_USER_NOT_FOUND,
             "User was not found." 
         });
     }
@@ -476,7 +476,7 @@ CleanableResult<User> user_compare_passwords(const char* username, unsigned int 
             PQclear(user_result);
             
             return CleanableResult(user, Status {
-                UserError::PASSWORD_INCORRECT,
+                Y_E_USER_PASSWORD_INCORRECT,
                 "Password is incorrect." 
             });
         }
@@ -486,7 +486,7 @@ CleanableResult<User> user_compare_passwords(const char* username, unsigned int 
         PQclear(user_result);
 
         return CleanableResult(user, Status {
-            UserError::PASSWORD_HASHING_ALGORITHM_UNSUPPORTED,
+            Y_E_USER_PASSWORD_HASHING_ALGORITHM_UNSUPPORTED,
             "Password hashing algorithm is (no longer) supported. Please, contact administrators." 
         });
     }
@@ -515,12 +515,12 @@ Result<unsigned int> user_create(const char* username, const char* password) {
     const auto password_len = strlen(password);
 
     if(password_len < 8 || password_len > 2048) {
-        return Result((unsigned int)0, Status { UserError::PASSWORD_LENGTH, "Invalid password format." });
+        return Result((unsigned int)0, Status { Y_E_USER_PASSWORD_LENGTH, "Invalid password format." });
     }
 
     std::cmatch username_m;
     if(!std::regex_match(username, username_m, std::regex("^[A-Za-z0-9_]{1,64}$"))) {
-        return Result((unsigned int)0, Status { UserError::USERNAME_FORMAT, "Invalid username format." });
+        return Result((unsigned int)0, Status { Y_E_USER_USERNAME_FORMAT, "Invalid username format." });
     }
 
     // TODO @cleanup @refactor @performance We do not check if the username is already taken
@@ -558,7 +558,7 @@ Result<unsigned int> user_create(const char* username, const char* password) {
         // unique_violation (23505), username is probably taken 
         if(std::stoi(error_type) == 23505) {
             PQclear(result);
-            return Result((unsigned int)0, Status { UserError::USERNAME_TAKEN, "Username is already taken." });
+            return Result((unsigned int)0, Status { Y_E_USER_USERNAME_TAKEN, "Username is already taken." });
         } else {
             const auto error_message = PQresultErrorMessage(result);
 
@@ -566,7 +566,7 @@ Result<unsigned int> user_create(const char* username, const char* password) {
             std::cout << "Could not create a user from user_create()\n" << error_message;
         
             PQclear(result);
-            return Result((unsigned int)0, Status { UserError::INTERNAL, "Error creating a new user." });
+            return Result((unsigned int)0, Status { Y_E_USER_INTERNAL, "Error creating a new user." });
         }
     }
 
@@ -702,7 +702,7 @@ CleanableResult<UserSession> user_session_create(unsigned int user_id, const dro
 
         PQclear(result);
         return CleanableResult(UserSession{}, Status {
-            UserError::INTERNAL,
+            Y_E_USER_INTERNAL,
             "Error creating a new user session."
         });
     }
@@ -729,7 +729,7 @@ CleanableResult<std::vector<UserSession>> user_get_all_sessions(unsigned int use
 
     if(!DB::is_result_ok(sessions_result)) {
         return CleanableResult(user_sessions, Status {
-            UserError::INTERNAL,
+            Y_E_USER_INTERNAL,
             "Could not get user's sessions." 
         });
     }
