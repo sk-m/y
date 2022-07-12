@@ -424,6 +424,24 @@ WHERE public.user_sessions.session_id = $1",
         NULL
     )) return false;
 
+    // Getting a user group by it's name
+    if(!_prepare_statement(
+        connection,
+        "usergroup_get_by_name",
+        "SELECT * FROM public.usergroups WHERE group_name = $1::varchar",
+        1,
+        NULL
+    )) return false;
+    
+    // Updating a user group
+    if(!_prepare_statement(
+        connection,
+        "usergroup_update",
+        "UPDATE public.usergroups SET group_display_name = $2::varchar WHERE group_id = $1::integer",
+        2,
+        NULL
+    )) return false;
+
     return true;
 }
 

@@ -70,6 +70,8 @@ namespace API {
 
         // User group
         app->registerHandler("/api/usergroup/create", &API_UserGroup::handle_usergroup_create, {drogon::Post, "AuthFilter"});
+        app->registerHandler("/api/usergroup/{1:group_name}", &API_UserGroup::handle_usergroup_get_by_name, {drogon::Get});
         app->registerHandler("/api/usergroup", &API_UserGroup::handle_usergroup_all, {drogon::Get});
+        app->registerHandler("/api/usergroup/{1:group_id}", &API_UserGroup::handle_usergroup_update, {drogon::Patch, "AuthFilter"});
     }
 }

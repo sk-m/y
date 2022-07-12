@@ -7,6 +7,91 @@
 #include "../user_group.hpp"
 
 namespace API_UserGroup {
+    // PATCH /usergroup/:group_id
+    void handle_usergroup_update(API_HANDLER_ARGS, std::string p_group_id) {
+        const auto body = req->getParameters();
+
+        const auto p_new_group_display_name = body.find("group_display_name");
+
+        // Check if we have got all the params we need
+        if(
+            p_new_group_display_name == body.end()
+        ) {
+            return send_error(
+                "Provide at least one field to update. Available fields are 'group_display_name'.",
+                drogon::HttpStatusCode::k412PreconditionFailed,
+                api_callback
+            );
+        }
+            
+        int group_id = -1;
+
+        try {
+            group_id = std::stoi(p_group_id.c_str());
+
+            if(group_id < 0) throw;
+        } catch(const std::exception e) {
+            return send_error(
+                "Invalid group_id.",
+                drogon::HttpStatusCode::k412PreconditionFailed,
+                api_callback
+            );
+        }
+
+        const auto new_group_display_name = p_new_group_display_name->second.c_str();
+
+        const auto update_status = usergroup_update(group_id, new_group_display_name);
+
+        if(!update_status.is_ok()) {
+            return send_error(update_status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+        }
+
+        Json::Value data_json;
+        const auto json = make_success_json("usergroup_update", data_json);
+
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+
+        api_callback(resp);
+    }
+
+    // GET /usergroup/:group_name
+    void handle_usergroup_get_by_name(API_HANDLER_ARGS, std::string p_group_name) {
+        const auto target_group_name = p_group_name.c_str();
+
+        // TODO @cleanup we might want to remove this
+        std::cmatch group_name_m;
+        if(!std::regex_match(target_group_name, group_name_m, std::regex("^[a-z0-9_]{1,64}$"))) {
+            return send_error(
+                "Internal group name can only contain lowercase letters, numbers and underscores. Maximum length is 64.",
+                drogon::HttpStatusCode::k412PreconditionFailed,
+                api_callback
+            );
+        }
+
+        auto target_group_res = usergroup_get(target_group_name);
+
+        if(!target_group_res.status.is_ok()) {
+            return send_error(target_group_res.status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+        }
+
+        const auto target_group = target_group_res.data;
+        
+        Json::Value data_json;
+
+        data_json["group_id"] = target_group.group_id;
+        data_json["group_name"] = target_group.group_name;
+        data_json["group_display_name"] = target_group.group_display_name;
+        data_json["group_is_system"] = target_group.group_is_system;
+
+        const auto json = make_success_json("usergroup_get", data_json);
+
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+
+        api_callback(resp);
+
+        target_group_res.cleanup();
+    }
+
     // GET /usergroup
     void handle_usergroup_all(API_HANDLER_ARGS) {
         auto all_usergroups_res = usergroup_get_all();

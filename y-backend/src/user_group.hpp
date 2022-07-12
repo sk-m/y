@@ -85,6 +85,34 @@ CleanableResult<UserGroup> usergroup_create(const char* group_name, const char* 
     return CleanableResult(new_group, DEFAULT_CLEANUP_FUNC(result));
 }
 
+// TODO @improvement in the future, we might want to provide a whole UserGroup object to this function, instead of enumerating fields as
+// function parameters
+/**
+ * @brief Update an existing user group
+ * 
+ * UserGroupErrors that can be returned:
+ * 
+ * \li INTERNAL;
+ * 
+ * @param group_id Target group's id
+ * @param group_display_name New display  name
+ */
+Status usergroup_update(int group_id, const char* group_display_name) {
+    const char* const sql_params[2] = { std::to_string(group_id).c_str(), group_display_name };
+    auto result = DB::exec_prepared("usergroup_update", sql_params, 2);
+
+    if(PQresultStatus(result) != PGRES_COMMAND_OK) {
+        const auto error_message = PQresultErrorMessage(result);
+
+        // TODO @log
+        std::cout << "Could not update an existing user group from usergroup_update()\n" << error_message;
+
+        return Status { Y_E_USERGROUP_INTERNAL, "Could not update a user group" };
+    } else {
+        return Status {0, nullptr};
+    }
+}
+
 /**
  * @brief Get all defined user groups
  */
@@ -105,4 +133,26 @@ CleanableResult<UserGroup> usergroup_create(const char* group_name, const char* 
     usergroups = UserGroup::from_result_many(result);
 
     return CleanableResult(usergroups, DEFAULT_CLEANUP_FUNC(result));
+}
+
+/**
+ * @brief Get group by it's name
+ * 
+ * @param group_name Target group's internal name
+ */
+[[nodiscard]] CleanableResult<UserGroup> usergroup_get(const char* group_name) {
+    const char* const sql_params[1] = { group_name };
+    auto result = DB::exec_prepared("usergroup_get_by_name", sql_params, 1);
+
+    // TODO @placeholder check if error type == NOT_FOUND
+    if(!DB::is_result_ok(result)) {
+        return CleanableResult(UserGroup {}, Status {
+            Y_E_USERGROUP_INTERNAL,
+            "Could not retrieve requested user group." 
+        });
+    }
+
+    const auto usergroup = UserGroup::from_result(result);
+
+    return CleanableResult(usergroup, DEFAULT_CLEANUP_FUNC(result));
 }
