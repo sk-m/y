@@ -163,7 +163,7 @@ export function useForm(fields: Record<string, UseFormField>, form_options: UseF
                                 }
                             }
 
-                            if(field_options.submittable_field && e.key === "Enter" && status() === "idle") {
+                            if(field_options.submittable_field && e.key === "Enter" && status() !== "fetching") {
                                 submitHandler();
                             }
                         }

@@ -14,30 +14,29 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
     const [isErrorRetryable, _setIsErrorRetryable] = createSignal(true);
 
     const userPreferencesFetcher = async (user_username: string): Promise<UserPreferences> => {
-        return new Promise((resolve, reject) => {
-            API.user_preferences_by_username(user_username)
-            .then(data => {
-                const user_preferences: UserPreferences = data.user_preferences;
-                const user_sessions: UserSession[] = [];
-                
-                for(const raw_session of user_preferences.user_sessions) {
-                    user_sessions.push({ 
-                        ...raw_session,
-                        ...appendUIStateFields<UserSessionUIState , UserPreferences>(undefined, props.setCache)
-                    });
-                }
+        return API.user_preferences_by_username(user_username)
+        .then(data => {
+            const user_preferences: UserPreferences = data.user_preferences;
+            const user_sessions: UserSession[] = [];
+            
+            for(const raw_session of user_preferences.user_sessions) {
+                user_sessions.push({ 
+                    ...raw_session,
+                    ...appendUIStateFields<UserSessionUIState , UserPreferences>(undefined, props.setCache)
+                });
+            }
 
-                user_preferences.user_sessions = user_sessions;
-                resolve(user_preferences);
-            })
-            .catch((error: Error) => {
-                // TODO @placeholder We must check what kind of error occurred and decide if we allow retrying
-                // We deliberately do not set it back to true at the beginning of this function, this is not a bug!
-                // As soon as it gets set to false - it should stay false.
-                // setIsErrorRetryable(false);
-    
-                reject(error.message);
-            })
+            user_preferences.user_sessions = user_sessions;
+
+            return user_preferences;
+        })
+        .catch((error: Error) => {
+            // TODO @placeholder We must check what kind of error occurred and decide if we allow retrying
+            // We deliberately do not set it back to true at the beginning of this function, this is not a bug!
+            // As soon as it gets set to false - it should stay false.
+            // setIsErrorRetryable(false);
+
+            return Promise.reject(error.message);
         });
     }
 
