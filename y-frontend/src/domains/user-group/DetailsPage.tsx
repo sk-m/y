@@ -4,7 +4,7 @@ import ErrorInfoPanel from "../../components/ErrorInfoPanel";
 import Input from "../../components/Input";
 import Panel, { PanelDrawer } from "../../components/Panel";
 import { UserGroup } from "../../interfaces/usergroup";
-import { CacheableDomainProps } from "../../util/domain_util";
+import { CacheableDomainProps, DomainCacheMutator } from "../../util/domain_util";
 import { useForm } from "../../util/form";
 import { createCachedResource } from "../../util/domain_util";
 
@@ -13,9 +13,11 @@ import API from "../../api";
 import "./DetailsPage.css";
 import { useNavigate, useParams } from "solid-app-router";
 import PageObstructionScreen from "../../components/PageObstructionScreen";
+import { APIResponse } from "../../util/api_util";
 
 const BasicInfoPanel: Component<{
-    group: Accessor<UserGroup>
+    group: Accessor<UserGroup>,
+    mutateGroupDetails: DomainCacheMutator<UserGroup>
 }> = props => {
     const { link, register_form, submit, status, global_error, error_out } = useForm({
         group_display_name: {
@@ -37,6 +39,10 @@ const BasicInfoPanel: Component<{
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             return API.usergroup_update(target_group.group_id, values.group_display_name!);
         },
+
+        onSuccess: (data: APIResponse<UserGroup, "usergroup_update">) => {
+            props.mutateGroupDetails(data.usergroup_update);
+        }
     });
 
     return (
@@ -207,7 +213,9 @@ const UsergroupDomainDetailsPage: Component<CacheableDomainProps<UserGroup>> = p
                         <div>
                             <BasicInfoPanel
                                 group={ groupDetails as Accessor<UserGroup> }
+                                mutateGroupDetails={ mutateGroupDetails }
                             />
+
                             <DeleteGroupPanel
                                 group={ groupDetails as Accessor<UserGroup> }
                             />

@@ -3,4 +3,6 @@ export interface UserGroup {
     
     group_name: string;
     group_display_name: string;
+
+    group_is_system: boolean;
 }

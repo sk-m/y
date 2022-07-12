@@ -97,20 +97,25 @@ CleanableResult<UserGroup> usergroup_create(const char* group_name, const char* 
  * @param group_id Target group's id
  * @param group_display_name New display  name
  */
-Status usergroup_update(int group_id, const char* group_display_name) {
+CleanableResult<UserGroup> usergroup_update(int group_id, const char* group_display_name) {
     const char* const sql_params[2] = { std::to_string(group_id).c_str(), group_display_name };
     auto result = DB::exec_prepared("usergroup_update", sql_params, 2);
 
-    if(PQresultStatus(result) != PGRES_COMMAND_OK) {
+    if(!DB::is_result_ok(result)) {
         const auto error_message = PQresultErrorMessage(result);
 
         // TODO @log
         std::cout << "Could not update an existing user group from usergroup_update()\n" << error_message;
 
-        return Status { Y_E_USERGROUP_INTERNAL, "Could not update a user group" };
-    } else {
-        return Status {0, nullptr};
+        return CleanableResult(
+            UserGroup {}, 
+            Status { Y_E_USERGROUP_INTERNAL, "Could not update a user group" }
+        );
     }
+
+    const auto updated_group = UserGroup::from_result(result);
+
+    return CleanableResult(updated_group, DEFAULT_CLEANUP_FUNC(result));
 }
 
 /**

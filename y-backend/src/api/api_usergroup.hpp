@@ -72,13 +72,21 @@ namespace API_UserGroup {
 
         const auto new_group_display_name = p_new_group_display_name->second.c_str();
 
-        const auto update_status = usergroup_update(group_id, new_group_display_name);
+        const auto updated_group_res = usergroup_update(group_id, new_group_display_name);
 
-        if(!update_status.is_ok()) {
-            return send_error(update_status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+        if(!updated_group_res.status.is_ok()) {
+            return send_error(updated_group_res.status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
         }
 
+        const auto updated_group = updated_group_res.data;
+
         Json::Value data_json;
+
+        data_json["group_id"] = updated_group.group_id;
+        data_json["group_name"] = updated_group.group_name;
+        data_json["group_display_name"] = updated_group.group_display_name;
+        data_json["group_is_system"] = updated_group.group_is_system;
+
         const auto json = make_success_json("usergroup_update", data_json);
 
         auto resp = drogon::HttpResponse::newHttpJsonResponse(json);

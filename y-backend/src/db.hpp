@@ -437,7 +437,7 @@ WHERE public.user_sessions.session_id = $1",
     if(!_prepare_statement(
         connection,
         "usergroup_update",
-        "UPDATE public.usergroups SET group_display_name = $2::varchar WHERE group_id = $1::integer",
+        "UPDATE public.usergroups SET group_display_name = $2::varchar WHERE group_id = $1::integer RETURNING *",
         2,
         NULL
     )) return false;
