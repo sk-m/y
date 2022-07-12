@@ -119,4 +119,14 @@ export default {
             })
         })
     ),
+
+    usergroup_delete: (group_id: number) => (
+        api_fetch<never, "usergroup_delete">(`/usergroup/${ group_id }`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            credentials: "include",
+        })
+    ),
 }

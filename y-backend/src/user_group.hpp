@@ -114,6 +114,31 @@ Status usergroup_update(int group_id, const char* group_display_name) {
 }
 
 /**
+ * @brief Delete a user group
+ * 
+ * UserGroupErrors that can be returned:
+ * 
+ * \li INTERNAL;
+ * 
+ * @param group_id Target group's id
+ */
+Status usergroup_delete(int group_id) {
+    const char* const sql_params[1] = { std::to_string(group_id).c_str() };
+    auto result = DB::exec_prepared("usergroup_delete", sql_params, 1);
+
+    if(PQresultStatus(result) != PGRES_COMMAND_OK) {
+        const auto error_message = PQresultErrorMessage(result);
+
+        // TODO @log
+        std::cout << "Could not delete a user group from usergroup_delete()\n" << error_message;
+
+        return Status { Y_E_USERGROUP_INTERNAL, "Could not delete a user group" };
+    } else {
+        return Status {0, nullptr};
+    }
+}
+
+/**
  * @brief Get all defined user groups
  */
 [[nodiscard]] CleanableResult<std::vector<UserGroup>> usergroup_get_all() {

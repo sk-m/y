@@ -11,7 +11,7 @@ import { createCachedResource } from "../../util/domain_util";
 import API from "../../api";
 
 import "./DetailsPage.css";
-import { useParams } from "solid-app-router";
+import { useNavigate, useParams } from "solid-app-router";
 import PageObstructionScreen from "../../components/PageObstructionScreen";
 
 const BasicInfoPanel: Component<{
@@ -85,20 +85,32 @@ const BasicInfoPanel: Component<{
     )
 }
 
-const DeleteGroupPanel: Component = () => {
+const DeleteGroupPanel: Component<{
+    group: Accessor<UserGroup>
+}> = props => {
     let panel_ref;
+
+    const navigate = useNavigate();
 
     const [drawerShown, setDrawerShown] = createSignal(false);
 
-    const { link, register_form, submit } = useForm({
+    const { link, register_form, submit, global_error, error_out } = useForm({
         summary: {
             min_length: 1,
             max_length: 4096,
         },
     }, {
         onSubmit: () => {
-            return;
+            const target_group = props.group();
+
+            if(!target_group.group_id) return error_out("Could not determine the current group");
+
+            return API.usergroup_delete(target_group.group_id);
         },
+        
+        onSuccess: () => {
+            navigate("/user-groups");
+        }
     });
 
     return (
@@ -133,6 +145,13 @@ const DeleteGroupPanel: Component = () => {
 
             <PanelDrawer panel_ref={ panel_ref }>
                 <form {...register_form()}>
+                    <div className="mb-1">
+                        <ErrorInfoPanel
+                            title="Could not update group information"
+                            message={ global_error()?.error_message }
+                        />
+                    </div>
+
                     <Input
                         label="Summary // reasoning for deletion"
                         placeholder="My boss asked me to..."
@@ -189,7 +208,9 @@ const UsergroupDomainDetailsPage: Component<CacheableDomainProps<UserGroup>> = p
                             <BasicInfoPanel
                                 group={ groupDetails as Accessor<UserGroup> }
                             />
-                            <DeleteGroupPanel />
+                            <DeleteGroupPanel
+                                group={ groupDetails as Accessor<UserGroup> }
+                            />
                         </div>
                     </div>
                 </div>

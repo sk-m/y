@@ -442,6 +442,15 @@ WHERE public.user_sessions.session_id = $1",
         NULL
     )) return false;
 
+    // Deleting a user group
+    if(!_prepare_statement(
+        connection,
+        "usergroup_delete",
+        "DELETE FROM public.usergroups WHERE group_id = $1::integer",
+        1,
+        NULL
+    )) return false;
+
     return true;
 }
 

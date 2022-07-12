@@ -7,6 +7,38 @@
 #include "../user_group.hpp"
 
 namespace API_UserGroup {
+    // DELETE /usergroup/:group_id
+    void handle_usergroup_delete(API_HANDLER_ARGS, std::string p_group_id) {
+        const auto body = req->getParameters();
+
+        int group_id = -1;
+
+        try {
+            group_id = std::stoi(p_group_id.c_str());
+
+            if(group_id < 0) throw;
+        } catch(const std::exception e) {
+            return send_error(
+                "Invalid group_id.",
+                drogon::HttpStatusCode::k412PreconditionFailed,
+                api_callback
+            );
+        }
+
+        const auto delete_status = usergroup_delete(group_id);
+
+        if(!delete_status.is_ok()) {
+            return send_error(delete_status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+        }
+
+        Json::Value data_json;
+        const auto json = make_success_json("usergroup_delete", data_json);
+
+        auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
+
+        api_callback(resp);
+    }
+
     // PATCH /usergroup/:group_id
     void handle_usergroup_update(API_HANDLER_ARGS, std::string p_group_id) {
         const auto body = req->getParameters();
