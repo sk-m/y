@@ -1,13 +1,17 @@
-import { Component } from "solid-js";
+import { Component, createSignal } from "solid-js";
 import { Route, Routes, useParams } from "solid-app-router";
 import DomainAsideMenu from "../../components_internal/DomainAsideMenu";
 import AsideMenuLink from "../../components/AsideMenuLink";
 
 import UsergroupDomainRightsPage from "./RightsPage";
 import UsergroupDomainDetailsPage from "./DetailsPage";
+import { DomainCache } from "../../util/domain_util";
+import { UserGroup } from "../../interfaces/usergroup";
 
 const UserGroupManagementDomain: Component = () => {
     const params = useParams();
+
+    const [userGroupCache, setUserGroupCache] = createSignal<DomainCache<UserGroup>>([null, undefined]);
 
     return (
         <div id="domain-usergroup" className="ui-domain">
@@ -55,7 +59,10 @@ const UserGroupManagementDomain: Component = () => {
                     <UsergroupDomainRightsPage />
                 }></Route>
                 <Route path="/details" element={
-                    <UsergroupDomainDetailsPage />
+                    <UsergroupDomainDetailsPage
+                        cache={ userGroupCache }
+                        setCache={ setUserGroupCache }
+                    />
                 }></Route>
             </Routes>
         </div>

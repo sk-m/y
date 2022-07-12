@@ -1,28 +1,41 @@
-import { Component, createSignal } from "solid-js";
+import { Accessor, Component, createSignal, Match, Switch } from "solid-js";
 import Button from "../../components/Button";
+import ErrorInfoPanel from "../../components/ErrorInfoPanel";
 import Input from "../../components/Input";
 import Panel, { PanelDrawer } from "../../components/Panel";
+import { UserGroup } from "../../interfaces/usergroup";
+import { CacheableDomainProps } from "../../util/domain_util";
 import { useForm } from "../../util/form";
+import { createCachedResource } from "../../util/domain_util";
+
+import API from "../../api";
 
 import "./DetailsPage.css";
+import { useParams } from "solid-app-router";
+import PageObstructionScreen from "../../components/PageObstructionScreen";
 
-const BasicInfoPanel: Component = () => {
-    const { link, register_form, submit } = useForm({
-        group_name: {
-            min_length: 1,
-            max_length: 128
-        },
+const BasicInfoPanel: Component<{
+    group: Accessor<UserGroup>
+}> = props => {
+    const { link, register_form, submit, status, global_error, error_out } = useForm({
         group_display_name: {
             min_length: 1,
-            max_length: 128
+            max_length: 128,
+
+            default_value: props.group().group_display_name
         },
         summary: {
             min_length: 1,
             max_length: 4096,
         },
     }, {
-        onSubmit: () => {
-            return;
+        onSubmit: (values) => {
+            const target_group = props.group();
+
+            if(!target_group.group_id) return error_out("Could not determine the current group");
+
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return API.usergroup_update(target_group.group_id, values.group_display_name!);
         },
     });
 
@@ -36,11 +49,13 @@ const BasicInfoPanel: Component = () => {
             </div>
 
             <form {...register_form()}>
-                <Input
-                    label="Internal group name"
-
-                    {...link("group_name")}
-                />
+                <div className="mb-1">
+                    <div className="ui-info-panel c-green" hidden={ status() !== "success" }>Success!</div>
+                    <ErrorInfoPanel
+                        title="Could not update group information"
+                        message={ global_error()?.error_message }
+                    />
+                </div>
 
                 <Input
                     label="Display group name"
@@ -60,8 +75,8 @@ const BasicInfoPanel: Component = () => {
                     {...link("summary")}
 
                     with_button={{
-                        text: "Save",
-
+                        text: "Save group",
+    
                         onclick: submit
                     }}
                 />
@@ -136,16 +151,50 @@ const DeleteGroupPanel: Component = () => {
     )
 }
 
-const UsergroupDomainDetailsPage: Component = () => {
+const UsergroupDomainDetailsPage: Component<CacheableDomainProps<UserGroup>> = props => {
+    const params = useParams();
+
+    const groupDetailsFetcher = async (group_name: string): Promise<UserGroup> => {
+        return API.usergroup_get_by_name(group_name)
+        .then(data => {
+            return data.usergroup_get;
+        })
+        .catch((error: Error) => {
+            return Promise.reject(error.message);
+        });
+    }
+
+    const [groupDetails, { refetch: refetchGroupDetails, mutate: mutateGroupDetails }] =
+        createCachedResource(params.group_name, groupDetailsFetcher, props.cache, props.setCache);
+
     return (
-        <div id="usergroup-details-page" className="ui-domain-page config-items-page">
-            <div className="group-details-container config-items-container">
-                <div>
-                    <BasicInfoPanel />
-                    <DeleteGroupPanel />
+        <Switch>
+            <Match when={ groupDetails.loading }>
+                <PageObstructionScreen type="loading" />
+            </Match>
+
+            <Match when={ !!groupDetails.error || groupDetails() === undefined }>
+                <PageObstructionScreen
+                    type="error"
+
+                    error_text={ groupDetails.error as string }
+                    on_retry={ refetchGroupDetails }
+                />
+            </Match>
+
+            <Match when={ groupDetails() }>
+                <div id="usergroup-details-page" className="ui-domain-page config-items-page">
+                    <div className="group-details-container config-items-container">
+                        <div>
+                            <BasicInfoPanel
+                                group={ groupDetails as Accessor<UserGroup> }
+                            />
+                            <DeleteGroupPanel />
+                        </div>
+                    </div>
                 </div>
-            </div>            
-        </div>
+            </Match>
+        </Switch>
     )
 } 
 

@@ -98,4 +98,25 @@ export default {
             credentials: "include",
         })
     ),
+
+    usergroup_get_by_name: (group_name: string) => (
+        api_fetch<UserGroup, "usergroup_get">(`/usergroup/${ group_name }`, {
+            method: "GET",
+            credentials: "include",
+        })
+    ),
+
+    usergroup_update: (group_id: number, group_display_name: string) => (
+        api_fetch<never, "usergroup_update">(`/usergroup/${ group_id }`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            credentials: "include",
+
+            body: new URLSearchParams({
+                group_display_name
+            })
+        })
+    ),
 }
