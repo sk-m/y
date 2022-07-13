@@ -51,6 +51,8 @@ struct UserSession {
 
     char token_cleartext[129];
 
+    Json::Value to_json() const;
+
     static UserSession from_result(PGresult* result, int row);
     static std::vector<UserSession> from_result_many(PGresult* result);
 };
@@ -64,6 +66,8 @@ struct User {
 
     char* last_login;
 
+    Json::Value to_json() const;
+    
     static User from_result(PGresult* result, int row);
 };
 
@@ -76,6 +80,27 @@ struct User {
 //     PQclear(result);
 //     return is_taken;
 // }
+
+[[nodiscard]] Json::Value User::to_json() const {
+    Json::Value json;
+
+    json["user_id"] = id;
+    json["user_username"] = username;
+
+    return json;
+}
+
+[[nodiscard]] Json::Value UserSession::to_json() const {
+    Json::Value json;
+
+    json["session_id"] = session_id;
+    json["session_device"] = device;
+    json["session_current_ip"] = current_ip;
+    json["session_ip_range"] = ip_range;
+    json["session_valid_until"] = valid_until.secondsSinceEpoch();
+
+    return json;
+}
 
 [[nodiscard]] User User::from_result(PGresult* result, int row = 0) {
     User user;

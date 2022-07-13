@@ -8,7 +8,7 @@
 #include "../user.hpp"
 
 namespace API_User {
-    // TODO @cleanup move out of this namespace 
+    // TODO @cleanup move out of this namespace
     inline drogon::Cookie create_session_cookie(UserSession &user_session) {
         auto session_cookie = drogon::Cookie();
 
@@ -17,7 +17,7 @@ namespace API_User {
 
         // TODO @incomplete domain
         // session_cookie.setDomain("something.local");
-        
+
         session_cookie.setKey("y_session");
         session_cookie.setValue(fmt::format("{}:{}", user_session.session_id, user_session.token_cleartext));
         session_cookie.setExpiresDate(user_session.valid_until);
@@ -84,11 +84,7 @@ namespace API_User {
     void handle_user_me(API_HANDLER_ARGS) {
         const auto current_user = req->getAttributes()->get<User>("current_user");
 
-        Json::Value data_json;
-        data_json["user_id"] = current_user.id;
-        data_json["user_username"] = current_user.username;
-
-        const auto json = make_success_json("user_me", data_json);
+        const auto json = make_success_json("user_me", current_user.to_json());
 
         auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
         api_callback(resp);
@@ -119,7 +115,7 @@ namespace API_User {
 
         // You must have specific rights in order to view someone's preferences.
         // Check if client is trying to query their own preferences, or someone else's
-        
+
         if(target_user.id != current_user.id) {
             target_user_res.cleanup();
 
@@ -152,13 +148,7 @@ namespace API_User {
         bool current_session_found = false;
 
         for(auto session : user_sessions_vec) {
-            Json::Value session_json;
-
-            session_json["session_id"] = session.session_id;
-            session_json["session_device"] = session.device;
-            session_json["session_current_ip"] = session.current_ip;
-            session_json["session_ip_range"] = session.ip_range;
-            session_json["session_valid_until"] = session.valid_until.secondsSinceEpoch();
+            Json::Value session_json = session.to_json();
 
             if(!current_session_found && strncmp(session.session_id, current_session.session_id, 36) == 0) {
                 session_json["session_is_current"] = true;
@@ -167,9 +157,7 @@ namespace API_User {
                 session_json["session_is_current"] = false;
             }
 
-            sessions_json[i] = session_json;
-
-            i++;
+            sessions_json[i++] = session_json;
         }
 
         user_preferences_json["user_sessions"] = sessions_json;
@@ -297,12 +285,8 @@ namespace API_User {
         // Login was successfull, create a new session for this user
         auto user_session_res = user_session_create(user.id, req);
         auto user_session = user_session_res.data;
-        
-        Json::Value data_json;
-        data_json["user_id"] = user.id;
-        data_json["user_username"] = user.username;
 
-        const auto json = make_success_json("user_login", data_json);
+        const auto json = make_success_json("user_login", user.to_json());
 
         auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
         resp->addCookie(create_session_cookie(user_session));
@@ -319,7 +303,7 @@ namespace API_User {
 
         const auto p_current_password = body.find("current_password");
         const auto p_new_password = body.find("new_password");
-        
+
         if(
             p_current_password == body.end() ||
             p_new_password == body.end()

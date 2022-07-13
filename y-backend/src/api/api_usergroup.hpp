@@ -55,7 +55,7 @@ namespace API_UserGroup {
                 api_callback
             );
         }
-            
+
         int group_id = -1;
 
         try {
@@ -80,14 +80,7 @@ namespace API_UserGroup {
 
         const auto updated_group = updated_group_res.data;
 
-        Json::Value data_json;
-
-        data_json["group_id"] = updated_group.group_id;
-        data_json["group_name"] = updated_group.group_name;
-        data_json["group_display_name"] = updated_group.group_display_name;
-        data_json["group_is_system"] = updated_group.group_is_system;
-
-        const auto json = make_success_json("usergroup_update", data_json);
+        const auto json = make_success_json("usergroup_update", updated_group.to_json());
 
         auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
 
@@ -115,15 +108,8 @@ namespace API_UserGroup {
         }
 
         const auto target_group = target_group_res.data;
-        
-        Json::Value data_json;
 
-        data_json["group_id"] = target_group.group_id;
-        data_json["group_name"] = target_group.group_name;
-        data_json["group_display_name"] = target_group.group_display_name;
-        data_json["group_is_system"] = target_group.group_is_system;
-
-        const auto json = make_success_json("usergroup_get", data_json);
+        const auto json = make_success_json("usergroup_get", target_group.to_json());
 
         auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
 
@@ -146,16 +132,7 @@ namespace API_UserGroup {
         int i = 0;
 
         for(auto usergroup : all_usergroups) {
-            Json::Value group_json;
-
-            group_json["group_id"] = usergroup.group_id;
-            group_json["group_name"] = usergroup.group_name;
-            group_json["group_display_name"] = usergroup.group_display_name;
-            group_json["group_is_system"] = usergroup.group_is_system;
-
-            groups_json[i] = group_json;
-
-            i++;
+            groups_json[i++] = usergroup.to_json();
         }
 
         const auto json = make_success_json("usergroup", groups_json);
@@ -217,12 +194,7 @@ namespace API_UserGroup {
             return;
         }
 
-        Json::Value data_json;
-        data_json["group_id"] = new_group.data.group_id;
-        data_json["group_name"] = new_group.data.group_name;
-        data_json["group_display_name"] = new_group.data.group_display_name;
-
-        const auto json = make_success_json("usergroup_create", data_json);
+        auto json = make_success_json("usergroup_create", new_group.data.to_json());
 
         auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
 

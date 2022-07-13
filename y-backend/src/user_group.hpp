@@ -1,5 +1,8 @@
 #pragma once
 
+#include <drogon/drogon.h>
+#include "db.hpp"
+
 typedef enum: unsigned char {
     Y_E_USERGROUP_OK = 0,
 
@@ -15,10 +18,23 @@ struct UserGroup {
     char* group_display_name;
 
     bool group_is_system;
+    
+    Json::Value to_json() const;
 
     static UserGroup from_result(PGresult* result, int row);
     static std::vector<UserGroup> from_result_many(PGresult* result);
 };
+
+[[nodiscard]] Json::Value UserGroup::to_json() const {
+    Json::Value json;
+
+    json["group_id"] = group_id;
+    json["group_name"] = group_name;
+    json["group_display_name"] = group_display_name;
+    json["group_is_system"] = group_is_system;
+
+    return json;
+}
 
 [[nodiscard]] UserGroup UserGroup::from_result(PGresult* result, int row = 0) {
     UserGroup group;
