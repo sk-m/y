@@ -65,7 +65,7 @@ const UserGroupsListPage: Component = () => {
 
                 <For each={ allUserGroups() ?? [] }>
                     { usergroup => (
-                        <Link href={ usergroup.group_name } className="list-item">
+                        <Link state={{ usergroup }} href={ usergroup.group_name } className="list-item">
                             <div className="item-label">{ usergroup.group_display_name }</div>
                             <div className="item-content">
                                 <div className="ui-text t-secondary">{ usergroup.group_name }</div>

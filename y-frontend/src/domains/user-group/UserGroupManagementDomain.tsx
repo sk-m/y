@@ -1,5 +1,5 @@
 import { Component, createSignal } from "solid-js";
-import { Route, Routes, useParams } from "solid-app-router";
+import { Route, Routes, useLocation, useParams } from "solid-app-router";
 import DomainAsideMenu from "../../components_internal/DomainAsideMenu";
 import AsideMenuLink from "../../components/AsideMenuLink";
 
@@ -10,8 +10,16 @@ import { UserGroup } from "../../interfaces/usergroup";
 
 const UserGroupManagementDomain: Component = () => {
     const params = useParams();
+    const location = useLocation<{ usergroup: UserGroup } | undefined>();
 
-    const [userGroupCache, setUserGroupCache] = createSignal<DomainCache<UserGroup>>([null, undefined]);
+    // We might get the details about this usergroup from a previous route (like AllGroupsListPage).
+    // If that is the case - use that data instead of querying an api
+    const state_usergroup = location.state?.usergroup;
+
+    const [userGroupDetailsCache, setUserGroupDetailsCache] = createSignal<DomainCache<UserGroup>>([
+        /* source:          */  state_usergroup ? state_usergroup.group_name : null,
+        /* resource (data): */  state_usergroup
+    ]);
 
     return (
         <div id="domain-usergroup" className="ui-domain">
@@ -60,8 +68,8 @@ const UserGroupManagementDomain: Component = () => {
                 }></Route>
                 <Route path="/details" element={
                     <UsergroupDomainDetailsPage
-                        cache={ userGroupCache }
-                        setCache={ setUserGroupCache }
+                        cache={ userGroupDetailsCache }
+                        setCache={ setUserGroupDetailsCache }
                     />
                 }></Route>
             </Routes>
