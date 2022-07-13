@@ -121,7 +121,7 @@ inline bool DB::is_result_ok(PGresult* db_result) {
     // No data returned from query
     if(status == ExecStatusType::PGRES_COMMAND_OK) true;
 
-    if(status != ExecStatusType::PGRES_TUPLES_OK || PQnfields(db_result) == 0 || PQntuples(db_result) == 0) {
+    if(status != ExecStatusType::PGRES_TUPLES_OK || PQnfields(db_result) == 0) {
         // Data should have been returned by query, but something went wrong
         PQclear(db_result);
 
