@@ -127,12 +127,17 @@ namespace API_UserGroup {
         }
 
         const auto all_usergroups = all_usergroups_res.data;
+        const auto all_usergroups_n = all_usergroups.size();
 
         Json::Value groups_json;
-        int i = 0;
+        groups_json.resize(all_usergroups_n);
 
-        for(auto usergroup : all_usergroups) {
-            groups_json[i++] = usergroup.to_json();
+        if(all_usergroups_n) {
+            int i = 0;
+
+            for(auto usergroup : all_usergroups) {
+                groups_json[i++] = usergroup.to_json();
+            }
         }
 
         const auto json = make_success_json("usergroup", groups_json);

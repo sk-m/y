@@ -17,7 +17,7 @@ struct UserGroup {
     char* group_name;
     char* group_display_name;
 
-    bool group_is_system;
+    bool group_is_system = false;
     
     Json::Value to_json() const;
 
@@ -43,6 +43,9 @@ struct UserGroup {
     group.group_id = std::stoi(PQgetvalue(result, row, PQfnumber(result, "group_id")));
     group.group_name = PQgetvalue(result, row, PQfnumber(result, "group_name"));
     group.group_display_name = PQgetvalue(result, row, PQfnumber(result, "group_display_name"));
+
+    // TODO @hack
+    group.group_is_system = PQgetvalue(result, row, PQfnumber(result, "group_is_system"))[0] == 't';
 
     return group;
 }
