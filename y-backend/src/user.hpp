@@ -752,7 +752,7 @@ CleanableResult<std::vector<UserSession>> user_get_all_sessions(unsigned int use
 
     std::vector<UserSession> user_sessions;
 
-    if(!DB::is_result_ok(sessions_result)) {
+    if(!DB::is_result_ok(sessions_result, false)) {
         return CleanableResult(user_sessions, Status {
             Y_E_USER_INTERNAL,
             "Could not get user's sessions." 

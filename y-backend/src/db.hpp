@@ -99,7 +99,7 @@ namespace DB {
     bool _init();
 
     // Util
-    inline bool is_result_ok(PGresult* db_result);
+    inline bool is_result_ok(PGresult* db_result, bool require_rows = true);
 
     // Statements
     bool _prepare_statement(PGconn* connection, const char* statement_name, const char* query, int n_params, const Oid *param_types);
@@ -115,13 +115,13 @@ namespace DB {
  * 
  * @param db_result Result, returned by the database
  */
-inline bool DB::is_result_ok(PGresult* db_result) {
+inline bool DB::is_result_ok(PGresult* db_result, bool require_rows) {
     const auto status = PQresultStatus(db_result);
 
     // No data returned from query
     if(status == ExecStatusType::PGRES_COMMAND_OK) true;
 
-    if(status != ExecStatusType::PGRES_TUPLES_OK || PQnfields(db_result) == 0) {
+    if(status != ExecStatusType::PGRES_TUPLES_OK || PQnfields(db_result) == 0 || (require_rows && PQntuples(db_result) == 0)) {
         // Data should have been returned by query, but something went wrong
         PQclear(db_result);
 

@@ -92,12 +92,13 @@ namespace API_User {
 
     // GET /user/preferences
     void handle_user_preferences(API_HANDLER_ARGS) {
-        // TODO @incomplete auth middleware
+        // TODO @incomplete Route is incomplete
+
         const auto target_username = req->getParameter("user_username");
 
         if(target_username.empty()) {
             return send_error(
-                "Please, provide either target's `user_username` or `user_id`.",
+                "Please, provide target's `user_username`.",
                 drogon::HttpStatusCode::k412PreconditionFailed,
                 api_callback
             );

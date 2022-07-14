@@ -78,7 +78,7 @@ CleanableResult<UserGroup> usergroup_create(const char* group_name, const char* 
     const char* const sql_params[2] = { group_name, group_display_name };
     auto result = DB::exec_prepared("usergroup_create", sql_params, 2);
 
-    if(PQresultStatus(result) != PGRES_TUPLES_OK) {
+    if(PQresultStatus(result) != PGRES_TUPLES_OK || PQntuples(result) == 0) {
         // Check the type of the error
         const auto error_type = PQresultErrorField(result, PG_DIAG_SQLSTATE);
 
@@ -170,7 +170,7 @@ Status usergroup_delete(int group_id) {
 
     std::vector<UserGroup> usergroups;
 
-    if(!DB::is_result_ok(result)) {
+    if(!DB::is_result_ok(result, false)) {
         // TODO @log
 
         return CleanableResult(usergroups, Status {
