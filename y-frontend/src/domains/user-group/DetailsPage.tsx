@@ -3,28 +3,26 @@ import Button from "../../components/Button";
 import ErrorInfoPanel from "../../components/ErrorInfoPanel";
 import Input from "../../components/Input";
 import Panel, { PanelDrawer } from "../../components/Panel";
-import { UserGroup } from "../../interfaces/usergroup";
-import { CacheableDomainProps, DomainCacheMutator } from "../../util/domain_util";
+import { FullUserGroupAPIResponse, UserGroup } from "../../interfaces/usergroup";
+import { DomainCacheMutator } from "../../util/domain_util";
 import { useForm } from "../../util/form";
-import { createCachedResource } from "../../util/domain_util";
+
+import "./DetailsPage.css";
+import { useNavigate } from "solid-app-router";
+import { APIResponse } from "../../util/api_util";
 
 import API from "../../api";
 
-import "./DetailsPage.css";
-import { useNavigate, useParams } from "solid-app-router";
-import PageObstructionScreen from "../../components/PageObstructionScreen";
-import { APIResponse } from "../../util/api_util";
-
 const BasicInfoPanel: Component<{
-    group: Accessor<UserGroup>,
-    mutateGroupDetails: DomainCacheMutator<UserGroup>
+    group: UserGroup,
+    mutateGroupDetails: (data: UserGroup) => void
 }> = props => {
     const { link, register_form, submit, status, global_error, error_out } = useForm({
         group_display_name: {
             min_length: 1,
             max_length: 128,
 
-            default_value: props.group().group_display_name
+            default_value: props.group.group_display_name
         },
         summary: {
             min_length: 1,
@@ -32,12 +30,10 @@ const BasicInfoPanel: Component<{
         },
     }, {
         onSubmit: (values) => {
-            const target_group = props.group();
-
-            if(!target_group.group_id) return error_out("Could not determine the current group");
+            if(!props.group.group_id) return error_out("Could not determine the current group");
 
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return API.usergroup_update(target_group.group_id, values.group_display_name!);
+            return API.usergroup_update(props.group.group_id, values.group_display_name!);
         },
 
         onSuccess: (data: APIResponse<UserGroup, "usergroup_update">) => {
@@ -92,7 +88,7 @@ const BasicInfoPanel: Component<{
 }
 
 const DeleteGroupPanel: Component<{
-    group: Accessor<UserGroup>
+    group: UserGroup
 }> = props => {
     let panel_ref;
 
@@ -107,11 +103,9 @@ const DeleteGroupPanel: Component<{
         },
     }, {
         onSubmit: () => {
-            const target_group = props.group();
+            if(!props.group.group_id) return error_out("Could not determine the current group");
 
-            if(!target_group.group_id) return error_out("Could not determine the current group");
-
-            return API.usergroup_delete(target_group.group_id);
+            return API.usergroup_delete(props.group.group_id);
         },
         
         onSuccess: () => {
@@ -176,54 +170,25 @@ const DeleteGroupPanel: Component<{
     )
 }
 
-const UsergroupDomainDetailsPage: Component<CacheableDomainProps<UserGroup>> = props => {
-    const params = useParams();
-
-    const groupDetailsFetcher = async (group_name: string): Promise<UserGroup> => {
-        return API.usergroup_get_by_name(group_name)
-        .then(data => {
-            return data.usergroup_get;
-        })
-        .catch((error: Error) => {
-            return Promise.reject(error.message);
-        });
-    }
-
-    const [groupDetails, { refetch: refetchGroupDetails, mutate: mutateGroupDetails }] =
-        createCachedResource(params.group_name, groupDetailsFetcher, props.cache, props.setCache);
-
+const UsergroupDomainDetailsPage: Component<{
+    full_usergroup_info: FullUserGroupAPIResponse
+    mutateGroupDetails: (data: UserGroup) => void
+}> = props => {
     return (
-        <Switch>
-            <Match when={ groupDetails.loading }>
-                <PageObstructionScreen type="loading" />
-            </Match>
+        <div id="usergroup-details-page" className="ui-domain-page config-items-page">
+            <div className="group-details-container config-items-container">
+                <div>
+                    <BasicInfoPanel
+                        group={ props.full_usergroup_info.usergroup }
+                        mutateGroupDetails={ props.mutateGroupDetails }
+                    />
 
-            <Match when={ !!groupDetails.error || groupDetails() === undefined }>
-                <PageObstructionScreen
-                    type="error"
-
-                    error_text={ groupDetails.error as string }
-                    on_retry={ refetchGroupDetails }
-                />
-            </Match>
-
-            <Match when={ groupDetails() }>
-                <div id="usergroup-details-page" className="ui-domain-page config-items-page">
-                    <div className="group-details-container config-items-container">
-                        <div>
-                            <BasicInfoPanel
-                                group={ groupDetails as Accessor<UserGroup> }
-                                mutateGroupDetails={ mutateGroupDetails }
-                            />
-
-                            <DeleteGroupPanel
-                                group={ groupDetails as Accessor<UserGroup> }
-                            />
-                        </div>
-                    </div>
+                    <DeleteGroupPanel
+                        group={ props.full_usergroup_info.usergroup }
+                    />
                 </div>
-            </Match>
-        </Switch>
+            </div>
+        </div>
     )
 } 
 

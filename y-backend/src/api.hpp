@@ -6,6 +6,7 @@
 
 #include "api/api_user.hpp"
 #include "api/api_usergroup.hpp"
+#include "api/api_userright.hpp"
 
 /**
  * @brief User authentication filter middleware
@@ -75,5 +76,8 @@ namespace API {
         app->registerHandler("/api/usergroup/create", &API_UserGroup::handle_usergroup_create, {drogon::Post, "AuthFilter"});
         app->registerHandler("/api/usergroup/{1:group_id}", &API_UserGroup::handle_usergroup_update, {drogon::Patch, "AuthFilter"});
         app->registerHandler("/api/usergroup/{1:group_id}", &API_UserGroup::handle_usergroup_delete, {drogon::Delete, "AuthFilter"});
+
+        // User right
+        app->registerHandler("/api/userright", &API_UserRight::handle_userright_get_all, {drogon::Get, "AuthFilter"});
     }
 }

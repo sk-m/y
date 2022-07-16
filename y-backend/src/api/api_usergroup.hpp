@@ -5,6 +5,7 @@
 #include "../db.hpp"
 #include "../api.hpp"
 #include "../user_group.hpp"
+#include "../user_right.hpp"
 
 namespace API_UserGroup {
     // DELETE /usergroup/:group_id
@@ -89,6 +90,10 @@ namespace API_UserGroup {
 
     // GET /usergroup/:group_name
     void handle_usergroup_get_by_name(API_HANDLER_ARGS, std::string p_group_name) {
+        // TODO @incomplete add ?full=1 query param
+
+        const auto is_full = req->getParameter("full").compare("1") == 0;
+
         const auto target_group_name = p_group_name.c_str();
 
         // TODO @cleanup we might want to remove this
@@ -108,8 +113,15 @@ namespace API_UserGroup {
         }
 
         const auto target_group = target_group_res.data;
+        
+        Json::Value data_json;
+        data_json["usergroup"] = target_group.to_json();
 
-        const auto json = make_success_json("usergroup_get", target_group.to_json());
+        if(is_full) {
+            data_json["userright"] = userright_get_all_json();
+        }
+
+        const auto json = make_success_json("usergroup_get", data_json);
 
         auto resp = drogon::HttpResponse::newHttpJsonResponse(json);
 

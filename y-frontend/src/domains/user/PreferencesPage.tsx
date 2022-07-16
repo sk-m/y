@@ -1,4 +1,4 @@
-import { Component, createSignal, Match, Switch } from "solid-js";
+import { Component, createMemo, createSignal, Match, Switch } from "solid-js";
 import PasswordPanel from "./preferences-page/PasswordPanel";
 
 import API from "../../api";
@@ -7,6 +7,7 @@ import { useParams } from "solid-app-router";
 import SessionsPanel from "./preferences-page/SessionsPanel";
 import { UserPreferences, UserSession, UserSessionUIState } from "../../interfaces/user";
 import { CacheableDomainProps, appendUIStateFields, createCachedResource } from "../../util/domain_util";
+import { is_resource_ok } from "../../util";
 
 const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>> = props => {
     const params = useParams();
@@ -43,13 +44,15 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
     const [userPreferences, { refetch: refetchUserPreferences }] =
         createCachedResource(params.user_name, userPreferencesFetcher, props.cache, props.setCache);
 
+    const resource_ok = createMemo(() => is_resource_ok(userPreferences));
+
     return (
         <Switch>
             <Match when={ userPreferences.loading }>
                 <PageObstructionScreen type="loading" />
             </Match>
 
-            <Match when={ !!userPreferences.error || userPreferences() === undefined }>
+            <Match when={ !resource_ok() }>
                 <PageObstructionScreen
                     type="error"
 
@@ -58,7 +61,7 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
                 />
             </Match>
 
-            <Match when={ userPreferences() }>
+            <Match when={ resource_ok() }>
                 <div id="user-preferences-page" className="ui-domain-page">
                     {/* <Panel
                         classList={{ "user-profile-panel": true }}

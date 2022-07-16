@@ -1,5 +1,6 @@
 import { BasicUserInfo, UserPreferences } from "../interfaces/user";
-import { UserGroup } from "../interfaces/usergroup";
+import { FullUserGroupAPIResponse, UserGroup } from "../interfaces/usergroup";
+import { UserRightCategory, UserRightWithOptions } from "../interfaces/userright";
 import { api_fetch } from "../util/api_util";
 
 // TODO use xhr instead
@@ -99,8 +100,8 @@ export default {
         })
     ),
 
-    usergroup_get_by_name: (group_name: string) => (
-        api_fetch<UserGroup, "usergroup_get">(`/usergroup/${ group_name }`, {
+    usergroup_get_by_name_full: (group_name: string) => (
+        api_fetch<FullUserGroupAPIResponse, "usergroup_get">(`/usergroup/${ group_name }?full=1`, {
             method: "GET",
             credentials: "include",
         })
@@ -123,6 +124,19 @@ export default {
     usergroup_delete: (group_id: number) => (
         api_fetch<never, "usergroup_delete">(`/usergroup/${ group_id }`, {
             method: "DELETE",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            credentials: "include",
+        })
+    ),
+
+    userright_get_all: () => (
+        api_fetch<{
+            user_right_categories: UserRightCategory[],
+            user_rights: UserRightWithOptions[]
+        }, "userright">("/userright", {
+            method: "GET",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
             },

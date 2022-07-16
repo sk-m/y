@@ -1,40 +1,43 @@
-import { Component } from "solid-js";
+import { Component, For } from "solid-js";
 import ConfigSectionHeader from "../config/common/ConfigSectionHeader";
 import UserRightItem from "./UserRightItem";
 
 import "./RightsPage.css"
+import { FormattedUserRights } from "./UserGroupManagementDomain";
+import { FullUserGroupAPIResponse } from "../../interfaces/usergroup";
 
-const UsergroupDomainRightsPage: Component = () => {
+const UsergroupDomainRightsPage: Component<{
+    full_usergroup_info: FullUserGroupAPIResponse,
+    formatted_user_rights: FormattedUserRights,
+}> = props => {
     return (
         <div id="usergroup-rights-page" className="ui-domain-page config-items-page">
             <div className="group-rights-container config-items-container">
-                <div>
-                    <ConfigSectionHeader
-                        title="Basic"
-                        description="Common rights probably everyone should have. You might still want to get rid of some of them, if you\
-                want this instance to be very restricted."
+                <For each={ Object.entries(props.full_usergroup_info.userright.user_right_categories) }>{
+                    ([_index, cat]) => (
+                        <div>
+                            <ConfigSectionHeader
+                                title={ cat.category_display_name }
+                                description={ cat.category_description }
 
-                        max_width="800px"
-                    />
+                                max_width="800px"
+                            />
 
-                    <UserRightItem
-                        name="account_create"
-
-                        display_name="Create new accounts"
-                        description="Allow creating new accounts"
-
-                        inherited_from="everyone"
-                    />
-
-                    <UserRightItem
-                        name="account_change_password"
-
-                        display_name="Change own password"
-                        description="Allow changing own password"
-
-                        inherited_from="user"
-                    />
-                </div>
+                            <For each={ Object.entries(props.formatted_user_rights[cat.category_name] ?? {}) }>{
+                                ([_index, right]) => (
+                                    <UserRightItem
+                                        name={ right.right_name }
+        
+                                        display_name={ right.right_display_name }
+                                        description={ right.right_description }
+        
+                                        // inherited_from="everyone"
+                                    />
+                                )
+                            }</For>
+                        </div>
+                    )
+                }</For>
             </div>                        
         </div>
     )
