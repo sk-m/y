@@ -41,7 +41,8 @@ SET default_table_access_method = heap;
 CREATE TABLE public.usergroups (
     group_id integer NOT NULL,
     group_name character varying(64) NOT NULL,
-    group_display_name character varying(128) NOT NULL
+    group_display_name character varying(128) NOT NULL,
+    group_is_system boolean DEFAULT false NOT NULL
 );
 
 
@@ -96,6 +97,68 @@ CREATE TABLE public.user_sessions (
 ALTER TABLE public.user_sessions OWNER TO y_user;
 
 --
+-- Name: usergroup_right_options; Type: TABLE; Schema: public; Owner: y_user
+--
+
+CREATE TABLE public.usergroup_right_options (
+    group_right_relation_id integer NOT NULL,
+    right_option character varying(64) NOT NULL,
+    option_value text
+);
+
+
+ALTER TABLE public.usergroup_right_options OWNER TO y_user;
+
+--
+-- Name: TABLE usergroup_right_options; Type: COMMENT; Schema: public; Owner: y_user
+--
+
+COMMENT ON TABLE public.usergroup_right_options IS 'Contains options, set for a specific user right in a specific user group';
+
+
+--
+-- Name: usergroup_rights; Type: TABLE; Schema: public; Owner: y_user
+--
+
+CREATE TABLE public.usergroup_rights (
+    group_right_relation_id integer NOT NULL,
+    group_id integer NOT NULL,
+    right_name character varying(64) NOT NULL
+);
+
+
+ALTER TABLE public.usergroup_rights OWNER TO y_user;
+
+--
+-- Name: TABLE usergroup_rights; Type: COMMENT; Schema: public; Owner: y_user
+--
+
+COMMENT ON TABLE public.usergroup_rights IS 'What rights are assigned to a particular user group';
+
+
+--
+-- Name: usergroup_rights_group_right_relation_id_seq; Type: SEQUENCE; Schema: public; Owner: y_user
+--
+
+CREATE SEQUENCE public.usergroup_rights_group_right_relation_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.usergroup_rights_group_right_relation_id_seq OWNER TO y_user;
+
+--
+-- Name: usergroup_rights_group_right_relation_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: y_user
+--
+
+ALTER SEQUENCE public.usergroup_rights_group_right_relation_id_seq OWNED BY public.usergroup_rights.group_right_relation_id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: y_user
 --
 
@@ -129,6 +192,13 @@ ALTER TABLE public.users_user_id_seq OWNER TO y_user;
 --
 
 ALTER SEQUENCE public.users_user_id_seq OWNED BY public.users.user_id;
+
+
+--
+-- Name: usergroup_rights group_right_relation_id; Type: DEFAULT; Schema: public; Owner: y_user
+--
+
+ALTER TABLE ONLY public.usergroup_rights ALTER COLUMN group_right_relation_id SET DEFAULT nextval('public.usergroup_rights_group_right_relation_id_seq'::regclass);
 
 
 --
@@ -166,7 +236,31 @@ ALTER TABLE ONLY public.usergroups
 --
 
 ALTER TABLE ONLY public.user_sessions
-    ADD CONSTRAINT user_sessions_pkey PRIMARY KEY (session_id, session_user_id);
+    ADD CONSTRAINT user_sessions_pkey PRIMARY KEY (session_id);
+
+
+--
+-- Name: usergroup_right_options usergroup_right_options_pkey; Type: CONSTRAINT; Schema: public; Owner: y_user
+--
+
+ALTER TABLE ONLY public.usergroup_right_options
+    ADD CONSTRAINT usergroup_right_options_pkey PRIMARY KEY (group_right_relation_id, right_option);
+
+
+--
+-- Name: usergroup_rights usergroup_rights_group_id_right_name_key; Type: CONSTRAINT; Schema: public; Owner: y_user
+--
+
+ALTER TABLE ONLY public.usergroup_rights
+    ADD CONSTRAINT usergroup_rights_group_id_right_name_key UNIQUE (group_id, right_name);
+
+
+--
+-- Name: usergroup_rights usergroup_rights_pkey; Type: CONSTRAINT; Schema: public; Owner: y_user
+--
+
+ALTER TABLE ONLY public.usergroup_rights
+    ADD CONSTRAINT usergroup_rights_pkey PRIMARY KEY (group_right_relation_id);
 
 
 --
@@ -190,7 +284,23 @@ ALTER TABLE ONLY public.users
 --
 
 ALTER TABLE ONLY public.user_sessions
-    ADD CONSTRAINT user_sessions_session_user_id_fkey FOREIGN KEY (session_user_id) REFERENCES public.users(user_id);
+    ADD CONSTRAINT user_sessions_session_user_id_fkey FOREIGN KEY (session_user_id) REFERENCES public.users(user_id) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+
+--
+-- Name: usergroup_right_options usergroup_right_options_group_right_relation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: y_user
+--
+
+ALTER TABLE ONLY public.usergroup_right_options
+    ADD CONSTRAINT usergroup_right_options_group_right_relation_id_fkey FOREIGN KEY (group_right_relation_id) REFERENCES public.usergroup_rights(group_right_relation_id) ON UPDATE RESTRICT ON DELETE CASCADE;
+
+
+--
+-- Name: usergroup_rights usergroup_rights_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: y_user
+--
+
+ALTER TABLE ONLY public.usergroup_rights
+    ADD CONSTRAINT usergroup_rights_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.usergroups(group_id) ON UPDATE RESTRICT ON DELETE CASCADE NOT VALID;
 
 
 --

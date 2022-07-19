@@ -424,11 +424,28 @@ WHERE public.user_sessions.session_id = $1",
         NULL
     )) return false;
 
-    // Getting a user group by it's name
+    // Getting a user group by it's name (definition only)
     if(!_prepare_statement(
         connection,
-        "usergroup_get_by_name",
+        "usergroup_get_by_name_definition",
         "SELECT * FROM public.usergroups WHERE group_name = $1::varchar",
+        1,
+        NULL
+    )) return false;
+
+    // Getting a user group by it's name (including rights)
+    if(!_prepare_statement(
+        connection,
+        "usergroup_get_by_name_full",
+        "SELECT \
+public.usergroups.*, \
+public.usergroup_rights.right_name, \
+public.usergroup_right_options.right_option, \
+public.usergroup_right_options.option_value \
+FROM public.usergroups \
+LEFT JOIN public.usergroup_rights ON public.usergroups.group_id = public.usergroup_rights.group_id \
+LEFT JOIN public.usergroup_right_options ON public.usergroup_rights.group_right_relation_id = public.usergroup_right_options.group_right_relation_id \
+WHERE public.usergroups.group_name = $1::varchar",
         1,
         NULL
     )) return false;

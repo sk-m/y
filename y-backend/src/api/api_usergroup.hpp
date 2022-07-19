@@ -94,6 +94,9 @@ namespace API_UserGroup {
 
         const auto is_full = req->getParameter("full").compare("1") == 0;
 
+        const auto is_include_available_rights = req->getParameter("include_available_rights").compare("1") == 0;
+        const auto is_include_group_rights = req->getParameter("include_group_rights").compare("1") == 0;
+
         const auto target_group_name = p_group_name.c_str();
 
         // TODO @cleanup we might want to remove this
@@ -106,18 +109,34 @@ namespace API_UserGroup {
             );
         }
 
-        auto target_group_res = usergroup_get(target_group_name);
-
-        if(!target_group_res.status.is_ok()) {
-            return send_error(target_group_res.status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
-        }
-
-        const auto target_group = target_group_res.data;
-        
         Json::Value data_json;
-        data_json["usergroup"] = target_group.to_json();
+        Json::Value usergroup_json;
 
-        if(is_full) {
+        std::function<void()> cleanup;
+
+        if (is_full || is_include_group_rights) {
+            auto target_group_res = usergroup_get_full(target_group_name);
+                
+            if(!target_group_res.status.is_ok()) {
+                return send_error(target_group_res.status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+            }
+
+            usergroup_json = target_group_res.data.to_json();
+            cleanup = target_group_res._cleanup_func;
+        } else {
+            auto target_group_res = usergroup_get(target_group_name);
+                
+            if(!target_group_res.status.is_ok()) {
+                return send_error(target_group_res.status, drogon::HttpStatusCode::k500InternalServerError, api_callback);
+            }
+
+            usergroup_json = target_group_res.data.to_json();
+            cleanup = target_group_res._cleanup_func;
+        } 
+
+        data_json["usergroup"] = usergroup_json;
+
+        if(is_full || is_include_available_rights) {
             data_json["userright"] = userright_get_all_json();
         }
 
@@ -127,7 +146,7 @@ namespace API_UserGroup {
 
         api_callback(resp);
 
-        target_group_res.cleanup();
+        cleanup();
     }
 
     // GET /usergroup

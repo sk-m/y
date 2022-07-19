@@ -25,6 +25,25 @@ struct UserGroup {
     static std::vector<UserGroup> from_result_many(PGresult* result);
 };
 
+// TODO @refactor this is not the best solution
+struct UserGroupWithAssignedRights: UserGroup {
+    std::unordered_map<std::string, std::unordered_map<std::string, char*>> assigned_rights;
+
+    // TODO @hack
+    UserGroupWithAssignedRights(UserGroup group_definition) {
+        group_id = group_definition.group_id;
+        group_name = group_definition.group_name;
+        group_display_name = group_definition.group_display_name;
+        group_is_system = group_definition.group_is_system;
+    };
+
+    UserGroupWithAssignedRights() = default;
+
+    Json::Value to_json() const;
+
+    static UserGroupWithAssignedRights from_result(PGresult *result);
+};
+
 [[nodiscard]] Json::Value UserGroup::to_json() const {
     Json::Value json;
 
@@ -32,6 +51,14 @@ struct UserGroup {
     json["group_name"] = group_name;
     json["group_display_name"] = group_display_name;
     json["group_is_system"] = group_is_system;
+
+    return json;
+}
+
+[[nodiscard]] Json::Value UserGroupWithAssignedRights::to_json() const {
+    Json::Value json = UserGroup::to_json();
+
+    json["assigned_rights"] = hashmap_to_json(assigned_rights);
 
     return json;
 }
@@ -61,6 +88,60 @@ struct UserGroup {
     }
 
     return groups;
+}
+
+[[nodiscard]] UserGroupWithAssignedRights UserGroupWithAssignedRights::from_result(PGresult* result) {
+    auto group = UserGroupWithAssignedRights(UserGroup::from_result(result, 0));
+
+    const auto rows_n = PQntuples(result);
+
+    if(rows_n == 1) {
+        // Group has no rights assigned to it
+        return group;
+    }
+
+    const auto right_name_col_pos = PQfnumber(result, "right_name");
+    const auto right_option_col_pos = PQfnumber(result, "right_option");
+    const auto right_option_value_col_pos = PQfnumber(result, "option_value");
+
+    // TODO @performance this can be optimized, but I'm not sure we really need it
+    for(int row = 0; row < rows_n; row++) {
+        const auto right_name = PQgetvalue(result, row, right_name_col_pos);
+
+        auto target_right = group.assigned_rights.find(right_name);
+
+        if(target_right == group.assigned_rights.end()) {
+            // We have not yet encountered this right
+
+            if(PQgetisnull(result, row, right_option_col_pos)) {
+                // This right has no options set, add it to the list of assigned rights as an empty hashmap
+
+                std::unordered_map<std::string, char*> right_option_map = {};
+
+                group.assigned_rights.insert(std::make_pair(right_name, right_option_map));
+            } else {
+                // This right has an option set, add it to the list of assigned rights and add the option straight away
+
+                const auto right_option = PQgetvalue(result, row, right_option_col_pos);
+                const auto right_option_value = PQgetvalue(result, row, right_option_value_col_pos);
+
+                std::unordered_map<std::string, char*> right_option_map = {};
+                right_option_map.insert(std::make_pair(right_option, right_option_value));
+
+                group.assigned_rights.insert(std::make_pair(right_name, right_option_map));
+            }
+        } else {
+            // We have encountered this right before and it is already added to the group. This row holds an option for this right,
+            // add it to the hashmap of the right's options
+
+            const auto right_option = PQgetvalue(result, row, right_option_col_pos);
+            const auto right_option_value = PQgetvalue(result, row, right_option_value_col_pos);
+
+            target_right->second.insert(std::make_pair(right_option, right_option_value));
+        }
+    }
+
+    return group;
 }
 
 /**
@@ -185,13 +266,13 @@ Status usergroup_delete(int group_id) {
 }
 
 /**
- * @brief Get group by it's name
+ * @brief Get group's definition by it's name
  * 
  * @param group_name Target group's internal name
  */
 [[nodiscard]] CleanableResult<UserGroup> usergroup_get(const char* group_name) {
     const char* const sql_params[1] = { group_name };
-    auto result = DB::exec_prepared("usergroup_get_by_name", sql_params, 1);
+    auto result = DB::exec_prepared("usergroup_get_by_name_definition", sql_params, 1);
 
     // TODO @placeholder check if error type == NOT_FOUND
     if(!DB::is_result_ok(result)) {
@@ -202,6 +283,29 @@ Status usergroup_delete(int group_id) {
     }
 
     const auto usergroup = UserGroup::from_result(result);
+
+    return CleanableResult(usergroup, DEFAULT_CLEANUP_FUNC(result));
+}
+
+
+/**
+ * @brief Get the group's definition, the rights, that are assigned to it & their options by the group's name
+ * 
+ * @param group_name Target group's internal name
+ */
+[[nodiscard]] CleanableResult<UserGroupWithAssignedRights> usergroup_get_full(const char* group_name) {
+    const char* const sql_params[1] = { group_name };
+    auto result = DB::exec_prepared("usergroup_get_by_name_full", sql_params, 1);
+
+    // TODO @placeholder check if error type == NOT_FOUND
+    if(!DB::is_result_ok(result)) {
+        return CleanableResult(UserGroupWithAssignedRights {}, Status {
+            Y_E_USERGROUP_INTERNAL,
+            "Could not retrieve requested user group." 
+        });
+    }
+
+    const auto usergroup = UserGroupWithAssignedRights::from_result(result);
 
     return CleanableResult(usergroup, DEFAULT_CLEANUP_FUNC(result));
 }

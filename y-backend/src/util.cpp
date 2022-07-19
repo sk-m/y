@@ -3,6 +3,9 @@
 #include <stdexcept>
 #include <string>
 #include <functional>
+#include <unordered_map>
+
+#include <drogon/drogon.h>
 
 // TODO @cleanup @refactor put all this in namespace Util?
 // TODO @cleanup the code in here, split into a couple of files
@@ -129,6 +132,32 @@ void send_error(const char* error_message, drogon::HttpStatusCode status_code, s
 
     api_callback(resp);
 };
+
+// TODO @cleanup @refactor would we even use hashmap_to_json somewhere other than UserGroupWithAssignedRights::to_json()? YAGNI?
+
+// TODO @performance @refactor use RapidJSON?
+// TODO @performance reserve somehow?
+inline Json::Value hashmap_to_json(std::unordered_map<std::string, char*> map) {
+    Json::Value json = Json::objectValue;
+
+    for(auto item : map) {
+        json[item.first] = item.second;
+    }
+
+    return json;
+}
+
+// TODO @performance @refactor use RapidJSON?
+// TODO @performance reserve somehow?
+inline Json::Value hashmap_to_json(std::unordered_map<std::string, std::unordered_map<std::string, char*>> map) {
+    Json::Value json = Json::objectValue;
+
+    for(auto item : map) {
+        json[item.first] = hashmap_to_json(item.second);
+    }
+
+    return json;
+}
 
 constexpr char _hexmap[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
