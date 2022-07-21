@@ -95,17 +95,14 @@ struct UserGroupWithAssignedRights: UserGroup {
 
     const auto rows_n = PQntuples(result);
 
-    if(rows_n == 1) {
-        // Group has no rights assigned to it
-        return group;
-    }
-
     const auto right_name_col_pos = PQfnumber(result, "right_name");
     const auto right_option_col_pos = PQfnumber(result, "right_option");
     const auto right_option_value_col_pos = PQfnumber(result, "option_value");
 
     // TODO @performance this can be optimized, but I'm not sure we really need it
     for(int row = 0; row < rows_n; row++) {
+        if(PQgetisnull(result, row, right_name_col_pos)) continue;
+
         const auto right_name = PQgetvalue(result, row, right_name_col_pos);
 
         auto target_right = group.assigned_rights.find(right_name);

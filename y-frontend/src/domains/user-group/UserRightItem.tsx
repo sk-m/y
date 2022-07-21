@@ -1,4 +1,4 @@
-import { Component, createSignal, For, Match, Show, Switch } from "solid-js";
+import { Accessor, Component, For, Match, Show, Switch } from "solid-js";
 import Button from "../../components/Button";
 import Checkbox from "../../components/Checkbox";
 import Panel from "../../components/Panel";
@@ -9,7 +9,11 @@ const UserRightItem: Component<{
     display_name: string;
     description: string;
 
-    is_granted?: boolean;
+    is_granted: boolean;
+    set_is_granted: (state: boolean) => void;
+
+    is_dirty: boolean;
+
     inherited_from?: "everyone" | "user";
 
     // TODO @refactor create a common UIPill interface, pills will be used a lot
@@ -22,8 +26,6 @@ const UserRightItem: Component<{
     }[]
 }> = props => {
     // TODO @placeholder for testing only! Remove
-    const [isChecked, setIsChecked] = createSignal(false);
-
     return (
         <Panel
             classList={{ "user-right-item": true }}
@@ -35,16 +37,16 @@ const UserRightItem: Component<{
             <div className="right-header">
                 <div className="left">
                     <Checkbox
-                        checked={ isChecked() }
+                        checked={ props.is_granted }
                         checked_hint="Granted"
 
-                        onclick={() => setIsChecked(c => !c)}
+                        onclick={() => props.set_is_granted(!props.is_granted)}
                     />
                     <div className="right-display-name">{ props.display_name }</div>
                 </div>
                 <div className="right">
                     <div className="ui-pills-container">
-                        <Show when={ isChecked() }>
+                        <Show when={ props.is_dirty }>
                             <div
                                 className="ui-pill c-yellow"
                             >

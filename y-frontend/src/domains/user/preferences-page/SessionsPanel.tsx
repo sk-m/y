@@ -3,6 +3,7 @@ import Button from "../../../components/Button";
 import Panel from "../../../components/Panel";
 import { UserPreferences } from "../../../interfaces/user";
 import { plural } from "../../../util";
+import { DomainCache } from "../../../util/domain_util";
 
 import API from "../../../api";
 import { useCurrentUser } from "../../../stores/current_user";
@@ -10,6 +11,7 @@ import { useNavigate } from "solid-app-router";
 
 const SessionsPanel: Component<{
     userPreferences: Accessor<UserPreferences | null | undefined>,
+    setCache: (c: DomainCache<UserPreferences>) => void
 }> = props => {
     const [_current_user, { logout }] = useCurrentUser();
     const navigate = useNavigate();
@@ -18,8 +20,10 @@ const SessionsPanel: Component<{
         const session = props.userPreferences()?.user_sessions[session_i()];
         if(!session) return;
 
-        session._ui_setState("loading");
-        
+        props.setCache([null, undefined]);
+
+        session.$ui_setState("loading");
+
         API.user_destroy_session_by_id(session.session_id)
         .then(() => {
             // Have we just destroyed our own session?
@@ -27,13 +31,13 @@ const SessionsPanel: Component<{
                 void logout();
                 navigate("/login");
             } else {
-                session._ui_setState("destroyed");
+                session.$ui_setState("destroyed");
             }
         })
         .catch((error: Error) => {
             // TODO show error
             alert(`Could not destroy the session. ${ error.message }`);
-            session._ui_setState(undefined);
+            session.$ui_setState(undefined);
         })
     }
 
@@ -45,7 +49,7 @@ const SessionsPanel: Component<{
         let n = 0;
 
         for(const session of preferences.user_sessions) {
-            if(session._ui_state() !== "destroyed") n++;
+            if(session.$ui_state() !== "destroyed") n++;
         }
 
         return n;
@@ -74,14 +78,14 @@ const SessionsPanel: Component<{
 
             <div className="sessions-list">
                 <For each={ props.userPreferences()?.user_sessions }>{(session, session_i) => (
-                    <div classList={{ session: true, "destroyed": session._ui_state() === "destroyed" }}>
+                    <div classList={{ session: true, "destroyed": session.$ui_state() === "destroyed" }}>
                         <div className="left">
                             <div className="client-info">{ session.session_device }</div>
                             {/* <div className="device-info">{ session.session_device }</div> */}
                             <div className="other-info">
                                 <span title="Last IP address">{ session.session_current_ip }</span> · 
                                 <span title="Allowed IP range">{ session.session_ip_range }</span>
-                                { session._ui_state() === "destroyed"
+                                { session.$ui_state() === "destroyed"
                                     ? <>· <span
                                         className="ui-tc-red"
                                     >destroyed</span></>
@@ -97,17 +101,17 @@ const SessionsPanel: Component<{
                         </div>
                         <div className="right">
                             <Show
-                                when={ session._ui_state() !== "destroyed" }
+                                when={ session.$ui_state() !== "destroyed" }
                             >
                                 <Button
                                     text={
-                                        session._ui_state() === "loading"
+                                        session.$ui_state() === "loading"
                                         ? "Working..."
                                         : (session.session_is_current ? "Log out" : "Destroy")
                                     }
                                     text_color="red"
 
-                                    disabled={ session._ui_state() !== undefined }
+                                    disabled={ session.$ui_state() !== undefined }
                                     onclick={[ destroy_session, session_i ]}
                                 />
                             </Show>

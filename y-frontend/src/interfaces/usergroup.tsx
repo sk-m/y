@@ -9,15 +9,8 @@ export interface UserGroup {
     group_is_system: boolean;
 }
 
-export interface UserGroupAssignedRight {
-    right_name: string;
-    right_is_assigned: boolean;
-
-    right_options: Record<string, unknown>;
-}
-
 export type UserGroupWithAssignedRights = UserGroup & {
-    assigned_rights: Record<string, UserGroupAssignedRight>;
+    assigned_rights: Record<string, Record<string, unknown> | undefined>;
 }
 
 export interface FullUserGroupAPIResponse {

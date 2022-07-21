@@ -1,4 +1,4 @@
-import { Component, createMemo, createResource, Match, Switch, on } from "solid-js";
+import { Component, createMemo, createResource, Match, Switch, on, Accessor, Setter } from "solid-js";
 import { Route, Routes, useParams } from "solid-app-router";
 import DomainAsideMenu from "../../components_internal/DomainAsideMenu";
 import AsideMenuLink from "../../components/AsideMenuLink";
@@ -11,8 +11,25 @@ import API from "../../api";
 import PageObstructionScreen from "../../components/PageObstructionScreen";
 import { UserRightWithOptions } from "../../interfaces/userright";
 import { is_resource_ok } from "../../util";
+import { appendUIStateFields } from "../../util/domain_util";
 
-export type FormattedUserRights = Record<string, Record<string, UserRightWithOptions> | undefined>;
+type CategoryName = string;
+type RightName = string;
+type OptionName = string;
+
+export interface FormattedUserRightsRightUIState {
+    is_assigned: boolean;
+    options: Record<string, unknown>;
+}
+
+interface FormattedUserRightsRight {
+    user_right: UserRightWithOptions;
+
+    $ui_state: Accessor<FormattedUserRightsRightUIState>;
+    $ui_setState: Setter<FormattedUserRightsRightUIState>
+}
+
+export type FormattedUserRights = Record<CategoryName, Record<RightName, FormattedUserRightsRight> | undefined>;
 
 const UserGroupManagementDomain: Component = () => {
     const params = useParams();
@@ -45,29 +62,68 @@ const UserGroupManagementDomain: Component = () => {
 
     const resource_ok = createMemo(() => is_resource_ok(groupInfo));
 
+    // TODO @bug? check if we rerun on refetch
     const formattedUserRights = createMemo(on(resource_ok, (ok) => {
         if(!ok) return;
 
         const group_info = groupInfo();
 
-        console.debug("Updating formatted rights object", group_info);
+        console.debug("Updating formatted rights object...");
 
         const new_formatted_rights: FormattedUserRights = {};
 
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        for(const right_name in group_info!.userright.user_rights) {
+        const rights = Object.values(group_info!.userright.user_rights);
+        const rights_num = rights.length;
+
+        for(let i = 0; i < rights_num; i++) {
+            const right = rights[i];
+
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const right = group_info!.userright.user_rights[right_name];
+            const assigned_right_options = group_info!.usergroup.assigned_rights[right.right_name];
 
             if(!Object.prototype.hasOwnProperty.call(new_formatted_rights, right.right_category)) {
                 new_formatted_rights[right.right_category] = {};
             }
 
+            const formatted_right_record: FormattedUserRightsRight = {
+                user_right: right,
+
+                ...appendUIStateFields<FormattedUserRightsRightUIState>({
+                    is_assigned: !!assigned_right_options,
+                    options: assigned_right_options ?? {}
+                })
+            }
+
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            new_formatted_rights[right.right_category]![right.right_name] = right;
+            new_formatted_rights[right.right_category]![right.right_name] = formatted_right_record;
         }
 
         return new_formatted_rights;
+    }));
+
+    // TODO @bug? check if we rerun on refetch
+    const initialUserRights = createMemo(on(resource_ok, (ok) => {
+        if(!ok) return;
+
+        const group_info = groupInfo();
+
+        console.debug("Updating initial rights object...");
+
+        const new_initial_rights: Record<RightName, Record<OptionName, unknown> | undefined> = {};
+
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        for(const right_name in group_info!.usergroup.assigned_rights) {
+            if(!right_name) return;
+
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const assigned_right = group_info!.usergroup.assigned_rights[right_name];
+
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            new_initial_rights[right_name] = assigned_right;
+        }
+
+        return new_initial_rights;
     }));
 
     return (
@@ -86,7 +142,7 @@ const UserGroupManagementDomain: Component = () => {
                     />
                 </Match>
 
-                <Match when={ resource_ok() && formattedUserRights() }>
+                <Match when={ resource_ok() && formattedUserRights() && initialUserRights() }>
                     <DomainAsideMenu
                         domain_id="usergroup"
 
@@ -133,6 +189,8 @@ const UserGroupManagementDomain: Component = () => {
                                 full_usergroup_info={ groupInfo()! }
                                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                                 formatted_user_rights={ formattedUserRights()! }
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                initial_user_rights={ initialUserRights()! }
                             />
                         }></Route>
                         <Route path="/details" element={

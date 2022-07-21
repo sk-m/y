@@ -23,7 +23,7 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
             for(const raw_session of user_preferences.user_sessions) {
                 user_sessions.push({ 
                     ...raw_session,
-                    ...appendUIStateFields<UserSessionUIState , UserPreferences>(undefined, props.setCache)
+                    ...appendUIStateFields<UserSessionUIState>(undefined)
                 });
             }
 
@@ -115,6 +115,7 @@ const UserDomainPreferencesPage: Component<CacheableDomainProps<UserPreferences>
                 
                     <SessionsPanel
                         userPreferences={ userPreferences }
+                        setCache={ props.setCache }
                     />
                 </div>
             </Match>

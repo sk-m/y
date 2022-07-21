@@ -21,6 +21,6 @@ export interface UserSession {
     
     session_is_current?: boolean;
 
-    _ui_state: Accessor<UserSessionUIState>;
-    _ui_setState: (v: UserSessionUIState) => void
+    $ui_state: Accessor<UserSessionUIState>;
+    $ui_setState: (v: UserSessionUIState) => void
 }

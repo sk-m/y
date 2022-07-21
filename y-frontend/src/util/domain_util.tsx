@@ -1,5 +1,5 @@
 import { Accessor, createSignal, ResourceFetcherInfo, createResource } from "solid-js";
-import { Resource, ResourceOptions, ResourceSource } from "solid-js/types/reactive/signal";
+import { Resource, ResourceOptions, ResourceSource, Setter } from "solid-js/types/reactive/signal";
 
 export interface CacheableDomainProps<T> {
     cache: Accessor<DomainCache<T>>,
@@ -143,24 +143,17 @@ data, as it is now also saved to the cache)"
     return [resource, { mutate, refetch }];
 }
 
-// ! TODO @cleanup @refactor This automatic cache reset is not good design... Better clear the cache explicitly
 /**
- * Returns _ui_state signal (accessor) and it's setter _ui_setState
+ * Returns $ui_state signal (accessor) and it's setter $ui_setState
  * 
- * @param defaultState default _ui_state value
- * @param setCache cache signal's setter (if you want to automatically clear cache each time you update _ui_state)
+ * @param defaultState default $ui_state value
  */
-export const appendUIStateFields = <StateT, CacheT>(defaultState: StateT, setCache?: (c: DomainCache<CacheT>) => void):
-    { _ui_state: Accessor<StateT>, _ui_setState: (v: StateT) => void } => {
-    const [_ui_state, ui_setState] = createSignal(defaultState);
+export const appendUIStateFields = <StateT,>(defaultState: StateT):
+    { $ui_state: Accessor<StateT>, $ui_setState: Setter<StateT>} => {
+    const [$ui_state, $ui_setState] = createSignal(defaultState);
 
     return {
-        _ui_state,
-        _ui_setState: setCache
-            ? (p: StateT) => {
-                ui_setState(() => p);
-                setCache([null, undefined]);
-            }
-            : ui_setState as (v: StateT) => void
+        $ui_state,
+        $ui_setState
     };
 }
