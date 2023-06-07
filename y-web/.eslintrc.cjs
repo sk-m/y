@@ -104,6 +104,23 @@ module.exports = {
     "@typescript-eslint/method-signature-style": ["error", "property"],
     "@typescript-eslint/prefer-function-type": "error",
     "@typescript-eslint/no-unnecessary-condition": "error",
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        selector: "default",
+        format: ["camelCase"],
+        leadingUnderscore: "allow",
+        trailingUnderscore: "forbid",
+      },
+      {
+        selector: "variable",
+        format: ["camelCase", "PascalCase", "UPPER_CASE"],
+      },
+      {
+        selector: "typeLike",
+        format: ["PascalCase"],
+      },
+    ],
 
     // Typescript ESLint - warns
     "no-magic-numbers": "off",
