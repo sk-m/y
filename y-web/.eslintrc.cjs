@@ -40,7 +40,7 @@ module.exports = {
     radix: "error",
     "eol-last": "error",
     indent: ["error", 2],
-    semi: ["error", "always"],
+    semi: ["error", "never"],
     "prefer-const": "error",
     "semi-spacing": ["error", { before: false, after: true }],
     "arrow-spacing": ["error", { before: true, after: true }],
@@ -127,4 +127,4 @@ module.exports = {
     "@typescript-eslint/no-magic-numbers": ["warn", { ignore: [1, 0] }],
     "@typescript-eslint/promise-function-async": "warn",
   },
-};
+}
