@@ -3,6 +3,7 @@ module.exports = {
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:unicorn/recommended",
   ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
@@ -55,7 +56,6 @@ module.exports = {
     "no-unneeded-ternary": "error",
     "no-useless-return": "error",
     "no-else-return": "error",
-    "no-lonely-if": "error",
     "no-unused-expressions": "error",
     "prefer-arrow-callback": "error",
     "prefer-rest-params": "error",
@@ -138,5 +138,19 @@ module.exports = {
     "no-magic-numbers": "off",
     "@typescript-eslint/no-magic-numbers": ["warn", { ignore: [1, 0] }],
     "@typescript-eslint/promise-function-async": "warn",
+
+    // eslint-plugin-unicorn
+    "unicorn/catch-error-name": "off",
+    "unicorn/prefer-query-selector": "off",
+    "unicorn/expiring-todo-comments": "off",
+    "unicorn/no-null": "off",
+    "unicorn/no-object-as-default-parameter": "off",
+    "unicorn/no-unused-properties": "warn",
+    "unicorn/filename-case": [
+      "error",
+      {
+        case: "kebabCase",
+      },
+    ],
   },
 }
