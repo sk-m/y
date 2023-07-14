@@ -54,10 +54,22 @@ module.exports = {
     "no-trailing-spaces": "error",
     "no-unneeded-ternary": "error",
     "no-useless-return": "error",
+    "no-else-return": "error",
+    "no-lonely-if": "error",
+    "no-unused-expressions": "error",
+    "prefer-arrow-callback": "error",
+    "prefer-rest-params": "error",
+    "prefer-spread": "error",
+    "sort-imports": ["error", { allowSeparatedGroups: true }],
+    "no-undefined": "error",
+    "no-empty": "error",
+    "no-lone-blocks": "error",
 
     // ESLint - warns
     "no-unmodified-loop-condition": "warn",
     "no-unreachable-loop": "warn",
+    "no-negated-condition": "warn",
+    "prefer-template": "warn",
 
     // Typescript ESLint - errors
     "no-unused-vars": "off",
