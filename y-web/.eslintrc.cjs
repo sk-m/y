@@ -5,13 +5,14 @@ module.exports = {
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:unicorn/recommended",
     "plugin:sonarjs/recommended",
+    "plugin:solid/typescript",
   ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     tsconfigRootDir: __dirname,
     project: ["./tsconfig.json"],
   },
-  plugins: ["@typescript-eslint", "unicorn", "sonarjs"],
+  plugins: ["@typescript-eslint", "unicorn", "sonarjs", "solid"],
   root: true,
   rules: {
     // ESLint - errors
@@ -158,5 +159,8 @@ module.exports = {
     "sonarjs/elseif-without-else": "warn",
     "sonarjs/cognitive-complexity": "warn",
     "sonarjs/no-nested-template-literals": "warn",
+
+    // eslint-plugin-solid
+    "solid/reactivity": "error",
   },
 }
