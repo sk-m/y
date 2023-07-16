@@ -133,6 +133,10 @@ module.exports = {
         selector: "typeLike",
         format: ["PascalCase"],
       },
+      {
+        selector: "objectLiteralProperty",
+        format: null,
+      },
     ],
 
     // Typescript ESLint - warns

@@ -1,6 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@solidjs/router': ^0.8.2
   '@trivago/prettier-plugin-sort-imports': ^4.1.1
   '@typescript-eslint/eslint-plugin': ^5.59.9
   '@typescript-eslint/parser': ^5.59.9
@@ -12,15 +13,16 @@ specifiers:
   less: ^4.1.3
   material-symbols: ^0.10.0
   prettier: ^2.8.8
-  solid-js: ^1.6.10
+  solid-js: ^1.7.8
   source-map-explorer: ^2.5.3
   typescript: ^4.9.5
   vite: ^4.1.1
   vite-plugin-solid: ^2.5.0
 
 dependencies:
+  '@solidjs/router': 0.8.2_solid-js@1.7.8
   material-symbols: 0.10.0
-  solid-js: 1.6.10
+  solid-js: 1.7.8
 
 devDependencies:
   '@trivago/prettier-plugin-sort-imports': 4.1.1_prettier@2.8.8
@@ -36,7 +38,7 @@ devDependencies:
   source-map-explorer: 2.5.3
   typescript: 4.9.5
   vite: 4.1.1_less@4.1.3
-  vite-plugin-solid: 2.5.0_solid-js@1.6.10+vite@4.1.1
+  vite-plugin-solid: 2.5.0_solid-js@1.7.8+vite@4.1.1
 
 packages:
 
@@ -703,6 +705,14 @@ packages:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.15.0
     dev: true
+
+  /@solidjs/router/0.8.2_solid-js@1.7.8:
+    resolution: {integrity: sha512-gUKW+LZqxtX6y/Aw6JKyy4gQ9E7dLqp513oB9pSYJR1HM5c56Pf7eijzyXX+b3WuXig18Cxqah4tMtF0YGu80w==}
+    peerDependencies:
+      solid-js: ^1.5.3
+    dependencies:
+      solid-js: 1.7.8
+    dev: false
 
   /@trivago/prettier-plugin-sort-imports/4.1.1_prettier@2.8.8:
     resolution: {integrity: sha512-dQ2r2uzNr1x6pJsuh/8x0IRA3CBUB+pWEW3J/7N98axqt7SQSm+2fy0FLNXvXGg77xEDC7KHxJlHfLYyi7PDcw==}
@@ -2579,6 +2589,10 @@ packages:
       lru-cache: 6.0.0
     dev: true
 
+  /seroval/0.5.1:
+    resolution: {integrity: sha512-ZfhQVB59hmIauJG5Ydynupy8KHyr5imGNtdDhbZG68Ufh1Ynkv9KOYOAABf71oVbQxJ8VkWnMHAjEHE7fWkH5g==}
+    engines: {node: '>=10'}
+
   /shebang-command/2.0.0:
     resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}
     engines: {node: '>=8'}
@@ -2604,12 +2618,13 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /solid-js/1.6.10:
-    resolution: {integrity: sha512-Sf0e6PQCEFkFtbPq0L+93Ua81YQOefBEbvDJ0YXT92b6Lzw0k7UvzSd2l1BbYM+yzE3UmepU1tyMDc/3nIByjA==}
+  /solid-js/1.7.8:
+    resolution: {integrity: sha512-XHBWk1FvFd0JMKljko7FfhefJMTSgYEuVKcQ2a8hzRXfiuSJAGsrPPafqEo+f6l+e8Oe3cROSpIL6kbzjC1fjQ==}
     dependencies:
       csstype: 3.1.1
+      seroval: 0.5.1
 
-  /solid-refresh/0.4.1_solid-js@1.6.10:
+  /solid-refresh/0.4.1_solid-js@1.7.8:
     resolution: {integrity: sha512-v3tD/OXQcUyXLrWjPW1dXZyeWwP7/+GQNs8YTL09GBq+5FguA6IejJWUvJDrLIA4M0ho9/5zK2e9n+uy+4488g==}
     peerDependencies:
       solid-js: ^1.3
@@ -2617,7 +2632,7 @@ packages:
       '@babel/generator': 7.20.7
       '@babel/helper-module-imports': 7.18.6
       '@babel/types': 7.20.7
-      solid-js: 1.6.10
+      solid-js: 1.7.8
     dev: true
 
   /source-map-explorer/2.5.3:
@@ -2883,7 +2898,7 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: true
 
-  /vite-plugin-solid/2.5.0_solid-js@1.6.10+vite@4.1.1:
+  /vite-plugin-solid/2.5.0_solid-js@1.7.8+vite@4.1.1:
     resolution: {integrity: sha512-VneGd3RyFJvwaiffsqgymeMaofn0IzQLPwDzafTV2f1agoWeeJlk5VrI5WqT9BTtLe69vNNbCJWqLhHr9fOdDw==}
     peerDependencies:
       solid-js: ^1.3.17 || ^1.4.0 || ^1.5.0 || ^1.6.0
@@ -2893,8 +2908,8 @@ packages:
       '@babel/preset-typescript': 7.18.6_@babel+core@7.20.7
       babel-preset-solid: 1.6.6_@babel+core@7.20.7
       merge-anything: 5.1.4
-      solid-js: 1.6.10
-      solid-refresh: 0.4.1_solid-js@1.6.10
+      solid-js: 1.7.8
+      solid-refresh: 0.4.1_solid-js@1.7.8
       vite: 4.1.1_less@4.1.3
       vitefu: 0.2.4_vite@4.1.1
     transitivePeerDependencies:

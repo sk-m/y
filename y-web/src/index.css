@@ -25,4 +25,6 @@ body {
   --text-lg: 16px;
 
   --color-text: hsl(0, 0%, 5%);
+
+  --color-border: #e9e9e9;
 }

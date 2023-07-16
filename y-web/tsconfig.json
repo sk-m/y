@@ -17,7 +17,6 @@
 
     "strict": true,
     "allowSyntheticDefaultImports": true,
-    "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true
   }
 }
