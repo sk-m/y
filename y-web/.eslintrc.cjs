@@ -62,7 +62,6 @@ module.exports = {
     "prefer-arrow-callback": "error",
     "prefer-rest-params": "error",
     "prefer-spread": "error",
-    "sort-imports": ["error", { allowSeparatedGroups: true }],
     "no-undefined": "error",
     "no-empty": "error",
     "no-lone-blocks": "error",
