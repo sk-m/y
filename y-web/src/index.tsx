@@ -1,6 +1,8 @@
 /* @refresh reload */
 import { render } from "solid-js/web"
 
+import "material-symbols"
+
 import App from "./app"
 import "./index.css"
 
