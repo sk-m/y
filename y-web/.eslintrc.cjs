@@ -42,7 +42,6 @@ module.exports = {
     "prefer-promise-reject-errors": "error",
     radix: "error",
     "eol-last": "error",
-    indent: ["error", 2],
     semi: ["error", "never"],
     "prefer-const": "error",
     "semi-spacing": ["error", { before: false, after: true }],
@@ -141,7 +140,7 @@ module.exports = {
 
     // Typescript ESLint - warns
     "no-magic-numbers": "off",
-    "@typescript-eslint/no-magic-numbers": ["warn", { ignore: [1, 0] }],
+    "@typescript-eslint/no-magic-numbers": ["warn", { ignore: [1, 0, -1] }],
     "@typescript-eslint/promise-function-async": "warn",
 
     // eslint-plugin-unicorn
@@ -156,6 +155,10 @@ module.exports = {
       {
         case: "kebabCase",
       },
+    ],
+    "unicorn/prevent-abbreviations": [
+      "error",
+      { ignore: ["^ref$", "Ref.*", "props", "args"] },
     ],
 
     // eslint-plugin-sonarjs
