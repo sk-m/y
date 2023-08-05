@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Component, JSX, Show, createSignal, onMount } from "solid-js"
 
 import {
@@ -7,7 +8,7 @@ import {
 
 import "./input-field.less"
 
-export type InputFieldProps = InputErrorProps & {
+export type InputFieldProps = Partial<InputErrorProps> & {
   ref?: HTMLInputElement | ((inputRef: HTMLInputElement) => unknown)
   type?: string
 
@@ -79,7 +80,7 @@ export const InputField: Component<InputFieldProps> = (props) => {
       </div>
 
       <Show when={props.error && typeof props.error === "string"}>
-        <InputError error={props.error} />
+        <InputError error={props.error!} />
       </Show>
 
       <Show when={props.subtext}>
