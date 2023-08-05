@@ -1,7 +1,7 @@
 import { Component } from "solid-js"
 
-import styles from "./app-aside.module.less"
+import "./app-aside.less"
 
 export const AppAside: Component = () => {
-  return <div id="app-aside" class={styles.appAside} />
+  return <div id="app-aside" />
 }
