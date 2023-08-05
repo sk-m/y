@@ -1,0 +1,134 @@
+.ui-input-field {
+  position: relative;
+
+  &:hover > .container {
+    box-shadow: 0 0 0 1px var(--color-border-3), 0 2px 4px var(--color-border-1);
+  }
+
+  &.focused > .container {
+    box-shadow: 0 0 0 2px var(--color-primary),
+      0px 0px 0 5px var(--color-primary-o-1);
+  }
+
+  &.error > .container {
+    box-shadow: 0 0 0 1px var(--color-error);
+  }
+
+  &.disabled > .container > .input-label,
+  &.disabled > .container {
+    background-color: var(--color-grey-1);
+  }
+
+  &.focused.error > .container {
+    box-shadow: 0 0 0 2px var(--color-error),
+      0px 0px 0 5px var(--color-error-o-1);
+  }
+
+  &.error.focused > .container > .input-label,
+  &.error:hover > .container > .input-label,
+  &.error > .container > .input-label {
+    color: var(--color-error);
+  }
+
+  &:hover > .container > .input-label {
+    color: var(--color-text-grey-05);
+  }
+
+  &.focused > .container > .input-label,
+  &.dirty > .container > .input-label {
+    font-size: var(--text-sm);
+
+    transform: translate(0.5em, -0.75em);
+  }
+
+  &.focused > .container > .input-label {
+    color: var(--color-primary);
+    font-weight: 500;
+  }
+
+  &.monospace > .container > input {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 500;
+  }
+
+  &.no-label > .container > input::placeholder,
+  &.focused > .container > input::placeholder,
+  &.dirty > .container > input::placeholder {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  &.fixed-height > .ui-input-error {
+    position: absolute;
+    z-index: 1;
+  }
+
+  &.focused > .ui-input-error {
+    transform: translateY(2px);
+  }
+
+  > .container {
+    position: relative;
+
+    box-shadow: 0 0 0 1px var(--color-border-2);
+
+    border-radius: 5px;
+
+    transition: 0.15s;
+
+    > .input-label {
+      position: absolute;
+
+      padding: 0 0.3em;
+
+      color: var(--color-text-grey-1);
+      font-size: var(--text-body1);
+
+      transform: translate(0.6em, 0.6em);
+
+      pointer-events: none;
+
+      background-color: white;
+
+      transition: all 0.15s, font-weight 0.05s;
+    }
+
+    > input {
+      box-sizing: border-box;
+      width: 100%;
+
+      padding: 0.6em 0.8em;
+
+      border: 0;
+      background-color: transparent;
+      outline: none;
+
+      color: var(--color-text);
+      font-family: "Inter", sans-serif;
+      font-weight: 420;
+      font-size: var(--text-body1);
+      line-height: 16px;
+    }
+
+    > input[type="password"] {
+      letter-spacing: 0.1em;
+    }
+
+    > input::placeholder {
+      font-family: "Inter", sans-serif;
+      font-weight: 420;
+
+      opacity: 0;
+      transform: translateY(150%);
+
+      transition: 0.15s;
+    }
+  }
+
+  > .input-subtext {
+    margin-top: 0.4em;
+
+    font-size: var(--text-sm);
+    color: var(--color-text-grey-05);
+  }
+}
