@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Show } from "solid-js"
 
-import { Icon } from "@/app/components/icon/icon"
+import { Icon } from "@/app/components/common/icon/icon"
 import { ComponentWithChildren } from "@/module"
 
 import "./button.less"

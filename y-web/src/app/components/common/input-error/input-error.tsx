@@ -1,6 +1,6 @@
 import { Component } from "solid-js"
 
-import { Icon } from "@/app/components/icon/icon"
+import { Icon } from "@/app/components/common/icon/icon"
 
 import "./input-error.less"
 

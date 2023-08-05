@@ -4,7 +4,7 @@ import { Component, JSX, Show, createSignal, onMount } from "solid-js"
 import {
   InputError,
   InputErrorProps,
-} from "@/app/components/input-error/input-error"
+} from "@/app/components/common/input-error/input-error"
 
 import "./input-field.less"
 
