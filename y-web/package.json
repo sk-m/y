@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@solidjs/router": "^0.8.2",
+    "@tanstack/solid-query": "^4.32.6",
     "material-symbols": "^0.10.0",
     "solid-js": "^1.7.8"
   }
