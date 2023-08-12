@@ -1,5 +1,7 @@
 import { get, post } from "@/app/core/request"
 
+import { TMe } from "./auth.codecs"
+
 const apiLogin = "/auth/login"
 const apiMe = "/auth/me"
 
@@ -15,5 +17,5 @@ export const login = async (input: LoginInput) => {
 }
 
 export const getMe = async () => {
-  return get(apiMe)
+  return get(apiMe).then((data) => TMe.parse(data))
 }
