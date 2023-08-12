@@ -11,6 +11,8 @@ use dotenvy::dotenv;
 use std::env;
 use std::process::exit;
 
+use crate::db::run_migrations;
+
 fn process_cli_arguments(connection: &mut diesel::PgConnection) {
     let cli_arguments: Vec<String> = env::args().collect();
 
@@ -52,6 +54,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Could not get a connection from the pool.");
 
     process_cli_arguments(&mut connection);
+    run_migrations(&mut connection);
 
     let server_address =
         env::var("SERVER_ADDRESS").expect("SERVER_ADDRESS env variable must be set");
