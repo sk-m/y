@@ -3,6 +3,7 @@ import { Component } from "solid-js"
 import { InstanceLogo } from "@/app/layout/components/instance-logo"
 
 import "./app-menubar.less"
+import { UserIsland } from "./components/user-island"
 
 export const AppMenubar: Component = () => {
   return (
@@ -15,7 +16,9 @@ export const AppMenubar: Component = () => {
           </div>
         </div>
         <div class="middle" />
-        <div class="right" />
+        <div class="right">
+          <UserIsland />
+        </div>
       </div>
     </div>
   )
