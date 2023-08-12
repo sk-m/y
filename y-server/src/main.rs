@@ -70,9 +70,11 @@ async fn main() -> std::io::Result<()> {
     );
 
     HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(pool.clone()))
-            .service(web::scope("/api/auth").service(crate::api::auth::login::login))
+        App::new().app_data(web::Data::new(pool.clone())).service(
+            web::scope("/api/auth")
+                .service(crate::api::auth::login::login)
+                .service(crate::api::auth::me::me),
+        )
     })
     .bind((server_address, server_port))?
     .run()

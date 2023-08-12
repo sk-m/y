@@ -3,7 +3,9 @@ use chrono::Utc;
 use diesel::prelude::*;
 use uuid::Uuid;
 
+use crate::models::user::User;
 use crate::schema::user_sessions;
+use crate::schema::users;
 
 use crate::models::user_session::NewUserSession;
 use crate::models::user_session::UserSession;
@@ -49,9 +51,7 @@ pub fn create_user_session(
         .get_result::<UserSession>(connection)
 }
 
-pub fn get_user_from_request(req: HttpRequest) -> Option<i32> {
-    use crate::util::RequestPool;
-
+pub fn get_user_from_request(connection: &mut PgConnection, req: HttpRequest) -> Option<User> {
     let session_cookie = req.cookie("y-session");
 
     if let Some(session_cookie) = session_cookie {
@@ -62,29 +62,29 @@ pub fn get_user_from_request(req: HttpRequest) -> Option<i32> {
             let (session_id, session_key) = (Uuid::parse_str(cookie_parts[0]), cookie_parts[1]);
 
             if let Ok(session_id) = session_id {
-                let mut connection = req
-                    .app_data::<RequestPool>()
-                    .expect("Could not get a connection pool from the request.")
-                    .get()
-                    .expect("Could not get a connection from the pool.");
+                let session: Result<Vec<(UserSession, User)>, diesel::result::Error> =
+                    user_sessions::table
+                        .inner_join(users::table)
+                        .filter(user_sessions::session_id.eq(session_id))
+                        .filter(user_sessions::session_key.eq(session_key))
+                        .limit(1)
+                        .select((UserSession::as_select(), User::as_select()))
+                        .load::<(UserSession, User)>(connection);
 
-                let session = user_sessions::table
-                    .filter(user_sessions::session_id.eq(session_id))
-                    .filter(user_sessions::session_key.eq(session_key))
-                    .limit(1)
-                    .select(UserSession::as_select())
-                    .load::<UserSession>(&mut connection);
-
-                if let Ok(session) = session {
-                    if let Some(session) = session.first() {
-                        if let Some(expires_on) = session.expires_on {
-                            if Utc::now().naive_utc() > expires_on {
-                                return None;
-                            }
-                        }
-
-                        return Some(session.user_id);
+                if let Ok(mut session) = session {
+                    if session.len() != 1 {
+                        return None;
                     }
+
+                    let (session, user) = session.remove(0);
+
+                    if let Some(expires_on) = session.expires_on {
+                        if Utc::now().naive_utc() > expires_on {
+                            return None;
+                        }
+                    }
+
+                    return Some(user);
                 }
             }
         }
