@@ -80,7 +80,7 @@ export const InputField: Component<InputFieldProps> = (props) => {
       </div>
 
       <Show when={props.error && typeof props.error === "string"}>
-        <InputError error={props.error!} />
+        <InputError error={props.error} />
       </Show>
 
       <Show when={props.subtext}>

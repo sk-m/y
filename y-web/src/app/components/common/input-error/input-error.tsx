@@ -5,7 +5,7 @@ import { Icon } from "@/app/components/common/icon/icon"
 import "./input-error.less"
 
 export type InputErrorProps = {
-  error: string
+  error?: string
 }
 
 export const InputError: Component<InputErrorProps> = (props) => {
