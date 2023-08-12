@@ -24,11 +24,11 @@
     "prettier": "^2.8.8",
     "source-map-explorer": "^2.5.3",
     "typescript": "^5.1.6",
-    "vite": "^4.1.1",
+    "vite": "^4.4.9",
     "vite-plugin-solid": "^2.5.0"
   },
   "dependencies": {
-    "@solidjs/router": "^0.8.2",
+    "@solidjs/router": "^0.8.3",
     "@tanstack/solid-query": "^4.32.6",
     "material-symbols": "^0.10.0",
     "solid-js": "^1.7.8"
