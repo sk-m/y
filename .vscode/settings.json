@@ -1,3 +1,8 @@
 {
-  "typescript.tsdk": "./y-web/node_modules/typescript/lib"
+  "typescript.tsdk": "./y-web/node_modules/typescript/lib",
+  "rust-analyzer.linkedProjects": [
+    ".\\y-server\\Cargo.toml",
+    ".\\y-server\\Cargo.toml"
+  ],
+  "rust-analyzer.showUnlinkedFileNotification": false
 }
