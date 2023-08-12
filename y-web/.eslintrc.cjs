@@ -64,6 +64,7 @@ module.exports = {
     "no-undefined": "error",
     "no-empty": "error",
     "no-lone-blocks": "error",
+    "no-warning-comments": ["error"],
 
     // ESLint - warns
     "no-unmodified-loop-condition": "warn",
