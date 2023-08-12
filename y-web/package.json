@@ -31,6 +31,7 @@
     "@solidjs/router": "^0.8.3",
     "@tanstack/solid-query": "^4.32.6",
     "material-symbols": "^0.10.0",
-    "solid-js": "^1.7.8"
+    "solid-js": "^1.7.8",
+    "zod": "^3.21.4"
   }
 }

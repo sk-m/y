@@ -9,7 +9,11 @@ import LoginPage from "@/modules/core/pages/login/login"
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      keepPreviousData: true,
+
       retry: false,
+      refetchInterval: false,
+      refetchOnWindowFocus: false,
     },
   },
 })
