@@ -2,6 +2,7 @@ import { ComponentWithChildren } from "@/module"
 
 export type PopupEntryProps = {
   onClick?: (event: MouseEvent) => void
+  size?: "normal" | "large"
 }
 
 export const PopupEntry: ComponentWithChildren<PopupEntryProps> = (props) => {
@@ -9,7 +10,10 @@ export const PopupEntry: ComponentWithChildren<PopupEntryProps> = (props) => {
     <button
       onClick={(event) => props.onClick?.(event)}
       type="button"
-      class="ui-popup-entry"
+      classList={{
+        "ui-popup-entry": true,
+        large: props.size === "large",
+      }}
     >
       {props.children}
     </button>

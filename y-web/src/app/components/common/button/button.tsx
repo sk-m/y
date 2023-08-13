@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Show } from "solid-js"
+import { JSX, Show } from "solid-js"
 
 import { Icon } from "@/app/components/common/icon/icon"
 import { ComponentWithChildren } from "@/module"
@@ -17,6 +17,8 @@ export type ButtonProps = {
   onClick?: (event: MouseEvent) => void
 
   buttonType?: "button" | "submit" | "reset"
+
+  style?: JSX.CSSProperties
 }
 
 export const Button: ComponentWithChildren<ButtonProps> = (props) => {
@@ -29,7 +31,7 @@ export const Button: ComponentWithChildren<ButtonProps> = (props) => {
       }}
     >
       <button
-        style={{ width: props.width ?? "auto" }}
+        style={{ width: props.width ?? "auto", ...props.style }}
         type={props.buttonType ?? "button"}
         onClick={(event) => props.onClick?.(event)}
       >

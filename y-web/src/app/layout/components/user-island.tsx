@@ -40,7 +40,7 @@ export const UserIsland: Component = () => {
             {$auth.data?.username}
           </div>
         </Button>
-        <Popup show={popupShown()}>
+        <Popup position="right" show={popupShown()}>
           <PopupEntry onClick={performLogout}>Log out</PopupEntry>
         </Popup>
       </PopupContainer>
