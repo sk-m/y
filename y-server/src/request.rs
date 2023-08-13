@@ -12,7 +12,7 @@ pub struct Response {
 }
 
 pub fn error(code: &str) -> HttpResponse {
-    HttpResponse::Unauthorized().json(web::Json(Response {
+    HttpResponse::BadRequest().json(web::Json(Response {
         error: Error {
             code: code.to_string(),
         },
