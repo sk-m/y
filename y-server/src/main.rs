@@ -73,7 +73,8 @@ async fn main() -> std::io::Result<()> {
         App::new().app_data(web::Data::new(pool.clone())).service(
             web::scope("/api/auth")
                 .service(crate::api::auth::login::login)
-                .service(crate::api::auth::me::me),
+                .service(crate::api::auth::me::me)
+                .service(crate::api::auth::logout::logout),
         )
     })
     .bind((server_address, server_port))?

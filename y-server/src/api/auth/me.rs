@@ -21,9 +21,9 @@ async fn me(pool: RequestPool, req: HttpRequest) -> impl Responder {
         .unwrap()
         .expect("Could not get a connection from the pool.");
 
-    let user = get_user_from_request(&mut connection, req);
+    let user_session = get_user_from_request(&mut connection, req);
 
-    if let Some(user) = user {
+    if let Some((user, _)) = user_session {
         HttpResponse::Ok().json(web::Json(MeOutput {
             id: user.id,
             username: user.username,

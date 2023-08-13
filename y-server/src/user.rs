@@ -51,7 +51,10 @@ pub fn create_user_session(
         .get_result::<UserSession>(connection)
 }
 
-pub fn get_user_from_request(connection: &mut PgConnection, req: HttpRequest) -> Option<User> {
+pub fn get_user_from_request(
+    connection: &mut PgConnection,
+    req: HttpRequest,
+) -> Option<(User, UserSession)> {
     let session_cookie = req.cookie("y-session");
 
     if let Some(session_cookie) = session_cookie {
@@ -84,11 +87,19 @@ pub fn get_user_from_request(connection: &mut PgConnection, req: HttpRequest) ->
                         }
                     }
 
-                    return Some(user);
+                    return Some((user, session));
                 }
             }
         }
     }
 
     None
+}
+
+pub fn destroy_user_session(connection: &mut PgConnection, session_id: Uuid) -> bool {
+    let result = diesel::delete(user_sessions::table)
+        .filter(user_sessions::session_id.eq(session_id))
+        .execute(connection);
+
+    result.is_ok() && result.unwrap() == 1
 }
