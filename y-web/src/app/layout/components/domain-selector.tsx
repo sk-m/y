@@ -43,7 +43,7 @@ export const DomainSelector: Component = () => {
         <Button
           variant="text"
           onClick={togglePopup}
-          leadingIcon={domainIcon[domain()]}
+          leadingIcon={popupShown() ? "expand_less" : domainIcon[domain()]}
           style={{
             "box-shadow": "0 0 0 1px var(--color-border-15)",
           }}
