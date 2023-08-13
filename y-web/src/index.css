@@ -39,6 +39,7 @@ body {
   --color-grey-2: hsl(0, 0%, 95%);
 
   --color-primary: #1d1de9;
+  --color-primary-d-1: hsl(240, 82%, 45%);
 
   --color-primary-t-1: rgba(29, 29, 233, 0.1);
   --color-primary-o-1: hsl(240deg 84% 95%);
