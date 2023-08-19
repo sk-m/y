@@ -58,12 +58,28 @@ export const DomainSelector: Component = () => {
         </Button>
 
         <Popup show={popupShown()} position="left">
-          <DomainLink onHide={() => setPopupShown(false)} domain="" to="/" />
-          <DomainLink
-            onHide={() => setPopupShown(false)}
-            domain="admin"
-            to="/admin"
-          />
+          <div
+            style={{
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "space-between",
+              gap: "1em",
+
+              margin: "0.33em 0.66em 1em 0.33em",
+              "font-weight": "440",
+            }}
+          >
+            <div>Switch between domains</div>
+          </div>
+
+          <div class="popup-list">
+            <DomainLink onHide={() => setPopupShown(false)} domain="" to="/" />
+            <DomainLink
+              onHide={() => setPopupShown(false)}
+              domain="admin"
+              to="/admin"
+            />
+          </div>
         </Popup>
       </PopupContainer>
     </div>

@@ -12,7 +12,7 @@
     justify-content: space-between;
     gap: 2em;
 
-    padding: 0.66em 1em;
+    padding: 0.33em 0.33em;
 
     color: var(--color-text);
     font-size: var(--text-body2);
@@ -20,9 +20,6 @@
     text-decoration: none;
 
     border-radius: 4px;
-
-    // Default state
-    background-color: var(--color-grey-15);
 
     transition: 0.15s ease-in-out;
 
@@ -42,6 +39,8 @@
 
     &:focus > .link > .ui-icon,
     &:hover > .link > .ui-icon {
+      background-color: var(--color-primary-t-1);
+
       font-variation-settings: "FILL" 1, "wght" 500, "GRAD" 25, "opsz" 22 !important;
     }
 
@@ -54,6 +53,13 @@
       flex-shrink: 0;
 
       > .ui-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0.2em;
+        border-radius: 4px;
+
         transition: 0.15s ease-in-out;
       }
     }

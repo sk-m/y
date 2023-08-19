@@ -41,7 +41,9 @@ export const UserIsland: Component = () => {
           </div>
         </Button>
         <Popup position="right" show={popupShown()}>
-          <PopupEntry onClick={performLogout}>Log out</PopupEntry>
+          <div class="popup-list">
+            <PopupEntry onClick={performLogout}>Log out</PopupEntry>
+          </div>
         </Popup>
       </PopupContainer>
     </Show>
