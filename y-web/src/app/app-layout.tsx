@@ -1,10 +1,9 @@
 import { Component, Show, createEffect } from "solid-js"
 
-import { useNavigate } from "@solidjs/router"
+import { Route, Routes, useNavigate } from "@solidjs/router"
 
-import { AppAside } from "@/app/layout/app-aside"
-import { AppContent } from "@/app/layout/app-content"
 import { AppMenubar } from "@/app/layout/app-menubar"
+import { AdminLayout } from "@/modules/admin/layout/admin-layout"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
 import "./app-layout.less"
@@ -16,8 +15,8 @@ export const AppLayout: Component = () => {
   const $auth = useAuth()
 
   createEffect(() => {
-    if ($auth.isError) {
-      navigate(routes["/login"])
+    if ($auth.isError && !($auth.isFetching || $auth.isRefetching)) {
+      navigate(`${routes["/login"]}?return=${window.location.pathname}`)
     }
   })
 
@@ -26,8 +25,10 @@ export const AppLayout: Component = () => {
       <div id="app-root">
         <AppMenubar />
         <div id="app-main">
-          <AppAside />
-          <AppContent />
+          <Routes>
+            <Route path="/" />
+            <Route path="/admin/*" component={AdminLayout} />
+          </Routes>
         </div>
       </div>
     </Show>
