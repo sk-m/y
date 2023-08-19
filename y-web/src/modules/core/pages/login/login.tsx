@@ -1,7 +1,7 @@
 import { Component, Show, createSignal } from "solid-js"
 
 import { useNavigate } from "@solidjs/router"
-import { createMutation } from "@tanstack/solid-query"
+import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Button } from "@/app/components/common/button/button"
 import { InputError } from "@/app/components/common/input-error/input-error"
@@ -10,11 +10,13 @@ import { ResponseError } from "@/app/core/request"
 import { useForm } from "@/app/core/use-form"
 import { routes } from "@/app/routes"
 import { login } from "@/modules/core/auth/auth.api"
+import { authKey } from "@/modules/core/auth/auth.service"
 
 import "./login.less"
 
 const LoginPage: Component = () => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const $login = createMutation(login)
 
@@ -28,6 +30,18 @@ const LoginPage: Component = () => {
     onSubmit: (values) => {
       $login.mutate(values, {
         onSuccess: () => {
+          void queryClient.invalidateQueries(authKey)
+
+          const urlParameters = new URLSearchParams(window.location.search)
+
+          if (urlParameters.has("return")) {
+            const to = urlParameters.get("return")
+
+            if (to && !to.includes("/login")) {
+              return void navigate(to)
+            }
+          }
+
           navigate(routes["/"])
         },
         onError: (requestError) => {
