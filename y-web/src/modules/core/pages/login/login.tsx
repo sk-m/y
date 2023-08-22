@@ -92,7 +92,7 @@ const LoginPage: Component = () => {
               width="100%"
               disabled={$login.isLoading}
             >
-              Log in
+              {$login.isLoading ? "Log in..." : "Log in"}
             </Button>
           </form>
         </div>
