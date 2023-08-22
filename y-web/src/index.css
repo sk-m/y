@@ -34,6 +34,7 @@ body {
   --color-border-3: hsl(0, 0%, 60%);
   --color-border-4: hsl(0, 0%, 40%);
 
+  --color-grey-05: hsl(0, 0%, 99%);
   --color-grey-1: hsl(0, 0%, 98%);
   --color-grey-15: hsl(0, 0%, 96%);
   --color-grey-2: hsl(0, 0%, 95%);
