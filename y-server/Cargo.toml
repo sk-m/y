@@ -20,3 +20,4 @@ uuid = { version = "1.4.1", features = ["v4"] }
 chrono = "0.4.26"
 rand = "0.8.5"
 diesel_migrations = { version = "2.1.0", features = ["postgres"] }
+serde_with = { version = "3.3.0", features = ["chrono"] }
