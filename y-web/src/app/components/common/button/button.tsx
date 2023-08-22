@@ -39,7 +39,9 @@ export const Button: ComponentWithChildren<ButtonProps> = (props) => {
           <Show when={props.leadingIcon}>
             <Icon size={16} grad={0} name={props.leadingIcon!} />
           </Show>
-          {props.children}
+          <Show when={props.children}>
+            <div>{props.children}</div>
+          </Show>
         </div>
       </button>
     </div>
