@@ -1,0 +1,161 @@
+.ui-expand-button {
+  position: relative;
+
+  > .button {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0.66em 1.33em;
+
+    cursor: pointer;
+
+    color: var(--color-primary-d-1);
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+
+    border: 1px solid white;
+    border-bottom: 0;
+
+    border-radius: 4px;
+
+    transition: 0.15s;
+
+    &.filled {
+      background-color: var(--color-primary-t-1);
+    }
+
+    &.text {
+      background-color: transparent;
+    }
+
+    &.no-label {
+      padding: 0.66em;
+    }
+
+    > .ui-icon {
+      margin-right: 0.5em;
+    }
+
+    > .label {
+      white-space: nowrap;
+    }
+
+    &.no-label > .ui-icon {
+      margin-right: 0;
+    }
+
+    &:hover {
+      background-color: var(--color-primary-t-2);
+    }
+  }
+
+  &.expanded > .button {
+    z-index: 11;
+
+    background-color: white;
+    border: 1px solid var(--color-border-15);
+
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom: 0;
+  }
+
+  > .expand-panel {
+    position: absolute;
+    z-index: 10;
+
+    top: 1;
+    right: 0;
+
+    box-sizing: border-box;
+
+    min-width: 150%;
+
+    padding: 0.33em;
+
+    margin-top: -1px;
+
+    border: 1px solid var(--color-border-15);
+    box-shadow: 0 2px 15px 0 rgba(0, 0, 0, 0.1);
+    background-color: white;
+
+    border-radius: 4px;
+    border-top-right-radius: 0;
+
+    // Hidden state
+    opacity: 0;
+    pointer-events: none;
+
+    transition: 0.15s;
+
+    .ui-expand-button-entries {
+      display: flex;
+      flex-direction: column;
+      gap: 0.33em;
+
+      > .ui-expand-button-entry {
+        display: flex;
+        align-items: center;
+
+        padding: 0.33em 0.66em 0.33em 0.33em;
+
+        cursor: pointer;
+
+        border: 0;
+
+        background-color: white;
+        border-radius: 4px;
+
+        transition: 0.15s;
+
+        > .ui-icon {
+          padding: 0.25em;
+
+          border-radius: 4px;
+
+          margin-right: 0.66em;
+
+          transition: 0.15s;
+        }
+
+        > .label {
+          font-family: "Inter", sans-serif;
+          font-weight: 500;
+
+          white-space: nowrap;
+        }
+
+        &:focus,
+        &:hover {
+          color: var(--color-primary-d-1);
+          background-color: var(--color-primary-t-1);
+          box-shadow: inset 0 0 0 1px var(--color-primary-t-1);
+
+          > .ui-icon {
+            background-color: var(--color-primary-t-1);
+
+            font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 25, "opsz" 16 !important;
+          }
+        }
+
+        &.danger:focus,
+        &.danger:hover {
+          color: var(--color-error);
+          background-color: var(--color-error-o-1);
+          box-shadow: inset 0 0 0 1px var(--color-error-o-2);
+
+          > .ui-icon {
+            background-color: var(--color-error-o-2);
+          }
+        }
+      }
+    }
+  }
+
+  &.expanded > .expand-panel {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
