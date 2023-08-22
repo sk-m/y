@@ -1,0 +1,47 @@
+@keyframes ui-list-page-switcher-loading {
+  0% {
+    opacity: 0.15;
+    box-shadow: 0 0 0 3px var(--color-primary-t-1);
+  }
+
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 5px var(--color-primary-t-1);
+  }
+}
+
+.ui-list-page-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  > * {
+    display: flex;
+    align-items: center;
+
+    gap: 0.5em;
+
+    > .status-circle {
+      width: 5px;
+      height: 5px;
+
+      border-radius: 50%;
+
+      margin: 0 0.5em;
+
+      transition: 0.15s;
+
+      &.idle {
+        background-color: var(--color-success);
+        box-shadow: 0 0 0 2px var(--color-success-t-1);
+      }
+
+      &.loading {
+        background-color: var(--color-primary);
+        box-shadow: 0 0 0 5px var(--color-primary-t-1);
+
+        animation: ui-list-page-switcher-loading 0.33s infinite alternate;
+      }
+    }
+  }
+}
