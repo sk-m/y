@@ -1,5 +1,18 @@
 use actix_web::{web, HttpResponse};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+
+pub const DEFAULT_LIMIT: i64 = 25;
+
+#[derive(Deserialize)]
+pub struct TableInput {
+    pub order_by: Option<String>,
+    pub direction: Option<String>,
+
+    pub limit: Option<i64>,
+    pub skip: Option<i64>,
+
+    pub search: Option<String>,
+}
 
 #[derive(Serialize)]
 pub struct Error {
