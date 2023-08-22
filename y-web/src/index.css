@@ -49,4 +49,7 @@ body {
   --color-error: #e91c1c;
   --color-error-o-1: hsl(0, 82%, 95%);
   --color-error-o-2: hsl(0, 82%, 90%);
+
+  --color-success: #13bf13;
+  --color-success-t-1: rgba(19, 191, 19, 0.1);
 }
