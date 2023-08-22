@@ -12,6 +12,7 @@ use crate::util::RequestPool;
 struct UserOutput {
     id: i32,
     username: String,
+    created_at: String,
 }
 
 #[derive(Serialize)]
@@ -57,6 +58,7 @@ async fn users(pool: RequestPool, query: web::Query<TableInput>) -> impl Respond
             .map(|user| UserOutput {
                 id: user.id,
                 username: user.username.clone(),
+                created_at: user.created_at.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
             })
             .collect::<Vec<UserOutput>>();
 

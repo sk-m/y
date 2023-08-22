@@ -19,6 +19,7 @@ diesel::table! {
         username -> Varchar,
         #[max_length = 512]
         password -> Nullable<Varchar>,
+        created_at -> Timestamp,
     }
 }
 
