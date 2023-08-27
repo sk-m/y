@@ -1,4 +1,4 @@
-import { Component } from "solid-js"
+import { Component, lazy } from "solid-js"
 
 import { Route, Routes } from "@solidjs/router"
 
@@ -7,7 +7,11 @@ import { AppContent } from "@/app/layout/app-content"
 import { AsideEntry } from "@/app/layout/components/aside-entry"
 import { AsideSection } from "@/app/layout/components/aside-section"
 
-export const AdminLayout: Component = () => {
+const UsersListPage = lazy(
+  async () => import("@/modules/admin/pages/users-list")
+)
+
+const AdminLayout: Component = () => {
   return (
     <>
       <AppAside>
@@ -19,9 +23,11 @@ export const AdminLayout: Component = () => {
       </AppAside>
       <AppContent>
         <Routes>
-          <Route path={"/users/list"} />
+          <Route path="/users/list" component={UsersListPage} />
         </Routes>
       </AppContent>
     </>
   )
 }
+
+export default AdminLayout

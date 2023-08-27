@@ -1,13 +1,16 @@
-import { Component, Show, createEffect } from "solid-js"
+import { Component, Show, createEffect, lazy } from "solid-js"
 
 import { Route, Routes, useNavigate } from "@solidjs/router"
 
 import { AppMenubar } from "@/app/layout/app-menubar"
-import { AdminLayout } from "@/modules/admin/layout/admin-layout"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
 import "./app-layout.less"
 import { routes } from "./routes"
+
+const AdminLayout = lazy(
+  async () => import("@/modules/admin/layout/admin-layout")
+)
 
 export const AppLayout: Component = () => {
   const navigate = useNavigate()
