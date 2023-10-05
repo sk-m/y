@@ -31,7 +31,7 @@ export const UserIsland: Component = () => {
   return (
     <Show when={$auth}>
       <PopupContainer>
-        <Button variant="text" onClick={togglePopup}>
+        <Button variant="secondary" leadingIcon="person" onClick={togglePopup}>
           <div
             style={{
               "font-weight": 450,

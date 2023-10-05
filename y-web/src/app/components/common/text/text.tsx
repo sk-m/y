@@ -22,7 +22,8 @@ export const Text: ComponentWithChildren<TextProps> = (props) => {
 
         ...(props.monospace && {
           // eslint-disable-next-line @typescript-eslint/quotes
-          "font-family": '"JetBrains Mono", monospace',
+          "font-family": '"SourceCodePro", monospace',
+          "font-weight": 450,
         }),
 
         ...props.style,

@@ -11,7 +11,7 @@
 
     cursor: pointer;
 
-    color: var(--color-primary-d-1);
+    color: var(--color-primary);
     font-family: "Inter", sans-serif;
     font-weight: 500;
 
@@ -47,6 +47,11 @@
     }
 
     &:hover {
+      background-color: var(--color-primary-t-1);
+    }
+
+    &.filled:hover {
+      color: var(--color-primary-d-1);
       background-color: var(--color-primary-t-2);
     }
   }

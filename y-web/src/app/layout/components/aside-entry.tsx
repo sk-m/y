@@ -26,19 +26,21 @@ export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
         href={props.to}
         classList={{
           "aside-entry": true,
-          selected: isSelected(),
+          selected: isSelected() || isActive(),
           group: subEntries.length > 0,
         }}
       >
         <div class="content">
+          <div class="line" />
           <div class="icon">
-            <Icon size={18} fill={0} type="outlined" name={props.icon} />
+            <Icon size={18} type="rounded" name={props.icon} />
           </div>
           <div class="text">{props.title}</div>
         </div>
         <div class="arrow">
           <Icon
             size={18}
+            wght={500}
             name={props.children ? "expand_more" : "chevron_right"}
           />
         </div>

@@ -2,6 +2,7 @@ import { Component, For, Show, createMemo } from "solid-js"
 
 import { format } from "date-fns"
 
+import { Card } from "@/app/components/common/card/card"
 import { ExpandButton } from "@/app/components/common/expand-button/expand-button"
 import {
   ExpandButtonEntries,
@@ -49,8 +50,14 @@ const UserEntry: Component<UserEntryProps> = (props) => {
           checked={props.selected}
           onChange={() => props.onSelect(props.user.id)}
         />
-        <div>
-          <Text monospace>{props.user.username}</Text>
+        <div
+          style={{
+            display: "flex",
+            "flex-direction": "column",
+            gap: "0.1em",
+          }}
+        >
+          <Text fontWeight={500}>{props.user.username}</Text>
           <Text variant="secondary">
             Joined{" "}
             {format(new Date(props.user.created_at), "dd.MM.yyyy, HH:mm")}
@@ -93,80 +100,108 @@ export const UsersList: Component = () => {
 
   return (
     <Show when={$users.isSuccess}>
-      <List>
-        <ListHead
-          style={{
-            display: "flex",
-            "align-items": "center",
-            gap: "1em",
-          }}
-        >
-          <InputField
-            placeholder="Search users"
-            width="100%"
-            monospace
-            inputProps={{
-              name: "users-search",
-              autocomplete: "off",
-              value: tableState.searchText(),
-              onInput: (event) =>
-                tableState.setSearch(event.currentTarget.value),
-            }}
-          />
-          <Show when={tableState.selectedEntries().size > 0}>
-            <ExpandButton
-              icon="bolt"
-              label={`${tableState.selectedEntries().size} selected`}
-            >
-              <ExpandButtonEntries>
-                <ExpandButtonEntry
-                  onClick={() => tableState.setSelectedEntries(() => new Set())}
-                  icon="unpublished"
-                >
-                  Deselect
-                </ExpandButtonEntry>
-
-                <ExpandButtonEntry variant="danger" icon="delete">
-                  Delete
-                </ExpandButtonEntry>
-              </ExpandButtonEntries>
-            </ExpandButton>
-          </Show>
-        </ListHead>
-
-        <Show when={users().length === 0}>
-          <Note
-            type="secondary"
+      <Card
+        style={{
+          padding: "0",
+        }}
+      >
+        <List>
+          <ListHead
             style={{
-              "border-radius": "0",
+              display: "flex",
+              "flex-direction": "column",
+              gap: "1em",
             }}
           >
-            No users found. Try changing your search query.
-          </Note>
-        </Show>
+            <Text
+              variant="h2"
+              style={{
+                margin: "0",
+              }}
+            >
+              Users
+            </Text>
+            <Text variant="secondary">
+              All registered user accounts. You can search by usernane.
+            </Text>
 
-        <ListEntries>
-          <For each={users()}>
-            {(user) => (
-              <UserEntry
-                selected={tableState.selectedEntries().has(user.id)}
-                onSelect={tableState.onSelect}
-                user={user}
+            <div
+              style={{
+                display: "flex",
+                "align-items": "center",
+                gap: "1em",
+              }}
+            >
+              <InputField
+                placeholder="Search users"
+                width="100%"
+                monospace
+                inputProps={{
+                  name: "users-search",
+                  autocomplete: "off",
+                  value: tableState.searchText(),
+                  onInput: (event) =>
+                    tableState.setSearch(event.currentTarget.value),
+                }}
               />
-            )}
-          </For>
-        </ListEntries>
+              <Show when={tableState.selectedEntries().size > 0}>
+                <ExpandButton
+                  icon="bolt"
+                  label={`${tableState.selectedEntries().size} selected`}
+                >
+                  <ExpandButtonEntries>
+                    <ExpandButtonEntry
+                      onClick={() =>
+                        tableState.setSelectedEntries(() => new Set())
+                      }
+                      icon="unpublished"
+                    >
+                      Deselect
+                    </ExpandButtonEntry>
 
-        <ListFooter>
-          <ListPageSwitcher
-            currentPage={tableState.page()}
-            rowsPerPage={tableState.rowsPerPage()}
-            totalCount={$users.data?.total_count ?? 0}
-            onPageChange={tableState.setPage}
-            query={$users}
-          />
-        </ListFooter>
-      </List>
+                    <ExpandButtonEntry variant="danger" icon="delete">
+                      Delete
+                    </ExpandButtonEntry>
+                  </ExpandButtonEntries>
+                </ExpandButton>
+              </Show>
+            </div>
+          </ListHead>
+
+          <Show when={users().length === 0}>
+            <Note
+              type="secondary"
+              style={{
+                "border-radius": "0",
+              }}
+            >
+              No users found. Try changing your search query.
+            </Note>
+          </Show>
+
+          <ListEntries>
+            <For each={users()}>
+              {(user) => (
+                <UserEntry
+                  selected={tableState.selectedEntries().has(user.id)}
+                  onSelect={tableState.onSelect}
+                  user={user}
+                />
+              )}
+            </For>
+          </ListEntries>
+
+          <ListFooter>
+            <ListPageSwitcher
+              currentPage={tableState.page()}
+              rowsPerPage={tableState.rowsPerPage()}
+              totalCount={$users.data?.total_count ?? 0}
+              onPageChange={tableState.setPage}
+              query={$users}
+            />
+          </ListFooter>
+        </List>
+      </Card>
     </Show>
   )
 }

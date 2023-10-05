@@ -15,15 +15,14 @@ const AdminLayout: Component = () => {
   return (
     <>
       <AppAside>
-        <AsideSection title="Administration">
-          <AsideEntry icon="group" title="Users & Groups" to="users">
-            <AsideEntry icon="person" title="Users" to="users/list" />
-          </AsideEntry>
+        <AsideSection>
+          <AsideEntry icon="group" title="Users" to="users" />
+          <AsideEntry icon="groups" title="Groups" to="groups" />
         </AsideSection>
       </AppAside>
       <AppContent>
         <Routes>
-          <Route path="/users/list" component={UsersListPage} />
+          <Route path="/users" component={UsersListPage} />
         </Routes>
       </AppContent>
     </>

@@ -2,7 +2,22 @@
   font-family: "Inter";
   src: url("/assets/fonts/Inter-VariableFont_slnt\,wght.ttf")
     format("truetype-variations");
-  font-weight: 100 900;
+  font-weight: 1 999;
+}
+
+@font-face {
+  font-family: "SourceCodePro";
+  src: url("/assets/fonts/SourceCodePro-Italic-VariableFont_wght.ttf")
+    format("truetype-variations");
+  font-weight: 1 999;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "SourceCodePro";
+  src: url("/assets/fonts/SourceCodePro-VariableFont_wght.ttf")
+    format("truetype-variations");
+  font-weight: 1 999;
 }
 
 body {
@@ -25,6 +40,7 @@ body {
   --text-lg: 16px;
 
   --color-text: hsl(0, 0%, 5%);
+  --color-text-grey-025: hsl(0, 0%, 12.5%);
   --color-text-grey-05: hsl(0, 0%, 25%);
   --color-text-grey-1: hsl(0, 0%, 50%);
 
@@ -39,18 +55,29 @@ body {
   --color-grey-15: hsl(0, 0%, 96%);
   --color-grey-2: hsl(0, 0%, 95%);
 
-  --color-primary: #1d1de9;
-  --color-primary-d-1: hsl(240, 82%, 45%);
+  --color-primary: #0017e6;
+  --color-primary-l-1: hsl(234, 100%, 50%);
+  --color-primary-d-1: hsl(234, 100%, 33%);
 
-  --color-primary-t-1: rgba(29, 29, 233, 0.1);
-  --color-primary-o-1: hsl(240deg 84% 95%);
+  --color-primary-l-1-t-1: hsla(234, 100%, 50%, 0.1);
+  --color-primary-l-1-t-05: hsla(234, 100%, 50%, 0.05);
+  --color-primary-l-1-t-025: hsla(234, 100%, 50%, 0.025);
 
-  --color-primary-t-2: rgba(29, 29, 233, 0.2);
+  --color-primary-t-025: rgba(0, 23, 230, 0.025);
+  --color-primary-t-05: rgba(0, 23, 230, 0.05);
+  --color-primary-t-1: rgba(0, 23, 230, 0.1);
+  --color-primary-o-1: rgb(230, 232, 253);
 
-  --color-error: #e91c1c;
-  --color-error-o-1: hsl(0, 82%, 95%);
-  --color-error-o-2: hsl(0, 82%, 90%);
+  --color-primary-t-2: rgba(0, 23, 230, 0.2);
 
-  --color-success: #13bf13;
-  --color-success-t-1: rgba(19, 191, 19, 0.1);
+  --color-warning: #faf200;
+  --color-warning-d-1: hsl(36, 80%, 60%);
+  --color-warning-t-1: rgba(250, 242, 0, 0.1);
+
+  --color-error: #fc0015;
+  --color-error-o-1: rgb(255, 230, 232);
+  --color-error-o-2: rgb(254, 204, 208);
+
+  --color-success: #22cc00;
+  --color-success-t-1: rgba(34, 204, 0, 0.1);
 }
