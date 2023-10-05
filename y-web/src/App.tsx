@@ -21,6 +21,7 @@ const queryClient = new QueryClient({
 const App: Component = () => {
   return (
     <QueryClientProvider client={queryClient}>
+      <div id="app-modals-container" />
       <Router>
         <Routes>
           <Route path="/login" component={LoginPage} />
