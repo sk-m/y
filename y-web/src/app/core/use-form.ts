@@ -30,6 +30,7 @@ export type UseFormInput<FieldValues, WatchedFields> = {
   defaultValues?: { [K in keyof FieldValues]: FieldValues[K] }
   watch?: WatchedFields
   onSubmit?: (values: FieldValues) => void
+  disabled?: () => boolean
 }
 
 export type FieldValidateFunction = (
@@ -144,6 +145,7 @@ export const useForm = <
   defaultValues,
   watch,
   onSubmit,
+  disabled,
 }: UseFormInput<FieldValues, WatchedFields> = {}): Form<
   FieldValues,
   WatchedFields
@@ -504,6 +506,7 @@ export const useForm = <
     }
 
     if (!onSubmit) return
+    if (disabled && disabled()) return
 
     const values: Partial<Record<string, unknown>> = {}
     const processedFieldsets: string[] = []

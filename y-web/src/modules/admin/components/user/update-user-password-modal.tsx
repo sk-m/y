@@ -36,6 +36,7 @@ export const AdminUpdateUserPasswordModal: Component<
 
       ...props.defaultValues,
     },
+    disabled: () => $updatePassword.isLoading,
     onSubmit: (values) => {
       if (!props.user) return
 
