@@ -78,7 +78,11 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::auth::me::me)
                     .service(crate::api::auth::logout::logout),
             )
-            .service(web::scope("/api/admin").service(crate::api::admin::users::users))
+            .service(
+                web::scope("/api/admin")
+                    .service(crate::api::admin::users::users)
+                    .service(crate::api::admin::update_password::update_password),
+            )
     })
     .bind((server_address, server_port))?
     .run()
