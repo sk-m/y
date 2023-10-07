@@ -32,6 +32,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+code {
+  font-family: "SourceCodePro", monospace;
+}
+
 :root {
   --text-sm: 12px;
   --text-body: 13px;

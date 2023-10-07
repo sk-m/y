@@ -1,4 +1,4 @@
-import { Component, For, Show, createMemo } from "solid-js"
+import { Component, For, Show, createMemo, createSignal } from "solid-js"
 
 import { format } from "date-fns"
 
@@ -22,10 +22,14 @@ import { useTableState } from "@/app/core/use-table-state"
 import { IUser } from "@/modules/admin/users/users.codecs"
 import { useUsers } from "@/modules/admin/users/users.service"
 
+import { AdminUpdateUserPasswordModal } from "./user/update-user-password-modal"
+
 export type UserEntryProps = {
   user: IUser
   onSelect: (entry: number) => void
   selected: boolean
+
+  onChangePassword: () => void
 }
 
 const UserEntry: Component<UserEntryProps> = (props) => {
@@ -66,10 +70,10 @@ const UserEntry: Component<UserEntryProps> = (props) => {
       </div>
 
       <div class="entry-actions">
-        <ExpandButton icon="build" variant="text">
+        <ExpandButton icon="more_horiz" variant="text">
           <ExpandButtonEntries>
-            <ExpandButtonEntry variant="danger" icon="delete">
-              Delete
+            <ExpandButtonEntry icon="key" onClick={props.onChangePassword}>
+              Update password
             </ExpandButtonEntry>
           </ExpandButtonEntries>
         </ExpandButton>
@@ -79,6 +83,9 @@ const UserEntry: Component<UserEntryProps> = (props) => {
 }
 
 export const UsersList: Component = () => {
+  const [userToUpdatePassword, setUserToUpdatePassword] =
+    createSignal<IUser | null>(null)
+
   const tableState = useTableState<number>({
     defaultRowsPerPage: 25,
   })
@@ -100,6 +107,12 @@ export const UsersList: Component = () => {
 
   return (
     <Show when={$users.isSuccess}>
+      <AdminUpdateUserPasswordModal
+        user={userToUpdatePassword()}
+        open={Boolean(userToUpdatePassword())}
+        onClose={() => setUserToUpdatePassword(null)}
+      />
+
       <Card
         style={{
           padding: "0",
@@ -158,10 +171,6 @@ export const UsersList: Component = () => {
                     >
                       Deselect
                     </ExpandButtonEntry>
-
-                    <ExpandButtonEntry variant="danger" icon="delete">
-                      Delete
-                    </ExpandButtonEntry>
                   </ExpandButtonEntries>
                 </ExpandButton>
               </Show>
@@ -186,6 +195,7 @@ export const UsersList: Component = () => {
                   selected={tableState.selectedEntries().has(user.id)}
                   onSelect={tableState.onSelect}
                   user={user}
+                  onChangePassword={() => setUserToUpdatePassword(user)}
                 />
               )}
             </For>
