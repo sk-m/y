@@ -7,19 +7,13 @@ use crate::{
 };
 
 #[post("/logout")]
-async fn logout(pool: RequestPool, req: HttpRequest) -> impl Responder {
-    let connection = web::block(move || pool.get()).await;
+async fn logout(pool: web::Data<RequestPool>, req: HttpRequest) -> impl Responder {
+    let session_info = get_user_from_request(&pool, req).await;
 
-    let mut connection = connection
-        .unwrap()
-        .expect("Could not get a connection from the pool.");
+    if let Some((_, session)) = session_info {
+        let result = destroy_user_session(&pool, session.session_id).await;
 
-    let user_session = get_user_from_request(&mut connection, req);
-
-    if let Some((_, session)) = user_session {
-        let destroyed = destroy_user_session(&mut connection, session.session_id);
-
-        if destroyed {
+        if result {
             return HttpResponse::Ok()
                 .cookie(
                     Cookie::build("y-session", "")

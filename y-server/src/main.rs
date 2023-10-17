@@ -1,8 +1,6 @@
 mod api;
 mod db;
-mod models;
 mod request;
-mod schema;
 mod user;
 mod util;
 
@@ -10,10 +8,9 @@ use actix_web::{web, App, HttpServer};
 use dotenvy::dotenv;
 use std::env;
 use std::process::exit;
+use util::RequestPool;
 
-use crate::db::run_migrations;
-
-fn process_cli_arguments(connection: &mut diesel::PgConnection) {
+async fn process_cli_arguments(pool: &RequestPool) {
     let cli_arguments: Vec<String> = env::args().collect();
 
     for (index, argument) in cli_arguments.iter().enumerate() {
@@ -24,7 +21,7 @@ fn process_cli_arguments(connection: &mut diesel::PgConnection) {
             if let (Some(username), Some(password)) = (username, password) {
                 println!("Creating an admin user '{}' and exiting...", username);
 
-                let create_admin = util::cli_create_admin(connection, username, password);
+                let create_admin = util::cli_create_admin(pool, username, password).await;
 
                 match create_admin {
                     Ok(_) => {
@@ -48,13 +45,9 @@ fn process_cli_arguments(connection: &mut diesel::PgConnection) {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    let pool = db::connect_to_database();
-    let mut connection = pool
-        .get()
-        .expect("Could not get a connection from the pool.");
+    let pool = db::connect_to_database().await;
 
-    process_cli_arguments(&mut connection);
-    run_migrations(&mut connection);
+    process_cli_arguments(&pool).await;
 
     let server_address =
         env::var("SERVER_ADDRESS").expect("SERVER_ADDRESS env variable must be set");

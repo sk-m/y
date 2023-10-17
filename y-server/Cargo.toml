@@ -2,22 +2,20 @@
 name = "y-server"
 version = "0.0.0"
 edition = "2021"
-authors = ["sk-m"]
+authors = ["sk-m <m@ax.mk>"]
 description = "y API server"
 repository = "https://github.com/sk-m/y"
 publish = false
 
 [dependencies]
 actix-web = "4"
-diesel = { version = "2.1.0", features = ["postgres", "r2d2", "chrono", "uuid"] }
 dotenvy = "0.15"
 pbkdf2 = { version = "0.12", features = ["simple"] }
 rand_core = { version = "0.6", features = ["std"] }
-r2d2 = "0.8.10"
-r2d2_postgres = "0.18.1"
 serde = { version = "1.0.183", features = ["derive"] }
 uuid = { version = "1.4.1", features = ["v4"] }
 chrono = "0.4.26"
 rand = "0.8.5"
-diesel_migrations = { version = "2.1.0", features = ["postgres"] }
 serde_with = { version = "3.3.0", features = ["chrono"] }
+sqlx = { version = "0.7", features = ["runtime-async-std", "postgres", "migrate", "chrono", "uuid", "json"] }
+futures = "0.3.28"

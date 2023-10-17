@@ -1,13 +1,14 @@
 use actix_web::{cookie::Cookie, post, web, HttpResponse, Responder};
-use diesel::prelude::*;
 use pbkdf2::{
     password_hash::{PasswordHash, PasswordVerifier},
     Pbkdf2,
 };
 use serde::Deserialize;
 
-use crate::schema::users;
-use crate::{models::user::User, request::error, user::create_user_session};
+use crate::{
+    request::error,
+    user::{create_user_session, User},
+};
 
 use crate::util::RequestPool;
 
@@ -18,25 +19,15 @@ struct LoginInput {
 }
 
 #[post("/login")]
-async fn login(pool: RequestPool, form: web::Json<LoginInput>) -> impl Responder {
+async fn login(pool: web::Data<RequestPool>, form: web::Json<LoginInput>) -> impl Responder {
     let provided_password = form.password.clone();
 
-    let connection = web::block(move || pool.get()).await;
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE username = $1")
+        .bind(&form.username)
+        .fetch_one(&**pool)
+        .await;
 
-    let mut connection = connection
-        .unwrap()
-        .expect("Could not get a connection from the pool.");
-
-    let users = users::table
-        .filter(users::username.eq(&form.username))
-        .limit(1)
-        .select(User::as_select())
-        .load(&mut connection)
-        .unwrap_or(vec![]) as Vec<User>;
-
-    let user = users.first();
-
-    if let Some(user) = user {
+    if let Ok(user) = user {
         match &user.password {
             Some(password) => {
                 let parsed_password_hash = PasswordHash::new(&password);
@@ -47,7 +38,7 @@ async fn login(pool: RequestPool, form: web::Json<LoginInput>) -> impl Responder
 
                     match passwords_match {
                         Ok(_) => {
-                            let new_session = create_user_session(&mut connection, user.id);
+                            let new_session = create_user_session(&pool, user.id).await;
 
                             if let Ok(new_session) = new_session {
                                 let session_cookie_value = format!(
@@ -68,6 +59,8 @@ async fn login(pool: RequestPool, form: web::Json<LoginInput>) -> impl Responder
                             return error("auth.passwords_do_not_match");
                         }
                     }
+                } else {
+                    return error("auth.other");
                 }
             }
             None => {

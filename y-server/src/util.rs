@@ -1,17 +1,10 @@
-use actix_web::web;
-use diesel::prelude::*;
-use diesel::r2d2::*;
+pub type RequestPool = sqlx::Pool<sqlx::Postgres>;
 
-pub type RequestPool = web::Data<Pool<ConnectionManager<PgConnection>>>;
-
-pub fn cli_create_admin(
-    connection: &mut PgConnection,
+pub async fn cli_create_admin(
+    pool: &RequestPool,
     username: &str,
     password: &str,
 ) -> Result<(), &'static str> {
-    use crate::models::user::NewUser;
-    use crate::schema::users;
-
     use pbkdf2::{
         password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
         Pbkdf2,
@@ -24,14 +17,11 @@ pub fn cli_create_admin(
         Ok(password_hash) => {
             let password_hash = password_hash.to_string();
 
-            let new_user = NewUser {
-                username: username,
-                password: password_hash.as_str(),
-            };
-
-            let result = diesel::insert_into(users::table)
-                .values(&new_user)
-                .execute(connection);
+            let result = sqlx::query("INSERT INTO users (username, password) VALUES ($1, $2)")
+                .bind(username)
+                .bind(password_hash.as_str())
+                .execute(pool)
+                .await;
 
             match result {
                 Ok(_) => Ok(()),

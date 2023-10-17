@@ -1,14 +1,32 @@
 use actix_web::HttpRequest;
+use chrono::NaiveDateTime as Timestamp;
 use chrono::Utc;
-use diesel::prelude::*;
 use uuid::Uuid;
 
-use crate::models::user::User;
-use crate::schema::user_sessions;
-use crate::schema::users;
+use crate::util::RequestPool;
 
-use crate::models::user_session::NewUserSession;
-use crate::models::user_session::UserSession;
+#[derive(sqlx::FromRow)]
+pub struct User {
+    pub id: i32,
+
+    pub username: String,
+    pub password: Option<String>,
+
+    pub created_at: Timestamp,
+}
+
+#[derive(sqlx::FromRow)]
+pub struct UserSession {
+    pub id: i32,
+
+    pub session_id: Uuid,
+    pub session_key: String,
+
+    pub user_id: i32,
+
+    pub created_at: Timestamp,
+    pub expires_on: Option<Timestamp>,
+}
 
 fn generate_session_secrets() -> (Uuid, String) {
     use rand::distributions::Alphanumeric;
@@ -25,10 +43,10 @@ fn generate_session_secrets() -> (Uuid, String) {
     (session_id, session_key)
 }
 
-pub fn create_user_session(
-    connection: &mut PgConnection,
+pub async fn create_user_session(
+    pool: &RequestPool,
     user_id: i32,
-) -> Result<UserSession, diesel::result::Error> {
+) -> Result<UserSession, sqlx::Error> {
     use chrono::prelude::*;
 
     let (session_id, session_key) = generate_session_secrets();
@@ -36,23 +54,34 @@ pub fn create_user_session(
     let created_at = Utc::now();
     let expires_on = created_at + chrono::Duration::days(30);
 
-    let new_session = NewUserSession {
-        session_id,
-        session_key,
-
-        user_id,
-
-        created_at: created_at.naive_utc(),
-        expires_on: Some(expires_on.naive_utc()),
-    };
-
-    diesel::insert_into(user_sessions::table)
-        .values(&new_session)
-        .get_result::<UserSession>(connection)
+    sqlx::query_as::<_, UserSession>(
+        "INSERT INTO user_sessions (session_id, session_key, user_id, created_at, expires_on) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    )
+        .bind(session_id)
+        .bind(session_key)
+        .bind(user_id)
+        .bind(created_at.naive_utc())
+        .bind(expires_on.naive_utc())
+        .fetch_one(pool)
+        .await
 }
 
-pub fn get_user_from_request(
-    connection: &mut PgConnection,
+#[derive(sqlx::FromRow)]
+struct UserWithSession {
+    pub id: i32,
+
+    pub user_id: i32,
+    pub username: String,
+    pub user_created_at: Timestamp,
+
+    pub session_id: Uuid,
+    pub session_key: String,
+    pub session_created_at: Timestamp,
+    pub session_expires_on: Option<Timestamp>,
+}
+
+pub async fn get_user_from_request(
+    pool: &RequestPool,
     req: HttpRequest,
 ) -> Option<(User, UserSession)> {
     let session_cookie = req.cookie("y-session");
@@ -65,29 +94,37 @@ pub fn get_user_from_request(
             let (session_id, session_key) = (Uuid::parse_str(cookie_parts[0]), cookie_parts[1]);
 
             if let Ok(session_id) = session_id {
-                let session: Result<Vec<(UserSession, User)>, diesel::result::Error> =
-                    user_sessions::table
-                        .inner_join(users::table)
-                        .filter(user_sessions::session_id.eq(session_id))
-                        .filter(user_sessions::session_key.eq(session_key))
-                        .limit(1)
-                        .select((UserSession::as_select(), User::as_select()))
-                        .load::<(UserSession, User)>(connection);
+                let user_with_session = sqlx::query_as::<_, UserWithSession>(
+                    "SELECT user_sessions.id, user_sessions.session_id, user_sessions.session_key, user_sessions.user_id, user_sessions.created_at as session_created_at, user_sessions.expires_on as session_expires_on, users.username, users.created_at as user_created_at FROM user_sessions INNER JOIN users ON user_sessions.user_id = users.id WHERE user_sessions.session_id = $1 AND user_sessions.session_key = $2"
+                )
+                .bind(session_id)
+                .bind(session_key)
+                .fetch_one(pool)
+                .await;
 
-                if let Ok(mut session) = session {
-                    if session.len() != 1 {
-                        return None;
-                    }
-
-                    let (session, user) = session.remove(0);
-
-                    if let Some(expires_on) = session.expires_on {
+                if let Ok(user_with_session) = user_with_session {
+                    if let Some(expires_on) = user_with_session.session_expires_on {
                         if Utc::now().naive_utc() > expires_on {
                             return None;
                         }
                     }
 
-                    return Some((user, session));
+                    return Some((
+                        User {
+                            created_at: user_with_session.user_created_at,
+                            id: user_with_session.user_id,
+                            password: None,
+                            username: user_with_session.username,
+                        },
+                        UserSession {
+                            id: user_with_session.id,
+                            created_at: user_with_session.session_created_at,
+                            expires_on: user_with_session.session_expires_on,
+                            session_id: user_with_session.session_id,
+                            session_key: user_with_session.session_key,
+                            user_id: user_with_session.user_id,
+                        },
+                    ));
                 }
             }
         }
@@ -96,10 +133,11 @@ pub fn get_user_from_request(
     None
 }
 
-pub fn destroy_user_session(connection: &mut PgConnection, session_id: Uuid) -> bool {
-    let result = diesel::delete(user_sessions::table)
-        .filter(user_sessions::session_id.eq(session_id))
-        .execute(connection);
+pub async fn destroy_user_session(pool: &RequestPool, session_id: Uuid) -> bool {
+    let result = sqlx::query("DELETE FROM user_sessions WHERE session_id = $1")
+        .bind(session_id)
+        .execute(pool)
+        .await;
 
-    result.is_ok() && result.unwrap() == 1
+    result.is_ok() && result.unwrap().rows_affected() == 1
 }

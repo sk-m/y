@@ -1,11 +1,10 @@
 use actix_web::{get, web, HttpResponse, Responder};
-use diesel::prelude::*;
 use serde::Serialize;
 
-use crate::models::user::User;
 use crate::request::{error, TableInput, DEFAULT_LIMIT};
-use crate::schema;
+use futures::join;
 
+use crate::user::User;
 use crate::util::RequestPool;
 
 #[derive(Serialize)]
@@ -22,51 +21,49 @@ struct UsersOutput {
 }
 
 #[get("/users")]
-async fn users(pool: RequestPool, query: web::Query<TableInput>) -> impl Responder {
-    let connection = web::block(move || pool.get()).await;
+async fn users(pool: web::Data<RequestPool>, query: web::Query<TableInput>) -> impl Responder {
+    let search = query.search.clone().unwrap_or("".to_string());
 
-    let mut connection = connection
-        .unwrap()
-        .expect("Could not get a connection from the pool.");
+    let order_by = match query.order_by.as_ref() {
+        Some(order_by) => match order_by.as_str() {
+            "username" => "username",
+            _ => "created_at",
+        },
+        None => "created_at",
+    };
 
-    let mut users_query = schema::users::table.into_boxed();
-    let mut count_query = schema::users::table.into_boxed();
+    let users = sqlx::query_as::<_, User>(
+        "SELECT * FROM users WHERE username LIKE '%' || $1 || '%' ORDER BY $2 LIMIT $3 OFFSET $4",
+    )
+    .bind(search)
+    .bind(order_by)
+    .bind(query.limit.unwrap_or(DEFAULT_LIMIT))
+    .bind(query.skip.unwrap_or(0))
+    .fetch_all(&**pool);
 
-    if let Some(search) = query.search.as_ref() {
-        users_query = users_query.filter(schema::users::username.like(format!("%{}%", search)));
-        count_query = count_query.filter(schema::users::username.like(format!("%{}%", search)));
-    }
+    let users_count = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM users").fetch_one(&**pool);
 
-    if let Some(order_by) = query.order_by.as_ref() {
-        users_query = match order_by.as_str() {
-            "username" => users_query.order(schema::users::username),
-            _ => users_query.order(schema::users::username),
-        };
-    }
+    let (users, users_count) = join!(users, users_count);
 
-    let users = users_query
-        .limit(query.limit.unwrap_or(DEFAULT_LIMIT))
-        .offset(query.skip.unwrap_or(0))
-        .select(User::as_select())
-        .load::<User>(&mut connection);
+    match users {
+        Ok(users) => {
+            let users_json = users
+                .iter()
+                .map(|user| UserOutput {
+                    id: user.id,
+                    username: user.username.clone(),
+                    created_at: user.created_at.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+                })
+                .collect::<Vec<UserOutput>>();
 
-    let users_count = count_query.count().get_result::<i64>(&mut connection);
-
-    if let Ok(users) = users {
-        let users_json = users
-            .iter()
-            .map(|user| UserOutput {
-                id: user.id,
-                username: user.username.clone(),
-                created_at: user.created_at.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
-            })
-            .collect::<Vec<UserOutput>>();
-
-        HttpResponse::Ok().json(web::Json(UsersOutput {
-            users: users_json,
-            total_count: users_count.unwrap_or(0),
-        }))
-    } else {
-        error("users.internal")
+            return HttpResponse::Ok().json(web::Json(UsersOutput {
+                users: users_json,
+                total_count: users_count.unwrap_or(0),
+            }));
+        }
+        Err(err) => {
+            dbg!(err);
+            return error("users.internal");
+        }
     }
 }
