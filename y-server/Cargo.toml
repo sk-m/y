@@ -19,3 +19,4 @@ rand = "0.8.5"
 serde_with = { version = "3.3.0", features = ["chrono"] }
 sqlx = { version = "0.7", features = ["runtime-async-std", "postgres", "migrate", "chrono", "uuid", "json"] }
 futures = "0.3.28"
+serde_json = "1.0.107"

@@ -159,7 +159,7 @@ module.exports = {
     ],
     "unicorn/prevent-abbreviations": [
       "error",
-      { ignore: ["^ref$", "Ref.*", "Props", "props", "args"] },
+      { ignore: ["^ref$", "Ref.*", "Props", "props", "args", "params"] },
     ],
 
     // eslint-plugin-sonarjs

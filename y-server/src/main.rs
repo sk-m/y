@@ -1,7 +1,9 @@
 mod api;
 mod db;
 mod request;
+mod right;
 mod user;
+mod user_group;
 mod util;
 
 use actix_web::{web, App, HttpServer};
@@ -74,8 +76,13 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api/admin")
                     .service(crate::api::admin::users::users)
-                    .service(crate::api::admin::update_password::update_password),
+                    .service(crate::api::admin::update_password::update_password)
+                    .service(crate::api::admin::user_groups::user_groups)
+                    .service(crate::api::admin::user_group::user_group)
+                    .service(crate::api::admin::update_user_group::update_user_group)
+                    .service(crate::api::admin::create_user_group::create_user_group),
             )
+            .service(web::scope("/api").service(crate::api::user_rights::user_rights))
     })
     .bind((server_address, server_port))?
     .run()
