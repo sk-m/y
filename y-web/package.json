@@ -28,6 +28,7 @@
     "vite-plugin-solid": "^2.5.0"
   },
   "dependencies": {
+    "@solid-primitives/i18n": "^2.0.0",
     "@solidjs/router": "^0.8.3",
     "@tanstack/solid-query": "^4.32.6",
     "date-fns": "^2.30.0",
