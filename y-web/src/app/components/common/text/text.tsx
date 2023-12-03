@@ -7,8 +7,11 @@ import "./text.less"
 export type TextProps = {
   variant?: "h1" | "h2" | "h3" | "body" | "body2" | "secondary"
   fontWeight?: JSX.CSSProperties["font-weight"]
+  fontSize?: JSX.CSSProperties["font-size"]
   textAlign?: JSX.CSSProperties["text-align"]
+  color?: JSX.CSSProperties["color"]
   monospace?: boolean
+  container?: "text" | "pill"
 
   style?: JSX.CSSProperties
 }
@@ -19,6 +22,14 @@ export const Text: ComponentWithChildren<TextProps> = (props) => {
       style: {
         "font-weight": props.fontWeight,
         "text-align": props.textAlign,
+
+        ...(props.color && {
+          color: props.color,
+        }),
+
+        ...(props.fontSize && {
+          "font-size": props.fontSize,
+        }),
 
         ...(props.monospace && {
           // eslint-disable-next-line @typescript-eslint/quotes
@@ -31,36 +42,53 @@ export const Text: ComponentWithChildren<TextProps> = (props) => {
     }
   })
 
+  const classList = createMemo(() => ({
+    "ui-text": true,
+    pill: props.container === "pill",
+  }))
+
   return (
     <Switch
       fallback={
-        <div class="ui-text" {...componentProps()}>
+        <div classList={classList()} {...componentProps()}>
           {props.children}
         </div>
       }
     >
       <Match when={props.variant === "h1"}>
-        <h1 class="ui-text" {...componentProps()}>
+        <h1 classList={classList()} {...componentProps()}>
           {props.children}
         </h1>
       </Match>
       <Match when={props.variant === "h2"}>
-        <h2 class="ui-text" {...componentProps()}>
+        <h2 classList={classList()} {...componentProps()}>
           {props.children}
         </h2>
       </Match>
       <Match when={props.variant === "h3"}>
-        <h3 class="ui-text" {...componentProps()}>
+        <h3 classList={classList()} {...componentProps()}>
           {props.children}
         </h3>
       </Match>
       <Match when={props.variant === "body2"}>
-        <div class="ui-text body2" {...componentProps()}>
+        <div
+          classList={{
+            ...classList(),
+            body2: true,
+          }}
+          {...componentProps()}
+        >
           {props.children}
         </div>
       </Match>
       <Match when={props.variant === "secondary"}>
-        <div class="ui-text secondary" {...componentProps()}>
+        <div
+          classList={{
+            ...classList(),
+            secondary: true,
+          }}
+          {...componentProps()}
+        >
           {props.children}
         </div>
       </Match>

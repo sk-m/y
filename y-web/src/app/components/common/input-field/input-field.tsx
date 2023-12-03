@@ -11,6 +11,8 @@ import "./input-field.less"
 export type InputFieldProps = Partial<InputErrorProps> & {
   ref?: HTMLInputElement | ((inputRef: HTMLInputElement) => unknown)
   type?: string
+  name?: string
+  maxLength?: number
 
   disabled?: boolean
 
@@ -71,11 +73,13 @@ export const InputField: Component<InputFieldProps> = (props) => {
               props.ref = inputRef
             }
           }}
+          name={props.name}
           type={props.type ?? "text"}
           disabled={props.disabled}
           placeholder={props.placeholder}
           onFocus={[setIsFocused, true]}
           onBlur={[setIsFocused, false]}
+          maxLength={props.maxLength}
         />
       </div>
 
