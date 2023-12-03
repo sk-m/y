@@ -176,7 +176,11 @@ export const useForm = <
           defaultValues && findDefaultValue(defaultValues, name.split("."))
 
         if (defaultValue) {
-          ref.value = defaultValue as string
+          if (ref.type === "checkbox") {
+            ref.checked = defaultValue as boolean
+          } else {
+            ref.value = defaultValue as string
+          }
         }
 
         const controller = createSignal(defaultValue)
@@ -518,7 +522,9 @@ export const useForm = <
       if (!isFieldsetField) {
         const value = field.controlled
           ? field.controller?.[0]()
-          : field.inputRef?.value ?? null
+          : (field.inputRef?.type === "checkbox"
+              ? field.inputRef.checked
+              : field.inputRef?.value) ?? null
 
         const validateResult = validateFieldValue(field)
 
@@ -560,12 +566,18 @@ export const useForm = <
     )
 
     if (field?.inputRef) {
-      field.inputRef.value =
+      const rawValue =
         typeof value === "function"
-          ? ((value as (currentValue: FieldValue) => FieldValue)(
+          ? (value as (currentValue: FieldValue) => FieldValue)(
               field.inputRef.value as FieldValue
-            ) as string)
-          : (value as string)
+            )
+          : value
+
+      if (field.inputRef.type === "checkbox") {
+        field.inputRef.checked = rawValue
+      } else {
+        field.inputRef.value = rawValue
+      }
 
       field.inputRef.dispatchEvent(new Event("input"))
     }
