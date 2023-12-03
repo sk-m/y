@@ -1,0 +1,56 @@
+.ui-list-entry-link {
+  position: relative;
+
+  > a {
+    color: var(--color-text);
+    text-decoration: none;
+
+    > .content {
+      cursor: pointer;
+
+      padding: 0.25em 0.75em;
+
+      border-radius: 4px;
+
+      // Hidden state
+      background-color: transparent;
+
+      transition: 0.15s ease-in-out;
+    }
+  }
+
+  &:hover > a > .content {
+    background-color: var(--color-grey-15);
+  }
+
+  > .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    height: 100%;
+
+    padding: 0.33em;
+
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    margin-left: 0.5em;
+
+    border-radius: 4px;
+    background-color: var(--color-grey-15);
+
+    // Hidden state
+    opacity: 0;
+    transform: translateY(-50%) translateX(-10%);
+
+    transition: 0.15s ease-out;
+  }
+
+  &:hover > .arrow {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
