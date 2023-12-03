@@ -1,6 +1,6 @@
 import { Tail } from "@/app/core/utils"
 
-type RequestMethod = "GET" | "POST" | "PUT" | "DELETE"
+type RequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
 export type RequestData = {
   query?: URLSearchParams
@@ -50,9 +50,10 @@ const createRequest =
   async (...args: RequestParameters) =>
     request(method, ...args)
 
-export const { get, post, put, del } = {
+export const { get, post, put, patch, del } = {
   get: createRequest("GET"),
   post: createRequest("POST"),
   put: createRequest("PUT"),
+  patch: createRequest("PATCH"),
   del: createRequest("DELETE"),
 }
