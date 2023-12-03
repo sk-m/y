@@ -36,6 +36,13 @@ code {
   font-family: "SourceCodePro", monospace;
 }
 
+hr {
+  margin: 0;
+  border: 0;
+  height: 1px;
+  background: var(--color-border-15);
+}
+
 :root {
   --text-sm: 12px;
   --text-body: 13px;
@@ -46,6 +53,7 @@ code {
   --color-text: hsl(0, 0%, 5%);
   --color-text-grey-025: hsl(0, 0%, 12.5%);
   --color-text-grey-05: hsl(0, 0%, 25%);
+  --color-text-grey-075: hsl(0, 0%, 33%);
   --color-text-grey-1: hsl(0, 0%, 50%);
 
   --color-border-1: hsl(0, 0%, 95%);
@@ -72,6 +80,7 @@ code {
   --color-primary-t-1: rgba(0, 23, 230, 0.1);
   --color-primary-o-1: rgb(230, 232, 253);
 
+  --color-primary-t-15: rgba(0, 23, 230, 0.15);
   --color-primary-t-2: rgba(0, 23, 230, 0.2);
 
   --color-warning: #faf200;
