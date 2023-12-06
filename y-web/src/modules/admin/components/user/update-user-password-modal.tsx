@@ -63,38 +63,40 @@ export const AdminUpdateUserPasswordModal: Component<
       style={{
         "max-width": "450px",
       }}
-    >
-      <Stack spacing={"1.5em"}>
-        <Text
-          variant="h2"
-          style={{
-            margin: 0,
-          }}
-        >
-          Update password
-        </Text>
-
-        <Text>
+      header={
+        <Stack spacing={"1.5em"} direction="row" alignItems="center">
           <div
             style={{
-              display: "inline-flex",
+              display: "flex",
               "align-items": "center",
-              gap: "0.33em",
+              "justify-content": "center",
+
+              padding: "1em",
+
+              "background-color": "var(--color-border-15)",
+              "border-radius": "15px",
             }}
           >
-            <span>Setting a new password for</span>
-            <Icon name="person" size={16} type="rounded" />
-            <code
-              style={{
-                "font-weight": "500",
-              }}
-            >
-              {props.user?.username}
-            </code>
+            <Icon grad={25} wght={500} size={24} name="key" />
           </div>
-          .
-        </Text>
-
+          <Stack spacing="0.5em">
+            <Text
+              variant="h2"
+              style={{
+                margin: 0,
+              }}
+              color="var(--color-text-grey-025)"
+            >
+              Update password
+            </Text>
+            <Text variant="secondary" fontWeight={500}>
+              {props.user?.username}
+            </Text>
+          </Stack>
+        </Stack>
+      }
+    >
+      <Stack spacing={"1.5em"}>
         <Text>
           New password will not be sent to the user, don't forget to write it
           down.

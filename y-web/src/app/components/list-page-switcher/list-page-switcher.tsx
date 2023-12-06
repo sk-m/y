@@ -4,7 +4,6 @@ import { Component, Setter, Show } from "solid-js"
 import { CreateQueryResult } from "@tanstack/solid-query"
 
 import { Button } from "../common/button/button"
-import { Text } from "../common/text/text"
 import "./list-page-switcher.less"
 
 export type ListPageSwitcherProps = {
@@ -13,6 +12,7 @@ export type ListPageSwitcherProps = {
   currentPage: number
   onPageChange: Setter<number>
 
+  currentCount?: number
   query?: CreateQueryResult
 }
 
@@ -37,26 +37,38 @@ export const ListPageSwitcher: Component<ListPageSwitcherProps> = (props) => {
   return (
     <div class="ui-list-page-switcher">
       <div class="status">
-        <Show when={props.query}>
+        <Show
+          when={
+            props.query &&
+            (props.query.isLoading ||
+              props.query.isFetching ||
+              props.query.isRefetching)
+          }
+        >
           <div
             classList={{
-              "status-circle": true,
-              idle: props.query!.isFetched || props.query!.isSuccess,
-              loading:
-                props.query!.isLoading ||
-                props.query!.isFetching ||
-                props.query!.isRefetching,
+              "status-text": true,
+              loading: true,
             }}
-          />
+          >
+            updating...
+          </div>
         </Show>
 
-        <Text>
-          Page {props.currentPage + 1} of {totalPages()} ({props.totalCount}{" "}
-          entries total)
-        </Text>
+        <Show
+          when={props.currentCount && props.currentCount !== props.totalCount}
+        >
+          <div class="info-text">{props.currentCount} entries found</div>
+        </Show>
+
+        <div class="info-text">{props.totalCount} entries total</div>
       </div>
 
       <div>
+        <div class="info-text">
+          Page {props.currentPage + 1} of {totalPages()}
+        </div>
+
         <Button
           style={{
             padding: "0.1em 0.2em",

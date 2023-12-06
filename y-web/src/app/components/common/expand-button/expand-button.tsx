@@ -10,6 +10,7 @@ export type ExpandButtonProps = {
   label?: JSXElement
   icon?: string
   variant?: "filled" | "text"
+  position?: "left" | "right"
 }
 
 export const ExpandButton: ComponentWithChildren<ExpandButtonProps> = (
@@ -47,7 +48,11 @@ export const ExpandButton: ComponentWithChildren<ExpandButtonProps> = (
           <div class="label">{props.label}</div>
         </Show>
       </button>
-      <div class="expand-panel">{props.children}</div>
+      <div
+        classList={{ "expand-panel": true, [props.position ?? "left"]: true }}
+      >
+        {props.children}
+      </div>
     </div>
   )
 }

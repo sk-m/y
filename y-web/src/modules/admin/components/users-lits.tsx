@@ -2,7 +2,6 @@ import { Component, For, Show, createMemo, createSignal } from "solid-js"
 
 import { format } from "date-fns"
 
-import { Card } from "@/app/components/common/card/card"
 import { ExpandButton } from "@/app/components/common/expand-button/expand-button"
 import {
   ExpandButtonEntries,
@@ -40,6 +39,7 @@ const UserEntry: Component<UserEntryProps> = (props) => {
         "justify-content": "space-between",
         "align-items": "center",
       }}
+      classList={{ selected: props.selected }}
     >
       <div
         style={{
@@ -59,12 +59,12 @@ const UserEntry: Component<UserEntryProps> = (props) => {
             display: "flex",
             "flex-direction": "column",
             gap: "0.1em",
+            padding: "0.1em 0",
           }}
         >
           <Text fontWeight={500}>{props.user.username}</Text>
-          <Text variant="secondary">
-            Joined{" "}
-            {format(new Date(props.user.created_at), "dd.MM.yyyy, HH:mm")}
+          <Text variant="secondary" fontSize={"var(--text-sm)"}>
+            Joined {format(new Date(props.user.created_at), "dd.MM.yyyy")}
           </Text>
         </div>
       </div>
@@ -105,6 +105,8 @@ export const UsersList: Component = () => {
 
   const users = createMemo(() => $users.data?.users ?? [])
 
+  const noneSelected = createMemo(() => tableState.selectedEntries().size === 0)
+
   return (
     <Show when={$users.isSuccess}>
       <AdminUpdateUserPasswordModal
@@ -113,105 +115,107 @@ export const UsersList: Component = () => {
         onClose={() => setUserToUpdatePassword(null)}
       />
 
-      <Card
-        style={{
-          padding: "0",
-        }}
-      >
-        <List>
-          <ListHead
+      <List>
+        <ListHead
+          style={{
+            display: "flex",
+            "flex-direction": "column",
+            gap: "1em",
+          }}
+        >
+          <div
             style={{
               display: "flex",
-              "flex-direction": "column",
+              "align-items": "center",
               gap: "1em",
             }}
           >
-            <Text
-              variant="h2"
-              style={{
-                margin: "0",
-              }}
+            <ExpandButton
+              icon={noneSelected() ? "select" : "select_all"}
+              position="right"
+              label={
+                noneSelected()
+                  ? null
+                  : `${tableState.selectedEntries().size} groups`
+              }
             >
-              Users
-            </Text>
-            <Text variant="secondary">
-              All registered user accounts. You can search by usernane.
-            </Text>
-
-            <div
-              style={{
-                display: "flex",
-                "align-items": "center",
-                gap: "1em",
-              }}
-            >
-              <InputField
-                placeholder="Search users"
-                width="100%"
-                monospace
-                inputProps={{
-                  name: "users-search",
-                  autocomplete: "off",
-                  value: tableState.searchText(),
-                  onInput: (event) =>
-                    tableState.setSearch(event.currentTarget.value),
-                }}
-              />
-              <Show when={tableState.selectedEntries().size > 0}>
-                <ExpandButton
-                  icon="bolt"
-                  label={`${tableState.selectedEntries().size} selected`}
-                >
-                  <ExpandButtonEntries>
+              <ExpandButtonEntries>
+                <Show
+                  when={!noneSelected()}
+                  fallback={
                     <ExpandButtonEntry
                       onClick={() =>
-                        tableState.setSelectedEntries(() => new Set())
+                        tableState.setSelectedEntries(
+                          // eslint-disable-next-line solid/reactivity
+                          () => new Set(users().map((group) => group.id))
+                        )
                       }
-                      icon="unpublished"
+                      icon="select_all"
                     >
-                      Deselect
+                      Select all
                     </ExpandButtonEntry>
-                  </ExpandButtonEntries>
-                </ExpandButton>
-              </Show>
-            </div>
-          </ListHead>
-
-          <Show when={users().length === 0}>
-            <Note
-              type="secondary"
-              style={{
-                "border-radius": "0",
+                  }
+                >
+                  <ExpandButtonEntry
+                    onClick={() =>
+                      tableState.setSelectedEntries(() => new Set())
+                    }
+                    icon="select"
+                  >
+                    Deselect
+                  </ExpandButtonEntry>
+                  <hr />
+                  <ExpandButtonEntry icon="delete" variant="danger">
+                    Delete
+                  </ExpandButtonEntry>
+                </Show>
+              </ExpandButtonEntries>
+            </ExpandButton>
+            <InputField
+              placeholder="Search users"
+              width="100%"
+              monospace
+              inputProps={{
+                name: "users-search",
+                autocomplete: "off",
+                value: tableState.searchText(),
+                onInput: (event) =>
+                  tableState.setSearch(event.currentTarget.value),
               }}
-            >
-              No users found. Try changing your search query.
-            </Note>
-          </Show>
-
-          <ListEntries>
-            <For each={users()}>
-              {(user) => (
-                <UserEntry
-                  selected={tableState.selectedEntries().has(user.id)}
-                  onSelect={tableState.onSelect}
-                  user={user}
-                  onChangePassword={() => setUserToUpdatePassword(user)}
-                />
-              )}
-            </For>
-          </ListEntries>
-
-          <ListFooter>
-            <ListPageSwitcher
-              currentPage={tableState.page()}
-              rowsPerPage={tableState.rowsPerPage()}
-              totalCount={$users.data?.total_count ?? 0}
-              onPageChange={tableState.setPage}
-              query={$users}
             />
-          </ListFooter>
-        </List>
-      </Card>
+          </div>
+        </ListHead>
+
+        <Show when={users().length === 0}>
+          <Note type="secondary">
+            No users found. Try changing your search query.
+          </Note>
+        </Show>
+
+        <ListEntries>
+          <For each={users()}>
+            {(user) => (
+              <UserEntry
+                selected={tableState.selectedEntries().has(user.id)}
+                onSelect={tableState.onSelect}
+                user={user}
+                onChangePassword={() => setUserToUpdatePassword(user)}
+              />
+            )}
+          </For>
+        </ListEntries>
+
+        <ListFooter>
+          <ListPageSwitcher
+            currentPage={tableState.page()}
+            rowsPerPage={tableState.rowsPerPage()}
+            totalCount={$users.data?.total_count ?? 0}
+            currentCount={$users.data?.users.length ?? 0}
+            onPageChange={tableState.setPage}
+            query={$users}
+          />
+        </ListFooter>
+      </List>
     </Show>
   )
 }

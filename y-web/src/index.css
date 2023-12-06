@@ -51,14 +51,17 @@ hr {
   --text-lg: 16px;
 
   --color-text: hsl(0, 0%, 5%);
-  --color-text-grey-025: hsl(0, 0%, 12.5%);
-  --color-text-grey-05: hsl(0, 0%, 25%);
-  --color-text-grey-075: hsl(0, 0%, 33%);
-  --color-text-grey-1: hsl(0, 0%, 50%);
+  --color-text-grey-025: hsl(234, 22%, 12.5%);
+  --color-text-grey-05: hsl(234, 20%, 25%);
+  --color-text-grey-075: hsl(234, 18%, 33%);
+  --color-text-grey-1: hsl(234, 16%, 50%);
+
+  --color-text-header: hsl(234, 100%, 12%);
 
   --color-border-1: hsl(0, 0%, 95%);
   --color-border-15: hsl(0, 0%, 90%);
   --color-border-2: hsl(0, 0%, 80%);
+  --color-border-25: hsl(0, 0%, 70%);
   --color-border-3: hsl(0, 0%, 60%);
   --color-border-4: hsl(0, 0%, 40%);
 
@@ -71,6 +74,10 @@ hr {
   --color-primary-l-1: hsl(234, 100%, 50%);
   --color-primary-d-1: hsl(234, 100%, 33%);
 
+  --color-primary-d-1-t-1: hsla(234, 100%, 33%, 0.1);
+  --color-primary-d-1-t-4: hsla(234, 100%, 33%, 0.4);
+  --color-primary-d-1-t-5: hsla(234, 100%, 33%, 0.5);
+
   --color-primary-l-1-t-1: hsla(234, 100%, 50%, 0.1);
   --color-primary-l-1-t-05: hsla(234, 100%, 50%, 0.05);
   --color-primary-l-1-t-025: hsla(234, 100%, 50%, 0.025);
@@ -82,10 +89,12 @@ hr {
 
   --color-primary-t-15: rgba(0, 23, 230, 0.15);
   --color-primary-t-2: rgba(0, 23, 230, 0.2);
+  --color-primary-t-5: rgba(0, 23, 230, 0.5);
 
   --color-warning: #faf200;
   --color-warning-d-1: hsl(36, 80%, 60%);
   --color-warning-t-1: rgba(250, 242, 0, 0.1);
+  --color-warning-t-3: rgba(250, 242, 0, 0.3);
 
   --color-error: #fc0015;
   --color-error-o-1: rgb(255, 230, 232);
@@ -93,4 +102,5 @@ hr {
 
   --color-success: #22cc00;
   --color-success-t-1: rgba(34, 204, 0, 0.1);
+  --color-success-t-3: rgba(34, 204, 0, 0.1);
 }

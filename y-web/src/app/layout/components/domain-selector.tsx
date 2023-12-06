@@ -21,11 +21,11 @@ const DomainLink: Component<DomainLinkProps> = (props) => {
   return (
     <Link onClick={props.onHide} href={props.to} class="domain-option">
       <div class="link">
-        <Icon name={domainIcon[props.domain]} size={22} wght={400} />
+        <Icon name={domainIcon[props.domain]} size={18} wght={400} />
         {domainName[props.domain]}
       </div>
 
-      <Icon name="chevron_right" size={24} />
+      <Icon name="chevron_right" size={18} />
     </Link>
   )
 }
@@ -44,9 +44,6 @@ export const DomainSelector: Component = () => {
           variant="text"
           onClick={togglePopup}
           leadingIcon={popupShown() ? "expand_less" : domainIcon[domain()]}
-          style={{
-            "box-shadow": "0 0 0 1px var(--color-border-15)",
-          }}
         >
           <div
             style={{
@@ -58,20 +55,6 @@ export const DomainSelector: Component = () => {
         </Button>
 
         <Popup show={popupShown()} position="left">
-          <div
-            style={{
-              display: "flex",
-              "align-items": "center",
-              "justify-content": "space-between",
-              gap: "1em",
-
-              margin: "0.33em 0.66em 1em 0.33em",
-              "font-weight": "440",
-            }}
-          >
-            <div>Switch between domains</div>
-          </div>
-
           <div class="popup-list">
             <DomainLink onHide={() => setPopupShown(false)} domain="" to="/" />
             <DomainLink

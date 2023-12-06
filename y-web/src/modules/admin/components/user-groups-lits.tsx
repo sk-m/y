@@ -1,6 +1,5 @@
 import { Component, For, Show, createMemo } from "solid-js"
 
-import { Card } from "@/app/components/common/card/card"
 import { ExpandButton } from "@/app/components/common/expand-button/expand-button"
 import {
   ExpandButtonEntries,
@@ -36,6 +35,7 @@ const UserGroupEntry: Component<UserGroupEntryProps> = (props) => {
         "justify-content": "space-between",
         "align-items": "center",
       }}
+      classList={{ selected: props.selected }}
     >
       <div
         style={{
@@ -55,6 +55,7 @@ const UserGroupEntry: Component<UserGroupEntryProps> = (props) => {
             display: "flex",
             "flex-direction": "column",
             gap: "0.1em",
+            padding: "0.1em 0",
           }}
         >
           <ListEntryLink href={`${props.group.id}`}>
@@ -64,7 +65,7 @@ const UserGroupEntry: Component<UserGroupEntryProps> = (props) => {
       </div>
 
       <div class="entry-actions">
-        <ExpandButton icon="more_horiz" variant="text">
+        <ExpandButton icon="more_vert" variant="text">
           <ExpandButtonEntries>
             <ExpandButtonEntry icon="delete" variant="danger">
               Delete
@@ -78,7 +79,7 @@ const UserGroupEntry: Component<UserGroupEntryProps> = (props) => {
 
 export const UserGroupsList: Component = () => {
   const tableState = useTableState<number>({
-    defaultRowsPerPage: 100,
+    defaultRowsPerPage: 500,
   })
 
   const $userGroups = useUserGroups(
@@ -95,113 +96,113 @@ export const UserGroupsList: Component = () => {
 
   const userGroups = createMemo(() => $userGroups.data?.user_groups ?? [])
 
+  const noneSelected = createMemo(() => tableState.selectedEntries().size === 0)
+
   return (
     <Show when={$userGroups.isSuccess}>
-      <Card
-        style={{
-          padding: "0",
-        }}
-      >
-        <List>
-          <ListHead
+      <List>
+        <ListHead
+          style={{
+            display: "flex",
+            "flex-direction": "column",
+            gap: "1em",
+          }}
+        >
+          <div
             style={{
               display: "flex",
-              "flex-direction": "column",
+              "align-items": "center",
               gap: "1em",
             }}
           >
-            <Text
-              variant="h2"
-              style={{
-                margin: "0",
-              }}
+            <ExpandButton
+              icon={noneSelected() ? "select" : "select_all"}
+              position="right"
+              label={
+                noneSelected()
+                  ? null
+                  : `${tableState.selectedEntries().size} groups`
+              }
             >
-              User groups
-            </Text>
-            <Text variant="secondary">You can search by group name.</Text>
-
-            <div
-              style={{
-                display: "flex",
-                "align-items": "center",
-                gap: "1em",
-              }}
-            >
-              <InputField
-                placeholder="Search user groups"
-                width="100%"
-                monospace
-                inputProps={{
-                  name: "user-groups-search",
-                  autocomplete: "off",
-                  value: tableState.searchText(),
-                  onInput: (event) =>
-                    tableState.setSearch(event.currentTarget.value),
-                }}
-              />
-              <Show when={tableState.selectedEntries().size > 0}>
-                <ExpandButton
-                  icon="bolt"
-                  label={`${tableState.selectedEntries().size} selected`}
-                >
-                  <ExpandButtonEntries>
+              <ExpandButtonEntries>
+                <Show
+                  when={!noneSelected()}
+                  fallback={
                     <ExpandButtonEntry
                       onClick={() =>
-                        tableState.setSelectedEntries(() => new Set())
+                        tableState.setSelectedEntries(
+                          // eslint-disable-next-line solid/reactivity
+                          () => new Set(userGroups().map((group) => group.id))
+                        )
                       }
-                      icon="unpublished"
+                      icon="select_all"
                     >
-                      Deselect
+                      Select all
                     </ExpandButtonEntry>
-                    <ExpandButtonEntry icon="delete" variant="danger">
-                      Delete
-                    </ExpandButtonEntry>
-                  </ExpandButtonEntries>
-                </ExpandButton>
-              </Show>
-            </div>
-          </ListHead>
-
-          <Show when={userGroups().length === 0}>
-            <Note
-              type="secondary"
-              style={{
-                "border-radius": "0",
+                  }
+                >
+                  <ExpandButtonEntry
+                    onClick={() =>
+                      tableState.setSelectedEntries(() => new Set())
+                    }
+                    icon="select"
+                  >
+                    Deselect
+                  </ExpandButtonEntry>
+                  <hr />
+                  <ExpandButtonEntry icon="delete" variant="danger">
+                    Delete
+                  </ExpandButtonEntry>
+                </Show>
+              </ExpandButtonEntries>
+            </ExpandButton>
+            <InputField
+              placeholder="Search user groups"
+              width="100%"
+              monospace
+              inputProps={{
+                name: "user-groups-search",
+                autocomplete: "off",
+                value: tableState.searchText(),
+                onInput: (event) =>
+                  tableState.setSearch(event.currentTarget.value),
               }}
-            >
-              No user groups found. Try changing your search query.
-            </Note>
-          </Show>
+            />
+          </div>
+        </ListHead>
 
-          <ListEntries>
-            <For each={userGroups()}>
-              {(group) => (
-                <UserGroupEntry
-                  selected={tableState.selectedEntries().has(group.id)}
-                  onSelect={tableState.onSelect}
-                  group={group}
-                />
-              )}
-            </For>
-          </ListEntries>
+        <Show when={userGroups().length === 0}>
+          <Note type="secondary">
+            No user groups found. Try changing your search query.
+          </Note>
+        </Show>
 
-          <Show
-            when={
-              ($userGroups.data?.total_count ?? 0) > tableState.rowsPerPage()
-            }
-          >
-            <ListFooter>
-              <ListPageSwitcher
-                currentPage={tableState.page()}
-                rowsPerPage={tableState.rowsPerPage()}
-                totalCount={$userGroups.data?.total_count ?? 0}
-                onPageChange={tableState.setPage}
-                query={$userGroups}
+        <ListEntries>
+          <For each={userGroups()}>
+            {(group) => (
+              <UserGroupEntry
+                selected={tableState.selectedEntries().has(group.id)}
+                onSelect={tableState.onSelect}
+                group={group}
               />
-            </ListFooter>
-          </Show>
-        </List>
-      </Card>
+            )}
+          </For>
+        </ListEntries>
+
+        <Show
+          when={($userGroups.data?.total_count ?? 0) > tableState.rowsPerPage()}
+        >
+          <ListFooter>
+            <ListPageSwitcher
+              currentPage={tableState.page()}
+              rowsPerPage={tableState.rowsPerPage()}
+              totalCount={$userGroups.data?.total_count ?? 0}
+              onPageChange={tableState.setPage}
+              query={$userGroups}
+            />
+          </ListFooter>
+        </Show>
+      </List>
     </Show>
   )
 }
