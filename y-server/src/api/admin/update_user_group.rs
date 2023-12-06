@@ -48,19 +48,21 @@ async fn update_user_group(
             .filter(|right| right.1.granted)
             .collect::<HashMap<String, Right>>();
 
-        rights_query_builder.push_values(assigned_rigths, |mut b, (right_name, right)| {
-            b.push_bind(user_group_id)
-                .push_bind(right_name)
-                .push_bind(serde_json::to_value(right.options).unwrap());
-        });
+        if assigned_rigths.len() > 0 {
+            rights_query_builder.push_values(assigned_rigths, |mut b, (right_name, right)| {
+                b.push_bind(user_group_id)
+                    .push_bind(right_name)
+                    .push_bind(serde_json::to_value(right.options).unwrap());
+            });
 
-        let assign_rights_result = rights_query_builder
-            .build()
-            .execute(&mut *transaction)
-            .await;
+            let assign_rights_result = rights_query_builder
+                .build()
+                .execute(&mut *transaction)
+                .await;
 
-        if assign_rights_result.is_err() {
-            return error("update_user_group.other");
+            if assign_rights_result.is_err() {
+                return error("update_user_group.other");
+            }
         }
 
         let result = transaction.commit().await;
