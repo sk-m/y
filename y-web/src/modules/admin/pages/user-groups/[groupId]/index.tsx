@@ -7,10 +7,11 @@ import {
   untrack,
 } from "solid-js"
 
-import { useParams } from "@solidjs/router"
+import { useNavigate, useParams } from "@solidjs/router"
 import { createMutation } from "@tanstack/solid-query"
 
 import { Button } from "@/app/components/common/button/button"
+import { Card } from "@/app/components/common/card/card"
 import { Icon } from "@/app/components/common/icon/icon"
 import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
@@ -26,10 +27,13 @@ import { UserGroupRightCategory } from "../../../components/user-group/user-grou
 
 export type UserGroupFieldValues = {
   [K in `right:${string}`]: boolean
-} & { [K in `right_option:${string}:${string}`]: IUserGroupRightOptionValue }
+} & { [K in `right_option:${string}`]: IUserGroupRightOptionValue }
+
+export type UserGroupWatchedFields = ["right:*", "right_option:*"]
 
 const UserGroupPage: Component = () => {
   const params = useParams()
+  const navigate = useNavigate()
 
   const $updateUserGroup = createMutation(updateUserGroup)
 
@@ -91,11 +95,12 @@ const UserGroupPage: Component = () => {
     )
   }
 
-  const form = useForm<UserGroupFieldValues>({
+  const form = useForm<UserGroupFieldValues, UserGroupWatchedFields>({
     defaultValues: {},
     disabled: () =>
       !$userGroup.data || !$userRights.data || $updateUserGroup.isLoading,
     onSubmit,
+    watch: ["right:*", "right_option:*"],
   })
 
   const { setValue, submit } = form
@@ -149,9 +154,33 @@ const UserGroupPage: Component = () => {
                   </UserGroupRightCategory>
                 )}
               </For>
-              <Button buttonType="submit" disabled={$updateUserGroup.isLoading}>
-                {$updateUserGroup.isLoading ? "Saving..." : "Save"}
-              </Button>
+
+              <Card>
+                <Stack
+                  direction="row"
+                  spacing="1em"
+                  alignItems="center"
+                  justifyContent="space-between"
+                >
+                  <Button
+                    variant="secondary"
+                    disabled={$updateUserGroup.isLoading}
+                    onClick={() => navigate("/admin/user-groups")}
+                  >
+                    Back
+                  </Button>
+                  <Stack direction="row" spacing="1em">
+                    <Button
+                      buttonType="submit"
+                      disabled={$updateUserGroup.isLoading}
+                    >
+                      {$updateUserGroup.isLoading
+                        ? "Saving..."
+                        : "Save changes"}
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Card>
             </Stack>
           </form>
         </Stack>

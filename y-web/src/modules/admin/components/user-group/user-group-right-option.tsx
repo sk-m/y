@@ -7,7 +7,10 @@ import { Text } from "@/app/components/common/text/text"
 import { Form } from "@/app/core/use-form"
 import { unsafe_t } from "@/i18n"
 
-import { UserGroupFieldValues } from "../../pages/user-groups/[groupId]"
+import {
+  UserGroupFieldValues,
+  UserGroupWatchedFields,
+} from "../../pages/user-groups/[groupId]"
 import {
   IUserRight,
   IUserRightOption,
@@ -16,7 +19,7 @@ import {
 export type UserGroupRightOptionProps = {
   right: IUserRight
   option: IUserRightOption
-  form: Form<UserGroupFieldValues, []>
+  form: Form<UserGroupFieldValues, UserGroupWatchedFields>
 }
 
 export const UserGroupRightOption: Component<UserGroupRightOptionProps> = (

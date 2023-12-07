@@ -6,7 +6,10 @@ import { Text } from "@/app/components/common/text/text"
 import { Form } from "@/app/core/use-form"
 import { unsafe_t } from "@/i18n"
 
-import { UserGroupFieldValues } from "../../pages/user-groups/[groupId]"
+import {
+  UserGroupFieldValues,
+  UserGroupWatchedFields,
+} from "../../pages/user-groups/[groupId]"
 import { IUserRight } from "../../user-rights/user-rights.codecs"
 import { UserGroupRightOption } from "./user-group-right-option"
 import { UserGroupRightTag } from "./user-group-right-tag"
@@ -14,10 +17,16 @@ import "./user-group-right.less"
 
 export type UserGroupRightProps = {
   right: IUserRight
-  form: Form<UserGroupFieldValues, []>
+  form: Form<UserGroupFieldValues, UserGroupWatchedFields>
 }
 
 export const UserGroupRight: Component<UserGroupRightProps> = (props) => {
+  // eslint-disable-next-line solid/reactivity
+  const isAssigned = props.form.watch(
+    // eslint-disable-next-line solid/reactivity
+    `right:${props.right.name}`
+  )
+
   return (
     <Stack
       style={{
@@ -52,7 +61,14 @@ export const UserGroupRight: Component<UserGroupRightProps> = (props) => {
         {unsafe_t(`main.userRight.${props.right.name}.description`)}
       </Text>
       <Show when={props.right.options.length > 0}>
-        <Stack direction="row" spacing="1em" alignItems="stretch">
+        <Stack
+          direction="row"
+          spacing="1em"
+          alignItems="stretch"
+          style={{
+            display: isAssigned() ? "flex" : "none",
+          }}
+        >
           <div class="user-group-right-options-section-left-floater" />
           <Stack spacing="1em">
             <Text

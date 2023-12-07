@@ -79,3 +79,18 @@ export const findDefaultValue = <
 
   return null
 }
+
+export const isFieldWatched = <WatchedFields extends Readonly<string[]>>(
+  fieldName: string,
+  watch: WatchedFields
+) => {
+  return (
+    watch.includes(fieldName) ||
+    // ! TODO This is a pretty dumb way to check this
+    watch.some(
+      (watchedField) =>
+        watchedField.includes("*") &&
+        fieldName.includes(watchedField.replace("*", ""))
+    )
+  )
+}
