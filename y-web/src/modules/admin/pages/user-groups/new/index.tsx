@@ -1,7 +1,7 @@
 import { Component } from "solid-js"
 
 import { useNavigate } from "@solidjs/router"
-import { createMutation } from "@tanstack/solid-query"
+import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Button } from "@/app/components/common/button/button"
 import { Icon } from "@/app/components/common/icon/icon"
@@ -11,9 +11,11 @@ import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { useForm } from "@/app/core/use-form"
 import { createUserGroup } from "@/modules/admin/user-groups/user-groups.api"
+import { userGroupsKey } from "@/modules/admin/user-groups/user-groups.service"
 
 const NewUserGroupPage: Component = () => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const $createUserGroup = createMutation(createUserGroup)
 
@@ -29,6 +31,7 @@ const NewUserGroupPage: Component = () => {
         },
         {
           onSuccess: (response) => {
+            void queryClient.invalidateQueries([userGroupsKey])
             navigate(`/admin/user-groups/${response.id}`)
           },
         }

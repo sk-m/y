@@ -26,7 +26,7 @@ export const useUserGroups = (
 
 export const useUserGroup = (input: () => GetUserGroupInput) => {
   return createQuery(
-    () => [userGroupKey, input()],
+    () => [userGroupKey, input().userGroupId],
     async () => userGroup(input())
   )
 }
