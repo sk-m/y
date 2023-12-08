@@ -50,6 +50,7 @@ async fn login(pool: web::Data<RequestPool>, form: web::Json<LoginInput>) -> imp
                                     Cookie::build("y-session", session_cookie_value)
                                         .secure(false)
                                         .http_only(true)
+                                        .path("/")
                                         .finish();
 
                                 return HttpResponse::Ok().cookie(session_cookie).body("{}");
