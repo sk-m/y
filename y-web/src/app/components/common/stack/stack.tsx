@@ -9,6 +9,7 @@ export type StackProps = {
   spacing?: JSX.CSSProperties["gap"]
 
   style?: JSX.CSSProperties
+  id?: string
 }
 
 export const Stack: ComponentWithChildren<StackProps> = (props) => {
@@ -23,6 +24,7 @@ export const Stack: ComponentWithChildren<StackProps> = (props) => {
 
         ...props.style,
       }}
+      id={props.id}
     >
       {props.children}
     </div>

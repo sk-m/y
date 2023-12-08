@@ -1,4 +1,4 @@
-import { Component, For, Show, createMemo, createSignal } from "solid-js"
+import { Component, For, Show, createMemo } from "solid-js"
 
 import { format } from "date-fns"
 
@@ -11,6 +11,7 @@ import { InputField } from "@/app/components/common/input-field/input-field"
 import { Note } from "@/app/components/common/note/note"
 import { Text } from "@/app/components/common/text/text"
 import { ListPageSwitcher } from "@/app/components/list-page-switcher/list-page-switcher"
+import { ListEntryLink } from "@/app/components/list/components/list-entry-link"
 import {
   List,
   ListEntries,
@@ -18,17 +19,14 @@ import {
   ListHead,
 } from "@/app/components/list/list"
 import { useTableState } from "@/app/core/use-table-state"
+import { routes } from "@/app/routes"
 import { IUser } from "@/modules/admin/users/users.codecs"
 import { useUsers } from "@/modules/admin/users/users.service"
-
-import { AdminUpdateUserPasswordModal } from "./user/update-user-password-modal"
 
 export type UserEntryProps = {
   user: IUser
   onSelect: (entry: number) => void
   selected: boolean
-
-  onChangePassword: () => void
 }
 
 const UserEntry: Component<UserEntryProps> = (props) => {
@@ -62,30 +60,25 @@ const UserEntry: Component<UserEntryProps> = (props) => {
             padding: "0.1em 0",
           }}
         >
-          <Text fontWeight={500}>{props.user.username}</Text>
-          <Text variant="secondary" fontSize={"var(--text-sm)"}>
+          <ListEntryLink href={`${routes["/admin/users"]}/${props.user.id}`}>
+            <Text fontWeight={500}>{props.user.username}</Text>
+          </ListEntryLink>
+          <Text
+            variant="secondary"
+            fontSize={"var(--text-sm)"}
+            style={{
+              "margin-left": "0.25em",
+            }}
+          >
             Joined {format(new Date(props.user.created_at), "dd.MM.yyyy")}
           </Text>
         </div>
-      </div>
-
-      <div class="entry-actions">
-        <ExpandButton icon="more_horiz" variant="text">
-          <ExpandButtonEntries>
-            <ExpandButtonEntry icon="key" onClick={props.onChangePassword}>
-              Update password
-            </ExpandButtonEntry>
-          </ExpandButtonEntries>
-        </ExpandButton>
       </div>
     </div>
   )
 }
 
 export const UsersList: Component = () => {
-  const [userToUpdatePassword, setUserToUpdatePassword] =
-    createSignal<IUser | null>(null)
-
   const tableState = useTableState<number>({
     defaultRowsPerPage: 25,
   })
@@ -109,12 +102,6 @@ export const UsersList: Component = () => {
 
   return (
     <Show when={$users.isSuccess}>
-      <AdminUpdateUserPasswordModal
-        user={userToUpdatePassword()}
-        open={Boolean(userToUpdatePassword())}
-        onClose={() => setUserToUpdatePassword(null)}
-      />
-
       <List>
         <ListHead
           style={{
@@ -199,7 +186,6 @@ export const UsersList: Component = () => {
                 selected={tableState.selectedEntries().has(user.id)}
                 onSelect={tableState.onSelect}
                 user={user}
-                onChangePassword={() => setUserToUpdatePassword(user)}
               />
             )}
           </For>
