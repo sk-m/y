@@ -1,5 +1,6 @@
-use crate::request::error;
+use crate::user::get_user_rights;
 use crate::util::RequestPool;
+use crate::{request::error, user::get_user_from_request};
 use actix_web::{put, web, HttpResponse, Responder};
 use serde::Deserialize;
 
@@ -18,8 +19,26 @@ async fn update_password(
     pool: web::Data<RequestPool>,
     form: web::Json<UpdatePasswordInput>,
     path: web::Path<i32>,
+    req: actix_web::HttpRequest,
 ) -> impl Responder {
-    let user_id = path.into_inner();
+    let session_info = get_user_from_request(&pool, req).await;
+
+    if let Some((client_user, _)) = session_info {
+        let client_rights = get_user_rights(&pool, client_user.id).await;
+
+        let action_allowed = client_rights
+            .iter()
+            .find(|right| right.right_name.eq("change_user_password"))
+            .is_some();
+
+        if !action_allowed {
+            return error("update_password.unauthorized");
+        }
+    } else {
+        return error("update_password.unauthorized");
+    }
+
+    let target_user_id = path.into_inner();
 
     let password_salt = SaltString::generate(&mut OsRng);
     let password_hash = Pbkdf2.hash_password(form.password.as_bytes(), &password_salt);
@@ -30,7 +49,7 @@ async fn update_password(
 
             let result = sqlx::query("UPDATE users SET password = $1 WHERE id = $2")
                 .bind(password_hash.as_str())
-                .bind(user_id)
+                .bind(target_user_id)
                 .execute(&**pool)
                 .await;
 

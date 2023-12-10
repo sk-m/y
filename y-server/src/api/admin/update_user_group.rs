@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
-use crate::request::error;
+use crate::user::get_user_rights;
 use crate::util::RequestPool;
+use crate::{request::error, user::get_user_from_request};
 use actix_web::{patch, web, HttpResponse, Responder};
 use serde::Deserialize;
 use sqlx::QueryBuilder;
@@ -22,7 +23,25 @@ async fn update_user_group(
     pool: web::Data<RequestPool>,
     form: web::Json<UpdateUserGroupInput>,
     path: web::Path<i32>,
+    req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let session_info = get_user_from_request(&pool, req).await;
+
+    if let Some((client_user, _)) = session_info {
+        let client_rights = get_user_rights(&pool, client_user.id).await;
+
+        let action_allowed = client_rights
+            .iter()
+            .find(|right| right.right_name.eq("manage_user_groups"))
+            .is_some();
+
+        if !action_allowed {
+            return error("update_user_group.unauthorized");
+        }
+    } else {
+        return error("update_user_group.unauthorized");
+    }
+
     let user_group_id = path.into_inner();
 
     let transaction = pool.begin().await;

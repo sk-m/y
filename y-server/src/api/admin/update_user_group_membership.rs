@@ -1,7 +1,10 @@
 use serde::Deserialize;
 use sqlx::QueryBuilder;
 
-use crate::request::error;
+use crate::{
+    request::error,
+    user::{get_user_from_request, get_user_rights},
+};
 use actix_web::{patch, web, HttpResponse, Responder};
 
 use crate::util::RequestPool;
@@ -16,7 +19,34 @@ async fn update_user_group_membership(
     pool: web::Data<RequestPool>,
     form: web::Json<UpdateUserGroupMembershipInput>,
     path: web::Path<i32>,
+    req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let session_info = get_user_from_request(&pool, req).await;
+
+    if let Some((client_user, _)) = session_info {
+        let client_rights = get_user_rights(&pool, client_user.id).await;
+
+        let assign_user_groups_right = client_rights
+            .iter()
+            .find(|right| right.right_name.eq("assign_user_groups"));
+
+        if let Some(assign_user_groups_right) = assign_user_groups_right {
+            let action_allowed = assign_user_groups_right
+                .right_options
+                .get("allow_assigning_any_group")
+                .and_then(|value| value.as_bool())
+                .unwrap_or(false);
+
+            if !action_allowed {
+                return error("update_user_group_membership.unauthorized");
+            }
+        } else {
+            return error("update_user_group_membership.unauthorized");
+        }
+    } else {
+        return error("update_user_group_membership.unauthorized");
+    }
+
     let user_id = path.into_inner();
 
     let transaction = pool.begin().await;
