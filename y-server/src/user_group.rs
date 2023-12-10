@@ -42,6 +42,10 @@ pub async fn get_user_group(
 
     match group_and_rights {
         Ok(group_and_rights) => {
+            if group_and_rights.len() == 0 {
+                return Err(sqlx::Error::RowNotFound);
+            }
+
             let group_id = group_and_rights[0].id.clone();
             let group_name = group_and_rights[0].name.clone();
 
