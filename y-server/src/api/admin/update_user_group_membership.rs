@@ -26,21 +26,19 @@ async fn update_user_group_membership(
     if let Some((client_user, _)) = session_info {
         let client_rights = get_user_rights(&pool, client_user.id).await;
 
-        let assign_user_groups_right = client_rights
+        let action_allowed = client_rights
             .iter()
-            .find(|right| right.right_name.eq("assign_user_groups"));
+            .find(|right| {
+                right.right_name.eq("assign_user_groups")
+                    && right
+                        .right_options
+                        .get("allow_assigning_any_group")
+                        .and_then(|value| value.as_bool())
+                        .unwrap_or(false)
+            })
+            .is_some();
 
-        if let Some(assign_user_groups_right) = assign_user_groups_right {
-            let action_allowed = assign_user_groups_right
-                .right_options
-                .get("allow_assigning_any_group")
-                .and_then(|value| value.as_bool())
-                .unwrap_or(false);
-
-            if !action_allowed {
-                return error("update_user_group_membership.unauthorized");
-            }
-        } else {
+        if !action_allowed {
             return error("update_user_group_membership.unauthorized");
         }
     } else {

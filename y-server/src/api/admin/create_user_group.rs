@@ -25,21 +25,19 @@ async fn create_user_group(
     if let Some((client_user, _)) = session_info {
         let client_rights = get_user_rights(&pool, client_user.id).await;
 
-        let manage_user_groups_right = client_rights
+        let action_allowed = client_rights
             .iter()
-            .find(|right| right.right_name.eq("manage_user_groups"));
+            .find(|right| {
+                right.right_name.eq("manage_user_groups")
+                    && right
+                        .right_options
+                        .get("allow_creating_user_groups")
+                        .and_then(|value| value.as_bool())
+                        .unwrap_or(false)
+            })
+            .is_some();
 
-        if let Some(manage_user_groups_right) = manage_user_groups_right {
-            let action_allowed = manage_user_groups_right
-                .right_options
-                .get("allow_creating_user_groups")
-                .and_then(|value| value.as_bool())
-                .unwrap_or(false);
-
-            if !action_allowed {
-                return error("create_user_group.unauthorized");
-            }
-        } else {
+        if !action_allowed {
             return error("create_user_group.unauthorized");
         }
     } else {
