@@ -25,8 +25,7 @@ async fn user_group(pool: web::Data<RequestPool>, path: web::Path<i32>) -> impl 
                 rights: user_group.rights,
             }));
         }
-        Err(err) => {
-            dbg!(err);
+        Err(_) => {
             return error("user_group.not_found");
         }
     }

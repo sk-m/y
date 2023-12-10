@@ -63,16 +63,6 @@ const UserGroupEntry: Component<UserGroupEntryProps> = (props) => {
           </ListEntryLink>
         </div>
       </div>
-
-      <div class="entry-actions">
-        <ExpandButton icon="more_vert" variant="text">
-          <ExpandButtonEntries>
-            <ExpandButtonEntry icon="delete" variant="danger">
-              Delete
-            </ExpandButtonEntry>
-          </ExpandButtonEntries>
-        </ExpandButton>
-      </div>
     </div>
   )
 }
@@ -148,10 +138,6 @@ export const UserGroupsList: Component = () => {
                     icon="select"
                   >
                     Deselect
-                  </ExpandButtonEntry>
-                  <hr />
-                  <ExpandButtonEntry icon="delete" variant="danger">
-                    Delete
                   </ExpandButtonEntry>
                 </Show>
               </ExpandButtonEntries>

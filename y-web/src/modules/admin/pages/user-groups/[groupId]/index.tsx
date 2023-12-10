@@ -20,13 +20,15 @@ import {
 } from "@/app/components/common/expand-button/expand-button-entry"
 import { Icon } from "@/app/components/common/icon/icon"
 import { Container } from "@/app/components/common/layout/container"
-import { Link } from "@/app/components/common/link/link"
 import { Modal } from "@/app/components/common/modal/modal"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { useForm } from "@/app/core/use-form"
 import { routes } from "@/app/routes"
-import { updateUserGroup } from "@/modules/admin/user-groups/user-groups.api"
+import {
+  deleteUserGroup,
+  updateUserGroup,
+} from "@/modules/admin/user-groups/user-groups.api"
 import { IUserGroupRightOptionValue } from "@/modules/admin/user-groups/user-groups.codecs"
 import {
   useUserGroup,
@@ -51,9 +53,13 @@ const UserGroupPage: Component = () => {
 
   let formRef: HTMLFormElement | undefined
 
-  const [confirmationModalOpen, setConfirmationModalOpen] = createSignal(false)
+  const [updateConfirmationModalOpen, setUpdateConfirmationModalOpen] =
+    createSignal(false)
+  const [deleteConfirmationModalOpen, setDeleteConfirmationModalOpen] =
+    createSignal(false)
 
   const $updateUserGroup = createMutation(updateUserGroup)
+  const $deleteUserGroup = createMutation(deleteUserGroup)
 
   const $userRights = useUserRights()
   const $userGroup = useUserGroup(() => ({
@@ -111,7 +117,7 @@ const UserGroupPage: Component = () => {
           void queryClient.invalidateQueries([userGroupKey, $userGroup.data.id])
         },
         onSettled: () => {
-          setConfirmationModalOpen(false)
+          setUpdateConfirmationModalOpen(false)
         },
       }
     )
@@ -145,9 +151,9 @@ const UserGroupPage: Component = () => {
   return (
     <>
       <Modal
-        open={confirmationModalOpen()}
+        open={updateConfirmationModalOpen()}
         keepMounted
-        onClose={() => setConfirmationModalOpen(false)}
+        onClose={() => setUpdateConfirmationModalOpen(false)}
         style={{
           "max-width": "450px",
         }}
@@ -200,7 +206,7 @@ const UserGroupPage: Component = () => {
           >
             <Button
               variant="secondary"
-              onClick={() => setConfirmationModalOpen(false)}
+              onClick={() => setUpdateConfirmationModalOpen(false)}
             >
               Cancel
             </Button>
@@ -211,6 +217,86 @@ const UserGroupPage: Component = () => {
               }}
             >
               {$updateUserGroup.isLoading ? "Saving..." : "Confirm"}
+            </Button>
+          </Stack>
+        </Stack>
+      </Modal>
+      <Modal
+        open={deleteConfirmationModalOpen()}
+        keepMounted
+        onClose={() => setDeleteConfirmationModalOpen(false)}
+        style={{
+          "max-width": "450px",
+        }}
+        header={
+          <Stack spacing={"1.5em"} direction="row" alignItems="center">
+            <div
+              style={{
+                display: "flex",
+                "align-items": "center",
+                "justify-content": "center",
+
+                padding: "1em",
+
+                "background-color": "var(--color-border-15)",
+                "border-radius": "15px",
+              }}
+            >
+              <Icon grad={25} wght={500} size={24} name="warning" />
+            </div>
+            <Stack spacing="0.5em">
+              <Text
+                variant="h2"
+                style={{
+                  margin: 0,
+                }}
+                color="var(--color-text-grey-025)"
+              >
+                Confirm group deletion
+              </Text>
+            </Stack>
+          </Stack>
+        }
+      >
+        <Stack spacing={"1.5em"}>
+          <Text>Are you sure you want to delete this user group?</Text>
+
+          <Text>
+            All users that are assigned to this group will unsassigned
+            automatically.
+          </Text>
+
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            style={{
+              "margin-top": "1.5em",
+            }}
+          >
+            <Button
+              variant="secondary"
+              onClick={() => setDeleteConfirmationModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={$deleteUserGroup.isLoading}
+              onClick={() => {
+                if (!$userGroup.data?.id) return
+                $deleteUserGroup.mutate(
+                  {
+                    userGroupId: $userGroup.data.id,
+                  },
+                  {
+                    onSuccess: () => {
+                      void queryClient.invalidateQueries([userGroupsKey])
+                      navigate(routes["/admin/user-groups"])
+                    },
+                  }
+                )
+              }}
+            >
+              {$deleteUserGroup.isLoading ? "Deleting..." : "Confirm"}
             </Button>
           </Stack>
         </Stack>
@@ -238,7 +324,11 @@ const UserGroupPage: Component = () => {
               <ExpandButton icon="bolt" label="Actions" position="left">
                 <ExpandButtonEntries>
                   <ExpandButtonEntry icon="edit">Rename</ExpandButtonEntry>
-                  <ExpandButtonEntry icon="delete" variant="danger">
+                  <ExpandButtonEntry
+                    icon="delete"
+                    variant="danger"
+                    onClick={() => setDeleteConfirmationModalOpen(true)}
+                  >
                     Delete
                   </ExpandButtonEntry>
                 </ExpandButtonEntries>
@@ -283,7 +373,7 @@ const UserGroupPage: Component = () => {
                     <Stack direction="row" spacing="1em">
                       <Button
                         disabled={$updateUserGroup.isLoading}
-                        onClick={() => setConfirmationModalOpen(true)}
+                        onClick={() => setUpdateConfirmationModalOpen(true)}
                       >
                         Save changes
                       </Button>

@@ -1,4 +1,4 @@
-import { get, patch, post } from "@/app/core/request"
+import { del, get, patch, post } from "@/app/core/request"
 import { TableInput, appendTableInput } from "@/app/core/request.utils"
 
 import {
@@ -60,4 +60,12 @@ export const updateUserGroup = async (input: UpdateUserGruopInput) => {
       rights: input.rights,
     },
   })
+}
+
+export type DeleteUserGruopInput = {
+  userGroupId: number
+}
+
+export const deleteUserGroup = async (input: DeleteUserGruopInput) => {
+  return del(`${apiUserGroups}/${input.userGroupId}`)
 }

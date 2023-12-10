@@ -82,6 +82,7 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::admin::user_group::user_group)
                     .service(crate::api::admin::update_user_group::update_user_group)
                     .service(crate::api::admin::create_user_group::create_user_group)
+                    .service(crate::api::admin::delete_user_group::delete_user_group)
                     .service(crate::api::admin::update_user_group_membership::update_user_group_membership)
                     ,
             )
