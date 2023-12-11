@@ -8,6 +8,7 @@ use serde::Serialize;
 struct UserGroupOutput {
     pub id: i32,
     pub name: String,
+    pub group_type: Option<String>,
     pub rights: Vec<UserGroupRight>,
 }
 
@@ -22,6 +23,7 @@ async fn user_group(pool: web::Data<RequestPool>, path: web::Path<i32>) -> impl 
             return HttpResponse::Ok().json(web::Json(UserGroupOutput {
                 id: user_group.id,
                 name: user_group.name,
+                group_type: user_group.group_type,
                 rights: user_group.rights,
             }));
         }

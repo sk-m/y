@@ -35,10 +35,12 @@ async fn delete_user_group(
 
     let user_group_id = path.into_inner();
 
-    let delete_group_result = sqlx::query("DELETE FROM user_groups WHERE id = $1")
-        .bind(user_group_id)
-        .execute(&**pool)
-        .await;
+    let delete_group_result = sqlx::query(
+        "DELETE FROM user_groups WHERE id = $1 AND (group_type NOT IN ('everyone', 'user') OR group_type IS NULL)",
+    )
+    .bind(user_group_id)
+    .execute(&**pool)
+    .await;
 
     if delete_group_result.is_err() {
         return error("delete_user_group.other");

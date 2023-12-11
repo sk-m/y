@@ -1,8 +1,11 @@
 import { z } from "zod"
 
+export const userGroupType = { user: "user", everyone: "everyone" } as const
+
 export const TUserGroupRow = z.object({
   id: z.number(),
   name: z.string(),
+  group_type: z.nullable(z.string()),
 })
 
 export type IUserGroupRow = z.infer<typeof TUserGroupRow>
@@ -38,4 +41,5 @@ export const TUserGroupDetails = z.object({
   id: z.number(),
   name: z.string(),
   rights: z.array(TUserGroupRight),
+  group_type: z.nullable(z.string()),
 })

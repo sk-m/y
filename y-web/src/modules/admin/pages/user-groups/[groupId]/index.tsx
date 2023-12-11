@@ -1,7 +1,9 @@
 import {
   Component,
   For,
+  Match,
   Show,
+  Switch,
   createEffect,
   createMemo,
   createSignal,
@@ -21,6 +23,7 @@ import {
 import { Icon } from "@/app/components/common/icon/icon"
 import { Container } from "@/app/components/common/layout/container"
 import { Modal } from "@/app/components/common/modal/modal"
+import { Pill } from "@/app/components/common/pill/pill"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { useForm } from "@/app/core/use-form"
@@ -29,7 +32,10 @@ import {
   deleteUserGroup,
   updateUserGroup,
 } from "@/modules/admin/user-groups/user-groups.api"
-import { IUserGroupRightOptionValue } from "@/modules/admin/user-groups/user-groups.codecs"
+import {
+  IUserGroupRightOptionValue,
+  userGroupType,
+} from "@/modules/admin/user-groups/user-groups.codecs"
 import {
   useUserGroup,
   userGroupKey,
@@ -309,30 +315,70 @@ const UserGroupPage: Component = () => {
               justifyContent="space-between"
               alignItems="center"
             >
-              <Text
-                variant="h1"
-                style={{
-                  display: "flex",
-                  "align-items": "center",
-                  gap: "0.5em",
-                }}
-              >
-                <Icon name="groups" grad={25} wght={500} />
-                {$userGroup.data?.name ?? ""}
-              </Text>
-
-              <ExpandButton icon="bolt" label="Actions" position="left">
-                <ExpandButtonEntries>
-                  <ExpandButtonEntry icon="edit">Rename</ExpandButtonEntry>
-                  <ExpandButtonEntry
-                    icon="delete"
-                    variant="danger"
-                    onClick={() => setDeleteConfirmationModalOpen(true)}
+              <Stack spacing={"0.5em"}>
+                <Text
+                  variant="h1"
+                  style={{
+                    display: "flex",
+                    "align-items": "center",
+                    gap: "0.5em",
+                  }}
+                >
+                  <Icon name="groups" grad={25} wght={500} />
+                  {$userGroup.data?.name ?? ""}
+                </Text>
+                <Switch>
+                  <Match
+                    when={
+                      $userGroup.data?.group_type === userGroupType.everyone
+                    }
                   >
-                    Delete
-                  </ExpandButtonEntry>
-                </ExpandButtonEntries>
-              </ExpandButton>
+                    <Text fontSize={"var(--text-sm)"}>
+                      <Pill>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={"0.25em"}
+                        >
+                          <Icon name="settings" size={12} wght={500} />
+                          <span>System group</span>
+                        </Stack>
+                      </Pill>
+                    </Text>
+                  </Match>
+                  <Match
+                    when={$userGroup.data?.group_type === userGroupType.user}
+                  >
+                    <Text fontSize={"var(--text-sm)"}>
+                      <Pill>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={"0.25em"}
+                        >
+                          <Icon name="settings" size={12} wght={500} />
+                          <span>System group</span>
+                        </Stack>
+                      </Pill>
+                    </Text>
+                  </Match>
+                </Switch>
+              </Stack>
+
+              <Show when={$userGroup.data?.group_type === null}>
+                <ExpandButton icon="bolt" label="Actions" position="left">
+                  <ExpandButtonEntries>
+                    <ExpandButtonEntry icon="edit">Rename</ExpandButtonEntry>
+                    <ExpandButtonEntry
+                      icon="delete"
+                      variant="danger"
+                      onClick={() => setDeleteConfirmationModalOpen(true)}
+                    >
+                      Delete
+                    </ExpandButtonEntry>
+                  </ExpandButtonEntries>
+                </ExpandButton>
+              </Show>
             </Stack>
 
             <Text variant="h2">Group Rights</Text>

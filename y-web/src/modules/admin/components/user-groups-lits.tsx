@@ -1,12 +1,10 @@
-import { Component, For, Show, createMemo } from "solid-js"
+import { Component, For, Match, Show, Switch, createMemo } from "solid-js"
 
-import { ExpandButton } from "@/app/components/common/expand-button/expand-button"
-import {
-  ExpandButtonEntries,
-  ExpandButtonEntry,
-} from "@/app/components/common/expand-button/expand-button-entry"
+import { Icon } from "@/app/components/common/icon/icon"
 import { InputField } from "@/app/components/common/input-field/input-field"
 import { Note } from "@/app/components/common/note/note"
+import { Pill } from "@/app/components/common/pill/pill"
+import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { ListPageSwitcher } from "@/app/components/list-page-switcher/list-page-switcher"
 import { ListEntryLink } from "@/app/components/list/components/list-entry-link"
@@ -18,7 +16,7 @@ import {
 } from "@/app/components/list/list"
 import { useTableState } from "@/app/core/use-table-state"
 
-import { IUserGroupRow } from "../user-groups/user-groups.codecs"
+import { IUserGroupRow, userGroupType } from "../user-groups/user-groups.codecs"
 import { useUserGroups } from "../user-groups/user-groups.service"
 
 export type UserGroupEntryProps = {
@@ -40,28 +38,54 @@ const UserGroupEntry: Component<UserGroupEntryProps> = (props) => {
       <div
         style={{
           display: "flex",
-          "align-items": "center",
-          gap: "1em",
+          "flex-direction": "column",
+          gap: "0.1em",
+          padding: "0.15em 0",
         }}
       >
-        <input
-          type="checkbox"
-          name={`user-${props.group.id}`}
-          checked={props.selected}
-          onChange={() => props.onSelect(props.group.id)}
-        />
-        <div
-          style={{
-            display: "flex",
-            "flex-direction": "column",
-            gap: "0.1em",
-            padding: "0.1em 0",
-          }}
-        >
+        <Stack spacing="0.5em">
           <ListEntryLink href={`${props.group.id}`}>
             <Text fontWeight={500}>{props.group.name}</Text>
           </ListEntryLink>
-        </div>
+          <Show when={props.group.group_type !== null}>
+            <Stack
+              style={{
+                "margin-left": "0.5em",
+              }}
+            >
+              <Switch>
+                <Match when={props.group.group_type === userGroupType.everyone}>
+                  <Text fontSize={"var(--text-sm)"}>
+                    <Pill>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={"0.25em"}
+                      >
+                        <Icon name="settings" size={12} wght={500} />
+                        <span>System group</span>
+                      </Stack>
+                    </Pill>
+                  </Text>
+                </Match>
+                <Match when={props.group.group_type === userGroupType.user}>
+                  <Text fontSize={"var(--text-sm)"}>
+                    <Pill>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={"0.25em"}
+                      >
+                        <Icon name="settings" size={12} wght={500} />
+                        <span>System group</span>
+                      </Stack>
+                    </Pill>
+                  </Text>
+                </Match>
+              </Switch>
+            </Stack>
+          </Show>
+        </Stack>
       </div>
     </div>
   )
@@ -84,9 +108,13 @@ export const UserGroupsList: Component = () => {
     }
   )
 
-  const userGroups = createMemo(() => $userGroups.data?.user_groups ?? [])
-
-  const noneSelected = createMemo(() => tableState.selectedEntries().size === 0)
+  const userGroups = createMemo(
+    () =>
+      // eslint-disable-next-line no-confusing-arrow
+      $userGroups.data?.user_groups.sort((group) =>
+        group.group_type === null ? 1 : -1
+      ) ?? []
+  )
 
   return (
     <Show when={$userGroups.isSuccess}>
@@ -98,63 +126,18 @@ export const UserGroupsList: Component = () => {
             gap: "1em",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              "align-items": "center",
-              gap: "1em",
+          <InputField
+            placeholder="Search user groups"
+            width="100%"
+            monospace
+            inputProps={{
+              name: "user-groups-search",
+              autocomplete: "off",
+              value: tableState.searchText(),
+              onInput: (event) =>
+                tableState.setSearch(event.currentTarget.value),
             }}
-          >
-            <ExpandButton
-              icon={noneSelected() ? "select" : "select_all"}
-              position="right"
-              label={
-                noneSelected()
-                  ? null
-                  : `${tableState.selectedEntries().size} groups`
-              }
-            >
-              <ExpandButtonEntries>
-                <Show
-                  when={!noneSelected()}
-                  fallback={
-                    <ExpandButtonEntry
-                      onClick={() =>
-                        tableState.setSelectedEntries(
-                          // eslint-disable-next-line solid/reactivity
-                          () => new Set(userGroups().map((group) => group.id))
-                        )
-                      }
-                      icon="select_all"
-                    >
-                      Select all
-                    </ExpandButtonEntry>
-                  }
-                >
-                  <ExpandButtonEntry
-                    onClick={() =>
-                      tableState.setSelectedEntries(() => new Set())
-                    }
-                    icon="select"
-                  >
-                    Deselect
-                  </ExpandButtonEntry>
-                </Show>
-              </ExpandButtonEntries>
-            </ExpandButton>
-            <InputField
-              placeholder="Search user groups"
-              width="100%"
-              monospace
-              inputProps={{
-                name: "user-groups-search",
-                autocomplete: "off",
-                value: tableState.searchText(),
-                onInput: (event) =>
-                  tableState.setSearch(event.currentTarget.value),
-              }}
-            />
-          </div>
+          />
         </ListHead>
 
         <Show when={userGroups().length === 0}>

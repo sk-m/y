@@ -11,6 +11,7 @@ use crate::util::RequestPool;
 struct UserGroupOutput {
     id: i32,
     name: String,
+    group_type: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -54,6 +55,7 @@ async fn user_groups(
             .map(|group| UserGroupOutput {
                 id: group.id,
                 name: group.name.clone(),
+                group_type: group.group_type.clone(),
             })
             .collect::<Vec<UserGroupOutput>>();
 
