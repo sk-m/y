@@ -1,6 +1,6 @@
-use crate::user::get_user_rights;
+use crate::request::error;
+use crate::user::get_client_rights;
 use crate::util::RequestPool;
-use crate::{request::error, user::get_user_from_request};
 use actix_web::{post, web, HttpResponse, Responder};
 use serde::Deserialize;
 
@@ -20,27 +20,21 @@ async fn create_user_group(
     form: web::Json<CreateUserGroupInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
-    let session_info = get_user_from_request(&pool, req).await;
+    let client_rights = get_client_rights(&pool, req).await;
 
-    if let Some((client_user, _)) = session_info {
-        let client_rights = get_user_rights(&pool, client_user.id).await;
+    let action_allowed = client_rights
+        .iter()
+        .find(|right| {
+            right.right_name.eq("manage_user_groups")
+                && right
+                    .right_options
+                    .get("allow_creating_user_groups")
+                    .and_then(|value| value.as_bool())
+                    .unwrap_or(false)
+        })
+        .is_some();
 
-        let action_allowed = client_rights
-            .iter()
-            .find(|right| {
-                right.right_name.eq("manage_user_groups")
-                    && right
-                        .right_options
-                        .get("allow_creating_user_groups")
-                        .and_then(|value| value.as_bool())
-                        .unwrap_or(false)
-            })
-            .is_some();
-
-        if !action_allowed {
-            return error("create_user_group.unauthorized");
-        }
-    } else {
+    if !action_allowed {
         return error("create_user_group.unauthorized");
     }
 

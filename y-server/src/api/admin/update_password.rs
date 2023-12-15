@@ -1,6 +1,6 @@
-use crate::user::get_user_rights;
+use crate::request::error;
+use crate::user::get_client_rights;
 use crate::util::RequestPool;
-use crate::{request::error, user::get_user_from_request};
 use actix_web::{put, web, HttpResponse, Responder};
 use serde::Deserialize;
 
@@ -21,20 +21,14 @@ async fn update_password(
     path: web::Path<i32>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
-    let session_info = get_user_from_request(&pool, req).await;
+    let client_rights = get_client_rights(&pool, req).await;
 
-    if let Some((client_user, _)) = session_info {
-        let client_rights = get_user_rights(&pool, client_user.id).await;
+    let action_allowed = client_rights
+        .iter()
+        .find(|right| right.right_name.eq("change_user_password"))
+        .is_some();
 
-        let action_allowed = client_rights
-            .iter()
-            .find(|right| right.right_name.eq("change_user_password"))
-            .is_some();
-
-        if !action_allowed {
-            return error("update_password.unauthorized");
-        }
-    } else {
+    if !action_allowed {
         return error("update_password.unauthorized");
     }
 

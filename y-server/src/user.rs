@@ -149,19 +149,30 @@ pub struct UserRight {
     pub right_options: Value,
 }
 
-pub async fn get_user_rights(pool: &RequestPool, user_id: i32) -> Vec<UserRight> {
-    let right_rows = sqlx::query_as::<_, UserRight>("SELECT DISTINCT ON (user_group_rights.right_name, user_group_rights.right_options) user_group_rights.right_name, user_group_rights.right_options FROM user_groups
-    RIGHT JOIN user_group_rights ON user_group_rights.group_id = user_groups.id
-    WHERE user_groups.group_type IN ('user', 'everyone')
-UNION ALL
-SELECT DISTINCT ON (user_group_rights.right_name, user_group_rights.right_options) user_group_rights.right_name, user_group_rights.right_options FROM user_groups
-    RIGHT JOIN user_group_membership ON user_groups.id = user_group_membership.group_id
-    RIGHT JOIN users ON user_group_membership.user_id = users.id
-    RIGHT JOIN user_group_rights ON user_group_rights.group_id = user_group_membership.group_id
-    WHERE users.id = $1")
-        .bind(user_id)
-        .fetch_all(pool)
-        .await;
+pub async fn get_client_rights(pool: &RequestPool, req: HttpRequest) -> Vec<UserRight> {
+    let client_session = get_user_from_request(&pool, req).await;
+
+    // ! TODO refactor the query
+    let right_rows = if let Some((user, _)) = client_session {
+        sqlx::query_as::<_, UserRight>("SELECT DISTINCT ON (user_group_rights.right_name, user_group_rights.right_options) user_group_rights.right_name, user_group_rights.right_options FROM user_groups
+        RIGHT JOIN user_group_rights ON user_group_rights.group_id = user_groups.id
+        WHERE user_groups.group_type IN ('user', 'everyone')
+    UNION ALL
+    SELECT DISTINCT ON (user_group_rights.right_name, user_group_rights.right_options) user_group_rights.right_name, user_group_rights.right_options FROM user_groups
+        RIGHT JOIN user_group_membership ON user_groups.id = user_group_membership.group_id
+        RIGHT JOIN users ON user_group_membership.user_id = users.id
+        RIGHT JOIN user_group_rights ON user_group_rights.group_id = user_group_membership.group_id
+        WHERE users.id = $1")
+            .bind(user.id)
+            .fetch_all(pool)
+            .await
+    } else {
+        sqlx::query_as::<_, UserRight>("SELECT DISTINCT ON (user_group_rights.right_name, user_group_rights.right_options) user_group_rights.right_name, user_group_rights.right_options FROM user_groups
+        RIGHT JOIN user_group_rights ON user_group_rights.group_id = user_groups.id
+        WHERE user_groups.group_type = 'everyone'")
+            .fetch_all(pool)
+            .await
+    };
 
     match right_rows {
         Ok(right_rows) => {

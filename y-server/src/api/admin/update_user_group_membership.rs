@@ -1,10 +1,7 @@
 use serde::Deserialize;
 use sqlx::QueryBuilder;
 
-use crate::{
-    request::error,
-    user::{get_user_from_request, get_user_rights},
-};
+use crate::{request::error, user::get_client_rights};
 use actix_web::{patch, web, HttpResponse, Responder};
 
 use crate::util::RequestPool;
@@ -21,27 +18,21 @@ async fn update_user_group_membership(
     path: web::Path<i32>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
-    let session_info = get_user_from_request(&pool, req).await;
+    let client_rights = get_client_rights(&pool, req).await;
 
-    if let Some((client_user, _)) = session_info {
-        let client_rights = get_user_rights(&pool, client_user.id).await;
+    let action_allowed = client_rights
+        .iter()
+        .find(|right| {
+            right.right_name.eq("assign_user_groups")
+                && right
+                    .right_options
+                    .get("allow_assigning_any_group")
+                    .and_then(|value| value.as_bool())
+                    .unwrap_or(false)
+        })
+        .is_some();
 
-        let action_allowed = client_rights
-            .iter()
-            .find(|right| {
-                right.right_name.eq("assign_user_groups")
-                    && right
-                        .right_options
-                        .get("allow_assigning_any_group")
-                        .and_then(|value| value.as_bool())
-                        .unwrap_or(false)
-            })
-            .is_some();
-
-        if !action_allowed {
-            return error("update_user_group_membership.unauthorized");
-        }
-    } else {
+    if !action_allowed {
         return error("update_user_group_membership.unauthorized");
     }
 
