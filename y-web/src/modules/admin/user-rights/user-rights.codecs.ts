@@ -17,6 +17,7 @@ export type IUserRightTag = z.infer<typeof TUserRightTag>
 export const TUserRightOption = z.object({
   name: z.string(),
   value_type: TUserRightOptionValueType,
+  value_source: z.string().nullable(),
 })
 
 export type IUserRightOption = z.infer<typeof TUserRightOption>

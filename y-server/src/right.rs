@@ -24,6 +24,7 @@ pub enum RightValueType {
 pub struct RightOption {
     name: &'static str,
     value_type: RightValueType,
+    value_source: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -56,6 +57,7 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                 options: vec![RightOption {
                     name: "user_groups_blacklist",
                     value_type: RightValueType::StringArray,
+                    value_source: Some("user_groups"),
                 }],
                 tags: vec![RightTag::Administrative],
             }],
@@ -69,14 +71,17 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                         RightOption {
                             name: "allow_creating_user_groups",
                             value_type: RightValueType::Boolean,
+                            value_source: None,
                         },
                         RightOption {
                             name: "allow_deleting_user_groups",
                             value_type: RightValueType::Boolean,
+                            value_source: None,
                         },
                         RightOption {
                             name: "mutable_user_rights",
                             value_type: RightValueType::StringArray,
+                            value_source: Some("user_groups"),
                         },
                     ],
                     tags: vec![RightTag::Administrative],
@@ -87,10 +92,12 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                         RightOption {
                             name: "allow_assigning_any_group",
                             value_type: RightValueType::Boolean,
+                            value_source: None,
                         },
                         RightOption {
                             name: "assignable_user_groups",
                             value_type: RightValueType::StringArray,
+                            value_source: None,
                         },
                     ],
                     tags: vec![RightTag::Administrative],

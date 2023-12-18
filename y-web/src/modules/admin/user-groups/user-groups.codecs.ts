@@ -26,6 +26,8 @@ export const TUserGroupRightOptionValue = z.union([
   z.number(),
   z.boolean(),
   z.array(z.string()),
+  z.array(z.number()),
+  z.null(),
 ])
 
 export type IUserGroupRightOptionValue = z.infer<
