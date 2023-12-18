@@ -94,7 +94,7 @@ export type Form<
         ? FieldValues[FieldName]
         : unknown
     >
-    setValue: Setter<
+    onChange: Setter<
       FieldName extends keyof FieldValues & string
         ? FieldValues[FieldName]
         : unknown
@@ -584,7 +584,16 @@ export const useForm = <
       (registeredField) => registeredField.name === fieldName
     )
 
-    if (field?.inputRef) {
+    if (field?.controlled && field.controller?.[1]) {
+      const rawValue =
+        typeof value === "function"
+          ? (value as (currentValue: FieldValue) => FieldValue)(
+              field.controller[0]() as FieldValue
+            )
+          : value
+
+      field.controller[1](rawValue)
+    } else if (field?.inputRef) {
       const rawValue =
         typeof value === "function"
           ? (value as (currentValue: FieldValue) => FieldValue)(
@@ -672,7 +681,7 @@ export const useForm = <
       name,
 
       value: fieldValue,
-      setValue: setFieldValue,
+      onChange: setFieldValue,
     }
   }
 
