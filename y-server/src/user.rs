@@ -83,7 +83,7 @@ struct UserWithSession {
 
 pub async fn get_user_from_request(
     pool: &RequestPool,
-    req: HttpRequest,
+    req: &HttpRequest,
 ) -> Option<(User, UserSession)> {
     let session_cookie = req.cookie("y-session");
 
@@ -143,14 +143,14 @@ pub async fn destroy_user_session(pool: &RequestPool, session_id: Uuid) -> bool 
     result.is_ok() && result.unwrap().rows_affected() == 1
 }
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, serde::Serialize)]
 pub struct UserRight {
     pub right_name: String,
     pub right_options: Value,
 }
 
-pub async fn get_client_rights(pool: &RequestPool, req: HttpRequest) -> Vec<UserRight> {
-    let client_session = get_user_from_request(&pool, req).await;
+pub async fn get_client_rights(pool: &RequestPool, req: &HttpRequest) -> Vec<UserRight> {
+    let client_session = get_user_from_request(&pool, &req).await;
 
     // ! TODO refactor the query
     let right_rows = if let Some((user, _)) = client_session {

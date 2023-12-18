@@ -20,7 +20,7 @@ async fn create_user_group(
     form: web::Json<CreateUserGroupInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
-    let client_rights = get_client_rights(&pool, req).await;
+    let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights
         .iter()

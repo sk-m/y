@@ -8,7 +8,7 @@ use crate::{
 
 #[post("/logout")]
 async fn logout(pool: web::Data<RequestPool>, req: HttpRequest) -> impl Responder {
-    let session_info = get_user_from_request(&pool, req).await;
+    let session_info = get_user_from_request(&pool, &req).await;
 
     if let Some((_, session)) = session_info {
         let result = destroy_user_session(&pool, session.session_id).await;
