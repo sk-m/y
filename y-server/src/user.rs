@@ -4,6 +4,7 @@ use chrono::Utc;
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::user_group::UserGroup;
 use crate::util::RequestPool;
 
 #[derive(sqlx::FromRow)]
@@ -177,6 +178,27 @@ pub async fn get_client_rights(pool: &RequestPool, req: &HttpRequest) -> Vec<Use
     match right_rows {
         Ok(right_rows) => {
             return right_rows;
+        }
+        Err(err) => {
+            dbg!(err);
+            return vec![];
+        }
+    }
+}
+
+pub async fn get_user_groups(pool: &RequestPool, user_id: i32) -> Vec<UserGroup> {
+    let groups = sqlx::query_as::<_, UserGroup>(
+        "SELECT user_groups.id, user_groups.name, user_groups.group_type FROM user_groups
+        RIGHT JOIN user_group_membership ON user_group_membership.group_id = user_groups.id
+        WHERE user_group_membership.user_id = $1",
+    )
+    .bind(user_id)
+    .fetch_all(pool)
+    .await;
+
+    match groups {
+        Ok(groups) => {
+            return groups;
         }
         Err(err) => {
             dbg!(err);

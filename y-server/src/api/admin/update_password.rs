@@ -1,6 +1,6 @@
-use crate::request::error;
 use crate::user::get_client_rights;
 use crate::util::RequestPool;
+use crate::{request::error, user::get_user_groups};
 use actix_web::{put, web, HttpResponse, Responder};
 use serde::Deserialize;
 
@@ -21,18 +21,46 @@ async fn update_password(
     path: web::Path<i32>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
-    let client_rights = get_client_rights(&pool, &req).await;
+    let target_user_id = path.into_inner();
 
-    let action_allowed = client_rights
-        .iter()
-        .find(|right| right.right_name.eq("change_user_password"))
-        .is_some();
+    let client_rights = get_client_rights(&pool, &req).await;
+    let target_user_groups = get_user_groups(&pool, target_user_id).await;
+
+    let mut change_user_password_right_present = false;
+    let mut client_right_groups_blacklist: Vec<i32> = vec![];
+
+    for right in client_rights {
+        if right.right_name.eq("change_user_password") {
+            change_user_password_right_present = true;
+
+            if let Some(blacklist) = right.right_options.get("user_groups_blacklist") {
+                if blacklist.is_array() {
+                    for group_id in blacklist.as_array().unwrap() {
+                        if group_id.is_i64() {
+                            client_right_groups_blacklist.push(group_id.as_i64().unwrap() as i32);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut action_allowed = false;
+
+    if change_user_password_right_present {
+        action_allowed = true;
+
+        for group in target_user_groups {
+            if client_right_groups_blacklist.contains(&group.id) {
+                action_allowed = false;
+                break;
+            }
+        }
+    }
 
     if !action_allowed {
         return error("update_password.unauthorized");
     }
-
-    let target_user_id = path.into_inner();
 
     let password_salt = SaltString::generate(&mut OsRng);
     let password_hash = Pbkdf2.hash_password(form.password.as_bytes(), &password_salt);

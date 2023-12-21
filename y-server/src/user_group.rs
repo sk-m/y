@@ -3,7 +3,7 @@ use sqlx::FromRow;
 
 use crate::util::RequestPool;
 
-#[derive(FromRow)]
+#[derive(FromRow, Serialize)]
 pub struct UserGroup {
     pub id: i32,
     pub name: String,
