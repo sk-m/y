@@ -46,7 +46,6 @@ export const UserGroupRight: Component<UserGroupRightProps> = (props) => {
           </Text>
         </Stack>
         <Stack direction="row" spacing="0.75em">
-          <UserGroupRightTag tag="inherited" />
           <For each={props.right.tags}>
             {(tag) => <UserGroupRightTag tag={tag} />}
           </For>

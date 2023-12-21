@@ -1,7 +1,6 @@
 import { Component, Match, Switch } from "solid-js"
 
 import { Checkbox } from "@/app/components/common/checkbox/checkbox"
-import { InputField } from "@/app/components/common/input-field/input-field"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { Form } from "@/app/core/use-form"
@@ -15,6 +14,7 @@ import {
   IUserRight,
   IUserRightOption,
 } from "../../user-rights/user-rights.codecs"
+import { UserGroupSelectField } from "./components/groups-option-field"
 
 export type UserGroupRightOptionProps = {
   right: IUserRight
@@ -43,20 +43,11 @@ export const UserGroupRightOption: Component<UserGroupRightOptionProps> = (
         </Stack>
       </Match>
       <Match when={props.option.value_type === "string_array"}>
-        <Stack spacing="0.5em">
-          <InputField
-            label={unsafe_t(
-              `main.userRightOption.${props.right.name}.${props.option.name}.label`
-            )}
-            subtext={unsafe_t(
-              `main.userRightOption.${props.right.name}.${props.option.name}.description`
-            )}
-            width="400px"
-            {...props.form.register(
-              `right_option:${props.right.name}:${props.option.name}`
-            )}
-          />
-        </Stack>
+        <Switch>
+          <Match when={props.option.value_source === "user_groups"}>
+            <UserGroupSelectField {...props} />
+          </Match>
+        </Switch>
       </Match>
     </Switch>
   )
