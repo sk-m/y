@@ -19,6 +19,7 @@ async fn logout(pool: web::Data<RequestPool>, req: HttpRequest) -> impl Responde
                     Cookie::build("y-session", "")
                         .secure(false)
                         .http_only(true)
+                        .path("/")
                         .finish(),
                 )
                 .body("{}");
