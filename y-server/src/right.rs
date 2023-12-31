@@ -81,7 +81,7 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                         RightOption {
                             name: "mutable_user_rights",
                             value_type: RightValueType::StringArray,
-                            value_source: Some("user_groups"),
+                            value_source: Some("user_rights"),
                         },
                     ],
                     tags: vec![RightTag::Administrative],
@@ -97,7 +97,7 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                         RightOption {
                             name: "assignable_user_groups",
                             value_type: RightValueType::StringArray,
-                            value_source: None,
+                            value_source: Some("user_groups"),
                         },
                     ],
                     tags: vec![RightTag::Administrative],

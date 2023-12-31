@@ -1,7 +1,10 @@
 use serde::Deserialize;
 use sqlx::QueryBuilder;
 
-use crate::{request::error, user::get_client_rights};
+use crate::{
+    request::error,
+    user::{get_client_rights, get_user_groups},
+};
 use actix_web::{patch, web, HttpResponse, Responder};
 
 use crate::util::RequestPool;
@@ -18,32 +21,62 @@ async fn update_user_group_membership(
     path: web::Path<i32>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    // ! TODO refactor the rights check
+    let target_user_id = path.into_inner();
+    let target_groups = get_user_groups(&pool, target_user_id).await;
+
     let client_rights = get_client_rights(&pool, &req).await;
 
-    let action_allowed = client_rights
-        .iter()
-        .find(|right| {
-            right.right_name.eq("assign_user_groups")
-                && right
-                    .right_options
-                    .get("allow_assigning_any_group")
-                    .and_then(|value| value.as_bool())
-                    .unwrap_or(false)
-        })
-        .is_some();
+    let input_groups = form
+        .into_inner()
+        .user_groups
+        .into_iter()
+        .collect::<Vec<i32>>();
+
+    let mut new_groups: Vec<i32> = vec![];
+
+    let mut it = target_groups.iter();
+    for group_id in &input_groups {
+        if !it.find(|group| group.id == *group_id).is_some() {
+            new_groups.push(group_id.clone());
+        }
+    }
+
+    let mut client_assignable_groups: Vec<i32> = vec![];
+
+    for right in client_rights {
+        if right.right_name.eq("assign_user_groups") {
+            if let Some(groups) = right.right_options.get("assignable_user_groups") {
+                if groups.is_array() {
+                    for group_id in groups.as_array().unwrap() {
+                        if group_id.is_i64() {
+                            client_assignable_groups.push(group_id.as_i64().unwrap() as i32);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut action_allowed = true;
+
+    for group_id in &new_groups {
+        if !client_assignable_groups.contains(group_id) {
+            action_allowed = false;
+            break;
+        }
+    }
 
     if !action_allowed {
         return error("update_user_group_membership.unauthorized");
     }
-
-    let user_id = path.into_inner();
 
     let transaction = pool.begin().await;
 
     if let Ok(mut transaction) = transaction {
         let unassign_groups_result =
             sqlx::query("DELETE FROM user_group_membership WHERE user_id = $1")
-                .bind(user_id)
+                .bind(target_user_id)
                 .execute(&mut *transaction)
                 .await;
 
@@ -54,15 +87,9 @@ async fn update_user_group_membership(
         let mut groups_query_builder =
             QueryBuilder::new("INSERT INTO user_group_membership(user_id, group_id) ");
 
-        let assigned_groups = form
-            .into_inner()
-            .user_groups
-            .into_iter()
-            .collect::<Vec<i32>>();
-
-        if assigned_groups.len() > 0 {
-            groups_query_builder.push_values(assigned_groups, |mut b, group_id| {
-                b.push_bind(user_id).push_bind(group_id);
+        if input_groups.len() > 0 {
+            groups_query_builder.push_values(input_groups, |mut b, group_id| {
+                b.push_bind(target_user_id).push_bind(group_id);
             });
 
             let assign_groups_result = groups_query_builder
