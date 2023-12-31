@@ -29,7 +29,10 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
   const $updateUserGroupMembership = createMutation(updateUserGroupMembership)
 
   const $userGroups = useUserGroups(() => ({}))
-  const userGroups = createMemo(() => $userGroups.data?.user_groups ?? [])
+  const userGroups = createMemo(
+    () =>
+      $userGroups.data?.user_groups.filter((group) => !group.group_type) ?? []
+  )
 
   const [confirmationModalOpen, setConfirmationModalOpen] = createSignal(false)
   const [selectedGroups, setSelectedGroups] = createSignal<number[]>(
