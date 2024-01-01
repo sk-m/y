@@ -33,12 +33,21 @@ async fn update_user_group_membership(
         .into_iter()
         .collect::<Vec<i32>>();
 
-    let mut new_groups: Vec<i32> = vec![];
+    let mut mutated_groups: Vec<i32> = vec![];
 
+    // Added groups
     let mut it = target_groups.iter();
     for group_id in &input_groups {
         if !it.find(|group| group.id == *group_id).is_some() {
-            new_groups.push(group_id.clone());
+            mutated_groups.push(group_id.clone());
+        }
+    }
+
+    // Removed groups
+    let mut it = input_groups.iter();
+    for group in &target_groups {
+        if !it.find(|group_id| group.id == **group_id).is_some() {
+            mutated_groups.push(group.id.clone());
         }
     }
 
@@ -60,7 +69,7 @@ async fn update_user_group_membership(
 
     let mut action_allowed = true;
 
-    for group_id in &new_groups {
+    for group_id in &mutated_groups {
         if !client_assignable_groups.contains(group_id) {
             action_allowed = false;
             break;
