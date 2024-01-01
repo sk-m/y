@@ -14,6 +14,8 @@ export type CheckboxProps = {
 
   checkedLabel?: string
   size?: "m" | "l"
+
+  disabled?: boolean
 }
 
 export const Checkbox: Component<CheckboxProps> = (props) => {
@@ -43,6 +45,8 @@ export const Checkbox: Component<CheckboxProps> = (props) => {
   })
 
   const toggle = () => {
+    if (props.disabled) return
+
     if (isControlled) {
       setChecked((value) => !value)
 
@@ -56,10 +60,17 @@ export const Checkbox: Component<CheckboxProps> = (props) => {
   }
 
   return (
-    <div classList={{ "ui-checkbox-container": true, checked: checked() }}>
+    <div
+      classList={{
+        "ui-checkbox-container": true,
+        checked: checked(),
+        disabled: props.disabled,
+      }}
+    >
       <input
         type="checkbox"
         hidden
+        disabled={props.disabled}
         ref={(inputRef) => {
           ref = inputRef
           if (typeof props.ref === "function") {
