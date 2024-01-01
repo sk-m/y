@@ -16,3 +16,7 @@ export const TGetUsers = z.object({
   users: TUsers,
   total_count: z.number(),
 })
+
+export const TCreateUser = z.object({
+  id: z.number(),
+})

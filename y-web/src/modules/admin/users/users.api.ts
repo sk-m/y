@@ -1,7 +1,7 @@
-import { get, put } from "@/app/core/request"
+import { get, post, put } from "@/app/core/request"
 import { TableInput, appendTableInput } from "@/app/core/request.utils"
 
-import { TGetUsers } from "./users.codecs"
+import { TCreateUser, TGetUsers } from "./users.codecs"
 
 export const apiUsers = "/admin/users"
 
@@ -28,4 +28,18 @@ export const updateUserPassword = async (input: UpdateUserPasswordInput) => {
       password: input.password,
     },
   })
+}
+
+export type CreateUserInput = {
+  username: string
+  password: string
+}
+
+export const createUser = async (input: CreateUserInput) => {
+  return post(apiUsers, {
+    body: {
+      username: input.username.trim(),
+      password: input.password,
+    },
+  }).then((data) => TCreateUser.parse(data))
 }
