@@ -13,6 +13,8 @@ const UsersListPage = lazy(
   async () => import("@/modules/admin/pages/users-list")
 )
 
+const NewUserPage = lazy(async () => import("@/modules/admin/pages/users/new"))
+
 const UserGroupsPage = lazy(
   async () => import("@/modules/admin/pages/user-groups")
 )
@@ -41,6 +43,7 @@ const AdminLayout: Component = () => {
           <Route path="/user-groups/new" component={NewUserGroupPage} />
           <Route path="/user-groups/:groupId" component={UserGroupPage} />
           <Route path="/users/:userId/*" component={UserPage} />
+          <Route path="/users/new" component={NewUserPage} />
         </Routes>
       </AppContent>
     </>
