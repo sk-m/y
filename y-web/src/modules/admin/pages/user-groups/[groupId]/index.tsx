@@ -42,6 +42,7 @@ import {
   userGroupsKey,
 } from "@/modules/admin/user-groups/user-groups.service"
 import { useUserRights } from "@/modules/admin/user-rights/user-rights.service"
+import { useAuth } from "@/modules/core/auth/auth.service"
 
 import { UserGroupRight } from "../../../components/user-group/user-group-right"
 import { UserGroupRightCategory } from "../../../components/user-group/user-group-right-category"
@@ -53,11 +54,35 @@ export type UserGroupFieldValues = {
 export type UserGroupWatchedFields = ["right:*", "right_option:*"]
 
 const UserGroupPage: Component = () => {
+  const $auth = useAuth()
+
   const params = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   let formRef: HTMLFormElement | undefined
+
+  const groupManagementPermissions = createMemo(() => {
+    let groupManagementAllowed = false
+    let groupDeletionAllowed = false
+
+    for (const right of $auth.data?.user_rights ?? []) {
+      if (right.right_name === "manage_user_groups") {
+        groupManagementAllowed = true
+
+        if (
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          (right.right_options?.["allow_deleting_user_groups"] as unknown) ===
+          true
+        ) {
+          groupDeletionAllowed = true
+          break
+        }
+      }
+    }
+
+    return { groupManagementAllowed, groupDeletionAllowed }
+  })
 
   const [updateConfirmationModalOpen, setUpdateConfirmationModalOpen] =
     createSignal(false)
@@ -369,13 +394,17 @@ const UserGroupPage: Component = () => {
                 <ExpandButton icon="bolt" label="Actions" position="left">
                   <ExpandButtonEntries>
                     <ExpandButtonEntry icon="edit">Rename</ExpandButtonEntry>
-                    <ExpandButtonEntry
-                      icon="delete"
-                      variant="danger"
-                      onClick={() => setDeleteConfirmationModalOpen(true)}
+                    <Show
+                      when={groupManagementPermissions().groupDeletionAllowed}
                     >
-                      Delete
-                    </ExpandButtonEntry>
+                      <ExpandButtonEntry
+                        icon="delete"
+                        variant="danger"
+                        onClick={() => setDeleteConfirmationModalOpen(true)}
+                      >
+                        Delete
+                      </ExpandButtonEntry>
+                    </Show>
                   </ExpandButtonEntries>
                 </ExpandButton>
               </Show>
@@ -417,12 +446,18 @@ const UserGroupPage: Component = () => {
                       Back
                     </Button>
                     <Stack direction="row" spacing="1em">
-                      <Button
-                        disabled={$updateUserGroup.isLoading}
-                        onClick={() => setUpdateConfirmationModalOpen(true)}
+                      <Show
+                        when={
+                          groupManagementPermissions().groupManagementAllowed
+                        }
                       >
-                        Save changes
-                      </Button>
+                        <Button
+                          disabled={$updateUserGroup.isLoading}
+                          onClick={() => setUpdateConfirmationModalOpen(true)}
+                        >
+                          Save changes
+                        </Button>
+                      </Show>
                     </Stack>
                   </Stack>
                 </Card>

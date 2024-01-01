@@ -17,11 +17,22 @@ import { Tab, TabsContainer } from "@/app/components/common/tab/tab"
 import { Text } from "@/app/components/common/text/text"
 import { routes } from "@/app/routes"
 import { useUser } from "@/modules/admin/user/user.service"
+import { useAuth } from "@/modules/core/auth/auth.service"
 
 import UserGeneralSubpage from "./general"
 import UserGroupsSubpage from "./groups"
 
 const UserPage: Component = () => {
+  const $auth = useAuth()
+
+  const allowedTabs = createMemo(() => {
+    const groupsTabAllowed = $auth.data?.user_rights.some(
+      (right) => right.right_name === "manage_user_groups"
+    )
+
+    return { groupsTabAllowed }
+  })
+
   const navigate = useNavigate()
   const location = useLocation()
   const params = useParams()
@@ -62,11 +73,13 @@ const UserPage: Component = () => {
               onClick={() => navigateToSubpage("")}
               selected={currentSubpage() === "general"}
             />
-            <Tab
-              label="Groups"
-              selected={currentSubpage() === "groups"}
-              onClick={() => navigateToSubpage("groups")}
-            />
+            <Show when={allowedTabs().groupsTabAllowed}>
+              <Tab
+                label="Groups"
+                selected={currentSubpage() === "groups"}
+                onClick={() => navigateToSubpage("groups")}
+              />
+            </Show>
           </TabsContainer>
         </Card>
 
@@ -77,11 +90,13 @@ const UserPage: Component = () => {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               element={<UserGeneralSubpage user={$user.data!} />}
             />
-            <Route
-              path="/groups"
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              element={<UserGroupsSubpage user={$user.data!} />}
-            />
+            <Show when={allowedTabs().groupsTabAllowed}>
+              <Route
+                path="/groups"
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                element={<UserGroupsSubpage user={$user.data!} />}
+              />
+            </Show>
           </Routes>
         </Show>
       </Stack>

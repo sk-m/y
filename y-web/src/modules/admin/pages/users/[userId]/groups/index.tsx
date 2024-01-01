@@ -15,6 +15,7 @@ import { routes } from "@/app/routes"
 import { useUserGroups } from "@/modules/admin/user-groups/user-groups.service"
 import { updateUserGroupMembership } from "@/modules/admin/user/user.api"
 import { IUser } from "@/modules/admin/user/user.codecs"
+import { useAuth } from "@/modules/core/auth/auth.service"
 
 import "./user-groups-subpage.less"
 
@@ -23,10 +24,39 @@ export type UserGroupsSubpageProps = {
 }
 
 const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
+  const $auth = useAuth()
+
   const params = useParams()
   const queryClient = useQueryClient()
 
   const $updateUserGroupMembership = createMutation(updateUserGroupMembership)
+
+  const clientPermissions = createMemo(() => {
+    let allowedGroups: number[] = []
+    let anyGroupIsAllowed = false
+
+    for (const right of $auth.data?.user_rights ?? []) {
+      if (right.right_name === "assign_user_groups") {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (right.right_options["allow_assigning_any_group"] === true) {
+          anyGroupIsAllowed = true
+        }
+
+        const allowedGroupsIds =
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          right.right_options?.["assignable_user_groups"] as
+            | number[]
+            | undefined
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (allowedGroupsIds && Array.isArray(allowedGroupsIds)) {
+          allowedGroups = [...allowedGroups, ...allowedGroupsIds]
+        }
+      }
+    }
+
+    return { allowedGroups, anyGroupIsAllowed }
+  })
 
   const $userGroups = useUserGroups(() => ({}))
   const userGroups = createMemo(
@@ -141,10 +171,17 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
                 selectedGroups().includes(userGroup.id)
               )
 
+              const isMutable = createMemo(
+                () =>
+                  clientPermissions().anyGroupIsAllowed ||
+                  clientPermissions().allowedGroups.includes(userGroup.id)
+              )
+
               return (
                 <div
                   classList={{
                     "group-option": true,
+                    disabled: !isMutable(),
                     selected: selected(),
                   }}
                 >
@@ -154,6 +191,7 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
                     onChange={(checked) =>
                       updateSelection(userGroup.id, checked)
                     }
+                    disabled={!isMutable()}
                   />
                   <Link
                     variant="text-secondary"

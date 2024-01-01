@@ -1,4 +1,4 @@
-import { Component } from "solid-js"
+import { Component, createEffect } from "solid-js"
 
 import { useNavigate } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
@@ -13,12 +13,27 @@ import { useForm } from "@/app/core/use-form"
 import { routes } from "@/app/routes"
 import { createUser } from "@/modules/admin/users/users.api"
 import { usersKey } from "@/modules/admin/users/users.service"
+import { useAuth } from "@/modules/core/auth/auth.service"
+
+const USERS_ROUTE = routes["/admin/users"]
 
 const NewUserPage: Component = () => {
+  const $auth = useAuth()
+
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const $createUser = createMutation(createUser)
+
+  createEffect(() => {
+    const userCreationAllowed = $auth.data?.user_rights.some(
+      (right) => right.right_name === "create_account"
+    )
+
+    if (!userCreationAllowed) {
+      navigate(USERS_ROUTE)
+    }
+  })
 
   const form = useForm({
     defaultValues: {
@@ -35,7 +50,7 @@ const NewUserPage: Component = () => {
         {
           onSuccess: (response) => {
             void queryClient.invalidateQueries([usersKey])
-            navigate(`${routes["/admin/users"]}/${response.id}`)
+            navigate(`${USERS_ROUTE}/${response.id}`)
           },
         }
       )
@@ -98,10 +113,7 @@ const NewUserPage: Component = () => {
             />
           </Stack>
           <Stack direction="row" justifyContent="space-between">
-            <Button
-              onClick={() => navigate(routes["/admin/users"])}
-              variant="secondary"
-            >
+            <Button onClick={() => navigate(USERS_ROUTE)} variant="secondary">
               Back
             </Button>
             <Button buttonType="submit" disabled={$createUser.isLoading}>

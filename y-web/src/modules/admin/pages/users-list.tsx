@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Component } from "solid-js"
+import { Component, Show, createMemo } from "solid-js"
 
 import { useNavigate } from "@solidjs/router"
 
@@ -8,11 +8,19 @@ import { Card } from "@/app/components/common/card/card"
 import { Container } from "@/app/components/common/layout/container"
 import { Text } from "@/app/components/common/text/text"
 import { routes } from "@/app/routes"
+import { useAuth } from "@/modules/core/auth/auth.service"
 
 import { UsersList } from "../components/users-lits"
 
 const UsersListPage: Component = () => {
+  const $auth = useAuth()
   const navigate = useNavigate()
+
+  const userCreationAllowed = createMemo(() =>
+    $auth.data?.user_rights.some(
+      (right) => right.right_name === "create_account"
+    )
+  )
 
   return (
     <Container
@@ -25,45 +33,47 @@ const UsersListPage: Component = () => {
     >
       <UsersList />
 
-      <Card>
-        <div
-          style={{
-            display: "flex",
-            "justify-content": "space-between",
-            "align-items": "center",
-            gap: "1em",
-          }}
-        >
+      <Show when={userCreationAllowed()}>
+        <Card>
           <div
             style={{
               display: "flex",
-              "flex-direction": "column",
+              "justify-content": "space-between",
+              "align-items": "center",
               gap: "1em",
             }}
           >
-            <Text
-              variant="h3"
+            <div
               style={{
-                margin: "0",
+                display: "flex",
+                "flex-direction": "column",
+                gap: "1em",
+              }}
+            >
+              <Text
+                variant="h3"
+                style={{
+                  margin: "0",
+                }}
+              >
+                New user
+              </Text>
+              <Text variant="secondary">
+                Manually create a new user account. You can set a temporary
+                password.
+              </Text>
+            </div>
+            <Button
+              leadingIcon="person_add"
+              onClick={() => {
+                navigate(routes["/admin/users/new"])
               }}
             >
               New user
-            </Text>
-            <Text variant="secondary">
-              Manually create a new user account. You can set a temporary
-              password.
-            </Text>
+            </Button>
           </div>
-          <Button
-            leadingIcon="person_add"
-            onClick={() => {
-              navigate(routes["/admin/users/new"])
-            }}
-          >
-            New user
-          </Button>
-        </div>
-      </Card>
+        </Card>
+      </Show>
     </Container>
   )
 }

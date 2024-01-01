@@ -1,4 +1,4 @@
-import { Component } from "solid-js"
+import { Component, createEffect } from "solid-js"
 
 import { useNavigate } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
@@ -10,13 +10,29 @@ import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { useForm } from "@/app/core/use-form"
+import { routes } from "@/app/routes"
 import { createUserGroup } from "@/modules/admin/user-groups/user-groups.api"
 import { userGroupsKey } from "@/modules/admin/user-groups/user-groups.service"
+import { useAuth } from "@/modules/core/auth/auth.service"
 
 const NewUserGroupPage: Component = () => {
+  const $auth = useAuth()
+
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
+  createEffect(() => {
+    const groupCreationAllowed = $auth.data?.user_rights.some(
+      (right) =>
+        right.right_name === "manage_user_groups" &&
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        (right.right_options["allow_creating_user_groups"] as unknown) === true
+    )
+
+    if (!groupCreationAllowed) {
+      navigate(routes["/admin/user-groups"])
+    }
+  })
   const $createUserGroup = createMutation(createUserGroup)
 
   const form = useForm({
