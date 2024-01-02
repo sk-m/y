@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Component, Show, createMemo } from "solid-js"
+import { Component, Show, createEffect, createMemo } from "solid-js"
 
 import {
   Route,
@@ -15,6 +15,7 @@ import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Tab, TabsContainer } from "@/app/components/common/tab/tab"
 import { Text } from "@/app/components/common/text/text"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
 import { useUser } from "@/modules/admin/user/user.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
@@ -43,6 +44,13 @@ const UserPage: Component = () => {
   const $user = useUser(() => ({
     userId: userId(),
   }))
+
+  createEffect(() => {
+    if ($user.isError) {
+      genericErrorToast($user.error)
+      navigate(routes["/admin/users"])
+    }
+  })
 
   const currentSubpage = createMemo(() => {
     const locationParts = location.pathname.split("/")

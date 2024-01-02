@@ -55,6 +55,8 @@ export type UserGroupFieldValues = {
 
 export type UserGroupWatchedFields = ["right:*", "right_option:*"]
 
+const USER_GROUPS_ROUTE = routes["/admin/user-groups"]
+
 const UserGroupPage: Component = () => {
   const $auth = useAuth()
 
@@ -107,6 +109,13 @@ const UserGroupPage: Component = () => {
         categories: [],
       }
   )
+
+  createEffect(() => {
+    if ($userGroup.isError) {
+      genericErrorToast($userGroup.error)
+      navigate(USER_GROUPS_ROUTE)
+    }
+  })
 
   const onSubmit = (values: UserGroupFieldValues) => {
     if (!$userGroup.data?.id) return
@@ -339,7 +348,7 @@ const UserGroupPage: Component = () => {
                       })
 
                       void queryClient.invalidateQueries([userGroupsKey])
-                      navigate(routes["/admin/user-groups"])
+                      navigate(USER_GROUPS_ROUTE)
                     },
                     onError: (error) => genericErrorToast(error),
                   }
@@ -460,7 +469,7 @@ const UserGroupPage: Component = () => {
                     <Button
                       variant="secondary"
                       disabled={$updateUserGroup.isLoading}
-                      onClick={() => navigate(routes["/admin/user-groups"])}
+                      onClick={() => navigate(USER_GROUPS_ROUTE)}
                     >
                       Back
                     </Button>
