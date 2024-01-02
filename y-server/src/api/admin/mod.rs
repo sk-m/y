@@ -1,5 +1,6 @@
 pub mod create_user;
 pub mod create_user_group;
+pub mod delete_user;
 pub mod delete_user_group;
 pub mod update_password;
 pub mod update_user_group;

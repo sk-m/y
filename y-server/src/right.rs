@@ -52,15 +52,22 @@ pub fn get_right_categories() -> Vec<RightCategory> {
         },
         RightCategory {
             name: "user_administration",
-            rights: vec![Right {
-                name: "change_user_password",
-                options: vec![RightOption {
-                    name: "user_groups_blacklist",
-                    value_type: RightValueType::StringArray,
-                    value_source: Some("user_groups"),
-                }],
-                tags: vec![RightTag::Administrative],
-            }],
+            rights: vec![
+                Right {
+                    name: "change_user_password",
+                    options: vec![RightOption {
+                        name: "user_groups_blacklist",
+                        value_type: RightValueType::StringArray,
+                        value_source: Some("user_groups"),
+                    }],
+                    tags: vec![RightTag::Administrative],
+                },
+                Right {
+                    name: "delete_user",
+                    options: vec![],
+                    tags: vec![RightTag::Administrative],
+                },
+            ],
         },
         RightCategory {
             name: "user_rights",

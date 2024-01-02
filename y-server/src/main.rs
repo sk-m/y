@@ -77,6 +77,7 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api/admin")
                     .service(crate::api::admin::user::user)
                     .service(crate::api::admin::create_user::create_user)
+                    .service(crate::api::admin::delete_user::delete_user)
                     .service(crate::api::admin::users::users)
                     .service(crate::api::admin::update_password::update_password)
                     .service(crate::api::admin::user_groups::user_groups)
