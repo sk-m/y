@@ -70,5 +70,26 @@
         }
       }
     }
+  },
+  "error": {
+    "code": {
+      "create_user_group.unauthorized": "Permission denied",
+      "create_user_group.other": "Other",
+      "create_user.unauthorized": "Permission denied",
+      "create_user.username_taken": "Username is already taken",
+      "create_user.other": "Other",
+      "delete_user_group.unauthorized": "Permission denied",
+      "delete_user_group.other": "Other",
+      "delete_user.unauthorized": "Permission denied",
+      "update_password.unauthorized": "Permission denied",
+      "update_password.user_not_found": "User not found",
+      "update_password.other": "Other",
+      "update_user_group_membership.unauthorized": "Permission denied",
+      "update_user_group_membership.other": "Other",
+      "update_user_groups.unauthorized": "Permission denied",
+      "update_user_groups.other": "Other",
+      "user_group.not_found": "User group not found",
+      "users.not_found": "User not found"
+    }
   }
 }
