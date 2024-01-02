@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/solid-query"
 import { AppLayout } from "@/app/app-layout"
 import LoginPage from "@/modules/core/pages/login/login"
 
+import { AppToasts } from "./app/layout/app-toasts"
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -28,6 +30,7 @@ const App: Component = () => {
           <Route path="/*" component={AppLayout} />
         </Routes>
       </Router>
+      <AppToasts />
     </QueryClientProvider>
   )
 }
