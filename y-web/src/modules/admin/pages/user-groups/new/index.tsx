@@ -9,7 +9,9 @@ import { InputField } from "@/app/components/common/input-field/input-field"
 import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
 import { createUserGroup } from "@/modules/admin/user-groups/user-groups.api"
 import { userGroupsKey } from "@/modules/admin/user-groups/user-groups.service"
@@ -20,6 +22,7 @@ const NewUserGroupPage: Component = () => {
 
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { notify } = toastCtl
 
   createEffect(() => {
     const groupCreationAllowed = $auth.data?.user_rights.some(
@@ -47,9 +50,17 @@ const NewUserGroupPage: Component = () => {
         },
         {
           onSuccess: (response) => {
+            notify({
+              title: "Group created",
+              content: "User group was created",
+              severity: "success",
+              icon: "check",
+            })
+
             void queryClient.invalidateQueries([userGroupsKey])
             navigate(`/admin/user-groups/${response.id}`)
           },
+          onError: (error) => genericErrorToast(error),
         }
       )
     },

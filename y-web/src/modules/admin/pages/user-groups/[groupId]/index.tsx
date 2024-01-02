@@ -26,7 +26,9 @@ import { Modal } from "@/app/components/common/modal/modal"
 import { Pill } from "@/app/components/common/pill/pill"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
 import {
   deleteUserGroup,
@@ -59,6 +61,7 @@ const UserGroupPage: Component = () => {
   const params = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { notify } = toastCtl
 
   let formRef: HTMLFormElement | undefined
 
@@ -144,9 +147,17 @@ const UserGroupPage: Component = () => {
       },
       {
         onSuccess: () => {
+          notify({
+            title: "Changes saved",
+            content: "User group was updated",
+            severity: "success",
+            icon: "check",
+          })
+
           void queryClient.invalidateQueries([userGroupsKey])
           void queryClient.invalidateQueries([userGroupKey, $userGroup.data.id])
         },
+        onError: (error) => genericErrorToast(error),
         onSettled: () => {
           setUpdateConfirmationModalOpen(false)
         },
@@ -320,9 +331,17 @@ const UserGroupPage: Component = () => {
                   },
                   {
                     onSuccess: () => {
+                      notify({
+                        title: "Group deleted",
+                        content: "User group was deleted",
+                        severity: "success",
+                        icon: "check",
+                      })
+
                       void queryClient.invalidateQueries([userGroupsKey])
                       navigate(routes["/admin/user-groups"])
                     },
+                    onError: (error) => genericErrorToast(error),
                   }
                 )
               }}

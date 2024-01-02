@@ -11,6 +11,8 @@ import { Link } from "@/app/components/common/link/link"
 import { Modal } from "@/app/components/common/modal/modal"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { toastCtl } from "@/app/core/toast"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
 import { useUserGroups } from "@/modules/admin/user-groups/user-groups.service"
 import { updateUserGroupMembership } from "@/modules/admin/user/user.api"
@@ -28,6 +30,7 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
 
   const params = useParams()
   const queryClient = useQueryClient()
+  const { notify } = toastCtl
 
   const $updateUserGroupMembership = createMutation(updateUserGroupMembership)
 
@@ -90,8 +93,16 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
             setConfirmationModalOpen(false)
           },
           onSuccess: () => {
+            notify({
+              title: "Changes saved",
+              content: "User's group membership was updated",
+              severity: "success",
+              icon: "check",
+            })
+
             void queryClient.invalidateQueries(["user", params.userId])
           },
+          onError: (error) => genericErrorToast(error),
         }
       )
     }

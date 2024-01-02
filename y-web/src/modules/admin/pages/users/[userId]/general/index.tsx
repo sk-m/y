@@ -9,6 +9,8 @@ import { Icon } from "@/app/components/common/icon/icon"
 import { Modal } from "@/app/components/common/modal/modal"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { toastCtl } from "@/app/core/toast"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
 import { AdminUpdateUserPasswordModal } from "@/modules/admin/components/user/update-user-password-modal"
 import { IUser } from "@/modules/admin/user/user.codecs"
@@ -24,6 +26,7 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
   const $auth = useAuth()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { notify } = toastCtl
 
   const $deleteUsers = createMutation(deleteUsers)
 
@@ -112,10 +115,18 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
                   },
                   {
                     onSuccess: () => {
+                      notify({
+                        title: "User deleted",
+                        content: "User was successfully deleted",
+                        severity: "success",
+                        icon: "check",
+                      })
+
                       setDeleteModalOpen(false)
                       void queryClient.invalidateQueries([usersKey])
                       navigate(routes["/admin/users"])
                     },
+                    onError: (error) => genericErrorToast(error),
                   }
                 )
               }}

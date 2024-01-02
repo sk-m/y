@@ -23,7 +23,9 @@ import {
   ListFooter,
   ListHead,
 } from "@/app/components/list/list"
+import { toastCtl } from "@/app/core/toast"
 import { useTableState } from "@/app/core/use-table-state"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
 import { IUser } from "@/modules/admin/users/users.codecs"
 import { useUsers, usersKey } from "@/modules/admin/users/users.service"
@@ -89,6 +91,7 @@ const UserEntry: Component<UserEntryProps> = (props) => {
 export const UsersList: Component = () => {
   const $auth = useAuth()
   const queryClient = useQueryClient()
+  const { notify } = toastCtl
 
   const tableState = useTableState<number>({
     defaultRowsPerPage: 25,
@@ -189,10 +192,18 @@ export const UsersList: Component = () => {
                   },
                   {
                     onSuccess: () => {
+                      notify({
+                        title: "Users deleted",
+                        content: "Selected users were deleted",
+                        severity: "success",
+                        icon: "check",
+                      })
+
                       setDeleteConfirmationModalOpen(false)
                       void queryClient.invalidateQueries([usersKey])
                       return tableState.setSelectedEntries(() => new Set())
                     },
+                    onError: (error) => genericErrorToast(error),
                   }
                 )
               }}

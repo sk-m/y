@@ -9,7 +9,9 @@ import { InputField } from "@/app/components/common/input-field/input-field"
 import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
 import { createUser } from "@/modules/admin/users/users.api"
 import { usersKey } from "@/modules/admin/users/users.service"
@@ -22,6 +24,7 @@ const NewUserPage: Component = () => {
 
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { notify } = toastCtl
 
   const $createUser = createMutation(createUser)
 
@@ -49,9 +52,17 @@ const NewUserPage: Component = () => {
         },
         {
           onSuccess: (response) => {
+            notify({
+              title: "User created",
+              content: "A new user was successfully created.",
+              severity: "success",
+              icon: "check",
+            })
+
             void queryClient.invalidateQueries([usersKey])
             navigate(`${USERS_ROUTE}/${response.id}`)
           },
+          onError: (error) => genericErrorToast(error),
         }
       )
     },

@@ -8,7 +8,9 @@ import { InputField } from "@/app/components/common/input-field/input-field"
 import { Modal } from "@/app/components/common/modal/modal"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { updateUserPassword } from "@/modules/admin/users/users.api"
 
 import { IUser } from "../../users/users.codecs"
@@ -28,6 +30,8 @@ export type AdminUpdateUserPasswordModalProps = {
 export const AdminUpdateUserPasswordModal: Component<
   AdminUpdateUserPasswordModalProps
 > = (props) => {
+  const { notify } = toastCtl
+
   const $updatePassword = createMutation(updateUserPassword)
 
   const form = useForm<AdminUpdateUserPasswordFormValues>({
@@ -47,8 +51,16 @@ export const AdminUpdateUserPasswordModal: Component<
         },
         {
           onSuccess: () => {
+            notify({
+              title: "Password updated",
+              content: "User's password was changed",
+              severity: "success",
+              icon: "check",
+            })
+
             props.onClose()
           },
+          onError: (error) => genericErrorToast(error),
         }
       )
     },
