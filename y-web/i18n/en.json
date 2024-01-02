@@ -19,6 +19,10 @@
         "name": "Create user accounts",
         "description": "Create new users. Already existing users will be able to create other accounts as well."
       },
+      "delete_user": {
+        "name": "Delete users",
+        "description": "Unlike blocking or hiding, deleting a user is an irreversible action. All data related to a deleted user is forever lost."
+      },
       "change_user_password": {
         "name": "Change user's password",
         "description": "Update user's password. Target user will not necessarily be notified of the change."

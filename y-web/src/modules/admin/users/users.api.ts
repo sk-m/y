@@ -1,4 +1,4 @@
-import { get, post, put } from "@/app/core/request"
+import { del, get, post, put } from "@/app/core/request"
 import { TableInput, appendTableInput } from "@/app/core/request.utils"
 
 import { TCreateUser, TGetUsers } from "./users.codecs"
@@ -42,4 +42,16 @@ export const createUser = async (input: CreateUserInput) => {
       password: input.password,
     },
   }).then((data) => TCreateUser.parse(data))
+}
+
+export type DeleteUsersInput = {
+  userIds: number[]
+}
+
+export const deleteUsers = async (input: DeleteUsersInput) => {
+  return del(apiUsers, {
+    body: {
+      user_ids: input.userIds,
+    },
+  })
 }
