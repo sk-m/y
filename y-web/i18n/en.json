@@ -73,6 +73,10 @@
   },
   "error": {
     "code": {
+      "auth.passwords_do_not_match": "Incorrect password",
+      "auth.other": "Other",
+      "auth.authentication_forbidden": "Authentication forbidden",
+      "auth.user_does_not_exist": "User does not exist",
       "create_user_group.unauthorized": "Permission denied",
       "create_user_group.other": "Other",
       "create_user.unauthorized": "Permission denied",

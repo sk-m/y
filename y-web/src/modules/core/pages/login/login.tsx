@@ -7,14 +7,17 @@ import { Button } from "@/app/components/common/button/button"
 import { InputError } from "@/app/components/common/input-error/input-error"
 import { InputField } from "@/app/components/common/input-field/input-field"
 import { ResponseError } from "@/app/core/request"
+import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
 import { routes } from "@/app/routes"
+import { unsafe_t } from "@/i18n"
 import { login } from "@/modules/core/auth/auth.api"
 import { authKey } from "@/modules/core/auth/auth.service"
 
 import "./login.less"
 
 const LoginPage: Component = () => {
+  const { notify } = toastCtl
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -30,6 +33,12 @@ const LoginPage: Component = () => {
     onSubmit: (values) => {
       $login.mutate(values, {
         onSuccess: () => {
+          notify({
+            title: "Welcome back!",
+            severity: "success",
+            icon: "waving_hand",
+          })
+
           void queryClient.invalidateQueries(authKey)
 
           const urlParameters = new URLSearchParams(window.location.search)
@@ -84,7 +93,12 @@ const LoginPage: Component = () => {
             />
 
             <Show when={error()}>
-              <InputError error={error()} />
+              <InputError
+                error={
+                  error() &&
+                  (unsafe_t(`error.code.${error() as string}`) ?? error())
+                }
+              />
             </Show>
 
             <Button
