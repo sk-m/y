@@ -15,7 +15,8 @@ struct Right {
 
 #[derive(Deserialize)]
 struct UpdateUserGroupInput {
-    rights: HashMap<String, Right>,
+    name: Option<String>,
+    rights: Option<HashMap<String, Right>>,
 }
 
 #[patch("/user-groups/{user_group_id}")]
@@ -38,55 +39,76 @@ async fn update_user_group(
 
     let user_group_id = path.into_inner();
 
-    let transaction = pool.begin().await;
+    let form = form.into_inner();
 
-    if let Ok(mut transaction) = transaction {
-        let delete_rights_result = sqlx::query("DELETE FROM user_group_rights WHERE group_id = $1")
+    let updated_name = &form.name.is_some();
+    let updated_rights = &form.rights.is_some().clone();
+
+    if *updated_name {
+        let name = &form.name.unwrap();
+
+        let result = sqlx::query("UPDATE user_groups SET name = $1 WHERE id = $2")
+            .bind(name)
             .bind(user_group_id)
-            .execute(&mut *transaction)
+            .execute(&**pool)
             .await;
 
-        if delete_rights_result.is_err() {
+        if result.is_err() {
             return error("update_user_group.other");
         }
+    }
 
-        let mut rights_query_builder = QueryBuilder::new(
-            "INSERT INTO user_group_rights(group_id, right_name, right_options) ",
-        );
+    if *updated_rights {
+        let transaction = pool.begin().await;
 
-        let assigned_rigths = form
-            .into_inner()
-            .rights
-            .into_iter()
-            .filter(|right| right.1.granted)
-            .collect::<HashMap<String, Right>>();
+        if let Ok(mut transaction) = transaction {
+            let delete_rights_result =
+                sqlx::query("DELETE FROM user_group_rights WHERE group_id = $1")
+                    .bind(user_group_id)
+                    .execute(&mut *transaction)
+                    .await;
 
-        if assigned_rigths.len() > 0 {
-            rights_query_builder.push_values(assigned_rigths, |mut b, (right_name, right)| {
-                b.push_bind(user_group_id)
-                    .push_bind(right_name)
-                    .push_bind(serde_json::to_value(right.options).unwrap());
-            });
-
-            let assign_rights_result = rights_query_builder
-                .build()
-                .execute(&mut *transaction)
-                .await;
-
-            if assign_rights_result.is_err() {
+            if delete_rights_result.is_err() {
                 return error("update_user_group.other");
             }
-        }
 
-        let result = transaction.commit().await;
+            let mut rights_query_builder = QueryBuilder::new(
+                "INSERT INTO user_group_rights(group_id, right_name, right_options) ",
+            );
 
-        match result {
-            Ok(_) => {
-                return HttpResponse::Ok().body("{}");
+            let assigned_rigths = form
+                .rights
+                .unwrap()
+                .into_iter()
+                .filter(|right| right.1.granted)
+                .collect::<HashMap<String, Right>>();
+
+            if assigned_rigths.len() > 0 {
+                rights_query_builder.push_values(assigned_rigths, |mut b, (right_name, right)| {
+                    b.push_bind(user_group_id)
+                        .push_bind(right_name)
+                        .push_bind(serde_json::to_value(right.options).unwrap());
+                });
+
+                let assign_rights_result = rights_query_builder
+                    .build()
+                    .execute(&mut *transaction)
+                    .await;
+
+                if assign_rights_result.is_err() {
+                    return error("update_user_group.other");
+                }
             }
-            Err(_) => return error("update_user_group.other"),
+
+            let result = transaction.commit().await;
+
+            if result.is_err() {
+                return error("update_user_group.other");
+            }
+        } else {
+            return error("update_user_group.other");
         }
-    } else {
-        return error("update_user_group.other");
     }
+
+    return HttpResponse::Ok().body("{}");
 }

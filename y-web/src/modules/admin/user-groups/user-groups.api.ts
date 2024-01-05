@@ -43,9 +43,12 @@ export const userGroup = async (input: GetUserGroupInput) => {
   )
 }
 
-export type UpdateUserGruopInput = {
+export type UpdateUserGroupInput = {
   userGroupId: number
-  rights: Record<
+
+  name?: string
+
+  rights?: Record<
     string,
     {
       granted: boolean
@@ -54,9 +57,10 @@ export type UpdateUserGruopInput = {
   >
 }
 
-export const updateUserGroup = async (input: UpdateUserGruopInput) => {
+export const updateUserGroup = async (input: UpdateUserGroupInput) => {
   return patch(`${apiUserGroups}/${input.userGroupId}`, {
     body: {
+      name: input.name?.trim(),
       rights: input.rights,
     },
   })
