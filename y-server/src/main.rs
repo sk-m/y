@@ -16,27 +16,35 @@ async fn process_cli_arguments(pool: &RequestPool) {
     let cli_arguments: Vec<String> = env::args().collect();
 
     for (index, argument) in cli_arguments.iter().enumerate() {
-        if argument == "--create-admin" {
+        if argument == "--create-user" {
             let username = &cli_arguments.get(index + 1);
             let password = &cli_arguments.get(index + 2);
+            let group_name = &cli_arguments.get(index + 3);
 
             if let (Some(username), Some(password)) = (username, password) {
-                println!("Creating an admin user '{}' and exiting...", username);
+                println!("Creating a new user and exiting...");
 
-                let create_admin = util::cli_create_admin(pool, username, password).await;
+                let create_user = util::cli_create_user(
+                    pool,
+                    username,
+                    password,
+                    group_name.and_then(|name| Some(name.as_str())),
+                )
+                .await;
 
-                match create_admin {
+                match create_user {
                     Ok(_) => {
-                        println!("Admin user created successfully.");
+                        println!("No errors reported.");
                         exit(0);
                     }
                     Err(error) => {
-                        println!("Error creating an admin user: {}", error);
+                        println!("Error reported: {}", error);
                         exit(1);
                     }
                 }
             } else {
-                println!("Error: --create-admin requires two arguments: username and password.");
+                println!("Usage: --create-user <username> <password> [group]");
+                println!("  group: optional, name of the group that will be assigned to the user.");
                 exit(1);
             }
         }
