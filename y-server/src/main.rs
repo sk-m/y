@@ -67,6 +67,18 @@ async fn main() -> std::io::Result<()> {
         .parse()
         .expect("SERVER_PORT is not a valid port number");
 
+    let migration_result = sqlx::migrate!().run(&pool).await;
+
+    match migration_result {
+        Ok(_) => {
+            println!("Migrations ran successfully.")
+        }
+        Err(error) => {
+            println!("Error running migrations: {}", error);
+            exit(1);
+        }
+    }
+
     println!(
         "Starting the server on {}:{}...",
         server_address, server_port
