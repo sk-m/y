@@ -20,6 +20,8 @@ export type UserGroupRightOptionProps = {
   right: IUserRight
   option: IUserRightOption
   form: Form<UserGroupFieldValues, UserGroupWatchedFields>
+
+  disabled?: boolean
 }
 
 export const UserGroupRightOption: Component<UserGroupRightOptionProps> = (
@@ -30,6 +32,7 @@ export const UserGroupRightOption: Component<UserGroupRightOptionProps> = (
       <Match when={props.option.value_type === "boolean"}>
         <Stack direction="row" spacing="0.75em" alignItems="center">
           <Checkbox
+            disabled={props.disabled}
             checkedLabel="Allow"
             {...props.form.register(
               `right_option:${props.right.name}:${props.option.name}`

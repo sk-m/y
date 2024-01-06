@@ -17,6 +17,8 @@ export type GroupsOptionFieldProps = {
   right: IUserRight
   option: IUserRightOption
   form: Form<UserGroupFieldValues, UserGroupWatchedFields>
+
+  disabled?: boolean
 }
 
 export const UserGroupSelectField: Component<GroupsOptionFieldProps> = (
@@ -29,6 +31,7 @@ export const UserGroupSelectField: Component<GroupsOptionFieldProps> = (
   // !TODO registerControlled's output is typed as any for now.
   return (
     <SelectField
+      disabled={props.disabled}
       label={unsafe_t(
         `main.userRightOption.${props.right.name}.${props.option.name}.label`
       )}

@@ -18,6 +18,8 @@ import "./user-group-right.less"
 export type UserGroupRightProps = {
   right: IUserRight
   form: Form<UserGroupFieldValues, UserGroupWatchedFields>
+
+  disabled?: boolean
 }
 
 export const UserGroupRight: Component<UserGroupRightProps> = (props) => {
@@ -37,6 +39,7 @@ export const UserGroupRight: Component<UserGroupRightProps> = (props) => {
       <Stack direction="row" justifyContent="space-between">
         <Stack direction="row" alignItems="center" spacing="1em">
           <Checkbox
+            disabled={props.disabled}
             checkedLabel="Granted"
             size="l"
             {...props.form.register(`right:${props.right.name}`)}
@@ -84,6 +87,7 @@ export const UserGroupRight: Component<UserGroupRightProps> = (props) => {
                   right={props.right}
                   option={option}
                   form={props.form}
+                  disabled={props.disabled}
                 />
               )}
             </For>

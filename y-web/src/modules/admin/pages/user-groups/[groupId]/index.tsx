@@ -463,7 +463,12 @@ const UserGroupPage: Component = () => {
               </Show>
             </Stack>
 
-            <Show when={$userGroup.data?.group_type === null}>
+            <Show
+              when={
+                groupManagementPermissions().groupManagementAllowed &&
+                $userGroup.data?.group_type === null
+              }
+            >
               <Text variant="h3">General Information</Text>
 
               <KeyValueFields
@@ -492,7 +497,14 @@ const UserGroupPage: Component = () => {
                           {(right) => (
                             <>
                               <hr />
-                              <UserGroupRight right={right} form={form} />
+                              <UserGroupRight
+                                disabled={
+                                  !groupManagementPermissions()
+                                    .groupManagementAllowed
+                                }
+                                right={right}
+                                form={form}
+                              />
                             </>
                           )}
                         </For>
