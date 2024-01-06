@@ -5,11 +5,17 @@ import { Link, useLocation } from "@solidjs/router"
 import { Icon } from "@/app/components/common/icon/icon"
 import { ComponentWithChildren } from "@/module"
 
+const ICON_SIZE_NORMAL = 18
+const ICON_SIZE_SMALL = 14
+
 export type AsideEnytryProps = {
   to: string
 
   icon: string
   title: string
+
+  relatedPaths?: string[]
+  subEntry?: boolean
 }
 
 export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
@@ -17,8 +23,20 @@ export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
 
   const subEntries = children(() => props.children).toArray()
 
-  const isActive = createMemo(() => location.pathname.includes(props.to))
-  const isSelected = createMemo(() => location.pathname.endsWith(props.to))
+  const isActive = createMemo(() => {
+    if (location.pathname.includes(props.to)) return true
+
+    for (const path of props.relatedPaths ?? []) {
+      if (location.pathname.includes(path)) return true
+    }
+  })
+
+  const isSelected = createMemo(() => {
+    if (location.pathname.endsWith(props.to)) return true
+    for (const path of props.relatedPaths ?? []) {
+      if (location.pathname.endsWith(path)) return true
+    }
+  })
 
   return (
     <>
@@ -33,30 +51,30 @@ export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
         <div class="content">
           <div class="line" />
           <div class="icon">
-            <Icon size={18} type="rounded" name={props.icon} />
+            <Icon
+              size={props.subEntry ? ICON_SIZE_SMALL : ICON_SIZE_NORMAL}
+              type="rounded"
+              name={props.icon}
+            />
           </div>
           <div class="text">{props.title}</div>
         </div>
         <div class="arrow">
           <Icon
-            size={18}
+            size={props.subEntry ? ICON_SIZE_SMALL : ICON_SIZE_NORMAL}
             wght={500}
             name={props.children ? "expand_more" : "chevron_right"}
           />
         </div>
       </Link>
       <Show when={props.children && isActive()}>
-        <div class="sub-entries">
-          <For each={subEntries}>
-            {(entry) =>
-              entry && (
-                <div class="sub-entry">
-                  <div class="separator" />
-                  {entry}
-                </div>
-              )
-            }
-          </For>
+        <div class="sub-entries-container">
+          <div class="spacer" />
+          <div class="sub-entries">
+            <For each={subEntries}>
+              {(entry) => entry && <div class="sub-entry">{entry}</div>}
+            </For>
+          </div>
         </div>
       </Show>
     </>

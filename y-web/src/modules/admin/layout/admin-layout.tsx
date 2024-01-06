@@ -32,8 +32,22 @@ const AdminLayout: Component = () => {
     <>
       <AppAside>
         <AsideSection>
-          <AsideEntry icon="group" title="Users" to="users" />
-          <AsideEntry icon="groups" title="Groups" to="user-groups" />
+          <AsideEntry
+            icon="group"
+            title="Users & Groups"
+            to="users"
+            relatedPaths={["users", "user-groups"]}
+          >
+            <AsideEntry subEntry icon="group" title="Users" to="users" />
+            <AsideEntry
+              subEntry
+              icon="groups"
+              title="Groups"
+              to="user-groups"
+            />
+          </AsideEntry>
+          <AsideEntry icon="settings" title="Instance config" to="config" />
+          <AsideEntry icon="bolt" title="Features" to="features" />
         </AsideSection>
       </AppAside>
       <AppContent>
