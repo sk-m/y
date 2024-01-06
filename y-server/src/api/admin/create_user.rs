@@ -32,7 +32,7 @@ async fn create_user(
 
     let action_allowed = client_rights
         .iter()
-        .any(|right| right.right_name == "change_user_password");
+        .any(|right| right.right_name == "create_account");
 
     if !action_allowed {
         return error("create_user.unauthorized");
