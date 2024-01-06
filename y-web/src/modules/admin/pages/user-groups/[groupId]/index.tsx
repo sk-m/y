@@ -21,6 +21,10 @@ import {
   ExpandButtonEntry,
 } from "@/app/components/common/expand-button/expand-button-entry"
 import { Icon } from "@/app/components/common/icon/icon"
+import {
+  KeyValue,
+  KeyValueFields,
+} from "@/app/components/common/key-value/key-value"
 import { Container } from "@/app/components/common/layout/container"
 import { Modal } from "@/app/components/common/modal/modal"
 import { Pill } from "@/app/components/common/pill/pill"
@@ -31,6 +35,7 @@ import { useForm } from "@/app/core/use-form"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
 import {
+  UpdateUserGroupInput,
   deleteUserGroup,
   updateUserGroup,
 } from "@/modules/admin/user-groups/user-groups.api"
@@ -198,6 +203,24 @@ const UserGroupPage: Component = () => {
       }
     }
   })
+
+  const saveKeyValue = (key: keyof UpdateUserGroupInput, value: string) => {
+    if (!$userGroup.data) return
+
+    void $updateUserGroup.mutate(
+      {
+        userGroupId: $userGroup.data.id,
+        [key]: value,
+      },
+      {
+        onSuccess: () => {
+          void queryClient.invalidateQueries([userGroupsKey])
+          void queryClient.invalidateQueries([userGroupKey, $userGroup.data.id])
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
+  }
 
   return (
     <>
@@ -418,27 +441,44 @@ const UserGroupPage: Component = () => {
                 </Switch>
               </Stack>
 
-              <Show when={$userGroup.data?.group_type === null}>
+              <Show
+                when={
+                  groupManagementPermissions().groupDeletionAllowed &&
+                  $userGroup.data?.group_type === null
+                }
+              >
                 <ExpandButton icon="bolt" label="Actions" position="left">
                   <ExpandButtonEntries>
-                    <ExpandButtonEntry icon="edit">Rename</ExpandButtonEntry>
-                    <Show
-                      when={groupManagementPermissions().groupDeletionAllowed}
+                    <ExpandButtonEntry
+                      icon="delete"
+                      variant="danger"
+                      onClick={() => setDeleteConfirmationModalOpen(true)}
                     >
-                      <ExpandButtonEntry
-                        icon="delete"
-                        variant="danger"
-                        onClick={() => setDeleteConfirmationModalOpen(true)}
-                      >
-                        Delete
-                      </ExpandButtonEntry>
-                    </Show>
+                      Delete
+                    </ExpandButtonEntry>
                   </ExpandButtonEntries>
                 </ExpandButton>
               </Show>
             </Stack>
 
-            <Text variant="h2">Group Rights</Text>
+            <Show when={$userGroup.data?.group_type === null}>
+              <Text variant="h3">General Information</Text>
+
+              <KeyValueFields
+                style={{
+                  width: "500px",
+                }}
+              >
+                <KeyValue
+                  keyWidth="100px"
+                  label="Group name"
+                  value={$userGroup.data?.name ?? ""}
+                  onChange={(value) => saveKeyValue("name", value)}
+                />
+              </KeyValueFields>
+            </Show>
+
+            <Text variant="h3">Group Rights</Text>
 
             <form ref={formRef as HTMLFormElement} onSubmit={submit}>
               <Stack spacing="2em">
