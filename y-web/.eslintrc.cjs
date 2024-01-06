@@ -73,6 +73,8 @@ module.exports = {
     "prefer-template": "warn",
 
     // Typescript ESLint - errors
+    "@typescript-eslint/no-non-null-assertion": "off",
+
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "error",
     "default-param-last": "off",
@@ -152,7 +154,7 @@ module.exports = {
     "unicorn/no-object-as-default-parameter": "off",
     "unicorn/no-unused-properties": "warn",
     "unicorn/filename-case": [
-      "error",
+      "warn",
       {
         case: "kebabCase",
       },

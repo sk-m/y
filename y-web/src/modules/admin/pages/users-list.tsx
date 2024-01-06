@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Component, Show, createMemo } from "solid-js"
 
 import { useNavigate } from "@solidjs/router"

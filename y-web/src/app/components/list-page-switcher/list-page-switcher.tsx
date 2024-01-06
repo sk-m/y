@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Component, Setter, Show } from "solid-js"
 
 import { CreateQueryResult } from "@tanstack/solid-query"

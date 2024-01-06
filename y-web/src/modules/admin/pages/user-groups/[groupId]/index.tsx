@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   Component,
   For,
@@ -106,7 +105,6 @@ const UserGroupPage: Component = () => {
 
   const $userRights = useUserRights()
   const $userGroup = useUserGroup(() => ({
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     userGroupId: Number.parseInt(params.groupId!, 10),
   }))
 
@@ -150,7 +148,6 @@ const UserGroupPage: Component = () => {
         const optionName = parts[2] as string
 
         if (rights[rightName]) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           rights[rightName]!.options[optionName] = value
         }
       }

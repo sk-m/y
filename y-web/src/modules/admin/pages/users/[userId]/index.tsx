@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Component, Show, createEffect, createMemo } from "solid-js"
 
 import {
@@ -110,13 +109,11 @@ const UserPage: Component = () => {
           <Routes>
             <Route
               path="/"
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               element={<UserGeneralSubpage user={$user.data!} />}
             />
             <Show when={allowedTabs().groupsTabAllowed}>
               <Route
                 path="/groups"
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 element={<UserGroupsSubpage user={$user.data!} />}
               />
             </Show>

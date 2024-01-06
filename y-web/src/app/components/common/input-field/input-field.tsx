@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Component, JSX, Show, createSignal, onMount } from "solid-js"
 
 import {

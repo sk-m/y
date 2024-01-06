@@ -16,7 +16,6 @@ export type ModalProps = {
 
 export const Modal: ComponentWithChildren<ModalProps> = (props) => {
   return (
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     <Portal mount={document.getElementById("app-modals-container")!}>
       <div
         classList={{ "ui-modal-container": true, open: props.open }}

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { For, Show } from "solid-js"
 
 import { Icon } from "../components/common/icon/icon"
