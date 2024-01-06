@@ -273,13 +273,7 @@ const UserGroupPage: Component = () => {
             immediately.
           </Text>
 
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            style={{
-              "margin-top": "1.5em",
-            }}
-          >
+          <Stack direction="row" justifyContent="space-between">
             <Button
               variant="secondary"
               onClick={() => setUpdateConfirmationModalOpen(false)}
@@ -342,13 +336,7 @@ const UserGroupPage: Component = () => {
             automatically.
           </Text>
 
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            style={{
-              "margin-top": "1.5em",
-            }}
-          >
+          <Stack direction="row" justifyContent="space-between">
             <Button
               variant="secondary"
               onClick={() => setDeleteConfirmationModalOpen(false)}
