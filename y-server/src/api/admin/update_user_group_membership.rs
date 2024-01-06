@@ -36,25 +36,40 @@ async fn update_user_group_membership(
     let mut mutated_groups: Vec<i32> = vec![];
 
     // Added groups
-    let mut it = target_groups.iter();
     for group_id in &input_groups {
-        if !it.find(|group| group.id == *group_id).is_some() {
+        if !target_groups
+            .iter()
+            .find(|group| group.id == *group_id)
+            .is_some()
+        {
             mutated_groups.push(group_id.clone());
         }
     }
 
     // Removed groups
-    let mut it = input_groups.iter();
     for group in &target_groups {
-        if !it.find(|group_id| group.id == **group_id).is_some() {
+        if !input_groups
+            .iter()
+            .find(|group_id| **group_id == group.id)
+            .is_some()
+        {
+            dbg!("removed group {}!", group.id);
             mutated_groups.push(group.id.clone());
         }
     }
 
     let mut client_assignable_groups: Vec<i32> = vec![];
+    let mut all_groups_allowed = false;
 
     for right in client_rights {
         if right.right_name.eq("assign_user_groups") {
+            if let Some(all_allowed) = right.right_options.get("allow_assigning_any_group") {
+                if all_allowed.as_bool().unwrap_or(false) {
+                    all_groups_allowed = true;
+                    break;
+                }
+            }
+
             if let Some(groups) = right.right_options.get("assignable_user_groups") {
                 if groups.is_array() {
                     for group_id in groups.as_array().unwrap() {
@@ -69,10 +84,14 @@ async fn update_user_group_membership(
 
     let mut action_allowed = true;
 
-    for group_id in &mutated_groups {
-        if !client_assignable_groups.contains(group_id) {
-            action_allowed = false;
-            break;
+    dbg!(&mutated_groups);
+
+    if !all_groups_allowed {
+        for group_id in &mutated_groups {
+            if !client_assignable_groups.contains(group_id) {
+                action_allowed = false;
+                break;
+            }
         }
     }
 
