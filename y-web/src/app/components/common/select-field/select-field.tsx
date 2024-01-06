@@ -31,6 +31,8 @@ export type SelectProps<TOption extends SelectOption = SelectOption> =
     subtext?: JSX.Element
 
     width?: string
+
+    disabled?: boolean
   }
 
 export const SelectField: Component<SelectProps> = <
@@ -75,6 +77,7 @@ export const SelectField: Component<SelectProps> = <
       classList={{
         "ui-select-field": true,
         active: active(),
+        disabled: props.disabled,
       }}
       style={{
         ...(props.width ? { width: props.width } : {}),
