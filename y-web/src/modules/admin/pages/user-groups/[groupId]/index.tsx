@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
   Component,
   For,
@@ -33,6 +34,7 @@ import { Text } from "@/app/components/common/text/text"
 import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
+import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import {
   UpdateUserGroupInput,
@@ -385,6 +387,18 @@ const UserGroupPage: Component = () => {
       </Modal>
       <Show when={$userGroup.data}>
         <Container size="m">
+          <Breadcrumbs
+            style={{
+              "margin-bottom": "1em",
+            }}
+          >
+            <Breadcrumb path={routes["/admin"]}>Administration</Breadcrumb>
+            <Breadcrumb path={USER_GROUPS_ROUTE}>Groups</Breadcrumb>
+            <Breadcrumb path={`${USER_GROUPS_ROUTE}/${$userGroup.data!.id}`}>
+              {$userGroup.data!.name}
+            </Breadcrumb>
+          </Breadcrumbs>
+
           <Stack spacing="2em">
             <Stack
               direction="row"

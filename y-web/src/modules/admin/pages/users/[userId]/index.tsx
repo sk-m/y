@@ -16,12 +16,15 @@ import { Stack } from "@/app/components/common/stack/stack"
 import { Tab, TabsContainer } from "@/app/components/common/tab/tab"
 import { Text } from "@/app/components/common/text/text"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
+import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { useUser } from "@/modules/admin/user/user.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
 import UserGeneralSubpage from "./general"
 import UserGroupsSubpage from "./groups"
+
+const USERS_LIST_ROUTE = routes["/admin/users"]
 
 const UserPage: Component = () => {
   const $auth = useAuth()
@@ -48,7 +51,7 @@ const UserPage: Component = () => {
   createEffect(() => {
     if ($user.isError) {
       genericErrorToast($user.error)
-      navigate(routes["/admin/users"])
+      navigate(USERS_LIST_ROUTE)
     }
   })
 
@@ -60,10 +63,22 @@ const UserPage: Component = () => {
   })
 
   const navigateToSubpage = (subpage: string) =>
-    userId() && navigate(`${routes["/admin/users"]}/${userId()}/${subpage}`)
+    userId() && navigate(`${USERS_LIST_ROUTE}/${userId()}/${subpage}`)
 
   return (
     <Container size="m">
+      <Breadcrumbs
+        style={{
+          "margin-bottom": "1em",
+        }}
+      >
+        <Breadcrumb path={routes["/admin"]}>Administration</Breadcrumb>
+        <Breadcrumb path={USERS_LIST_ROUTE}>Users</Breadcrumb>
+        <Breadcrumb path={`${USERS_LIST_ROUTE}/${userId()}`}>
+          {$user.data?.username ?? ""}
+        </Breadcrumb>
+      </Breadcrumbs>
+
       <Stack spacing="2em">
         <Show when={$user.data}>
           <Stack spacing={"0.5em"}>

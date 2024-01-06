@@ -7,6 +7,8 @@ import { Card } from "@/app/components/common/card/card"
 import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
+import { routes } from "@/app/routes"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
 import { UserGroupsList } from "../../components/user-groups-lits"
@@ -25,41 +27,41 @@ const UserGroupsListPage: Component = () => {
   )
 
   return (
-    <Container
-      size="m"
-      style={{
-        display: "flex",
-        "flex-direction": "column",
-        gap: "2em",
-      }}
-    >
-      <UserGroupsList />
+    <Container size="m">
+      <Stack spacing={"2em"}>
+        <Breadcrumbs>
+          <Breadcrumb path={routes["/admin"]}>Administration</Breadcrumb>
+          <Breadcrumb path={routes["/admin/user-groups"]}>Groups</Breadcrumb>
+        </Breadcrumbs>
 
-      <Show when={groupCreationAllowed()}>
-        <Card>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            spacing="1em"
-          >
-            <Stack spacing="1em">
-              <Text
-                variant="h3"
-                style={{
-                  margin: "0",
-                }}
-              >
-                New user group
-              </Text>
-              <Text variant="secondary">Create a new user group.</Text>
+        <UserGroupsList />
+
+        <Show when={groupCreationAllowed()}>
+          <Card>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              spacing="1em"
+            >
+              <Stack spacing="1em">
+                <Text
+                  variant="h3"
+                  style={{
+                    margin: "0",
+                  }}
+                >
+                  New user group
+                </Text>
+                <Text variant="secondary">Create a new user group.</Text>
+              </Stack>
+              <Button onClick={() => navigate("new")} leadingIcon="group_add">
+                New group
+              </Button>
             </Stack>
-            <Button onClick={() => navigate("new")} leadingIcon="group_add">
-              New group
-            </Button>
-          </Stack>
-        </Card>
-      </Show>
+          </Card>
+        </Show>
+      </Stack>
     </Container>
   )
 }

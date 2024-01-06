@@ -12,10 +12,13 @@ import { Text } from "@/app/components/common/text/text"
 import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
+import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { createUserGroup } from "@/modules/admin/user-groups/user-groups.api"
 import { userGroupsKey } from "@/modules/admin/user-groups/user-groups.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
+
+const USER_GROUPS_ROUTE = routes["/admin/user-groups"]
 
 const NewUserGroupPage: Component = () => {
   const $auth = useAuth()
@@ -33,7 +36,7 @@ const NewUserGroupPage: Component = () => {
     )
 
     if (!groupCreationAllowed) {
-      navigate(routes["/admin/user-groups"])
+      navigate(USER_GROUPS_ROUTE)
     }
   })
   const $createUserGroup = createMutation(createUserGroup)
@@ -69,60 +72,65 @@ const NewUserGroupPage: Component = () => {
   const { register, submit, errors } = form
 
   return (
-    <Container
-      size="s"
-      style={{
-        display: "flex",
-        "flex-direction": "column",
-        gap: "2em",
-      }}
-    >
-      <Stack spacing="0.5em">
-        <Text
-          variant="h1"
-          style={{
-            display: "flex",
-            "align-items": "center",
-            gap: "0.5em",
-          }}
-        >
-          <Icon name="group_add" grad={25} wght={500} />
-          Create a new user group
-        </Text>
-        <Text variant="secondary">
-          You will be able to set up user rights later.
-        </Text>
-      </Stack>
+    <Container size="s">
+      <Breadcrumbs
+        style={{
+          "margin-bottom": "1em",
+        }}
+      >
+        <Breadcrumb path={routes["/admin"]}>Administration</Breadcrumb>
+        <Breadcrumb path={USER_GROUPS_ROUTE}>Groups</Breadcrumb>
+        <Breadcrumb path={routes["/admin/user-groups/new"]}>new</Breadcrumb>
+      </Breadcrumbs>
 
-      <form onSubmit={submit}>
-        <Stack spacing="2em">
-          <InputField
-            label="Group name"
-            error={errors().name}
-            width="100%"
-            subtext="Group name is visible to everyone. Keep it short and descriptive."
-            maxLength={256}
-            inputProps={{
-              autofocus: true,
-              autocomplete: "off",
+      <Stack spacing="2em">
+        <Stack spacing="0.5em">
+          <Text
+            variant="h1"
+            style={{
+              display: "flex",
+              "align-items": "center",
+              gap: "0.5em",
             }}
-            {...register("name", {
-              required: true,
-            })}
-          />
-          <Stack direction="row" justifyContent="space-between">
-            <Button
-              onClick={() => navigate("/admin/user-groups")}
-              variant="secondary"
-            >
-              Back
-            </Button>
-            <Button buttonType="submit" disabled={$createUserGroup.isLoading}>
-              {$createUserGroup.isLoading ? "Creating..." : "Create"}
-            </Button>
-          </Stack>
+          >
+            <Icon name="group_add" grad={25} wght={500} />
+            Create a new user group
+          </Text>
+          <Text variant="secondary">
+            You will be able to set up user rights later.
+          </Text>
         </Stack>
-      </form>
+
+        <form onSubmit={submit}>
+          <Stack spacing="2em">
+            <InputField
+              label="Group name"
+              error={errors().name}
+              width="100%"
+              subtext="Group name is visible to everyone. Keep it short and descriptive."
+              maxLength={256}
+              inputProps={{
+                autofocus: true,
+                autocomplete: "off",
+              }}
+              {...register("name", {
+                required: true,
+              })}
+            />
+            <Stack direction="row" justifyContent="space-between">
+              <Button
+                onClick={() => navigate("/admin/user-groups")}
+                variant="secondary"
+              >
+                Back
+              </Button>
+              <Button buttonType="submit" disabled={$createUserGroup.isLoading}>
+                {$createUserGroup.isLoading ? "Creating..." : "Create"}
+              </Button>
+            </Stack>
+          </Stack>
+        </form>
+      </Stack>
     </Container>
   )
 }

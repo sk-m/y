@@ -12,6 +12,7 @@ import { Text } from "@/app/components/common/text/text"
 import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
+import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { createUser } from "@/modules/admin/users/users.api"
 import { usersKey } from "@/modules/admin/users/users.service"
@@ -71,68 +72,73 @@ const NewUserPage: Component = () => {
   const { register, submit, errors } = form
 
   return (
-    <Container
-      size="s"
-      style={{
-        display: "flex",
-        "flex-direction": "column",
-        gap: "2em",
-      }}
-    >
-      <Stack spacing="0.5em">
-        <Text
-          variant="h1"
-          style={{
-            display: "flex",
-            "align-items": "center",
-            gap: "0.5em",
-          }}
-        >
-          <Icon name="person_add" grad={25} wght={500} />
-          Create a new user
-        </Text>
-      </Stack>
+    <Container size="s">
+      <Breadcrumbs
+        style={{
+          "margin-bottom": "1em",
+        }}
+      >
+        <Breadcrumb path={routes["/admin"]}>Administration</Breadcrumb>
+        <Breadcrumb path={routes["/admin/users"]}>Users</Breadcrumb>
+        <Breadcrumb path={routes["/admin/users/new"]}>new</Breadcrumb>
+      </Breadcrumbs>
 
-      <form onSubmit={submit}>
-        <Stack spacing="2em">
-          <Stack spacing={"1em"}>
-            <InputField
-              label="Username"
-              error={errors().username}
-              width="100%"
-              maxLength={127}
-              inputProps={{
-                autofocus: true,
-                autocomplete: "username",
-              }}
-              {...register("username", {
-                required: true,
-              })}
-            />
-            <InputField
-              label="Password"
-              error={errors().password}
-              width="100%"
-              maxLength={512}
-              type="password"
-              inputProps={{
-                autocomplete: "new-password",
-              }}
-              {...register("password", {
-                required: true,
-              })}
-            />
-          </Stack>
-          <Stack direction="row" justifyContent="space-between">
-            <Button onClick={() => navigate(USERS_ROUTE)} variant="secondary">
-              Back
-            </Button>
-            <Button buttonType="submit" disabled={$createUser.isLoading}>
-              {$createUser.isLoading ? "Creating..." : "Create"}
-            </Button>
-          </Stack>
+      <Stack spacing="2em">
+        <Stack spacing="0.5em">
+          <Text
+            variant="h1"
+            style={{
+              display: "flex",
+              "align-items": "center",
+              gap: "0.5em",
+            }}
+          >
+            <Icon name="person_add" grad={25} wght={500} />
+            Create a new user
+          </Text>
         </Stack>
-      </form>
+
+        <form onSubmit={submit}>
+          <Stack spacing="2em">
+            <Stack spacing={"1em"}>
+              <InputField
+                label="Username"
+                error={errors().username}
+                width="100%"
+                maxLength={127}
+                inputProps={{
+                  autofocus: true,
+                  autocomplete: "username",
+                }}
+                {...register("username", {
+                  required: true,
+                })}
+              />
+              <InputField
+                label="Password"
+                error={errors().password}
+                width="100%"
+                maxLength={512}
+                type="password"
+                inputProps={{
+                  autocomplete: "new-password",
+                }}
+                {...register("password", {
+                  required: true,
+                })}
+              />
+            </Stack>
+            <Stack direction="row" justifyContent="space-between">
+              <Button onClick={() => navigate(USERS_ROUTE)} variant="secondary">
+                Back
+              </Button>
+              <Button buttonType="submit" disabled={$createUser.isLoading}>
+                {$createUser.isLoading ? "Creating..." : "Create"}
+              </Button>
+            </Stack>
+          </Stack>
+        </form>
+      </Stack>
     </Container>
   )
 }

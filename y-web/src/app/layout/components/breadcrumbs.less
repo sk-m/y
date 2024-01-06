@@ -1,0 +1,34 @@
+.ui-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.33em;
+
+  > .spacer {
+    display: flex;
+    align-items: center;
+
+    color: var(--color-text-grey-1);
+  }
+}
+
+.ui-breadcrumb {
+  text-decoration: none;
+
+  > .breadcrumb {
+    display: flex;
+
+    padding: 0.2em 0.4em;
+
+    color: var(--color-text-grey-1);
+    font-size: var(--text-sm);
+    font-weight: 500;
+
+    border-radius: 4px;
+
+    transition: 0.15s;
+
+    &:hover {
+      background-color: var(--color-grey-2);
+    }
+  }
+}
