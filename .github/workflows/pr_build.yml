@@ -1,11 +1,24 @@
-name: Build web
+name: Build on PR
 
 on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  build:
+  build_server:
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build server
+      run: |
+        cd y-server
+        cargo build --verbose
+
+  build_web:
     runs-on: self-hosted
 
     strategy:
@@ -14,13 +27,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-
-    - name: Build
+    - name: Build web
       run: |
         cd y-web
         npm install
