@@ -17,7 +17,7 @@ import { routes } from "@/app/routes"
 import { useUserGroups } from "@/modules/admin/user-groups/user-groups.service"
 import { updateUserGroupMembership } from "@/modules/admin/user/user.api"
 import { IUser } from "@/modules/admin/user/user.codecs"
-import { useAuth } from "@/modules/core/auth/auth.service"
+import { authKey, useAuth } from "@/modules/core/auth/auth.service"
 
 import "./user-groups-subpage.less"
 
@@ -101,6 +101,10 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
             })
 
             void queryClient.invalidateQueries(["user", params.userId])
+
+            if ($auth.data?.id === Number.parseInt(params.userId ?? "", 10)) {
+              void queryClient.invalidateQueries(authKey)
+            }
           },
           onError: (error) => genericErrorToast(error),
         }
