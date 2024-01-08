@@ -51,6 +51,14 @@ pub fn get_right_categories() -> Vec<RightCategory> {
             }],
         },
         RightCategory {
+            name: "instance_administration",
+            rights: vec![Right {
+                name: "update_features",
+                options: vec![],
+                tags: vec![RightTag::Administrative],
+            }],
+        },
+        RightCategory {
             name: "user_administration",
             rights: vec![
                 Right {

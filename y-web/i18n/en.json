@@ -5,6 +5,10 @@
         "name": "Basic",
         "description": "Common rights most users should probably have."
       },
+      "instance_administration": {
+        "name": "Instance administration",
+        "description": "Rights for administrating this instance."
+      },
       "user_administration": {
         "name": "User administration",
         "description": "Rights for administrating other user's accounts."
@@ -18,6 +22,10 @@
       "create_account": {
         "name": "Create user accounts",
         "description": "Create new users. Already existing users will be able to create other accounts as well."
+      },
+      "update_features": {
+        "name": "Toggle features",
+        "description": "Allows enabling and disabling y's features via the Features page."
       },
       "delete_user": {
         "name": "Delete users",

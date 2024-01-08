@@ -1,4 +1,4 @@
-import { Component, lazy } from "solid-js"
+import { Component, Show, createMemo, lazy } from "solid-js"
 
 import { Route, Routes } from "@solidjs/router"
 
@@ -6,6 +6,7 @@ import { AppAside } from "@/app/layout/app-aside"
 import { AppContent } from "@/app/layout/app-content"
 import { AsideEntry } from "@/app/layout/components/aside-entry"
 import { AsideSection } from "@/app/layout/components/aside-section"
+import { useAuth } from "@/modules/core/auth/auth.service"
 
 import UserPage from "../pages/users/[userId]"
 
@@ -30,6 +31,15 @@ const NewUserGroupPage = lazy(
 const FeaturesPage = lazy(async () => import("@/modules/admin/pages/features"))
 
 const AdminLayout: Component = () => {
+  const $auth = useAuth()
+
+  const featuresPageAllowed = createMemo(
+    () =>
+      $auth.data?.user_rights.some(
+        (right) => right.right_name === "update_features"
+      ) ?? false
+  )
+
   return (
     <>
       <AppAside>
@@ -49,7 +59,9 @@ const AdminLayout: Component = () => {
             />
           </AsideEntry>
           <AsideEntry icon="settings" title="Instance config" to="config" />
-          <AsideEntry icon="bolt" title="Features" to="features" />
+          <Show when={featuresPageAllowed()}>
+            <AsideEntry icon="bolt" title="Features" to="features" />
+          </Show>
         </AsideSection>
       </AppAside>
       <AppContent>
