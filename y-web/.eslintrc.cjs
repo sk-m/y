@@ -64,6 +64,7 @@ module.exports = {
     "no-undefined": "error",
     "no-empty": "error",
     "no-lone-blocks": "error",
+    "no-warning-comments": ["error"],
 
     // ESLint - warns
     "no-unmodified-loop-condition": "warn",
@@ -72,6 +73,8 @@ module.exports = {
     "prefer-template": "warn",
 
     // Typescript ESLint - errors
+    "@typescript-eslint/no-non-null-assertion": "off",
+
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "error",
     "default-param-last": "off",
@@ -151,14 +154,14 @@ module.exports = {
     "unicorn/no-object-as-default-parameter": "off",
     "unicorn/no-unused-properties": "warn",
     "unicorn/filename-case": [
-      "error",
+      "warn",
       {
         case: "kebabCase",
       },
     ],
     "unicorn/prevent-abbreviations": [
       "error",
-      { ignore: ["^ref$", "Ref.*", "Props", "props", "args"] },
+      { ignore: ["^ref$", "Ref.*", "Props", "props", "args", "params"] },
     ],
 
     // eslint-plugin-sonarjs

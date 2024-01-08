@@ -1,0 +1,27 @@
+.user-group-right-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+
+  padding: 0.4em 0.8em;
+
+  cursor: help;
+
+  border-radius: 5px;
+
+  background-color: var(--color-grey-1);
+
+  &.dangerous {
+    background-color: var(--color-error-o-1);
+    color: var(--color-error);
+  }
+
+  &.administrative {
+    background-color: var(--color-error-o-1);
+    color: var(--color-error);
+  }
+  &.inherited {
+    background-color: var(--color-primary-t-05);
+    color: var(--color-primary);
+  }
+}

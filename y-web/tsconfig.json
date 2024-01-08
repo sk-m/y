@@ -17,6 +17,8 @@
 
     "strict": true,
     "allowSyntheticDefaultImports": true,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+
+    "resolveJsonModule": true
   }
 }

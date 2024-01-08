@@ -1,0 +1,22 @@
+[package]
+name = "y-server"
+version = "0.0.0"
+edition = "2021"
+authors = ["sk-m <m@ax.mk>"]
+description = "y API server"
+repository = "https://github.com/sk-m/y"
+publish = false
+
+[dependencies]
+actix-web = "4"
+dotenvy = "0.15"
+pbkdf2 = { version = "0.12", features = ["simple"] }
+rand_core = { version = "0.6", features = ["std"] }
+serde = { version = "1.0.183", features = ["derive"] }
+uuid = { version = "1.4.1", features = ["v4"] }
+chrono = "0.4.26"
+rand = "0.8.5"
+serde_with = { version = "3.3.0", features = ["chrono"] }
+sqlx = { version = "0.7", features = ["runtime-async-std", "postgres", "migrate", "chrono", "uuid", "json"] }
+futures = "0.3.28"
+serde_json = "1.0.107"

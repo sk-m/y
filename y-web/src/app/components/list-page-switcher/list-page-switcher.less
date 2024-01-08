@@ -1,0 +1,51 @@
+.ui-list-page-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  user-select: none;
+
+  > * {
+    display: flex;
+    align-items: center;
+
+    gap: 0.5em;
+
+    > .status-text {
+      padding: 0.15em 0.5em;
+
+      color: white;
+      font-weight: 600;
+      font-size: var(--text-sm);
+      font-family: "SourceCodePro", monospace;
+
+      border-radius: 4px;
+
+      transition: 0.15s;
+
+      &.idle {
+        color: var(--color-success);
+        background-color: var(--color-success-t-3);
+      }
+
+      &.loading {
+        color: var(--color-warning-d-1);
+        background-color: var(--color-warning-t-3);
+      }
+    }
+
+    > .info-text {
+      padding: 0.15em 0.5em;
+
+      color: var(--color-text-grey-1);
+      font-weight: 450;
+      font-size: var(--text-sm);
+
+      border-radius: 4px;
+
+      background-color: var(--color-border-1);
+
+      transition: 0.15s;
+    }
+  }
+}

@@ -22,6 +22,7 @@ import {
   TWatchedFields,
   ValueFromPath,
   findDefaultValue,
+  isFieldWatched,
   validateFieldValue,
 } from "./use-form.utils"
 import { debug } from "./utils"
@@ -30,6 +31,7 @@ export type UseFormInput<FieldValues, WatchedFields> = {
   defaultValues?: { [K in keyof FieldValues]: FieldValues[K] }
   watch?: WatchedFields
   onSubmit?: (values: FieldValues) => void
+  disabled?: () => boolean
 }
 
 export type FieldValidateFunction = (
@@ -92,7 +94,7 @@ export type Form<
         ? FieldValues[FieldName]
         : unknown
     >
-    setValue: Setter<
+    onChange: Setter<
       FieldName extends keyof FieldValues & string
         ? FieldValues[FieldName]
         : unknown
@@ -103,9 +105,15 @@ export type Form<
     FieldName extends
       | WatchedFields[number]
       | `${WatchedFields[number]}.${string}`
+      | string,
+    CustomFieldValue
   >(
     name: FieldNameFromPath<FieldValues, FieldName>
-  ) => () => ValueFromPath<FieldValues, FieldName>
+  ) => () => FieldName extends
+    | WatchedFields[number]
+    | `${WatchedFields[number]}.${string}`
+    ? ValueFromPath<FieldValues, FieldName>
+    : CustomFieldValue
 
   useFieldset: <
     FieldsetName extends
@@ -144,6 +152,7 @@ export const useForm = <
   defaultValues,
   watch,
   onSubmit,
+  disabled,
 }: UseFormInput<FieldValues, WatchedFields> = {}): Form<
   FieldValues,
   WatchedFields
@@ -174,21 +183,31 @@ export const useForm = <
           defaultValues && findDefaultValue(defaultValues, name.split("."))
 
         if (defaultValue) {
-          ref.value = defaultValue as string
+          if (ref.type === "checkbox") {
+            ref.checked = defaultValue as boolean
+          } else {
+            ref.value = defaultValue as string
+          }
         }
 
         const controller = createSignal(defaultValue)
 
         if (
           fieldsetName
-            ? watch?.includes(fieldsetName as WatchedFields[number])
-            : watch?.includes(name as WatchedFields[number])
+            ? isFieldWatched(fieldsetName, (watch ?? []) as Readonly<string[]>)
+            : isFieldWatched(name, (watch ?? []) as Readonly<string[]>)
         ) {
           debug("[use-form] registering a watcher", { name })
 
-          ref.addEventListener("input", () => {
-            controller[1](ref.value as FieldValues[keyof FieldValues])
-          })
+          if (ref.type === "checkbox") {
+            ref.addEventListener("change", () => {
+              controller[1](ref.checked as FieldValues[keyof FieldValues])
+            })
+          } else {
+            ref.addEventListener("input", () => {
+              controller[1](ref.value as FieldValues[keyof FieldValues])
+            })
+          }
         }
 
         setForm(
@@ -228,6 +247,8 @@ export const useForm = <
     FieldName extends
       | WatchedFields[number]
       | `${WatchedFields[number]}.${string}`
+      | string,
+    CustomFieldValue
   >(
     name: FieldNameFromPath<FieldValues, FieldName>
   ) => {
@@ -245,7 +266,11 @@ export const useForm = <
 
     return createMutable(
       () => fieldValue()?.controller?.[0]?.() ?? null
-    ) as () => ValueFromPath<FieldValues, FieldName>
+    ) as () => FieldName extends
+      | WatchedFields[number]
+      | `${WatchedFields[number]}.${string}`
+      ? ValueFromPath<FieldValues, FieldName>
+      : CustomFieldValue
   }
 
   const processFieldsetDefaultValues = <
@@ -504,6 +529,7 @@ export const useForm = <
     }
 
     if (!onSubmit) return
+    if (disabled && disabled()) return
 
     const values: Partial<Record<string, unknown>> = {}
     const processedFieldsets: string[] = []
@@ -515,7 +541,9 @@ export const useForm = <
       if (!isFieldsetField) {
         const value = field.controlled
           ? field.controller?.[0]()
-          : field.inputRef?.value ?? null
+          : (field.inputRef?.type === "checkbox"
+              ? field.inputRef.checked
+              : field.inputRef?.value) ?? null
 
         const validateResult = validateFieldValue(field)
 
@@ -556,13 +584,29 @@ export const useForm = <
       (registeredField) => registeredField.name === fieldName
     )
 
-    if (field?.inputRef) {
-      field.inputRef.value =
+    if (field?.controlled && field.controller?.[1]) {
+      const rawValue =
         typeof value === "function"
-          ? ((value as (currentValue: FieldValue) => FieldValue)(
+          ? (value as (currentValue: FieldValue) => FieldValue)(
+              field.controller[0]() as FieldValue
+            )
+          : value
+
+      field.controller[1](rawValue)
+    } else if (field?.inputRef) {
+      const rawValue =
+        typeof value === "function"
+          ? (value as (currentValue: FieldValue) => FieldValue)(
               field.inputRef.value as FieldValue
-            ) as string)
-          : (value as string)
+            )
+          : value
+
+      if (field.inputRef.type === "checkbox") {
+        field.inputRef.checked = rawValue
+        field.inputRef.dispatchEvent(new Event("change", { bubbles: true }))
+      } else {
+        field.inputRef.value = rawValue
+      }
 
       field.inputRef.dispatchEvent(new Event("input"))
     }
@@ -637,7 +681,7 @@ export const useForm = <
       name,
 
       value: fieldValue,
-      setValue: setFieldValue,
+      onChange: setFieldValue,
     }
   }
 

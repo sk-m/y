@@ -1,7 +1,7 @@
-import { Component } from "solid-js"
+import { ComponentWithChildren } from "@/module"
 
 import "./app-aside.less"
 
-export const AppAside: Component = () => {
-  return <div id="app-aside" />
+export const AppAside: ComponentWithChildren = (props) => {
+  return <div id="app-aside">{props.children}</div>
 }

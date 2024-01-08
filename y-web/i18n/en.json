@@ -1,0 +1,99 @@
+{
+  "main": {
+    "userRightCategory": {
+      "basic": {
+        "name": "Basic",
+        "description": "Common rights most users should probably have."
+      },
+      "user_administration": {
+        "name": "User administration",
+        "description": "Rights for administrating other user's accounts."
+      },
+      "user_rights": {
+        "name": "Rights and groups",
+        "description": "User groups administration."
+      }
+    },
+    "userRight": {
+      "create_account": {
+        "name": "Create user accounts",
+        "description": "Create new users. Already existing users will be able to create other accounts as well."
+      },
+      "delete_user": {
+        "name": "Delete users",
+        "description": "Unlike blocking or hiding, deleting a user is an irreversible action. All data related to a deleted user is forever lost."
+      },
+      "change_user_password": {
+        "name": "Change user's password",
+        "description": "Update user's password. Target user will not necessarily be notified of the change."
+      },
+      "manage_user_groups": {
+        "name": "Manage user groups",
+        "description": "Allows control over user groups & it's rights."
+      },
+      "assign_user_groups": {
+        "name": "Update user's groups",
+        "description": "Allows assigning and removing groups from a user."
+      }
+    },
+    "userRightTagDescription": {
+      "inherited": "This right is inherited from \"user\" or \"everyone\" group.",
+      "dangerous": "",
+      "administrative": "This right is very dangerous and could allow complete access to the system. It may also give access to restricted or personal infomation and be highly desctructive. Only the most trusted individuals should have this assigned."
+    },
+    "userRightOption": {
+      "change_user_password": {
+        "user_groups_blacklist": {
+          "label": "Blacklisted groups",
+          "description": "Prevent changing password for users of these groups."
+        }
+      },
+      "manage_user_groups": {
+        "allow_creating_user_groups": {
+          "description": "Allow creating new user groups."
+        },
+        "allow_deleting_user_groups": {
+          "description": "Allow deleting user groups."
+        },
+        "mutable_user_rights": {
+          "label": "Mutable user rights",
+          "description": "Rights that are allowed to be added or removed from a group."
+        }
+      },
+      "assign_user_groups": {
+        "allow_assigning_any_group": {
+          "description": "Allow assigning any group to a user."
+        },
+        "assignable_user_groups": {
+          "label": "Assignable user groups",
+          "description": "List of user groups that are allowed to be assigned or removed from a user."
+        }
+      }
+    }
+  },
+  "error": {
+    "code": {
+      "auth.passwords_do_not_match": "Incorrect password",
+      "auth.other": "Other",
+      "auth.authentication_forbidden": "Authentication forbidden",
+      "auth.user_does_not_exist": "User does not exist",
+      "create_user_group.unauthorized": "Permission denied",
+      "create_user_group.other": "Other",
+      "create_user.unauthorized": "Permission denied",
+      "create_user.username_taken": "Username is already taken",
+      "create_user.other": "Other",
+      "delete_user_group.unauthorized": "Permission denied",
+      "delete_user_group.other": "Other",
+      "delete_user.unauthorized": "Permission denied",
+      "update_password.unauthorized": "Permission denied",
+      "update_password.user_not_found": "User not found",
+      "update_password.other": "Other",
+      "update_user_group_membership.unauthorized": "Permission denied",
+      "update_user_group_membership.other": "Other",
+      "update_user_groups.unauthorized": "Permission denied",
+      "update_user_groups.other": "Other",
+      "user_group.not_found": "User group not found",
+      "users.not_found": "User not found"
+    }
+  }
+}

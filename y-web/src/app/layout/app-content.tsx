@@ -1,13 +1,7 @@
-import { Component } from "solid-js"
-
-import { AppRouter } from "@/app/app-router"
+import { ComponentWithChildren } from "@/module"
 
 import "./app-content.less"
 
-export const AppContent: Component = () => {
-  return (
-    <div id="app-content">
-      <AppRouter />
-    </div>
-  )
+export const AppContent: ComponentWithChildren = (props) => {
+  return <div id="app-content">{props.children}</div>
 }
