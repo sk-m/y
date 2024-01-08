@@ -1,15 +1,31 @@
-import { Component } from "solid-js"
+import { Component, createEffect } from "solid-js"
+
+import { useNavigate } from "@solidjs/router"
 
 import { Icon } from "@/app/components/common/icon/icon"
 import { Container } from "@/app/components/common/layout/container"
 import { Pill } from "@/app/components/common/pill/pill"
 import { Text } from "@/app/components/common/text/text"
 import { Toggle } from "@/app/components/common/toggle/toggle"
+import { routes } from "@/app/routes"
+import { useAuth } from "@/modules/core/auth/auth.service"
 
 import folderSVG from "./assets/folder.svg"
 import "./features.less"
 
 const FeaturesPage: Component = () => {
+  const $auth = useAuth()
+  const navigate = useNavigate()
+
+  createEffect(() => {
+    const pageAccessAllowed =
+      $auth.data?.user_rights.some(
+        (right) => right.right_name === "update_features"
+      ) ?? false
+
+    if (!pageAccessAllowed) navigate(routes["/admin"])
+  })
+
   // eslint-disable-next-line unicorn/consistent-function-scoping
   const enabled = () => false
 
