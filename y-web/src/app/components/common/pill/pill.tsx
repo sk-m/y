@@ -5,7 +5,7 @@ import { ComponentWithChildren } from "@/module"
 import "./pill.less"
 
 export type PillProps = {
-  variant?: "secondary" | "info"
+  variant?: "secondary" | "warning"
 
   style?: JSX.CSSProperties
 }

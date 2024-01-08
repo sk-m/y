@@ -1,4 +1,7 @@
 .ui-pill {
+  display: flex;
+  width: fit-content;
+
   padding: 0.2em 0.4em;
 
   font-weight: 450;
@@ -8,5 +11,10 @@
   &.secondary {
     color: var(--color-text-grey-1);
     background-color: var(--color-grey-2);
+  }
+
+  &.warning {
+    color: var(--color-warning-d-2);
+    background-color: var(--color-warning-t-3);
   }
 }
