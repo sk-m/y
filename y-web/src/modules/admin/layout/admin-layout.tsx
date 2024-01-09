@@ -8,6 +8,7 @@ import { AsideEntry } from "@/app/layout/components/aside-entry"
 import { AsideSection } from "@/app/layout/components/aside-section"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
+import { useFeatures } from "../feature/feature.service"
 import UserPage from "../pages/users/[userId]"
 
 const UsersListPage = lazy(
@@ -32,6 +33,7 @@ const FeaturesPage = lazy(async () => import("@/modules/admin/pages/features"))
 
 const AdminLayout: Component = () => {
   const $auth = useAuth()
+  const $features = useFeatures()
 
   const featuresPageAllowed = createMemo(
     () =>
@@ -40,12 +42,19 @@ const AdminLayout: Component = () => {
       ) ?? false
   )
 
+  const storagePageAllowed = createMemo(
+    () =>
+      $features.data?.features.some(
+        (feature) => feature.feature === "storage" && feature.enabled
+      ) ?? false
+  )
+
   return (
     <>
       <AppAside>
         <AsideSection>
           <AsideEntry
-            icon="group"
+            icon="person"
             title="Users & Groups"
             to="users"
             relatedPaths={["users", "user-groups"]}
@@ -58,7 +67,25 @@ const AdminLayout: Component = () => {
               to="user-groups"
             />
           </AsideEntry>
+
+          <Show when={storagePageAllowed()}>
+            <AsideEntry
+              icon="hard_drive"
+              title="Storage"
+              to="storage/endpoints"
+              relatedPaths={["storage/endpoints"]}
+            >
+              <AsideEntry
+                subEntry
+                icon="data_table"
+                title="Endpoints"
+                to="storage/endpoints"
+              />
+            </AsideEntry>
+          </Show>
+
           <AsideEntry icon="settings" title="Instance config" to="config" />
+
           <Show when={featuresPageAllowed()}>
             <AsideEntry icon="bolt" title="Features" to="features" />
           </Show>
