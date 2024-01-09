@@ -39,6 +39,9 @@ export const Toggle: Component<ToggleProps> = (props) => {
   createEffect(() => {
     if (!isControlled) {
       props.onChange?.(toggled())
+      // eslint-disable-next-line no-undefined, sonarjs/elseif-without-else
+    } else if (props.value !== undefined) {
+      setToggled(props.value)
     }
   })
 

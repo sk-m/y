@@ -101,7 +101,10 @@
       "update_user_groups.unauthorized": "Permission denied",
       "update_user_groups.other": "Other",
       "user_group.not_found": "User group not found",
-      "users.not_found": "User not found"
+      "users.not_found": "User not found",
+      "features.unauthorized": "Permission denied",
+      "update_feature.unauthorized": "Permission denied",
+      "update_feature.other": "Other"
     }
   }
 }
