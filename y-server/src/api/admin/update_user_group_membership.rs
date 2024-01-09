@@ -84,8 +84,6 @@ async fn update_user_group_membership(
 
     let mut action_allowed = true;
 
-    dbg!(&mutated_groups);
-
     if !all_groups_allowed {
         for group_id in &mutated_groups {
             if !client_assignable_groups.contains(group_id) {
