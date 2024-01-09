@@ -8,11 +8,15 @@ export const useFeatures = (
   options: {
     refetchOnWindowFocus?: boolean
     refetchInterval?: number
+    refetchOnMount?: boolean
   } = {}
 ) => {
   return createQuery(
     () => [featuresKey],
     async () => features(),
-    options
+    {
+      refetchOnMount: false,
+      ...options,
+    }
   )
 }
