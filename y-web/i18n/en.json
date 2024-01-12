@@ -16,6 +16,10 @@
       "user_rights": {
         "name": "Rights and groups",
         "description": "User groups administration."
+      },
+      "storage_feature": {
+        "name": "Storage",
+        "description": "Storage feature-related rights."
       }
     },
     "userRight": {
@@ -42,6 +46,10 @@
       "assign_user_groups": {
         "name": "Update user's groups",
         "description": "Allows assigning and removing groups from a user."
+      },
+      "manage_storage_endpoints": {
+        "name": "Manage storage endpoints",
+        "description": "Allows control over storage endpoints."
       }
     },
     "userRightTagDescription": {
@@ -104,7 +112,11 @@
       "users.not_found": "User not found",
       "features.unauthorized": "Permission denied",
       "update_feature.unauthorized": "Permission denied",
-      "update_feature.other": "Other"
+      "update_feature.other": "Other",
+      "create_storage_endpoint.unauthorized": "Permission denied",
+      "create_storage_endpoint.other": "Other",
+      "storage_endpoints.unauthorized": "Permission denied",
+      "storage_endpoints.internal": "Other"
     }
   }
 }
