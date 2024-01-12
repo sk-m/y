@@ -140,7 +140,7 @@ const FeaturesPage: Component = () => {
                         void updateFeatureStatus("storage", enabled)
                       }
                     }}
-                    value={state.storage}
+                    value={() => state.storage}
                   />
                 </div>
               </div>

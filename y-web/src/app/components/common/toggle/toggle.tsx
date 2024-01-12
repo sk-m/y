@@ -1,4 +1,10 @@
-import { Component, createEffect, createSignal, onMount } from "solid-js"
+import {
+  Accessor,
+  Component,
+  createEffect,
+  createSignal,
+  onMount,
+} from "solid-js"
 
 import "./toggle.less"
 
@@ -9,7 +15,7 @@ export type ToggleProps = {
   ref?: HTMLInputElement | ((inputRef: HTMLInputElement) => unknown)
 
   /** Use if you want this toggle to be controlled. */
-  value?: boolean
+  value?: Accessor<boolean>
 
   size?: "m" | "l"
 
@@ -24,7 +30,7 @@ export const Toggle: Component<ToggleProps> = (props) => {
 
   const [toggled, setToggled] = createSignal(
     // eslint-disable-next-line solid/reactivity, no-undefined
-    props.value === undefined ? false : props.value
+    props.value === undefined ? false : props.value()
   )
 
   onMount(() => {
