@@ -6,4 +6,5 @@ export const routes = {
   "/admin/user-groups/new": "/admin/user-groups/new",
   "/admin/users": "/admin/users",
   "/admin/users/new": "/admin/users/new",
+  "/about": "/about",
 } as const
