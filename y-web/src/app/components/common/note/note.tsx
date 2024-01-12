@@ -5,8 +5,9 @@ import { ComponentWithChildren } from "@/module"
 import "./note.less"
 
 export type NoteProps = {
-  type: "secondary" | "critical"
+  type: "secondary" | "warning" | "critical"
 
+  fontSize?: string
   style?: JSX.CSSProperties
 }
 
@@ -17,7 +18,10 @@ export const Note: ComponentWithChildren<NoteProps> = (props) => {
         "ui-note": true,
         [props.type]: true,
       }}
-      style={props.style}
+      style={{
+        ...(props.fontSize && { "font-size": props.fontSize }),
+        ...props.style,
+      }}
     >
       {props.children}
     </div>
