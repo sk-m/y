@@ -2,6 +2,7 @@ mod api;
 mod db;
 mod request;
 mod right;
+mod storage_endpoint;
 mod user;
 mod user_group;
 mod util;
@@ -108,6 +109,8 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::admin::update_user_group_membership::update_user_group_membership)
                     .service(crate::api::admin::features::features)
                     .service(crate::api::admin::update_feature::update_feature)
+                    .service(crate::api::admin::create_storage_endpoint::create_storage_endpoint)
+                    .service(crate::api::admin::storage_endpoints::storage_enpoints)
                     ,
             )
             .service(web::scope("/api").service(crate::api::user_rights::user_rights))
