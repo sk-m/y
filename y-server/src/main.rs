@@ -111,6 +111,8 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::admin::update_feature::update_feature)
                     .service(crate::api::admin::create_storage_endpoint::create_storage_endpoint)
                     .service(crate::api::admin::storage_endpoints::storage_enpoints)
+                    .service(crate::api::admin::storage_endpoint::storage_enpoint)
+                    .service(crate::api::admin::update_storage_endpoint::update_storage_endpoint)
                     ,
             )
             .service(web::scope("/api").service(crate::api::user_rights::user_rights))
