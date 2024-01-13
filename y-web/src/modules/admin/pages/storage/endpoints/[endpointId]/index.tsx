@@ -3,11 +3,13 @@ import { Show, createEffect, createMemo } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
+import { Icon } from "@/app/components/common/icon/icon"
 import {
   KeyValue,
   KeyValueFields,
 } from "@/app/components/common/key-value/key-value"
 import { Container } from "@/app/components/common/layout/container"
+import { Pill } from "@/app/components/common/pill/pill"
 import { SelectField } from "@/app/components/common/select-field/select-field"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
@@ -103,6 +105,19 @@ const StorageEndpointPage = () => {
               <StorageEndpointTypePill
                 type={$storageEndpoint.data!.endpoint_type}
               />
+              <Show when={$storageEndpoint.data!.preserve_file_structure}>
+                <Pill
+                  variant="secondary"
+                  style={{
+                    "font-size": "var(--text-sm)",
+                  }}
+                >
+                  <Stack spacing={"0.5em"} direction="row" alignItems="center">
+                    <Icon name="account_tree" size={12} wght={500} />
+                    <Text>preserved file structure</Text>
+                  </Stack>
+                </Pill>
+              </Show>
             </Stack>
           </Stack>
 

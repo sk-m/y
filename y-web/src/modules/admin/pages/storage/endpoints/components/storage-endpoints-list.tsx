@@ -1,7 +1,9 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { Component, For, Show, createMemo } from "solid-js"
 
+import { Icon } from "@/app/components/common/icon/icon"
 import { Note } from "@/app/components/common/note/note"
+import { Pill } from "@/app/components/common/pill/pill"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { ListEntryLink } from "@/app/components/list/components/list-entry-link"
@@ -50,6 +52,20 @@ const StorageEndpointEntry: Component<StorageEndpointEntryProps> = (props) => {
             <Stack direction="row" spacing={"0.5em"}>
               <StorageEndpointStatusPill status={props.endpoint.status} />
               <StorageEndpointTypePill type={props.endpoint.endpoint_type} />
+
+              <Show when={props.endpoint.preserve_file_structure}>
+                <Pill
+                  variant="secondary"
+                  style={{
+                    "font-size": "var(--text-sm)",
+                  }}
+                >
+                  <Stack spacing={"0.5em"} direction="row" alignItems="center">
+                    <Icon name="account_tree" size={12} wght={500} />
+                    <Text>preserved file structure</Text>
+                  </Stack>
+                </Pill>
+              </Show>
             </Stack>
 
             <Show when={props.endpoint.description}>
