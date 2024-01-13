@@ -235,7 +235,7 @@ export const UsersList: Component = () => {
                 label={
                   noneSelected()
                     ? null
-                    : `${tableState.selectedEntries().size} groups`
+                    : `${tableState.selectedEntries().size} users`
                 }
               >
                 <ExpandButtonEntries>

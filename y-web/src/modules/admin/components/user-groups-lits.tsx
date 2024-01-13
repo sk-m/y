@@ -141,9 +141,7 @@ export const UserGroupsList: Component = () => {
         </ListHead>
 
         <Show when={userGroups().length === 0}>
-          <Note type="secondary">
-            No user groups found. Try changing your search query.
-          </Note>
+          <Note type="secondary">No user groups found.</Note>
         </Show>
 
         <ListEntries>
