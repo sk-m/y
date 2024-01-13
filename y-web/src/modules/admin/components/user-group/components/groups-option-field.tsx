@@ -31,6 +31,7 @@ export const UserGroupSelectField: Component<GroupsOptionFieldProps> = (
   // !TODO registerControlled's output is typed as any for now.
   return (
     <SelectField
+      multi
       disabled={props.disabled}
       label={unsafe_t(
         `main.userRightOption.${props.right.name}.${props.option.name}.label`

@@ -1,6 +1,5 @@
 import {
   Accessor,
-  Component,
   For,
   JSX,
   Show,
@@ -19,25 +18,35 @@ export type SelectOption = {
   id: string
 }
 
-export type SelectProps<TOption extends SelectOption = SelectOption> =
-  Partial<InputErrorProps> & {
-    options: SelectOption[]
+export type SelectProps<
+  IsMulti extends true | false,
+  TOption extends SelectOption
+> = Partial<InputErrorProps> & {
+  options: SelectOption[]
 
-    value: Accessor<Array<TOption["id"]> | null>
-    onChange: (values: Array<TOption["id"]>) => void
+  label?: string
+  subtext?: JSX.Element
 
-    label?: string
-    subtext?: JSX.Element
+  width?: string
 
-    width?: string
+  disabled?: boolean
+} & (IsMulti extends false
+    ? {
+        multi: false
+        value: Accessor<TOption["id"] | null>
+        onChange: (value: TOption["id"] | null) => void
+      }
+    : {
+        multi: true
+        value: Accessor<Array<TOption["id"]> | null>
+        onChange: (value: Array<TOption["id"]> | null) => void
+      })
 
-    disabled?: boolean
-  }
-
-export const SelectField: Component<SelectProps> = <
-  TOption extends SelectOption = SelectOption
+export const SelectField = <
+  IsMulti extends true | false,
+  TOption extends SelectOption
 >(
-  props: SelectProps<TOption>
+  props: SelectProps<IsMulti, TOption>
 ) => {
   const [active, setActive] = createSignal(false)
 
@@ -54,19 +63,25 @@ export const SelectField: Component<SelectProps> = <
   const toggleActive = () => setActive((state) => !state)
 
   const toggleOption = (id: string) => {
-    if (props.value() === null) {
-      props.onChange([id])
-    } else {
-      if (props.value()!.includes(id)) {
-        props.onChange(props.value()!.filter((v) => v !== id))
+    if (props.multi) {
+      if (props.value() === null) {
+        props.onChange([id])
       } else {
-        props.onChange([...props.value()!, id])
+        if (props.value()!.includes(id)) {
+          props.onChange(props.value()!.filter((v) => v !== id))
+        } else {
+          props.onChange([...props.value()!, id])
+        }
       }
+    } else {
+      props.onChange(id)
+
+      setActive(false)
     }
   }
 
   createEffect(() => {
-    if (!props.value()) {
+    if (!props.value() && props.multi) {
       props.onChange([])
     }
   })
@@ -95,20 +110,36 @@ export const SelectField: Component<SelectProps> = <
         </Text>
       </Show>
 
-      <div class="field">
+      <div classList={{ field: true, multi: props.multi }}>
         <div class="container" onClick={toggleActive}>
           <div class="selected-options">
-            <For each={props.value()}>
-              {(selectedOptionId) => (
-                <button
-                  type="button"
-                  class="option"
-                  onClick={() => toggleOption(selectedOptionId)}
-                >
-                  {options()[selectedOptionId]?.name}
-                </button>
-              )}
-            </For>
+            <Show
+              when={props.multi}
+              fallback={
+                <div class="single-option">
+                  {
+                    // prettier-ignore
+                    props.multi
+                    ? ""
+                    : (props.value()
+                    ? options()[props.value()!]?.name
+                    : "")
+                  }
+                </div>
+              }
+            >
+              <For each={props.multi ? props.value() : []}>
+                {(selectedOptionId) => (
+                  <button
+                    type="button"
+                    class="option"
+                    onClick={() => toggleOption(selectedOptionId)}
+                  >
+                    {options()[selectedOptionId]?.name}
+                  </button>
+                )}
+              </For>
+            </Show>
           </div>
 
           <div class="floater">
