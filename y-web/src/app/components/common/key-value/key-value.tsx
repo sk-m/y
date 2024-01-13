@@ -20,6 +20,8 @@ export type KeyValueProps<TValue> = {
   value: TValue
   onChange: (value: TValue) => void
 
+  readonly?: boolean
+
   getValueString?: (value: TValue | null) => string
 
   inputField?: (inputProps: {
@@ -87,7 +89,12 @@ export const KeyValue = <TValue,>(props: KeyValueProps<TValue>) => {
   })
 
   return (
-    <div class="ui-keyvalue">
+    <div
+      classList={{
+        "ui-keyvalue": true,
+        readonly: props.readonly,
+      }}
+    >
       <div
         class="key"
         style={{
@@ -101,7 +108,9 @@ export const KeyValue = <TValue,>(props: KeyValueProps<TValue>) => {
           value: true,
           active: active(),
         }}
-        onClick={() => !active() && setActive((state) => !state)}
+        onClick={() =>
+          !active() && !props.readonly && setActive((state) => !state)
+        }
       >
         <div class="value-display">{valueString()}</div>
         <div class="value-input">
