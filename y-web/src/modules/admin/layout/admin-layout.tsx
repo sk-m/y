@@ -38,6 +38,10 @@ const NewStorageEndpointPage = lazy(
   async () => import("@/modules/admin/pages/storage/endpoints/new")
 )
 
+const StorageEndpointPage = lazy(
+  async () => import("@/modules/admin/pages/storage/endpoints/[endpointId]")
+)
+
 const AboutPage = lazy(async () => import("@/modules/admin/pages/about"))
 
 const FeaturesPage = lazy(async () => import("@/modules/admin/pages/features"))
@@ -123,6 +127,10 @@ const AdminLayout: Component = () => {
           <Route path="/users/new" component={NewUserPage} />
           <Route path="/features" component={FeaturesPage} />
           <Route path="/storage/endpoints" component={StorageEndpointsPage} />
+          <Route
+            path="/storage/endpoints/:endpointId"
+            component={StorageEndpointPage}
+          />
           <Route
             path="/storage/endpoints/new"
             component={NewStorageEndpointPage}

@@ -1,5 +1,11 @@
 import { z } from "zod"
 
+export const storageEndpointStatus = [
+  "active",
+  "read_only",
+  "disabled",
+] as const
+
 export const TStorageEndpointType = z.union([
   z.literal("local_fs"),
   z.literal("test"),
@@ -30,6 +36,8 @@ export type IStorageEndpointRow = z.infer<typeof TStorageEndpointRow>
 export const TGetStorageEndpoints = z.object({
   storage_endpoints: z.array(TStorageEndpointRow),
 })
+
+export const TGetStorageEndpoint = TStorageEndpoint
 
 export const TCreateStorageEndpoint = z.object({
   id: z.number(),

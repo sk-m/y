@@ -116,7 +116,11 @@
       "create_storage_endpoint.unauthorized": "Permission denied",
       "create_storage_endpoint.other": "Other",
       "storage_endpoints.unauthorized": "Permission denied",
-      "storage_endpoints.internal": "Other"
+      "storage_endpoints.internal": "Other",
+      "storage_endpoint.unauthorized": "Permission denied",
+      "storage_endpoint.internal": "Other",
+      "update_storage_endpoint.unauthorized": "Permission denied",
+      "update_storage_endpoint.other": "Other"
     }
   }
 }

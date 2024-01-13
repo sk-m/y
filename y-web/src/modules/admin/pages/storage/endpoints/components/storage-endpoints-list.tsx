@@ -1,16 +1,17 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import { Component, For, Match, Show, Switch, createMemo } from "solid-js"
+import { Component, For, Show, createMemo } from "solid-js"
 
-import { Icon } from "@/app/components/common/icon/icon"
 import { Note } from "@/app/components/common/note/note"
-import { Pill } from "@/app/components/common/pill/pill"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { ListEntryLink } from "@/app/components/list/components/list-entry-link"
 import { List, ListEntries } from "@/app/components/list/list"
 import { useTableState } from "@/app/core/use-table-state"
 import { IStorageEndpointRow } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.codecs"
-import { useStoragetEndpoints } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.service"
+import { useStorageEndpoints } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.service"
+
+import { StorageEndpointStatusPill } from "./storage-endpoint-status-pill"
+import { StorageEndpointTypePill } from "./storage-endpoint-type-pill"
 
 export type StorageEndpointEntryProps = {
   endpoint: IStorageEndpointRow
@@ -47,61 +48,8 @@ const StorageEndpointEntry: Component<StorageEndpointEntryProps> = (props) => {
             }}
           >
             <Stack direction="row" spacing={"0.5em"}>
-              <Switch>
-                <Match when={props.endpoint.status === "read_only"}>
-                  <Pill
-                    dot
-                    variant="secondary"
-                    style={{
-                      "font-size": "var(--text-sm)",
-                    }}
-                  >
-                    read-only
-                  </Pill>
-                </Match>
-                <Match when={props.endpoint.status === "disabled"}>
-                  <Pill
-                    dot
-                    variant="warning"
-                    style={{
-                      "font-size": "var(--text-sm)",
-                    }}
-                  >
-                    disabled
-                  </Pill>
-                </Match>
-                <Match when={props.endpoint.status === "active"}>
-                  <Pill
-                    dot
-                    variant="success"
-                    style={{
-                      "font-size": "var(--text-sm)",
-                    }}
-                  >
-                    active
-                  </Pill>
-                </Match>
-              </Switch>
-
-              <Switch>
-                <Match when={props.endpoint.endpoint_type === "local_fs"}>
-                  <Pill
-                    variant="secondary"
-                    style={{
-                      "font-size": "var(--text-sm)",
-                    }}
-                  >
-                    <Stack
-                      spacing={"0.5em"}
-                      direction="row"
-                      alignItems="center"
-                    >
-                      <Icon name="hard_drive" size={12} wght={500} />
-                      <Text>local fs</Text>
-                    </Stack>
-                  </Pill>
-                </Match>
-              </Switch>
+              <StorageEndpointStatusPill status={props.endpoint.status} />
+              <StorageEndpointTypePill type={props.endpoint.endpoint_type} />
             </Stack>
 
             <Show when={props.endpoint.description}>
@@ -121,7 +69,7 @@ export const StorageEndpointsList: Component = () => {
     defaultRowsPerPage: 500,
   })
 
-  const $storageEndpoints = useStoragetEndpoints(() => ({}), {
+  const $storageEndpoints = useStorageEndpoints(() => ({}), {
     refetchOnWindowFocus: true,
   })
 
