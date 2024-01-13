@@ -8,12 +8,18 @@ import {
   KeyValueFields,
 } from "@/app/components/common/key-value/key-value"
 import { Container } from "@/app/components/common/layout/container"
+import { SelectField } from "@/app/components/common/select-field/select-field"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
+import { unsafe_t } from "@/i18n"
 import { updateStorageEndpoint } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.api"
+import {
+  IStorageEndpointStatus,
+  storageEndpointStatus,
+} from "@/modules/admin/storage/storage-endpoint/storage-endpoint.codecs"
 import {
   storageEndpointsKey,
   useStorageEndpoint,
@@ -49,7 +55,7 @@ const StorageEndpointPage = () => {
     }
   })
 
-  const updateKeyValue = (key: string, value: string) => {
+  const updateKeyValue = (key: string, value: string | null) => {
     $updateStorageEndpoint.mutate(
       {
         endpointId: Number.parseInt(endpointId()!, 10),
@@ -109,6 +115,38 @@ const StorageEndpointPage = () => {
                 width: "500px",
               }}
             >
+              <KeyValue<IStorageEndpointStatus>
+                keyWidth="100px"
+                label="Status"
+                getValueString={(value) =>
+                  (
+                    unsafe_t(
+                      `main.storage_feature.endpoint_status.${value as string}`
+                    ) ??
+                    value ??
+                    ""
+                  ).toLowerCase()
+                }
+                value={$storageEndpoint.data?.status ?? "disabled"}
+                onChange={(value) => updateKeyValue("status", value)}
+                inputField={(inputProps) => (
+                  <SelectField<
+                    false,
+                    { name: string; id: IStorageEndpointStatus }
+                  >
+                    multi={false}
+                    options={storageEndpointStatus.map((status) => ({
+                      name:
+                        unsafe_t(
+                          `main.storage_feature.endpoint_status.${status}`
+                        ) ?? status,
+                      id: status,
+                    }))}
+                    width="100%"
+                    {...inputProps}
+                  />
+                )}
+              />
               <KeyValue
                 keyWidth="100px"
                 label="Name"

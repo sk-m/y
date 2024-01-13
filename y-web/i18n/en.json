@@ -85,6 +85,13 @@
           "description": "List of user groups that are allowed to be assigned or removed from a user."
         }
       }
+    },
+    "storage_feature": {
+      "endpoint_status": {
+        "active": "Active",
+        "read_only": "Read-only",
+        "disabled": "Disabled"
+      }
     }
   },
   "error": {
@@ -120,7 +127,8 @@
       "storage_endpoint.unauthorized": "Permission denied",
       "storage_endpoint.internal": "Other",
       "update_storage_endpoint.unauthorized": "Permission denied",
-      "update_storage_endpoint.other": "Other"
+      "update_storage_endpoint.other": "Other",
+      "update_storage_endpoint.invalid_status": "Invalid status"
     }
   }
 }

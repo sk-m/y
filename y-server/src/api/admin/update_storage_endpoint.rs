@@ -8,6 +8,7 @@ use serde::Deserialize;
 struct UpdateStorageEndpointInput {
     name: Option<String>,
     description: Option<String>,
+    status: Option<String>,
 }
 
 #[patch("/storage/endpoints/{endpoint_id}")]
@@ -34,6 +35,7 @@ async fn update_storage_endpoint(
 
     let updated_name = &form.name.is_some();
     let updated_description = &form.description.is_some();
+    let updated_status = &form.status.is_some();
 
     if *updated_name {
         let name = &form.name.unwrap();
@@ -57,6 +59,26 @@ async fn update_storage_endpoint(
             .bind(storage_endpoint_id)
             .execute(&**pool)
             .await;
+
+        if result.is_err() {
+            return error("update_storage_endpoint.other");
+        }
+    }
+
+    if *updated_status {
+        let status = &form.status.unwrap();
+
+        if status != "active" && status != "read_only" && status != "disabled" {
+            return error("update_storage_endpoint.invalid_status");
+        }
+
+        let result = sqlx::query(
+            "UPDATE storage_endpoints SET status = $1::storage_endpoint_status WHERE id = $2",
+        )
+        .bind(status)
+        .bind(storage_endpoint_id)
+        .execute(&**pool)
+        .await;
 
         if result.is_err() {
             return error("update_storage_endpoint.other");

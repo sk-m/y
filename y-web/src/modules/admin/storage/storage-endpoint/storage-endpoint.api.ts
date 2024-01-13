@@ -1,6 +1,7 @@
 import { get, patch, post } from "@/app/core/request"
 
 import {
+  IStorageEndpointStatus,
   TCreateStorageEndpoint,
   TGetStorageEndpoint,
   TGetStorageEndpoints,
@@ -29,6 +30,7 @@ export type UpdateStorageEndpointInput = {
 
   name?: string
   description?: string
+  status?: IStorageEndpointStatus
 }
 
 export const updateStorageEndpoint = async (
@@ -38,6 +40,7 @@ export const updateStorageEndpoint = async (
     body: {
       name: input.name?.trim(),
       description: input.description?.trim(),
+      ...(input.status && { status: input.status }),
     },
   })
 }

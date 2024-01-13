@@ -33,8 +33,8 @@ export type SelectProps<
 } & (IsMulti extends false
     ? {
         multi: false
-        value: Accessor<TOption["id"] | null>
-        onChange: (value: TOption["id"] | null) => void
+        value: Accessor<TOption["id"]>
+        onChange: (value: TOption["id"]) => void
       }
     : {
         multi: true
