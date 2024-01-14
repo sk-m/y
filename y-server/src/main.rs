@@ -95,6 +95,10 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::auth::logout::logout),
             )
             .service(
+                web::scope("/api/storage")
+                    .service(crate::api::storage::storage_upload::storage_upload)
+            )
+            .service(
                 web::scope("/api/admin")
                     .service(crate::api::admin::user::user)
                     .service(crate::api::admin::create_user::create_user)

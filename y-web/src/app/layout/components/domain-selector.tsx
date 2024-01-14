@@ -21,7 +21,7 @@ const DomainLink: Component<DomainLinkProps> = (props) => {
   return (
     <Link onClick={props.onHide} href={props.to} class="domain-option">
       <div class="link">
-        <Icon name={domainIcon[props.domain]} size={18} wght={400} />
+        <Icon name={domainIcon[props.domain]} size={18} wght={500} />
         {domainName[props.domain]}
       </div>
 
@@ -57,6 +57,11 @@ export const DomainSelector: Component = () => {
         <Popup show={popupShown()} position="left">
           <div class="popup-list">
             <DomainLink onHide={() => setPopupShown(false)} domain="" to="/" />
+            <DomainLink
+              onHide={() => setPopupShown(false)}
+              domain="files"
+              to="/files"
+            />
             <DomainLink
               onHide={() => setPopupShown(false)}
               domain="admin"

@@ -5,11 +5,13 @@ import { useLocation } from "@solidjs/router"
 export const domainName = {
   "": "Home",
   admin: "Administration",
+  files: "Files",
 } as const
 
 export const domainIcon = {
   "": "home",
   admin: "handyman",
+  files: "cloud",
 } as const
 
 export const useDomain = () => {
