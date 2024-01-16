@@ -2,7 +2,6 @@
 import { Component } from "solid-js"
 
 import { Icon } from "@/app/components/common/icon/icon"
-import { post } from "@/app/core/request"
 
 import { retrieveFiles } from "../../upload"
 import "./file-explorer.less"
@@ -29,20 +28,15 @@ const FileExplorerPage: Component = () => {
     const data = new FormData()
 
     let index = 0
-    for (const file of filesToUpload) {
-      data.append(`file_${index}`, file)
 
-      index++
+    for (const file of filesToUpload) {
+      data.append(`file_${index++}`, file, file.path)
     }
 
-    post("/storage/upload", {
-      rawBody: data,
-      contentType: "multipart/form-data",
+    await fetch(`/api/storage/upload?files_n=${filesToUpload.length}`, {
+      method: "POST",
+      body: data,
     })
-      .then((resp) => console.log(resp))
-      .catch((error) => console.error(error))
-
-    console.log(filesToUpload)
   }
 
   const onDragOver = (event: DragEvent) => {
