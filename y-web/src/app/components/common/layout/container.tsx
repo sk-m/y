@@ -7,7 +7,7 @@ import "./container.less"
 export type ContainerProps = {
   id?: string
 
-  size: "xs" | "s" | "m" | "l" | "xl"
+  size: "xs" | "s" | "m" | "l" | "xl" | "full"
 
   style?: JSX.CSSProperties
 }
