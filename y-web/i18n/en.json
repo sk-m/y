@@ -54,6 +54,10 @@
       "storage_upload": {
         "name": "Upload files",
         "description": "A general right to upload data onto a storage endpoint. This is a \"first check\" right, meaning that it is required for any upload action. Users that do not have this right are guranteed to not be able to upload anything anywhere, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
+      },
+      "storage_list": {
+        "name": "List files",
+        "description": "A general right to see files on a storage endpoint. This is a \"first check\" right, meaning that it is required to list files on any endpoint. Users that do not have this right are guranteed to not be able to see files on any endpoint, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
       }
     },
     "userRightTagDescription": {
@@ -126,6 +130,9 @@
       "update_feature.other": "Other",
       "create_storage_endpoint.unauthorized": "Permission denied",
       "create_storage_endpoint.other": "Other",
+      "create_storage_endpoint.base_path_does_not_exist": "Base path points to a non-existing directory",
+      "create_storage_endpoint.base_path_not_a_directory": "Base path does not point to a directory",
+      "create_storage_endpoint.base_path_not_absolute": "Base path must be an absolute path",
       "storage_endpoints.unauthorized": "Permission denied",
       "storage_endpoints.internal": "Other",
       "storage_endpoint.unauthorized": "Permission denied",
@@ -133,7 +140,12 @@
       "update_storage_endpoint.unauthorized": "Permission denied",
       "update_storage_endpoint.other": "Other",
       "update_storage_endpoint.invalid_status": "Invalid status",
-      "storage.upload.unauthorized": "Permission denied"
+      "storage.upload.unauthorized": "Permission denied",
+      "storage.upload.internal": "Other",
+      "storage.upload.no_filnema": "No filename provided",
+      "storage.upload.endpoint_not_found": "Target endpoint not found",
+      "storage_entries.unauthorized": "Permission denied",
+      "storage_entries.internal": "Other"
     }
   }
 }

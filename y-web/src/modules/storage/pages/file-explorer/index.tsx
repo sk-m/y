@@ -1,12 +1,38 @@
+/* eslint-disable unicorn/prevent-abbreviations */
+
+/* eslint-disable no-undefined */
+
+/* eslint-disable no-warning-comments */
+
 /* eslint-disable unicorn/consistent-function-scoping */
-import { Component } from "solid-js"
+import { Component, For, Show, createMemo } from "solid-js"
+
+import { useParams, useSearchParams } from "@solidjs/router"
+import { useQueryClient } from "@tanstack/solid-query"
 
 import { Icon } from "@/app/components/common/icon/icon"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 
+import {
+  storageEntriesKey,
+  useStorageEntries,
+} from "../../storage-entry/storage-entry.service"
 import { retrieveFiles } from "../../upload"
 import "./file-explorer.less"
 
 const FileExplorerPage: Component = () => {
+  const params = useParams()
+  const queryClient = useQueryClient()
+
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const $folderEntries = useStorageEntries(() => ({
+    folderId: searchParams.folderId,
+    endpointId: params.endpointId as string,
+  }))
+
+  const folderEntries = createMemo(() => $folderEntries.data?.entries ?? [])
+
   const onDrop = async (event: DragEvent) => {
     event.preventDefault()
 
@@ -23,20 +49,74 @@ const FileExplorerPage: Component = () => {
     }
 
     const files = await Promise.all(promises)
-    const filesToUpload = files.flat(1)
+
+    // TODO This is slow and should really be done on the server side.
+    const filesToUpload = files.flat(1).sort((a, b) => {
+      const aParts = a.path.split("/").length
+      const bParts = b.path.split("/").length
+
+      return aParts > bParts ? 1 : -1
+    })
 
     const data = new FormData()
 
-    let index = 0
-
     for (const file of filesToUpload) {
-      data.append(`file_${index++}`, file, file.path)
+      // TODO Make sure if it's ok to store the file name in the FormData's field.name
+      const path =
+        // eslint-disable-next-line unicorn/prefer-at
+        file.path[file.path.length - 1] === "/"
+          ? file.path.slice(0, Math.max(0, file.path.length - 1))
+          : file.path
+
+      data.append(file.name, file, path)
     }
 
-    await fetch(`/api/storage/upload?files_n=${filesToUpload.length}`, {
-      method: "POST",
-      body: data,
+    const uploadUrl = new URL(`${location.origin}/api/storage/upload`)
+
+    uploadUrl.searchParams.set("endpoint_id", params.endpointId as string)
+
+    if (searchParams.folderId) {
+      uploadUrl.searchParams.set("target_folder", searchParams.folderId)
+    }
+
+    const request = new XMLHttpRequest()
+
+    request.upload.addEventListener("progress", (progressEvent) => {
+      if (progressEvent.lengthComputable) {
+        console.log(
+          "upload progress:",
+          progressEvent.loaded / progressEvent.total
+        )
+      }
     })
+
+    request.addEventListener("loadend", (loadendEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const json: {
+        error?: {
+          code?: string
+        }
+      } = JSON.parse(
+        (loadendEvent.target as { responseText?: string }).responseText ?? ""
+      )
+
+      if (json.error) {
+        genericErrorToast(json.error)
+      }
+
+      void queryClient.invalidateQueries([
+        storageEntriesKey,
+        params.endpointId,
+        searchParams.folderId,
+      ])
+    })
+
+    request.addEventListener("error", () => {
+      genericErrorToast({ code: "storage.upload.other" })
+    })
+
+    request.open("POST", uploadUrl, true)
+    request.send(data)
   }
 
   const onDragOver = (event: DragEvent) => {
@@ -45,6 +125,10 @@ const FileExplorerPage: Component = () => {
 
   const onDragLeave = (event: DragEvent) => {
     event.preventDefault()
+  }
+
+  const navigateToFolder = (folderId: number) => {
+    setSearchParams({ folderId: folderId.toString() })
   }
 
   return (
@@ -58,25 +142,43 @@ const FileExplorerPage: Component = () => {
         <div class="browser-container">
           <div class="browser-contents">
             <div class="items">
-              <div class="item">
-                <div class="item-thumb">
-                  <div class="icon">
-                    <Icon
-                      name="movie"
-                      type="outlined"
-                      fill={1}
-                      wght={500}
-                      size={40}
-                    />
+              {/* TODO: Maybe use Index instaed of For? */}
+              <For each={folderEntries()}>
+                {(entry) => (
+                  // TODO: Should be a clickable button
+                  <div
+                    class="item"
+                    onClick={() =>
+                      entry.entry_type === "folder" &&
+                      navigateToFolder(entry.id)
+                    }
+                  >
+                    <div class="item-thumb">
+                      <div class="icon">
+                        <Icon
+                          name={
+                            entry.entry_type === "folder"
+                              ? "folder_open"
+                              : "draft"
+                          }
+                          type="outlined"
+                          fill={1}
+                          wght={500}
+                          size={40}
+                        />
+                      </div>
+                    </div>
+                    <div class="item-info">
+                      <div class="item-name">
+                        <div class="name">{entry.name}</div>
+                        <Show when={entry.extension}>
+                          <div class="extension">{entry.extension}</div>
+                        </Show>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div class="item-info">
-                  <div class="item-name">
-                    <div class="name">Example</div>
-                    <div class="extension">.mov</div>
-                  </div>
-                </div>
-              </div>
+                )}
+              </For>
             </div>
           </div>
         </div>
