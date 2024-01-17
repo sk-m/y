@@ -23,10 +23,11 @@ import {
   storageEndpointStatus,
 } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.codecs"
 import {
-  storageEndpointsKey,
+  adminStorageEndpointsKey,
   useStorageEndpoint,
 } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
+import { storageEndpointsKey } from "@/modules/storage/storage-endpoint/storage-endpoint.service"
 
 import { StorageEndpointStatusPill } from "../components/storage-endpoint-status-pill"
 import { StorageEndpointTypePill } from "../components/storage-endpoint-type-pill"
@@ -65,8 +66,9 @@ const StorageEndpointPage = () => {
       },
       {
         onSuccess: () => {
+          void queryClient.invalidateQueries([storageEndpointsKey])
           void queryClient.invalidateQueries([
-            storageEndpointsKey,
+            adminStorageEndpointsKey,
             { endpointId: endpointId() },
           ])
         },

@@ -7,20 +7,20 @@ import {
   TGetStorageEndpoints,
 } from "./storage-endpoint.codecs"
 
-export const apiStorageEndpoints = "/admin/storage/endpoints" as const
+export const apiAdminStorageEndpoints = "/admin/storage/endpoints" as const
 
 export type GetStorageEndpointInput = {
   endpointId: number | string
 }
 
 export const storageEndpoint = async (input: GetStorageEndpointInput) => {
-  return get(`${apiStorageEndpoints}/${input.endpointId}`).then((data) =>
+  return get(`${apiAdminStorageEndpoints}/${input.endpointId}`).then((data) =>
     TGetStorageEndpoint.parse(data)
   )
 }
 
 export const storageEndpoints = async () => {
-  return get(apiStorageEndpoints).then((data) =>
+  return get(apiAdminStorageEndpoints).then((data) =>
     TGetStorageEndpoints.parse(data)
   )
 }
@@ -36,7 +36,7 @@ export type UpdateStorageEndpointInput = {
 export const updateStorageEndpoint = async (
   input: UpdateStorageEndpointInput
 ) => {
-  return patch(`${apiStorageEndpoints}/${input.endpointId}`, {
+  return patch(`${apiAdminStorageEndpoints}/${input.endpointId}`, {
     body: {
       name: input.name?.trim(),
       description: input.description?.trim(),
@@ -56,7 +56,7 @@ export type CreateStorageEndpointInput = {
 export const createStorageEndpoint = async (
   input: CreateStorageEndpointInput
 ) => {
-  return post(apiStorageEndpoints, {
+  return post(apiAdminStorageEndpoints, {
     body: {
       name: input.name.trim(),
       endpoint_type: input.type,

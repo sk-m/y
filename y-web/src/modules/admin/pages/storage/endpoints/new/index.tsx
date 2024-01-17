@@ -22,7 +22,8 @@ import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { createStorageEndpoint } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.api"
 import { IStorageEndpointType } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.codecs"
-import { storageEndpointsKey } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.service"
+import { adminStorageEndpointsKey } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.service"
+import { storageEndpointsKey } from "@/modules/storage/storage-endpoint/storage-endpoint.service"
 
 const ENDPOINTS_ROUTE = routes["/admin/storage/endpoints"]
 
@@ -56,6 +57,7 @@ const NewStorageEndpointPage: Component = () => {
     onSubmit: (values) => {
       $createEndpoint.mutate(values, {
         onSuccess: () => {
+          void queryClient.invalidateQueries([adminStorageEndpointsKey])
           void queryClient.invalidateQueries([storageEndpointsKey])
 
           notify({
