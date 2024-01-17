@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/solid-query"
 import { Icon } from "@/app/components/common/icon/icon"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 
+import { downloadStorageFile } from "../../storage-entry/storage-entry.api"
 import {
   storageEntriesKey,
   useStorageEntries,
@@ -131,6 +132,13 @@ const FileExplorerPage: Component = () => {
     setSearchParams({ folderId: folderId.toString() })
   }
 
+  const downloadFile = (fileId: number) => {
+    void downloadStorageFile({
+      endpointId: params.endpointId as string,
+      fileId,
+    })
+  }
+
   return (
     <div
       id="page-storage-file-explorer"
@@ -148,9 +156,11 @@ const FileExplorerPage: Component = () => {
                   // TODO: Should be a clickable button
                   <div
                     class="item"
-                    onClick={() =>
-                      entry.entry_type === "folder" &&
-                      navigateToFolder(entry.id)
+                    // prettier-ignore
+                    onClick={() => (
+                      entry.entry_type === "folder"
+                        ? navigateToFolder(entry.id)
+                        : downloadFile(entry.id))
                     }
                   >
                     <div class="item-thumb">

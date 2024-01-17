@@ -14,9 +14,15 @@ dependencies:
   '@tanstack/solid-query':
     specifier: ^4.32.6
     version: 4.32.6(solid-js@1.8.7)
+  '@types/downloadjs':
+    specifier: ^1.4.6
+    version: 1.4.6
   date-fns:
     specifier: ^2.30.0
     version: 2.30.0
+  downloadjs:
+    specifier: ^1.4.7
+    version: 1.4.7
   material-symbols:
     specifier: ^0.10.0
     version: 0.10.0
@@ -908,6 +914,10 @@ packages:
       - supports-color
     dev: true
 
+  /@types/downloadjs@1.4.6:
+    resolution: {integrity: sha512-mp3w70vsaiLRT9ix92fmI9Ob2yJAPZm6tShJtofo2uHbN11G2i6a0ApIEjBl/kv3e9V7Pv7jMjk1bUwYWvMHvA==}
+    dev: false
+
   /@types/json-schema@7.0.12:
     resolution: {integrity: sha512-Hr5Jfhc9eYOQNPYO5WLDq/n4jqijdHNlDXjuAQkkt+mWdQR+XJToOHrsD4cPaMXpn6KO7y2+wM8AZEs8VpBLVA==}
     dev: true
@@ -1391,6 +1401,10 @@ packages:
     dependencies:
       esutils: 2.0.3
     dev: true
+
+  /downloadjs@1.4.7:
+    resolution: {integrity: sha512-LN1gO7+u9xjU5oEScGFKvXhYf7Y/empUIIEAGBs1LzUq/rg5duiDrkuH5A2lQGd5jfMOb9X9usDa2oVXwJ0U/Q==}
+    dev: false
 
   /duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
