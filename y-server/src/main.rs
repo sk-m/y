@@ -97,6 +97,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api/storage")
                     .service(crate::api::storage::storage_upload::storage_upload)
+                    .service(crate::api::storage::storage_endpoints::storage_endpoints)
             )
             .service(
                 web::scope("/api/admin")
