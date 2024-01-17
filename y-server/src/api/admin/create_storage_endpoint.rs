@@ -37,6 +37,20 @@ async fn create_storage_endpoint(
 
     let form = form.into_inner();
 
+    let base_path = std::path::Path::new(&form.base_path);
+
+    if !base_path.exists() {
+        return error("create_storage_endpoint.base_path_does_not_exist");
+    }
+
+    if !base_path.is_dir() {
+        return error("create_storage_endpoint.base_path_not_a_directory");
+    }
+
+    if !base_path.is_absolute() {
+        return error("create_storage_endpoint.base_path_not_absolute");
+    }
+
     let result = sqlx::query_scalar("INSERT INTO storage_endpoints (name, endpoint_type, status, preserve_file_structure, base_path, description) VALUES ($1, $2::storage_endpoint_type, $3::storage_endpoint_status, $4, $5, $6) RETURNING id")
         .bind(form.name)
         .bind(form.endpoint_type)
