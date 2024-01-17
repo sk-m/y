@@ -50,6 +50,10 @@
       "manage_storage_endpoints": {
         "name": "Manage storage endpoints",
         "description": "Allows control over storage endpoints."
+      },
+      "storage_upload": {
+        "name": "Upload files",
+        "description": "A general right to upload data onto a storage endpoint. This is a \"first check\" right, meaning that it is required for any upload action. Users that do not have this right are guranteed to not be able to upload anything anywhere, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
       }
     },
     "userRightTagDescription": {
@@ -128,7 +132,8 @@
       "storage_endpoint.internal": "Other",
       "update_storage_endpoint.unauthorized": "Permission denied",
       "update_storage_endpoint.other": "Other",
-      "update_storage_endpoint.invalid_status": "Invalid status"
+      "update_storage_endpoint.invalid_status": "Invalid status",
+      "storage.upload.unauthorized": "Permission denied"
     }
   }
 }

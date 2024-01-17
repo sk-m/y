@@ -128,12 +128,20 @@ pub fn get_right_categories() -> Vec<RightCategory> {
         },
         RightCategory {
             name: "storage_feature",
-            rights: vec![Right {
-                name: "manage_storage_endpoints",
-                options: vec![],
-                tags: vec![RightTag::Administrative],
-                feature: Some("storage"),
-            }],
+            rights: vec![
+                Right {
+                    name: "manage_storage_endpoints",
+                    options: vec![],
+                    tags: vec![RightTag::Administrative],
+                    feature: Some("storage"),
+                },
+                Right {
+                    name: "storage_upload",
+                    options: vec![],
+                    tags: vec![],
+                    feature: Some("storage"),
+                },
+            ],
         },
     ]
 }
