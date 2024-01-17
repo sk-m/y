@@ -5,15 +5,22 @@
 /* eslint-disable no-warning-comments */
 
 /* eslint-disable unicorn/consistent-function-scoping */
-import { Component, For, Show, createMemo } from "solid-js"
+import { Component, For, Show, createMemo, createSignal } from "solid-js"
 
 import { useParams, useSearchParams } from "@solidjs/router"
 import { useQueryClient } from "@tanstack/solid-query"
 
 import { Icon } from "@/app/components/common/icon/icon"
+import {
+  ContextMenu,
+  ContextMenuLink,
+  ContextMenuSection,
+} from "@/app/components/context-menu/context-menu"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
+import { useContextMenu } from "@/app/core/util/use-context-menu"
 
 import { downloadStorageFile } from "../../storage-entry/storage-entry.api"
+import { IStorageEntry } from "../../storage-entry/storage-entry.codecs"
 import {
   storageEntriesKey,
   useStorageEntries,
@@ -24,6 +31,14 @@ import "./file-explorer.less"
 const FileExplorerPage: Component = () => {
   const params = useParams()
   const queryClient = useQueryClient()
+  const {
+    open: openContextMenu,
+    close: closeContextMenu,
+    contextMenuProps,
+  } = useContextMenu()
+
+  const [temporarySelectedEntry, setTemporarySelectedEntry] =
+    createSignal<IStorageEntry | null>(null)
 
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -149,6 +164,23 @@ const FileExplorerPage: Component = () => {
       <div class="page-container">
         <div class="browser-container">
           <div class="browser-contents">
+            <ContextMenu {...contextMenuProps()}>
+              <ContextMenuSection>
+                <Show when={temporarySelectedEntry()?.entry_type === "file"}>
+                  <ContextMenuLink
+                    icon="download"
+                    onClick={() => {
+                      if (temporarySelectedEntry()) {
+                        downloadFile(temporarySelectedEntry()!.id)
+                        closeContextMenu()
+                      }
+                    }}
+                  >
+                    Download
+                  </ContextMenuLink>
+                </Show>
+              </ContextMenuSection>
+            </ContextMenu>
             <div class="items">
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
@@ -156,12 +188,18 @@ const FileExplorerPage: Component = () => {
                   // TODO: Should be a clickable button
                   <div
                     class="item"
-                    // prettier-ignore
-                    onClick={() => (
-                      entry.entry_type === "folder"
-                        ? navigateToFolder(entry.id)
-                        : downloadFile(entry.id))
+                    onClick={() =>
+                      entry.entry_type === "folder" &&
+                      navigateToFolder(entry.id)
                     }
+                    onContextMenu={(event) => {
+                      event.preventDefault()
+
+                      if (entry.entry_type === "folder") return
+
+                      setTemporarySelectedEntry(entry)
+                      openContextMenu(event)
+                    }}
                   >
                     <div class="item-thumb">
                       <div class="icon">
@@ -179,7 +217,12 @@ const FileExplorerPage: Component = () => {
                       </div>
                     </div>
                     <div class="item-info">
-                      <div class="item-name">
+                      <div
+                        class="item-name"
+                        title={`${entry.name}${
+                          entry.extension ? `.${entry.extension}` : ""
+                        }`}
+                      >
                         <div class="name">{entry.name}</div>
                         <Show when={entry.extension}>
                           <div class="extension">{entry.extension}</div>

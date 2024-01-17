@@ -36,8 +36,13 @@
             cursor: pointer;
 
             &:hover {
-              box-shadow: 0 0 0 1px var(--color-border-1),
-                0 5px 15px rgba(21, 23, 46, 0.1);
+              background-color: var(--color-grey-1);
+              box-shadow: 0 0 0 1px var(--color-border-15),
+                0 3px 15px rgba(21, 23, 46, 0.1);
+
+              > .item-thumb {
+                background-color: var(--color-grey-2);
+              }
             }
 
             > .item-thumb {
@@ -49,6 +54,8 @@
 
               border-bottom: 1px solid var(--color-border-1);
               background-color: var(--color-grey-1);
+
+              transition: 0.15s;
 
               > .icon {
                 width: 100%;
