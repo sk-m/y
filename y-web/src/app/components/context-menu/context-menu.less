@@ -37,8 +37,8 @@
 
   background-color: white;
 
-  border: 1px solid var(--color-border-1);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--color-border-15);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   border-radius: 6px;
 
   padding: 0.5em 0;
@@ -55,6 +55,12 @@
       > .section-items {
         display: flex;
         flex-direction: column;
+
+        > .separator {
+          height: 1px;
+          background-color: var(--color-border-1);
+          margin: 0.5em 0;
+        }
 
         > .link {
           display: flex;

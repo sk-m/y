@@ -51,7 +51,14 @@ export const ContextMenu: ComponentWithChildren<ContextMenuProps> = (props) => {
       <Show when={props.position}>
         <div
           onClick={() => props.onClose()}
-          onAuxClick={() => props.onClose()}
+          onAuxClick={(event) => {
+            event.preventDefault()
+            props.onClose()
+          }}
+          onContextMenu={(event) => {
+            event.preventDefault()
+            props.onClose()
+          }}
           class="ui-context-menu-background"
         />
       </Show>
