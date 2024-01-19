@@ -1,10 +1,16 @@
 import download from "downloadjs"
 
-import { get } from "@/app/core/request"
+import { get, post } from "@/app/core/request"
 
-import { TGetStorageEntries } from "./storage-entry.codecs"
+import {
+  TCreateStorageFolder,
+  TGetStorageEntries,
+  TGetStorageFolderPath,
+} from "./storage-entry.codecs"
 
+export const apiStorageFolderPath = "/storage/folder-path" as const
 export const apiStorageEntries = "/storage/entries" as const
+export const apiStorageCreateFoler = "/storage/create-folder" as const
 
 export type GetStorageEntriesInput = {
   endpointId: number | string
@@ -23,6 +29,45 @@ export const storageEntries = async (input: GetStorageEntriesInput) => {
   return get(apiStorageEntries, {
     query,
   }).then((data) => TGetStorageEntries.parse(data))
+}
+
+export type GetStorageFolderPathInput = {
+  endpointId: number | string
+  folderId?: number | string
+}
+
+export const storageFolderPath = async (input: GetStorageFolderPathInput) => {
+  // eslint-disable-next-line no-undefined
+  if (input.folderId === undefined) return { folder_path: [] }
+
+  const query = new URLSearchParams()
+
+  query.set("endpoint_id", input.endpointId.toString())
+
+  if (input.folderId) {
+    query.set("folder_id", input.folderId.toString())
+  }
+
+  return get(apiStorageFolderPath, {
+    query,
+  }).then((data) => TGetStorageFolderPath.parse(data))
+}
+
+export type CreateStorageFolderInput = {
+  endpointId: number
+  folderId?: number
+
+  newFolderName: string
+}
+
+export const createStorageFolder = async (input: CreateStorageFolderInput) => {
+  return post(apiStorageCreateFoler, {
+    body: {
+      endpoint_id: input.endpointId,
+      target_folder: input.folderId,
+      new_folder_name: input.newFolderName,
+    },
+  }).then((data) => TCreateStorageFolder.parse(data))
 }
 
 export type DownloadStorageFileInput = {

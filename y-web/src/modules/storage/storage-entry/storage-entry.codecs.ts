@@ -20,3 +20,17 @@ export type IStorageEntry = z.infer<typeof TStorageEntry>
 export const TGetStorageEntries = z.object({
   entries: z.array(TStorageEntry),
 })
+
+export const TCreateStorageFolder = z.object({
+  new_folder_id: z.number(),
+})
+
+export const TGetStorageFolderPath = z.object({
+  folder_path: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+      parent_folder: z.number().nullable(),
+    })
+  ),
+})

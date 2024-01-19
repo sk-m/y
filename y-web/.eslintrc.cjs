@@ -64,7 +64,7 @@ module.exports = {
     "no-undefined": "error",
     "no-empty": "error",
     "no-lone-blocks": "error",
-    "no-warning-comments": ["error"],
+    "no-warning-comments": "warn",
 
     // ESLint - warns
     "no-unmodified-loop-condition": "warn",
@@ -143,7 +143,10 @@ module.exports = {
 
     // Typescript ESLint - warns
     "no-magic-numbers": "off",
-    "@typescript-eslint/no-magic-numbers": ["warn", { ignore: [1, 0, -1] }],
+    "@typescript-eslint/no-magic-numbers": [
+      "warn",
+      { ignore: [1, 0, -1, 0.5] },
+    ],
     "@typescript-eslint/promise-function-async": "warn",
 
     // eslint-plugin-unicorn
