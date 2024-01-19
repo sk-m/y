@@ -5,12 +5,20 @@
 /* eslint-disable no-warning-comments */
 
 /* eslint-disable unicorn/consistent-function-scoping */
-import { Component, For, Show, createMemo, createSignal } from "solid-js"
+import {
+  Component,
+  For,
+  Show,
+  createMemo,
+  createSignal,
+  onMount,
+} from "solid-js"
 
 import { useParams, useSearchParams } from "@solidjs/router"
-import { useQueryClient } from "@tanstack/solid-query"
+import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Icon } from "@/app/components/common/icon/icon"
+import { Text } from "@/app/components/common/text/text"
 import {
   ContextMenu,
   ContextMenuLink,
@@ -19,35 +27,100 @@ import {
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 
-import { downloadStorageFile } from "../../storage-entry/storage-entry.api"
+import {
+  createStorageFolder,
+  downloadStorageFile,
+} from "../../storage-entry/storage-entry.api"
 import { IStorageEntry } from "../../storage-entry/storage-entry.codecs"
 import {
   storageEntriesKey,
   useStorageEntries,
+  useStorageFolderPath,
 } from "../../storage-entry/storage-entry.service"
 import { retrieveFiles } from "../../upload"
+import { FileExplorerPath } from "./components/file-explorer-path"
 import "./file-explorer.less"
 
 const FileExplorerPage: Component = () => {
   const params = useParams()
   const queryClient = useQueryClient()
   const {
-    open: openContextMenu,
-    close: closeContextMenu,
-    contextMenuProps,
+    open: openEntryContextMenu,
+    close: closeEntryContextMenu,
+    contextMenuProps: entryContextMenuProps,
   } = useContextMenu()
+
+  const {
+    open: openGeneralContextMenu,
+    close: closeGeneralContextMenu,
+    contextMenuProps: generalContextMenuProps,
+  } = useContextMenu()
+
+  let newFolderNameInputRef: HTMLInputElement | undefined
+
+  const [folderCreationInitiated, setFolderCreationInitiated] =
+    createSignal(false)
 
   const [temporarySelectedEntry, setTemporarySelectedEntry] =
     createSignal<IStorageEntry | null>(null)
 
   const [searchParams, setSearchParams] = useSearchParams()
 
+  const $createFolder = createMutation(createStorageFolder)
+
   const $folderEntries = useStorageEntries(() => ({
     folderId: searchParams.folderId,
     endpointId: params.endpointId as string,
   }))
 
+  const $folderPath = useStorageFolderPath(() => ({
+    folderId: searchParams.folderId,
+    endpointId: params.endpointId as string,
+  }))
+
+  const folderPath = createMemo(() => $folderPath.data?.folder_path ?? [])
   const folderEntries = createMemo(() => $folderEntries.data?.entries ?? [])
+
+  const invalidateEntries = async () => {
+    return queryClient.invalidateQueries([
+      storageEntriesKey,
+      params.endpointId,
+      searchParams.folderId,
+    ])
+  }
+
+  const createFolder = (newFolderName: string) => {
+    $createFolder.mutate(
+      {
+        endpointId: Number.parseInt(params.endpointId as string, 10),
+        folderId: searchParams.folderId
+          ? Number.parseInt(searchParams.folderId, 10)
+          : undefined,
+
+        newFolderName,
+      },
+      {
+        onSuccess: () => {
+          void invalidateEntries()
+
+          newFolderNameInputRef!.value = ""
+
+          setFolderCreationInitiated(false)
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
+  }
+
+  onMount(() => {
+    if (newFolderNameInputRef) {
+      newFolderNameInputRef.addEventListener("keyup", (event) => {
+        if (event.key === "Enter") {
+          createFolder(newFolderNameInputRef!.value)
+        }
+      })
+    }
+  })
 
   const onDrop = async (event: DragEvent) => {
     event.preventDefault()
@@ -120,11 +193,7 @@ const FileExplorerPage: Component = () => {
         genericErrorToast(json.error)
       }
 
-      void queryClient.invalidateQueries([
-        storageEntriesKey,
-        params.endpointId,
-        searchParams.folderId,
-      ])
+      void invalidateEntries()
     })
 
     request.addEventListener("error", () => {
@@ -163,16 +232,76 @@ const FileExplorerPage: Component = () => {
     >
       <div class="page-container">
         <div class="browser-container">
-          <div class="browser-contents">
-            <ContextMenu {...contextMenuProps()}>
+          <div class="top-container">
+            <FileExplorerPath
+              path={folderPath()}
+              onNavigate={(newFolderId) =>
+                setSearchParams({ folderId: newFolderId })
+              }
+            />
+          </div>
+          <div
+            class="browser-contents"
+            onContextMenu={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              event.stopImmediatePropagation()
+
+              openGeneralContextMenu(event)
+            }}
+          >
+            <ContextMenu {...generalContextMenuProps()}>
+              <ContextMenuSection>
+                <ContextMenuLink
+                  icon="folder"
+                  onClick={() => {
+                    setFolderCreationInitiated(true)
+                    newFolderNameInputRef?.focus()
+
+                    closeGeneralContextMenu()
+                  }}
+                >
+                  New Folder
+                </ContextMenuLink>
+
+                <div class="separator" />
+
+                <ContextMenuLink
+                  icon="cached"
+                  onClick={() => {
+                    void invalidateEntries()
+                    closeGeneralContextMenu()
+                  }}
+                >
+                  Refresh
+                </ContextMenuLink>
+              </ContextMenuSection>
+            </ContextMenu>
+
+            <ContextMenu {...entryContextMenuProps()}>
               <ContextMenuSection>
                 <Show when={temporarySelectedEntry()?.entry_type === "file"}>
+                  <Text
+                    variant="secondary"
+                    fontSize={"var(--text-sm)"}
+                    fontWeight={450}
+                    style={{
+                      "max-width": "20em",
+                      "word-break": "break-all",
+                      padding: "0.5em 1.5em",
+                    }}
+                  >
+                    {temporarySelectedEntry()!.name}
+                  </Text>
+
+                  <div class="separator" />
+
                   <ContextMenuLink
                     icon="download"
                     onClick={() => {
                       if (temporarySelectedEntry()) {
                         downloadFile(temporarySelectedEntry()!.id)
-                        closeContextMenu()
+                        closeEntryContextMenu()
                       }
                     }}
                   >
@@ -181,7 +310,12 @@ const FileExplorerPage: Component = () => {
                 </Show>
               </ContextMenuSection>
             </ContextMenu>
-            <div class="items">
+            <div
+              class="items"
+              style={{
+                opacity: $folderEntries.isFetching ? 0.5 : 1,
+              }}
+            >
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
                 {(entry) => (
@@ -194,11 +328,13 @@ const FileExplorerPage: Component = () => {
                     }
                     onContextMenu={(event) => {
                       event.preventDefault()
+                      event.stopPropagation()
+                      event.stopImmediatePropagation()
 
                       if (entry.entry_type === "folder") return
 
                       setTemporarySelectedEntry(entry)
-                      openContextMenu(event)
+                      openEntryContextMenu(event)
                     }}
                   >
                     <div class="item-thumb">
@@ -232,6 +368,28 @@ const FileExplorerPage: Component = () => {
                   </div>
                 )}
               </For>
+              <div class="item" hidden={!folderCreationInitiated()}>
+                <div class="item-thumb">
+                  <div class="icon">
+                    <Icon
+                      name={"create_new_folder"}
+                      type="outlined"
+                      fill={1}
+                      wght={500}
+                      size={40}
+                    />
+                  </div>
+                </div>
+                <div class="item-info">
+                  <div class="item-name">
+                    <input
+                      ref={(ref) => (newFolderNameInputRef = ref)}
+                      type="text"
+                      class="name-input"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
