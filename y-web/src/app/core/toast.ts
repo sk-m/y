@@ -1,7 +1,7 @@
 import { createRoot, createSignal, createUniqueId } from "solid-js"
 
 const DEFAULT_TOAST_DURATION_MS = 6000
-export type ToastSeverity = "info" | "success" | "error"
+export type ToastSeverity = "info" | "success" | "error" | "warning"
 
 export type ToastInput = {
   title: string

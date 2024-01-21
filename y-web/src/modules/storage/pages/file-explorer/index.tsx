@@ -9,10 +9,12 @@ import {
   Component,
   For,
   Show,
+  createEffect,
   createMemo,
   createSignal,
   onMount,
 } from "solid-js"
+import { createStore } from "solid-js/store"
 
 import { useParams, useSearchParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
@@ -24,6 +26,7 @@ import {
   ContextMenuLink,
   ContextMenuSection,
 } from "@/app/components/context-menu/context-menu"
+import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 
@@ -39,9 +42,16 @@ import {
 } from "../../storage-entry/storage-entry.service"
 import { retrieveFiles } from "../../upload"
 import { FileExplorerPath } from "./components/file-explorer-path"
+import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
 import "./file-explorer.less"
 
+const closeTabConfirmation = (event: BeforeUnloadEvent) => {
+  event.preventDefault()
+  event.returnValue = ""
+}
+
 const FileExplorerPage: Component = () => {
+  const { notify } = toastCtl
   const params = useParams()
   const queryClient = useQueryClient()
   const {
@@ -57,6 +67,11 @@ const FileExplorerPage: Component = () => {
   } = useContextMenu()
 
   let newFolderNameInputRef: HTMLInputElement | undefined
+
+  const [uploadStatus, setUploadStatus] = createStore({
+    numberOfFiles: 0,
+    percentageUploaded: 0,
+  })
 
   const [folderCreationInitiated, setFolderCreationInitiated] =
     createSignal(false)
@@ -122,6 +137,14 @@ const FileExplorerPage: Component = () => {
     }
   })
 
+  createEffect(() => {
+    if (uploadStatus.numberOfFiles === 0) {
+      window.removeEventListener("beforeunload", closeTabConfirmation)
+    } else {
+      window.addEventListener("beforeunload", closeTabConfirmation)
+    }
+  })
+
   const onDrop = async (event: DragEvent) => {
     event.preventDefault()
 
@@ -146,6 +169,8 @@ const FileExplorerPage: Component = () => {
 
       return aParts > bParts ? 1 : -1
     })
+
+    setUploadStatus("numberOfFiles", filesToUpload.length)
 
     const data = new FormData()
 
@@ -172,8 +197,8 @@ const FileExplorerPage: Component = () => {
 
     request.upload.addEventListener("progress", (progressEvent) => {
       if (progressEvent.lengthComputable) {
-        console.log(
-          "upload progress:",
+        setUploadStatus(
+          "percentageUploaded",
           progressEvent.loaded / progressEvent.total
         )
       }
@@ -185,6 +210,8 @@ const FileExplorerPage: Component = () => {
         error?: {
           code?: string
         }
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        skipped_files: string[]
       } = JSON.parse(
         (loadendEvent.target as { responseText?: string }).responseText ?? ""
       )
@@ -192,6 +219,21 @@ const FileExplorerPage: Component = () => {
       if (json.error) {
         genericErrorToast(json.error)
       }
+
+      if (json.skipped_files.length > 0) {
+        notify({
+          title: `${json.skipped_files.length} of ${filesToUpload.length} files were not uploaded`,
+          content: json.skipped_files.join(", "),
+          duration: 30_000,
+          icon: "file_copy",
+          severity: "warning",
+        })
+      }
+
+      setUploadStatus({
+        numberOfFiles: 0,
+        percentageUploaded: 0,
+      })
 
       void invalidateEntries()
     })
@@ -230,6 +272,13 @@ const FileExplorerPage: Component = () => {
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
     >
+      <Show when={uploadStatus.numberOfFiles !== 0}>
+        <FileExplorerUploadStatusToast
+          percentageUploaded={uploadStatus.percentageUploaded}
+          numberOfFiles={uploadStatus.numberOfFiles}
+        />
+      </Show>
+
       <div class="page-container">
         <div class="browser-container">
           <div class="top-container">
@@ -292,6 +341,9 @@ const FileExplorerPage: Component = () => {
                     }}
                   >
                     {temporarySelectedEntry()!.name}
+                    {temporarySelectedEntry()!.extension
+                      ? `.${temporarySelectedEntry()!.extension!}`
+                      : ""}
                   </Text>
 
                   <div class="separator" />
@@ -310,12 +362,7 @@ const FileExplorerPage: Component = () => {
                 </Show>
               </ContextMenuSection>
             </ContextMenu>
-            <div
-              class="items"
-              style={{
-                opacity: $folderEntries.isFetching ? 0.5 : 1,
-              }}
-            >
+            <div class="items">
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
                 {(entry) => (

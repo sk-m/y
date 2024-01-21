@@ -1,0 +1,69 @@
+.file-explorer-upload-status-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+
+  min-width: 200px;
+  max-width: 300px;
+
+  padding: 0.5em;
+  margin: 1em;
+
+  border-radius: 6px;
+  border: 1px solid var(--color-border-1);
+  box-shadow: 0px 0px 10px 0px var(--color-grey-1);
+  background-color: white;
+
+  transition: 0.15s;
+
+  > .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0.5em;
+
+    color: hsl(110, 80%, 30%);
+
+    border-radius: 4px;
+    background-color: var(--color-success-t-1);
+  }
+
+  > .content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+
+    width: 100%;
+
+    > .text {
+      font-size: var(--text-sm);
+      font-weight: 500;
+    }
+
+    > .progress-container {
+      width: 100%;
+
+      > .progress-bar {
+        width: 100%;
+        height: 3px;
+
+        box-shadow: 0 0 0 1px var(--color-grey-15);
+        background-color: var(--color-grey-15);
+
+        border-radius: 3px;
+
+        > .progress-inner {
+          height: 100%;
+
+          border-radius: 3px;
+
+          background-color: hsl(110, 100%, 37%);
+          box-shadow: 0 0 0 1px hsl(110, 90%, 35%);
+
+          transition: 0.2s ease-out;
+        }
+      }
+    }
+  }
+}
