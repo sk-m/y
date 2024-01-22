@@ -1,7 +1,7 @@
 use serde::Serialize;
 use sqlx::FromRow;
 
-#[derive(FromRow, Serialize)]
+#[derive(FromRow, Serialize, Debug)]
 pub struct StorageEndpoint {
     pub id: i32,
     pub name: String,

@@ -1,4 +1,5 @@
 pub mod storage_create_folder;
+pub mod storage_delete_entries;
 pub mod storage_download;
 pub mod storage_endpoints;
 pub mod storage_entries;

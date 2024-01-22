@@ -1,6 +1,6 @@
 import download from "downloadjs"
 
-import { get, post } from "@/app/core/request"
+import { del, get, post } from "@/app/core/request"
 
 import {
   TCreateStorageFolder,
@@ -10,6 +10,8 @@ import {
 
 export const apiStorageFolderPath = "/storage/folder-path" as const
 export const apiStorageEntries = "/storage/entries" as const
+
+// TODO move to POST /folder
 export const apiStorageCreateFoler = "/storage/create-folder" as const
 
 export type GetStorageEntriesInput = {
@@ -68,6 +70,24 @@ export const createStorageFolder = async (input: CreateStorageFolderInput) => {
       new_folder_name: input.newFolderName,
     },
   }).then((data) => TCreateStorageFolder.parse(data))
+}
+
+export type DeleteStorageEntriesInput = {
+  endpointId: number
+  folderIds: number[]
+  fileIds: number[]
+}
+
+export const deleteStorageEntries = async (
+  input: DeleteStorageEntriesInput
+) => {
+  return del(apiStorageEntries, {
+    body: {
+      endpoint_id: input.endpointId,
+      folder_ids: input.folderIds,
+      file_ids: input.fileIds,
+    },
+  })
 }
 
 export type DownloadStorageFileInput = {

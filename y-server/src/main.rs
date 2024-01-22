@@ -3,6 +3,7 @@ mod db;
 mod request;
 mod right;
 mod storage_endpoint;
+mod storage_entry;
 mod user;
 mod user_group;
 mod util;
@@ -102,6 +103,7 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_download::storage_download)
                     .service(crate::api::storage::storage_create_folder::storage_create_folder)
                     .service(crate::api::storage::storage_get_folder_path::storage_get_folder_path)
+                    .service(crate::api::storage::storage_delete_entries::storage_delete_entries)
             )
             .service(
                 web::scope("/api/admin")
