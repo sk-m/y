@@ -32,6 +32,7 @@ import { useContextMenu } from "@/app/core/util/use-context-menu"
 
 import {
   createStorageFolder,
+  deleteStorageEntries,
   downloadStorageFile,
 } from "../../storage-entry/storage-entry.api"
 import { IStorageEntry } from "../../storage-entry/storage-entry.codecs"
@@ -82,6 +83,7 @@ const FileExplorerPage: Component = () => {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const $createFolder = createMutation(createStorageFolder)
+  const $deleteEntries = createMutation(deleteStorageEntries)
 
   const $folderEntries = useStorageEntries(() => ({
     folderId: searchParams.folderId,
@@ -121,6 +123,22 @@ const FileExplorerPage: Component = () => {
           newFolderNameInputRef!.value = ""
 
           setFolderCreationInitiated(false)
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
+  }
+
+  const deleteEntries = (folderIds: number[], fileIds: number[]) => {
+    $deleteEntries.mutate(
+      {
+        endpointId: Number.parseInt(params.endpointId as string, 10),
+        fileIds,
+        folderIds,
+      },
+      {
+        onSuccess: () => {
+          void invalidateEntries()
         },
         onError: (error) => genericErrorToast(error),
       }
@@ -329,6 +347,17 @@ const FileExplorerPage: Component = () => {
 
             <ContextMenu {...entryContextMenuProps()}>
               <ContextMenuSection>
+                <Show when={temporarySelectedEntry()?.entry_type === "folder"}>
+                  <ContextMenuLink
+                    icon="delete"
+                    onClick={() => {
+                      deleteEntries([temporarySelectedEntry()!.id], [])
+                      closeEntryContextMenu()
+                    }}
+                  >
+                    Delete folder
+                  </ContextMenuLink>
+                </Show>
                 <Show when={temporarySelectedEntry()?.entry_type === "file"}>
                   <Text
                     variant="secondary"
@@ -359,6 +388,18 @@ const FileExplorerPage: Component = () => {
                   >
                     Download
                   </ContextMenuLink>
+
+                  <div class="separator" />
+
+                  <ContextMenuLink
+                    icon="delete"
+                    onClick={() => {
+                      deleteEntries([], [temporarySelectedEntry()!.id])
+                      closeEntryContextMenu()
+                    }}
+                  >
+                    Delete file
+                  </ContextMenuLink>
                 </Show>
               </ContextMenuSection>
             </ContextMenu>
@@ -377,8 +418,6 @@ const FileExplorerPage: Component = () => {
                       event.preventDefault()
                       event.stopPropagation()
                       event.stopImmediatePropagation()
-
-                      if (entry.entry_type === "folder") return
 
                       setTemporarySelectedEntry(entry)
                       openEntryContextMenu(event)
