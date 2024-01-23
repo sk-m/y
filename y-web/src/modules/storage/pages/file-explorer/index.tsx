@@ -72,6 +72,7 @@ const FileExplorerPage: Component = () => {
   const [uploadStatus, setUploadStatus] = createStore({
     numberOfFiles: 0,
     percentageUploaded: 0,
+    totalSizeBytes: 0,
   })
 
   const [folderCreationInitiated, setFolderCreationInitiated] =
@@ -188,7 +189,13 @@ const FileExplorerPage: Component = () => {
       return aParts > bParts ? 1 : -1
     })
 
-    setUploadStatus("numberOfFiles", filesToUpload.length)
+    let totalSizeBytes = 0
+
+    for (const file of filesToUpload) {
+      totalSizeBytes += file.size
+    }
+
+    setUploadStatus({ numberOfFiles: filesToUpload.length, totalSizeBytes })
 
     const data = new FormData()
 
@@ -294,6 +301,7 @@ const FileExplorerPage: Component = () => {
         <FileExplorerUploadStatusToast
           percentageUploaded={uploadStatus.percentageUploaded}
           numberOfFiles={uploadStatus.numberOfFiles}
+          totalSizeBytes={uploadStatus.totalSizeBytes}
         />
       </Show>
 

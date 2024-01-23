@@ -37,8 +37,20 @@
     width: 100%;
 
     > .text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15em;
+
       font-size: var(--text-sm);
-      font-weight: 500;
+
+      > .heading {
+        font-weight: 500;
+      }
+
+      > .details {
+        font-weight: 420;
+        color: var(--color-text-grey-1);
+      }
     }
 
     > .progress-container {
