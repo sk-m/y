@@ -19,6 +19,7 @@ import { createStore } from "solid-js/store"
 import { useParams, useSearchParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
+import { Checkbox } from "@/app/components/common/checkbox/checkbox"
 import { Icon } from "@/app/components/common/icon/icon"
 import { Text } from "@/app/components/common/text/text"
 import {
@@ -69,6 +70,13 @@ const FileExplorerPage: Component = () => {
 
   let newFolderNameInputRef: HTMLInputElement | undefined
 
+  const [selectedEntries, setSelectedEntries] = createSignal<Set<number>>(
+    new Set(),
+    {
+      equals: false,
+    }
+  )
+
   const [uploadStatus, setUploadStatus] = createStore({
     numberOfFiles: 0,
     percentageUploaded: 0,
@@ -105,6 +113,18 @@ const FileExplorerPage: Component = () => {
       params.endpointId,
       searchParams.folderId,
     ])
+  }
+
+  const onSelect = (entryId: number) => {
+    setSelectedEntries((entries) => {
+      if (entries.has(entryId)) {
+        entries.delete(entryId)
+      } else {
+        entries.add(entryId)
+      }
+
+      return entries
+    })
   }
 
   const createFolder = (newFolderName: string) => {
@@ -414,53 +434,72 @@ const FileExplorerPage: Component = () => {
             <div class="items">
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
-                {(entry) => (
-                  // TODO: Should be a clickable button
-                  <div
-                    class="item"
-                    onClick={() =>
-                      entry.entry_type === "folder" &&
-                      navigateToFolder(entry.id)
-                    }
-                    onContextMenu={(event) => {
-                      event.preventDefault()
-                      event.stopPropagation()
-                      event.stopImmediatePropagation()
+                {(entry) => {
+                  const selected = createMemo(() =>
+                    selectedEntries().has(entry.id)
+                  )
 
-                      setTemporarySelectedEntry(entry)
-                      openEntryContextMenu(event)
-                    }}
-                  >
-                    <div class="item-thumb">
-                      <div class="icon">
-                        <Icon
-                          name={
-                            entry.entry_type === "folder"
-                              ? "folder_open"
-                              : "draft"
-                          }
-                          type="outlined"
-                          fill={1}
-                          wght={500}
-                          size={40}
+                  return (
+                    // TODO: Should be a clickable <button />
+                    <div
+                      classList={{ item: true, selected: selected() }}
+                      onClick={() =>
+                        entry.entry_type === "folder" &&
+                        navigateToFolder(entry.id)
+                      }
+                      onContextMenu={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        event.stopImmediatePropagation()
+
+                        setTemporarySelectedEntry(entry)
+                        openEntryContextMenu(event)
+                      }}
+                    >
+                      <div class="item-select-container">
+                        <Checkbox
+                          size="m"
+                          value={selected()}
+                          onChange={(_, event) => {
+                            if (event) {
+                              event.stopPropagation()
+                            }
+
+                            onSelect(entry.id)
+                          }}
                         />
                       </div>
-                    </div>
-                    <div class="item-info">
-                      <div
-                        class="item-name"
-                        title={`${entry.name}${
-                          entry.extension ? `.${entry.extension}` : ""
-                        }`}
-                      >
-                        <div class="name">{entry.name}</div>
-                        <Show when={entry.extension}>
-                          <div class="extension">{entry.extension}</div>
-                        </Show>
+                      <div class="item-thumb">
+                        <div class="icon">
+                          <Icon
+                            name={
+                              entry.entry_type === "folder"
+                                ? "folder_open"
+                                : "draft"
+                            }
+                            type="outlined"
+                            fill={1}
+                            wght={500}
+                            size={40}
+                          />
+                        </div>
+                      </div>
+                      <div class="item-info">
+                        <div
+                          class="item-name"
+                          title={`${entry.name}${
+                            entry.extension ? `.${entry.extension}` : ""
+                          }`}
+                        >
+                          <div class="name">{entry.name}</div>
+                          <Show when={entry.extension}>
+                            <div class="extension">{entry.extension}</div>
+                          </Show>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )
+                }}
               </For>
               <div class="item" hidden={!folderCreationInitiated()}>
                 <div class="item-thumb">
