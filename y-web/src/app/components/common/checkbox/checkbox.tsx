@@ -44,6 +44,12 @@ export const Checkbox: Component<CheckboxProps> = (props) => {
     }
   })
 
+  createEffect(() => {
+    if (isControlled) {
+      setChecked(props.value!)
+    }
+  })
+
   const toggle = (event: MouseEvent) => {
     if (props.disabled) return
 

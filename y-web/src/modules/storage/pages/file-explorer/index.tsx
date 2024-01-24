@@ -9,6 +9,7 @@ import {
   Component,
   For,
   Show,
+  batch,
   createEffect,
   createMemo,
   createSignal,
@@ -89,6 +90,10 @@ const FileExplorerPage: Component = () => {
   const [temporarySelectedEntry, setTemporarySelectedEntry] =
     createSignal<IStorageEntry | null>(null)
 
+  const [lastSelectedEntryIndex, setLastSelectedEntryIndex] = createSignal<
+    number | null
+  >(null)
+
   const [searchParams, setSearchParams] = useSearchParams()
 
   const $createFolder = createMutation(createStorageFolder)
@@ -108,6 +113,8 @@ const FileExplorerPage: Component = () => {
   const folderEntries = createMemo(() => $folderEntries.data?.entries ?? [])
 
   const invalidateEntries = async () => {
+    setLastSelectedEntryIndex(null)
+
     return queryClient.invalidateQueries([
       storageEntriesKey,
       params.endpointId,
@@ -115,15 +122,58 @@ const FileExplorerPage: Component = () => {
     ])
   }
 
-  const onSelect = (entryId: number) => {
-    setSelectedEntries((entries) => {
-      if (entries.has(entryId)) {
-        entries.delete(entryId)
-      } else {
-        entries.add(entryId)
-      }
+  const temporarySelectedEntryIsInMultiselect = createMemo(
+    () =>
+      temporarySelectedEntry() !== null &&
+      selectedEntries().has(temporarySelectedEntry()!.id)
+  )
 
-      return entries
+  const onSelectRange = (firstEntryIndex: number, lastEntryIndex: number) => {
+    const entryIdsToSelect: number[] = []
+
+    const entries = folderEntries()
+
+    for (let i = firstEntryIndex; i <= lastEntryIndex; i++) {
+      if (entries[i] !== undefined) {
+        entryIdsToSelect.push(entries[i]!.id)
+      }
+    }
+
+    const firstEntryId = entryIdsToSelect[0]
+    // eslint-disable-next-line unicorn/prefer-at
+    const lastEntryId = entryIdsToSelect[entryIdsToSelect.length - 1]
+
+    if (firstEntryId === undefined || lastEntryId === undefined) return
+
+    batch(() => {
+      setLastSelectedEntryIndex(lastEntryIndex)
+      setSelectedEntries((currentEntries) => {
+        for (const entry of entryIdsToSelect) {
+          currentEntries.add(entry)
+        }
+
+        return currentEntries
+      })
+    })
+  }
+
+  const onSelect = (entryIdx: number) => {
+    const entryId = folderEntries()[entryIdx]?.id
+
+    if (entryId === undefined) return
+
+    batch(() => {
+      setLastSelectedEntryIndex(entryIdx)
+
+      setSelectedEntries((entries) => {
+        if (entries.has(entryId)) {
+          entries.delete(entryId)
+        } else {
+          entries.add(entryId)
+        }
+
+        return entries
+      })
     })
   }
 
@@ -150,6 +200,16 @@ const FileExplorerPage: Component = () => {
     )
   }
 
+  const resetSelection = () => {
+    setSelectedEntries((entries) => {
+      for (const entry of entries) {
+        entries.delete(entry)
+      }
+
+      return entries
+    })
+  }
+
   const deleteEntries = (folderIds: number[], fileIds: number[]) => {
     $deleteEntries.mutate(
       {
@@ -159,6 +219,7 @@ const FileExplorerPage: Component = () => {
       },
       {
         onSuccess: () => {
+          resetSelection()
           void invalidateEntries()
         },
         onError: (error) => genericErrorToast(error),
@@ -374,67 +435,119 @@ const FileExplorerPage: Component = () => {
             </ContextMenu>
 
             <ContextMenu {...entryContextMenuProps()}>
-              <ContextMenuSection>
-                <Show when={temporarySelectedEntry()?.entry_type === "folder"}>
-                  <ContextMenuLink
-                    icon="delete"
-                    onClick={() => {
-                      deleteEntries([temporarySelectedEntry()!.id], [])
-                      closeEntryContextMenu()
-                    }}
-                  >
-                    Delete folder
-                  </ContextMenuLink>
-                </Show>
-                <Show when={temporarySelectedEntry()?.entry_type === "file"}>
-                  <Text
-                    variant="secondary"
-                    fontSize={"var(--text-sm)"}
-                    fontWeight={450}
-                    style={{
-                      "max-width": "20em",
-                      "word-break": "break-all",
-                      padding: "0.5em 1.5em",
-                    }}
-                  >
-                    {temporarySelectedEntry()!.name}
-                    {temporarySelectedEntry()!.extension
-                      ? `.${temporarySelectedEntry()!.extension!}`
-                      : ""}
-                  </Text>
+              <Show
+                when={
+                  !(
+                    selectedEntries().size > 1 &&
+                    temporarySelectedEntryIsInMultiselect()
+                  )
+                }
+                fallback={
+                  <ContextMenuSection>
+                    <ContextMenuLink
+                      icon="remove_selection"
+                      onClick={() => {
+                        setSelectedEntries(new Set<number>())
+                      }}
+                    >
+                      Remove selection
+                    </ContextMenuLink>
 
-                  <div class="separator" />
+                    <div class="separator" />
 
-                  <ContextMenuLink
-                    icon="download"
-                    onClick={() => {
-                      if (temporarySelectedEntry()) {
-                        downloadFile(temporarySelectedEntry()!.id)
+                    <ContextMenuLink
+                      icon="delete_sweep"
+                      onClick={() => {
+                        const folderIds: number[] = []
+                        const fileIds: number[] = []
+
+                        for (const entryId of selectedEntries()) {
+                          const entry = folderEntries().find(
+                            (e) => e.id === entryId
+                          )
+
+                          if (entry) {
+                            if (entry.entry_type === "folder") {
+                              folderIds.push(entryId)
+                            } else {
+                              fileIds.push(entryId)
+                            }
+                          }
+                        }
+
+                        deleteEntries(folderIds, fileIds)
                         closeEntryContextMenu()
-                      }
-                    }}
+                      }}
+                    >
+                      Delete {selectedEntries().size} entries
+                    </ContextMenuLink>
+                  </ContextMenuSection>
+                }
+              >
+                <ContextMenuSection>
+                  <Show
+                    when={temporarySelectedEntry()?.entry_type === "folder"}
                   >
-                    Download
-                  </ContextMenuLink>
+                    <ContextMenuLink
+                      icon="delete"
+                      onClick={() => {
+                        deleteEntries([temporarySelectedEntry()!.id], [])
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Delete folder
+                    </ContextMenuLink>
+                  </Show>
+                  <Show when={temporarySelectedEntry()?.entry_type === "file"}>
+                    <Text
+                      variant="secondary"
+                      fontSize={"var(--text-sm)"}
+                      fontWeight={450}
+                      style={{
+                        "max-width": "20em",
+                        "word-break": "break-all",
+                        padding: "0.5em 1.5em",
+                      }}
+                    >
+                      {temporarySelectedEntry()!.name}
+                      {temporarySelectedEntry()!.extension
+                        ? `.${temporarySelectedEntry()!.extension!}`
+                        : ""}
+                    </Text>
 
-                  <div class="separator" />
+                    <div class="separator" />
 
-                  <ContextMenuLink
-                    icon="delete"
-                    onClick={() => {
-                      deleteEntries([], [temporarySelectedEntry()!.id])
-                      closeEntryContextMenu()
-                    }}
-                  >
-                    Delete file
-                  </ContextMenuLink>
-                </Show>
-              </ContextMenuSection>
+                    <ContextMenuLink
+                      icon="download"
+                      onClick={() => {
+                        if (temporarySelectedEntry()) {
+                          downloadFile(temporarySelectedEntry()!.id)
+                          closeEntryContextMenu()
+                        }
+                      }}
+                    >
+                      Download
+                    </ContextMenuLink>
+
+                    <div class="separator" />
+
+                    <ContextMenuLink
+                      icon="delete"
+                      onClick={() => {
+                        deleteEntries([], [temporarySelectedEntry()!.id])
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Delete file
+                    </ContextMenuLink>
+                  </Show>
+                </ContextMenuSection>
+              </Show>
             </ContextMenu>
             <div class="items">
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
-                {(entry) => {
+                {(entry, idx) => {
                   const selected = createMemo(() =>
                     selectedEntries().has(entry.id)
                   )
@@ -463,9 +576,17 @@ const FileExplorerPage: Component = () => {
                           onChange={(_, event) => {
                             if (event) {
                               event.stopPropagation()
+
+                              if (
+                                event.shiftKey &&
+                                lastSelectedEntryIndex() !== null
+                              ) {
+                                onSelectRange(lastSelectedEntryIndex()!, idx())
+                                return
+                              }
                             }
 
-                            onSelect(entry.id)
+                            onSelect(idx())
                           }}
                         />
                       </div>
