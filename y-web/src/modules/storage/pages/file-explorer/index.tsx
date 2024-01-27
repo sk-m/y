@@ -36,6 +36,7 @@ import {
   createStorageFolder,
   deleteStorageEntries,
   downloadStorageFile,
+  downloadStorageFilesZip,
 } from "../../storage-entry/storage-entry.api"
 import { IStorageEntry } from "../../storage-entry/storage-entry.codecs"
 import {
@@ -371,6 +372,38 @@ const FileExplorerPage: Component = () => {
     })
   }
 
+  // TODO This should be refactored, its horribly inefficient.
+  const downloadSelectedEntries = () => {
+    const folderIds: number[] = []
+    const fileIds: number[] = []
+
+    for (const entryId of selectedEntries()) {
+      const entry = folderEntries().find((e) => e.id === entryId)
+
+      if (entry) {
+        if (entry.entry_type === "folder") {
+          folderIds.push(entryId)
+        } else {
+          fileIds.push(entryId)
+        }
+      }
+    }
+
+    void downloadStorageFilesZip({
+      endpointId: params.endpointId as string,
+      folderIds,
+      fileIds,
+    })
+  }
+
+  const downloadFolder = (entryId: number) => {
+    void downloadStorageFilesZip({
+      endpointId: params.endpointId as string,
+      folderIds: [entryId],
+      fileIds: [],
+    })
+  }
+
   return (
     <div
       id="page-storage-file-explorer"
@@ -456,6 +489,16 @@ const FileExplorerPage: Component = () => {
                     <div class="separator" />
 
                     <ContextMenuLink
+                      icon="download"
+                      onClick={() => {
+                        downloadSelectedEntries()
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Download {selectedEntries().size} entries
+                    </ContextMenuLink>
+
+                    <ContextMenuLink
                       icon="delete_sweep"
                       onClick={() => {
                         const folderIds: number[] = []
@@ -488,6 +531,18 @@ const FileExplorerPage: Component = () => {
                   <Show
                     when={temporarySelectedEntry()?.entry_type === "folder"}
                   >
+                    <ContextMenuLink
+                      icon="download"
+                      onClick={() => {
+                        downloadFolder(temporarySelectedEntry()!.id)
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Download folder (zip)
+                    </ContextMenuLink>
+
+                    <div class="separator" />
+
                     <ContextMenuLink
                       icon="delete"
                       onClick={() => {

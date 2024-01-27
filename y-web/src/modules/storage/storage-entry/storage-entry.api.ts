@@ -105,10 +105,53 @@ export const downloadStorageFile = async (input: DownloadStorageFileInput) => {
     {
       method: "GET",
       mode: "cors",
+      // eslint-disable-next-line sonarjs/no-duplicate-string
       credentials: "same-origin",
       referrerPolicy: "same-origin",
     }
   ).then(async (response) => {
+    const blob = await response.blob()
+    const contentDispositionHeader = response.headers.get("Content-Disposition")
+
+    if (contentDispositionHeader) {
+      const regExpFilename = /filename="(?<filename>.*)"/
+
+      const filename: string | null =
+        regExpFilename.exec(contentDispositionHeader)?.groups?.filename ?? null
+
+      if (filename) {
+        download(blob, filename)
+      }
+    } else {
+      download(blob)
+    }
+  })
+}
+
+export type DownloadStorageFilesZipInput = {
+  endpointId: number | string
+  folderIds: number[]
+  fileIds: number[]
+}
+
+export const downloadStorageFilesZip = async (
+  input: DownloadStorageFilesZipInput
+) => {
+  return fetch(`/api${apiStorageEntries}/${input.endpointId}/download-zip`, {
+    method: "POST",
+    mode: "cors",
+    credentials: "same-origin",
+    referrerPolicy: "same-origin",
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      folder_ids: input.folderIds,
+      file_ids: input.fileIds,
+    }),
+  }).then(async (response) => {
     const blob = await response.blob()
     const contentDispositionHeader = response.headers.get("Content-Disposition")
 
