@@ -1,4 +1,4 @@
-use std::{fs::remove_file, path::Path};
+use std::{collections::HashMap, fs::remove_file, path::Path};
 
 use async_recursion::async_recursion;
 use serde::Serialize;
@@ -14,9 +14,98 @@ pub struct StorageFolder {
     pub name: String,
 }
 
+#[derive(FromRow, Debug)]
+struct PartialStorageFileRow {
+    filesystem_id: String,
+    name: String,
+    extension: Option<String>,
+}
+
 #[derive(FromRow)]
 struct StorageFolderIdRow {
     id: i64,
+}
+
+#[derive(FromRow)]
+struct PartialStorageFolderRow {
+    id: i64,
+    name: String,
+}
+
+#[async_recursion]
+async fn traverse_folder(
+    endpoint_id: i32,
+    resolved_entries: &mut HashMap<String, String>,
+    target_folder_id: i64,
+    current_path: &String,
+    pool: &RequestPool,
+) -> Result<(), sqlx::Error> {
+    // TODO these two requests can probably be combined into one
+
+    // Find folders inside of the target folder
+    let folder_subfolders = sqlx::query_as::<_, PartialStorageFolderRow>(
+        "SELECT id, name FROM storage_folders WHERE endpoint_id = $1 AND parent_folder = $2",
+    )
+    .bind(endpoint_id)
+    .bind(target_folder_id)
+    .fetch_all(pool)
+    .await;
+
+    // Find files inside of the target folder
+    let folder_files = sqlx::query_as::<_, PartialStorageFileRow>(
+        "SELECT filesystem_id, name, extension FROM storage_files WHERE endpoint_id = $1 AND parent_folder = $2",
+    )
+    .bind(endpoint_id)
+    .bind(target_folder_id)
+    .fetch_all(pool)
+    .await;
+
+    match folder_files {
+        Ok(folder_files) => {
+            for file in folder_files {
+                let file_base_path = if current_path.len() > 0 {
+                    format!("{}/{}", current_path, file.name)
+                } else {
+                    file.name
+                };
+
+                let file_path = if file.extension.is_some() {
+                    format!("{}.{}", file_base_path, file.extension.unwrap())
+                } else {
+                    file_base_path
+                };
+
+                resolved_entries.insert(file_path, file.filesystem_id);
+            }
+        }
+
+        Err(err) => {
+            return Err(err);
+        }
+    }
+
+    match folder_subfolders {
+        Ok(subfolders) => {
+            for folder in subfolders {
+                let folder_path = if current_path.len() > 0 {
+                    format!("{}/{}", current_path, folder.name)
+                } else {
+                    folder.name
+                };
+
+                let result =
+                    traverse_folder(endpoint_id, resolved_entries, folder.id, &folder_path, pool)
+                        .await;
+
+                if result.is_err() {
+                    return Err(result.unwrap_err());
+                }
+            }
+
+            Ok(())
+        }
+        Err(err) => Err(err),
+    }
 }
 
 #[async_recursion]
@@ -63,6 +152,85 @@ async fn get_subfolders_level(
             return Err("Could not query the database for the next level of folders".to_string());
         }
     }
+}
+/**
+ * Recursively find all enties that reside somewhere inside of the target folders
+ *
+ * @param endpoint_id - Storage endpoint id
+ * @param target_folders - Vector of folder ids to be resolved (can be empty)
+ * @param target_files - Vector of file ids to be resolved (can be empty)
+ * @param pool - Database connection pool
+ *
+ * @returns HashMap<String, String> - HashMap of resolved entries,
+ * where the key is the relative path to the storage entry and the
+ * value is the filesystem_id
+ */
+pub async fn resolve_entries(
+    endpoint_id: i32,
+    target_folders: Vec<i64>,
+    target_files: Vec<i64>,
+    pool: &RequestPool,
+) -> Result<HashMap<String, String>, &str> {
+    let current_path = String::new();
+    let mut resolved_entries: HashMap<String, String> = HashMap::new();
+
+    // Process folders
+    if target_folders.len() > 0 {
+        for target_folder_id in target_folders {
+            let result = traverse_folder(
+                endpoint_id,
+                &mut resolved_entries,
+                target_folder_id,
+                &current_path,
+                pool,
+            )
+            .await;
+
+            if result.is_err() {
+                return Err("Unable to traverse the folders tree");
+            }
+        }
+    }
+
+    // Proccess files
+    if target_files.len() > 0 {
+        let target_files_param = target_files
+            .iter()
+            .map(|id| id.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+
+        let files = sqlx::query_as::<_, PartialStorageFileRow>(
+            format!(
+                "SELECT filesystem_id, name, extension FROM storage_files WHERE endpoint_id = $1 AND id IN ({})",
+                target_files_param
+            )
+            .as_str(),
+        )
+        .bind(endpoint_id)
+        .fetch_all(pool)
+        .await;
+
+        match files {
+            Ok(files) => {
+                for file in files {
+                    let file_name = if file.extension.is_some() {
+                        format!("{}.{}", file.name, file.extension.unwrap())
+                    } else {
+                        file.name
+                    };
+
+                    resolved_entries.insert(file_name, file.filesystem_id);
+                }
+            }
+
+            Err(_) => {
+                return Err("Unable to retrieve requested target_files");
+            }
+        }
+    }
+
+    Ok(resolved_entries)
 }
 
 /**
