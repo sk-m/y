@@ -105,11 +105,14 @@ async fn storage_download_zip(
 
             zip.finish().unwrap();
 
-            sqlx::query("INSERT INTO storage_archives (filesystem_id) VALUES ($1)")
-                .bind(&file_uuid)
-                .execute(&**pool)
-                .await
-                .unwrap();
+            sqlx::query(
+                "INSERT INTO storage_archives (endpoint_id, filesystem_id) VALUES ($1, $2)",
+            )
+            .bind(endpoint_id)
+            .bind(&file_uuid)
+            .execute(&**pool)
+            .await
+            .unwrap();
 
             let download_file = actix_files::NamedFile::open_async(&zip_staging_path)
                 .await
