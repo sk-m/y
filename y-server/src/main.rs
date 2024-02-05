@@ -2,6 +2,7 @@ mod api;
 mod db;
 mod request;
 mod right;
+mod storage_archives;
 mod storage_endpoint;
 mod storage_entry;
 mod user;
@@ -9,10 +10,15 @@ mod user_group;
 mod util;
 
 use actix_web::{web, App, HttpServer};
+use chrono::{FixedOffset, Local};
 use dotenvy::dotenv;
+use sqlx::pool;
 use std::env;
 use std::process::exit;
+use std::{str::FromStr, time::Duration};
 use util::RequestPool;
+
+use crate::storage_archives::cleanup_storage_archives;
 
 async fn process_cli_arguments(pool: &RequestPool) {
     let cli_arguments: Vec<String> = env::args().collect();
@@ -53,6 +59,27 @@ async fn process_cli_arguments(pool: &RequestPool) {
     }
 }
 
+fn setup_job_scheduler(pool: RequestPool) {
+    actix_rt::spawn(async move {
+        // At 0 minutes past the hour, every 12 hours
+        let schedule = cron::Schedule::from_str("0 0 0/12 * * * *").unwrap();
+        let offset = FixedOffset::east_opt(0).unwrap();
+
+        loop {
+            let mut upcoming = schedule.upcoming(offset).take(1);
+            actix_rt::time::sleep(Duration::from_secs(30)).await;
+
+            let local = &Local::now();
+
+            if let Some(datetime) = upcoming.next() {
+                if datetime.timestamp() <= local.timestamp() {
+                    cleanup_storage_archives(&pool).await;
+                }
+            }
+        }
+    });
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -80,6 +107,11 @@ async fn main() -> std::io::Result<()> {
             exit(1);
         }
     }
+
+    println!("Setting up the job scheduler...");
+
+    let jobs_database_pool = pool.clone();
+    setup_job_scheduler(jobs_database_pool);
 
     println!(
         "Starting the server on {}:{}...",
