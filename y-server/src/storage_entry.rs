@@ -5,6 +5,7 @@ use serde::Serialize;
 use sqlx::FromRow;
 
 use crate::util::RequestPool;
+use log::*;
 
 #[derive(FromRow, Serialize)]
 pub struct StorageFolder {
@@ -147,8 +148,7 @@ async fn get_subfolders_level(
 
             return Ok(());
         }
-        Err(err) => {
-            dbg!(err);
+        Err(_) => {
             return Err("Could not query the database for the next level of folders".to_string());
         }
     }
@@ -257,7 +257,6 @@ pub async fn delete_entries(
             .await;
 
     if target_endpoint.is_err() {
-        dbg!(target_endpoint.unwrap_err());
         return Err("Could not get target endpoint".to_string());
     }
 
@@ -367,10 +366,9 @@ pub async fn delete_entries(
                 let file_path = endpoint_files_path.join(file_filesystem_id);
                 let fs_remove_result = remove_file(file_path);
 
-                // TODO log this incident
                 if fs_remove_result.is_err() {
-                    dbg!(
-                        "Could not remove a file from the filesystem.",
+                    error!(
+                        "(storage entry -> delete entries) Could not remove a file from the filesystem. endpoint_id = {}. filesystem_id = {}. {}",
                         endpoint_id,
                         file_filesystem_id,
                         fs_remove_result.unwrap_err()

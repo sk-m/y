@@ -9,16 +9,16 @@ mod user;
 mod user_group;
 mod util;
 
+use crate::storage_archives::cleanup_storage_archives;
 use actix_web::{web, App, HttpServer};
 use chrono::{FixedOffset, Local};
 use dotenvy::dotenv;
-use sqlx::pool;
+use log::*;
+use simplelog::*;
 use std::env;
 use std::process::exit;
 use std::{str::FromStr, time::Duration};
 use util::RequestPool;
-
-use crate::storage_archives::cleanup_storage_archives;
 
 async fn process_cli_arguments(pool: &RequestPool) {
     let cli_arguments: Vec<String> = env::args().collect();
@@ -42,11 +42,11 @@ async fn process_cli_arguments(pool: &RequestPool) {
 
                 match create_user {
                     Ok(_) => {
-                        println!("No errors reported.");
+                        println!("No errors reported");
                         exit(0);
                     }
                     Err(error) => {
-                        println!("Error reported: {}", error);
+                        println!("{}", error);
                         exit(1);
                     }
                 }
@@ -84,6 +84,31 @@ fn setup_job_scheduler(pool: RequestPool) {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
+    let logger_level = if cfg!(debug_assertions) {
+        LevelFilter::Debug
+    } else {
+        LevelFilter::Info
+    };
+
+    CombinedLogger::init(vec![
+        TermLogger::new(
+            logger_level,
+            Config::default(),
+            TerminalMode::Mixed,
+            ColorChoice::Auto,
+        ),
+        WriteLogger::new(
+            logger_level,
+            Config::default(),
+            std::fs::File::create("y-server.log").unwrap(),
+        ),
+    ])
+    .unwrap();
+
+    if logger_level == LevelFilter::Debug {
+        info!("Logging level set to debug");
+    }
+
     let pool = db::connect_to_database().await;
 
     process_cli_arguments(&pool).await;
@@ -100,23 +125,20 @@ async fn main() -> std::io::Result<()> {
 
     match migration_result {
         Ok(_) => {
-            println!("Migrations ran successfully.")
+            info!("Migrations ran successfully")
         }
         Err(error) => {
-            println!("Error running migrations: {}", error);
+            error!("Error running migrations. {}", error);
             exit(1);
         }
     }
 
-    println!("Setting up the job scheduler...");
+    info!("Setting up the job scheduler");
 
     let jobs_database_pool = pool.clone();
     setup_job_scheduler(jobs_database_pool);
 
-    println!(
-        "Starting the server on {}:{}...",
-        server_address, server_port
-    );
+    info!("Starting the server on {}:{}", server_address, server_port);
 
     HttpServer::new(move || {
         App::new()

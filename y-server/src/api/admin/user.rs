@@ -56,8 +56,7 @@ async fn user(pool: web::Data<RequestPool>, path: web::Path<i32>) -> impl Respon
                 user_groups: group_ids,
             }));
         }
-        Err(err) => {
-            dbg!(err);
+        Err(_) => {
             return error("users.internal");
         }
     }

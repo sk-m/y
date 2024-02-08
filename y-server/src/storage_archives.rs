@@ -1,6 +1,7 @@
 use std::{fs::remove_file, path::Path};
 
 use crate::util::RequestPool;
+use log::*;
 
 #[derive(sqlx::FromRow)]
 struct PartialStorageEndpointRow {
@@ -15,7 +16,7 @@ struct PartialStorageArchiveRow {
 }
 
 pub async fn cleanup_storage_archives(pool: &RequestPool) {
-    println!("Cleaning up expired storage archives...");
+    info!("[scheduled] Cleaning up expired storage archives...");
 
     let endpoints = sqlx::query_as::<_, PartialStorageEndpointRow>(
         "SELECT id, base_path FROM storage_endpoints",
@@ -24,8 +25,8 @@ pub async fn cleanup_storage_archives(pool: &RequestPool) {
     .await;
 
     if endpoints.is_err() {
-        println!(
-            "Could not fetch storage endpoints from the database. {}",
+        error!(
+            "[scheduled] Could not fetch storage endpoints from the database. {}",
             endpoints.err().unwrap()
         );
         return;
@@ -62,23 +63,26 @@ pub async fn cleanup_storage_archives(pool: &RequestPool) {
                         let remove_file_result = remove_file(file_path);
 
                         if remove_file_result.is_err() {
-                            println!(
-                                "Could not remove the file with filesystem_id {}. {}",
+                            error!(
+                                "[scheduled] Could not remove an archive file from the filesystem (filesystem_id = {}). {}",
                                 file.filesystem_id,
                                 remove_file_result.err().unwrap()
                             );
                         }
                     }
                     None => {
-                        println!("Could not find the endpoint with id {}.", file.endpoint_id);
+                        error!(
+                            "[scheduled] Could not find a storage endpoint with id {}",
+                            file.endpoint_id
+                        );
                         continue;
                     }
                 }
             }
         }
         Err(error) => {
-            println!(
-                "Could not delete expired storage archives from the database. {}",
+            error!(
+                "Could not delete expired storage archive rows from the database. {}",
                 error
             );
 

@@ -57,8 +57,7 @@ pub async fn cli_create_user(
                                 println!("User added to the group successfully.");
                                 return Ok(());
                             }
-                            Err(error) => {
-                                dbg!(error);
+                            Err(_) => {
                                 return Err("Could not add the user to the group");
                             }
                         }
@@ -66,10 +65,7 @@ pub async fn cli_create_user(
                         Ok(())
                     }
                 }
-                Err(error) => {
-                    dbg!(error);
-                    Err("Error creating a new user")
-                }
+                Err(_) => Err("Error creating a new user"),
             }
         }
         Err(_) => Err("Error hashing the password for a new user"),

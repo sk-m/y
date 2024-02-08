@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 use crate::user_group::UserGroup;
 use crate::util::RequestPool;
+use log::*;
 
 #[derive(sqlx::FromRow)]
 pub struct User {
@@ -180,7 +181,10 @@ pub async fn get_client_rights(pool: &RequestPool, req: &HttpRequest) -> Vec<Use
             return right_rows;
         }
         Err(err) => {
-            dbg!(err);
+            error!(
+                "(user -> get_client_rights) Error returned from the database. {}",
+                err
+            );
             return vec![];
         }
     }
@@ -201,7 +205,10 @@ pub async fn get_user_groups(pool: &RequestPool, user_id: i32) -> Vec<UserGroup>
             return groups;
         }
         Err(err) => {
-            dbg!(err);
+            error!(
+                "(user -> get_user_groups) Error returned from the database. {}",
+                err
+            );
             return vec![];
         }
     }

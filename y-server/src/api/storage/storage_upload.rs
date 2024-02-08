@@ -7,6 +7,7 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use futures::StreamExt;
+use log::*;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::time::Instant;
@@ -311,8 +312,7 @@ async fn storage_upload(
     }
 
     if cfg!(debug_assertions) {
-        println!("storage/upload: {}ms", now.elapsed().as_millis());
-        dbg!(path_ids_cache);
+        debug!("storage/upload: {}ms", now.elapsed().as_millis());
     }
 
     HttpResponse::Ok().json(web::Json(StorageUploadOutput { skipped_files }))

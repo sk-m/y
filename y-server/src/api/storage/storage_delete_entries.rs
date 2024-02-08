@@ -39,6 +39,7 @@ async fn storage_delete_entries(
     let target_folders = form.folder_ids;
     let target_files = form.file_ids;
 
+    // TODO! make sure that folderids are actually folders and fileids are actually files
     let result = delete_entries(endpoint_id, target_folders, target_files, &**pool).await;
 
     match result {
@@ -48,8 +49,7 @@ async fn storage_delete_entries(
                 deleted_folders,
             });
         }
-        Err(err) => {
-            dbg!(err);
+        Err(_) => {
             return error("storage.delete_entries.internal");
         }
     }
