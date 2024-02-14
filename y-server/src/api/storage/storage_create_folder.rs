@@ -1,7 +1,10 @@
 use actix_web::{post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
-use crate::{request::error, user::get_client_rights, util::RequestPool};
+use crate::{
+    request::error, storage_endpoint::get_storage_endpoint, user::get_client_rights,
+    util::RequestPool,
+};
 
 #[derive(Deserialize)]
 struct StorageCreateFolderInput {
@@ -34,6 +37,16 @@ async fn storage_create_folder(
 
     let form = form.into_inner();
     let is_root = form.target_folder.is_none();
+
+    let target_endpoint = get_storage_endpoint(form.endpoint_id, &pool).await;
+
+    if target_endpoint.is_err() {
+        return error("storage.create_folder.endpoint_not_found");
+    }
+
+    if target_endpoint.unwrap().status != "active" {
+        return error("storage.create_folder.endpoint_not_active");
+    }
 
     let new_folder_id = if is_root {
         sqlx::query_scalar::<_, i64>(

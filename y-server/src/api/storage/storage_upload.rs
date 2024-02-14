@@ -12,7 +12,10 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::time::Instant;
 
-use crate::{request::error, user::get_client_rights, util::RequestPool};
+use crate::{
+    request::error, storage_endpoint::get_storage_endpoint, user::get_client_rights,
+    util::RequestPool,
+};
 
 #[derive(Serialize)]
 struct StorageUploadOutput {
@@ -54,18 +57,19 @@ async fn storage_upload(
     // TODO: Cache all endpoints so we dont' have to query for them every time
     let endpoint_id = query.endpoint_id;
 
-    let target_endpoint =
-        sqlx::query_scalar::<_, String>("SELECT base_path FROM storage_endpoints WHERE id = $1")
-            .bind(endpoint_id)
-            .fetch_one(&**pool)
-            .await;
+    let target_endpoint = get_storage_endpoint(endpoint_id, &pool).await;
 
     if target_endpoint.is_err() {
         return error("storage.upload.endpoint_not_found");
     }
 
-    let target_endpoint_base_path = target_endpoint.unwrap();
-    let target_endpoint_base_path = Path::new(&target_endpoint_base_path);
+    let target_endpoint = target_endpoint.unwrap();
+
+    if target_endpoint.status != "active" {
+        return error("storage.upload.endpoint_not_active");
+    }
+
+    let target_endpoint_base_path = Path::new(&target_endpoint.base_path);
 
     let target_folder_id = query.target_folder;
 

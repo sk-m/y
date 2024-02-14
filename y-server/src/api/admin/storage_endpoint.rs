@@ -1,6 +1,7 @@
 use actix_web::{get, web, HttpResponse, Responder};
 
-use crate::{request::error, storage_endpoint::StorageEndpoint, user::get_client_rights};
+use crate::storage_endpoint::get_storage_endpoint;
+use crate::{request::error, user::get_client_rights};
 
 use crate::util::RequestPool;
 
@@ -23,10 +24,7 @@ async fn storage_enpoint(
 
     let endpoint_id = path.into_inner();
 
-    let endpoint = sqlx::query_as::<_, StorageEndpoint>("SELECT id, name, endpoint_type::TEXT, status::TEXT, preserve_file_structure, base_path, description FROM storage_endpoints WHERE id = $1")
-        .bind(endpoint_id)
-        .fetch_one(&**pool)
-        .await;
+    let endpoint = get_storage_endpoint(endpoint_id, &pool).await;
 
     match endpoint {
         Ok(endpoint) => HttpResponse::Ok().json(web::Json(endpoint)),

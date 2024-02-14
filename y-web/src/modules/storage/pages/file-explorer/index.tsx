@@ -312,13 +312,14 @@ const FileExplorerPage: Component = () => {
     })
 
     request.addEventListener("loadend", (loadendEvent) => {
+      // TODO! use a zod scheme
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const json: {
         error?: {
           code?: string
         }
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        skipped_files: string[]
+        skipped_files?: string[]
       } = JSON.parse(
         (loadendEvent.target as { responseText?: string }).responseText ?? ""
       )
@@ -327,7 +328,7 @@ const FileExplorerPage: Component = () => {
         genericErrorToast(json.error)
       }
 
-      if (json.skipped_files.length > 0) {
+      if (json.skipped_files && json.skipped_files.length > 0) {
         notify({
           title: `${json.skipped_files.length} of ${filesToUpload.length} files were not uploaded`,
           content: json.skipped_files.join(", "),

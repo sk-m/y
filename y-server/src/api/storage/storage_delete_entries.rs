@@ -2,7 +2,8 @@ use actix_web::{delete, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    request::error, storage_entry::delete_entries, user::get_client_rights, util::RequestPool,
+    request::error, storage_endpoint::get_storage_endpoint, storage_entry::delete_entries,
+    user::get_client_rights, util::RequestPool,
 };
 
 #[derive(Deserialize)]
@@ -38,6 +39,16 @@ async fn storage_delete_entries(
     let endpoint_id = form.endpoint_id;
     let target_folders = form.folder_ids;
     let target_files = form.file_ids;
+
+    let target_endpoint = get_storage_endpoint(endpoint_id, &pool).await;
+
+    if target_endpoint.is_err() {
+        return error("storage.delete_entries.endpoint_not_found");
+    }
+
+    if target_endpoint.unwrap().status != "active" {
+        return error("storage.delete_entries.endpoint_not_active");
+    }
 
     // TODO! make sure that folderids are actually folders and fileids are actually files
     let result = delete_entries(endpoint_id, target_folders, target_files, &**pool).await;
