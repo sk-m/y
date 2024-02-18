@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "This script will set up a service for y-server."
+echo "This script will set up a service for y-server and create a `y-server` user acccount."
 echo
 echo "This directory ($(pwd)) will be set as the working directory for y."
 echo "Please make sure to move y-server's files to a desired location before continuing."
@@ -21,10 +21,18 @@ Before=postgresql.service
 WantedBy=default.target
 
 [Service]
+User=y-server
 WorkingDirectory=$(pwd)
 ExecStart=$(pwd)/y-server
 "
 
+id -u y-server
+if [ $? -ne 0 ]; then
+    echo "Creating a `y-server` user..."
+    sudo useradd -r -M -s /bin/bash -d $(pwd) -c "Project 'y' user" y-server
+fi
+
+echo "Writing service definition..."
 echo "$service_definition" > /etc/systemd/system/y-server.service
 systemctl daemon-reload
 
