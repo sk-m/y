@@ -70,14 +70,10 @@ async fn storage_download(
                 entry.extension.unwrap_or("".to_string())
             );
 
-            let filename_regex = regex::Regex::new(r"^[a-zA-Z0-9\)\(\ \,\.\_]+$").unwrap();
-
-            if filename_regex.is_match(raw_filename.as_str()) {
-                file = file.set_content_disposition(ContentDisposition {
-                    disposition: DispositionType::Attachment,
-                    parameters: vec![DispositionParam::Filename(raw_filename)],
-                });
-            }
+            file = file.set_content_disposition(ContentDisposition {
+                disposition: DispositionType::Attachment,
+                parameters: vec![DispositionParam::Filename(raw_filename)],
+            });
 
             return file.into_response(&req);
         }
