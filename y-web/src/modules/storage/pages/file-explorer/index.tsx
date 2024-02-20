@@ -9,7 +9,6 @@ import {
   Component,
   For,
   Show,
-  batch,
   createEffect,
   createMemo,
   createSignal,
@@ -17,7 +16,7 @@ import {
 import { createStore } from "solid-js/store"
 
 import { useParams, useSearchParams } from "@solidjs/router"
-import { createMutation, useQueryClient } from "@tanstack/solid-query"
+import { createMutation } from "@tanstack/solid-query"
 
 import { Checkbox } from "@/app/components/common/checkbox/checkbox"
 import { Icon } from "@/app/components/common/icon/icon"
@@ -31,21 +30,14 @@ import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 
+import { useFileExplorer } from "../../file-explorer/use-file-explorer"
 import {
   createStorageFolder,
   deleteStorageEntries,
   downloadStorageFile,
   downloadStorageFilesZip,
 } from "../../storage-entry/storage-entry.api"
-import {
-  IStorageEntry,
-  TUploadEntries,
-} from "../../storage-entry/storage-entry.codecs"
-import {
-  storageEntriesKey,
-  useStorageEntries,
-  useStorageFolderPath,
-} from "../../storage-entry/storage-entry.service"
+import { TUploadEntries } from "../../storage-entry/storage-entry.codecs"
 import { FileWithPath, retrieveFiles } from "../../upload"
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
@@ -60,7 +52,6 @@ const closeTabConfirmation = (event: BeforeUnloadEvent) => {
 const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
   const params = useParams()
-  const queryClient = useQueryClient()
   const {
     open: openEntryContextMenu,
     close: closeEntryContextMenu,
@@ -73,13 +64,6 @@ const FileExplorerPage: Component = () => {
     contextMenuProps: generalContextMenuProps,
   } = useContextMenu()
 
-  const [selectedEntries, setSelectedEntries] = createSignal<Set<number>>(
-    new Set(),
-    {
-      equals: false,
-    }
-  )
-
   const [uploadStatus, setUploadStatus] = createStore({
     numberOfFiles: 0,
     percentageUploaded: 0,
@@ -89,105 +73,26 @@ const FileExplorerPage: Component = () => {
   const [folderCreationInitiated, setFolderCreationInitiated] =
     createSignal(false)
 
-  const [temporarySelectedEntry, setTemporarySelectedEntry] =
-    createSignal<IStorageEntry | null>(null)
-
-  const [lastSelectedEntryIndex, setLastSelectedEntryIndex] = createSignal<
-    number | null
-  >(null)
-
   const [searchParams, setSearchParams] = useSearchParams()
 
   const $deleteEntries = createMutation(deleteStorageEntries)
   const $createFolder = createMutation(createStorageFolder)
 
-  const $folderEntries = useStorageEntries(() => ({
-    folderId: searchParams.folderId,
-    endpointId: params.endpointId as string,
-  }))
-
-  const $folderPath = useStorageFolderPath(() => ({
-    folderId: searchParams.folderId,
-    endpointId: params.endpointId as string,
-  }))
-
-  const folderPath = createMemo(() => $folderPath.data?.folder_path ?? [])
-  const folderEntries = createMemo(() => $folderEntries.data?.entries ?? [])
-
-  const invalidateEntries = async () => {
-    setLastSelectedEntryIndex(null)
-
-    return queryClient.invalidateQueries([
-      storageEntriesKey,
-      params.endpointId,
-      searchParams.folderId,
-    ])
-  }
-
-  const temporarySelectedEntryIsInMultiselect = createMemo(
-    () =>
-      temporarySelectedEntry() !== null &&
-      selectedEntries().has(temporarySelectedEntry()!.id)
-  )
-
-  const onSelectRange = (firstEntryIndex: number, lastEntryIndex: number) => {
-    const entryIdsToSelect: number[] = []
-
-    const entries = folderEntries()
-
-    for (let i = firstEntryIndex; i <= lastEntryIndex; i++) {
-      if (entries[i] !== undefined) {
-        entryIdsToSelect.push(entries[i]!.id)
-      }
-    }
-
-    const firstEntryId = entryIdsToSelect[0]
-    // eslint-disable-next-line unicorn/prefer-at
-    const lastEntryId = entryIdsToSelect[entryIdsToSelect.length - 1]
-
-    if (firstEntryId === undefined || lastEntryId === undefined) return
-
-    batch(() => {
-      setLastSelectedEntryIndex(lastEntryIndex)
-      setSelectedEntries((currentEntries) => {
-        for (const entry of entryIdsToSelect) {
-          currentEntries.add(entry)
-        }
-
-        return currentEntries
-      })
-    })
-  }
-
-  const onSelect = (entryIdx: number) => {
-    const entryId = folderEntries()[entryIdx]?.id
-
-    if (entryId === undefined) return
-
-    batch(() => {
-      setLastSelectedEntryIndex(entryIdx)
-
-      setSelectedEntries((entries) => {
-        if (entries.has(entryId)) {
-          entries.delete(entryId)
-        } else {
-          entries.add(entryId)
-        }
-
-        return entries
-      })
-    })
-  }
-
-  const resetSelection = () => {
-    setSelectedEntries((entries) => {
-      for (const entry of entries) {
-        entries.delete(entry)
-      }
-
-      return entries
-    })
-  }
+  const {
+    folderEntries,
+    folderPath,
+    invalidateEntries,
+    selectedEntries,
+    onSelect,
+    setTemporarySelectedEntry,
+    temporarySelectedEntryIsInMultiselect,
+    resetSelection,
+    setSelectedEntries,
+    temporarySelectedEntry,
+  } = useFileExplorer({
+    endpointId: () => params.endpointId as string,
+    folderId: () => searchParams.folderId,
+  })
 
   const createFolder = (newFolderName: string) => {
     $createFolder.mutate(
@@ -613,19 +518,7 @@ const FileExplorerPage: Component = () => {
                           size="m"
                           value={selected()}
                           onChange={(_, event) => {
-                            if (event) {
-                              event.stopPropagation()
-
-                              if (
-                                event.shiftKey &&
-                                lastSelectedEntryIndex() !== null
-                              ) {
-                                onSelectRange(lastSelectedEntryIndex()!, idx())
-                                return
-                              }
-                            }
-
-                            onSelect(idx())
+                            onSelect(idx(), event)
                           }}
                         />
                       </div>
