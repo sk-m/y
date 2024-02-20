@@ -13,7 +13,6 @@ import {
   createEffect,
   createMemo,
   createSignal,
-  onMount,
 } from "solid-js"
 import { createStore } from "solid-js/store"
 
@@ -50,6 +49,7 @@ import {
 import { FileWithPath, retrieveFiles } from "../../upload"
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
+import { NewFolderEntry } from "./components/new-folder-entry"
 import "./file-explorer.less"
 
 const closeTabConfirmation = (event: BeforeUnloadEvent) => {
@@ -72,8 +72,6 @@ const FileExplorerPage: Component = () => {
     close: closeGeneralContextMenu,
     contextMenuProps: generalContextMenuProps,
   } = useContextMenu()
-
-  let newFolderNameInputRef: HTMLInputElement | undefined
 
   const [selectedEntries, setSelectedEntries] = createSignal<Set<number>>(
     new Set(),
@@ -100,8 +98,8 @@ const FileExplorerPage: Component = () => {
 
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const $createFolder = createMutation(createStorageFolder)
   const $deleteEntries = createMutation(deleteStorageEntries)
+  const $createFolder = createMutation(createStorageFolder)
 
   const $folderEntries = useStorageEntries(() => ({
     folderId: searchParams.folderId,
@@ -181,6 +179,16 @@ const FileExplorerPage: Component = () => {
     })
   }
 
+  const resetSelection = () => {
+    setSelectedEntries((entries) => {
+      for (const entry of entries) {
+        entries.delete(entry)
+      }
+
+      return entries
+    })
+  }
+
   const createFolder = (newFolderName: string) => {
     $createFolder.mutate(
       {
@@ -195,23 +203,11 @@ const FileExplorerPage: Component = () => {
         onSuccess: () => {
           void invalidateEntries()
 
-          newFolderNameInputRef!.value = ""
-
           setFolderCreationInitiated(false)
         },
         onError: (error) => genericErrorToast(error),
       }
     )
-  }
-
-  const resetSelection = () => {
-    setSelectedEntries((entries) => {
-      for (const entry of entries) {
-        entries.delete(entry)
-      }
-
-      return entries
-    })
   }
 
   const deleteEntries = (folderIds: number[], fileIds: number[]) => {
@@ -230,16 +226,6 @@ const FileExplorerPage: Component = () => {
       }
     )
   }
-
-  onMount(() => {
-    if (newFolderNameInputRef) {
-      newFolderNameInputRef.addEventListener("keyup", (event) => {
-        if (event.key === "Enter") {
-          createFolder(newFolderNameInputRef!.value)
-        }
-      })
-    }
-  })
 
   createEffect(() => {
     if (uploadStatus.numberOfFiles === 0) {
@@ -444,7 +430,6 @@ const FileExplorerPage: Component = () => {
                   icon="folder"
                   onClick={() => {
                     setFolderCreationInitiated(true)
-                    newFolderNameInputRef?.focus()
 
                     closeGeneralContextMenu()
                   }}
@@ -676,28 +661,18 @@ const FileExplorerPage: Component = () => {
                   )
                 }}
               </For>
-              <div class="item" hidden={!folderCreationInitiated()}>
-                <div class="item-thumb">
-                  <div class="icon">
-                    <Icon
-                      name={"create_new_folder"}
-                      type="outlined"
-                      fill={1}
-                      wght={500}
-                      size={40}
-                    />
-                  </div>
-                </div>
-                <div class="item-info">
-                  <div class="item-name">
-                    <input
-                      ref={(ref) => (newFolderNameInputRef = ref)}
-                      type="text"
-                      class="name-input"
-                    />
-                  </div>
-                </div>
-              </div>
+              <NewFolderEntry
+                endpointId={Number.parseInt(params.endpointId as string, 10)}
+                folderId={
+                  searchParams.folderId
+                    ? Number.parseInt(searchParams.folderId, 10)
+                    : undefined
+                }
+                show={folderCreationInitiated()}
+                onCreate={(folderName) => {
+                  createFolder(folderName)
+                }}
+              />
             </div>
           </div>
         </div>
