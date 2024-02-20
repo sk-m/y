@@ -150,12 +150,26 @@
       "update_storage_endpoint.invalid_status": "Invalid status",
       "storage.upload.unauthorized": "Permission denied",
       "storage.upload.internal": "Other",
-      "storage.upload.no_filnema": "No filename provided",
+      "storage.upload.no_filename": "No filename provided",
       "storage.upload.endpoint_not_found": "Target endpoint not found",
       "storage_entries.unauthorized": "Permission denied",
       "storage_entries.internal": "Other",
       "storage_download.unauthorized": "Permission denied",
-      "storage_download.internal": "Other"
+      "storage_download.file_id_required": "file_id parameter is required",
+      "storage_download.internal": "Other",
+      "storage.create_folder.unauthorized": "Permission denied",
+      "storage.create_folder.endpoint_not_found": "Target endpoint not found",
+      "storage.create_folder.endpoint_not_active": "Target endpoint is not active",
+      "storage.create_folder.internal": "Other",
+      "storage.delete_entries.unauthorized": "Permission denied",
+      "storage.delete_entries.endpoint_not_found": "Target endpoint not found",
+      "storage.delete_entries.endpoint_not_active": "Target endpoint is not active",
+      "storage.delete_entries.internal": "Other",
+      "storage.download_zip.unauthorized": "Permission denied",
+      "storage.download_zip.endpoint_not_found": "Target endpoint not found",
+      "storage.download_zip.internal": "Other",
+      "storage.get_folder_path.unauthorized": "Permission denied",
+      "storage.get_folder_path.internal": "Other"
     }
   }
 }
