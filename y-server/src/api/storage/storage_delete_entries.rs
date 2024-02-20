@@ -50,7 +50,7 @@ async fn storage_delete_entries(
         return error("storage.delete_entries.endpoint_not_active");
     }
 
-    // TODO! make sure that folderids are actually folders and fileids are actually files
+    // TODO make sure that folderids are actually folders and fileids are actually files
     let result = delete_entries(endpoint_id, target_folders, target_files, &**pool).await;
 
     match result {

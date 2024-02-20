@@ -48,28 +48,26 @@ async fn storage_entries(
     let endpoint_id = query.endpoint_id;
     let folder_id = query.folder_id;
 
-    let entries: Result<Vec<Entry>, sqlx::Error>;
-
-    if folder_id.is_some() {
+    let entries = if folder_id.is_some() {
         // Entries inside of a folder
 
-        entries = sqlx::query_as::<_, Entry>(
+        sqlx::query_as::<_, Entry>(
             "SELECT id, name, parent_folder, null as extension, 'folder' as entry_type FROM storage_folders WHERE endpoint_id = $1 AND parent_folder = $2 UNION ALL SELECT id, name, parent_folder, extension, 'file' as entry_type FROM storage_files WHERE endpoint_id = $1 AND parent_folder = $2",
         )
         .bind(endpoint_id)
         .bind(folder_id)
         .fetch_all(&**pool)
-        .await;
+        .await
     } else {
-        // Entries on the root
+        // Entries on the root level
 
-        entries = sqlx::query_as::<_, Entry>(
+        sqlx::query_as::<_, Entry>(
             "SELECT id, name, parent_folder, null as extension, 'folder' as entry_type FROM storage_folders WHERE endpoint_id = $1 AND parent_folder IS NULL UNION ALL SELECT id, name, parent_folder, extension, 'file' as entry_type FROM storage_files WHERE endpoint_id = $1 AND parent_folder IS NULL",
         )
         .bind(endpoint_id)
         .fetch_all(&**pool)
-        .await;
-    }
+        .await
+    };
 
     if entries.is_err() {
         return error("storage_entries.internal");

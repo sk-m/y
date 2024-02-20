@@ -13,6 +13,7 @@ use crate::storage_entry::resolve_entries;
 use crate::user::get_client_rights;
 use crate::util::RequestPool;
 
+// TODO research what the best value would be
 const WRITE_FILE_CHUNK_SIZE: usize = 8192;
 
 #[derive(Deserialize)]
@@ -126,7 +127,7 @@ async fn storage_download_zip(
         }
 
         Err(_) => {
-            return error("storage_download.internal");
+            return error("storage.download_zip.internal");
         }
     }
 }
