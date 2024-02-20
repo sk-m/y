@@ -38,7 +38,10 @@ import {
   downloadStorageFile,
   downloadStorageFilesZip,
 } from "../../storage-entry/storage-entry.api"
-import { IStorageEntry } from "../../storage-entry/storage-entry.codecs"
+import {
+  IStorageEntry,
+  TUploadEntries,
+} from "../../storage-entry/storage-entry.codecs"
 import {
   storageEntriesKey,
   useStorageEntries,
@@ -313,16 +316,10 @@ const FileExplorerPage: Component = () => {
     })
 
     request.addEventListener("loadend", (loadendEvent) => {
-      // TODO! use a zod scheme
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const json: {
-        error?: {
-          code?: string
-        }
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        skipped_files?: string[]
-      } = JSON.parse(
-        (loadendEvent.target as { responseText?: string }).responseText ?? ""
+      const json = TUploadEntries.parse(
+        JSON.parse(
+          (loadendEvent.target as { responseText?: string }).responseText ?? ""
+        )
       )
 
       if (json.error) {

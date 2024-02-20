@@ -1,6 +1,15 @@
 /* eslint-disable no-warning-comments */
 import { z } from "zod"
 
+export const TUploadEntries = z.object({
+  error: z
+    .object({
+      code: z.string(),
+    })
+    .optional(),
+  skipped_files: z.array(z.string()).optional(),
+})
+
 // TODO: Consider removing parent_folder.
 // I'm not sure it's actually really necessary for us to know that.
 export const TStorageEntry = z.object({
