@@ -84,30 +84,20 @@ fn setup_job_scheduler(pool: RequestPool) {
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
-    let logger_level = if cfg!(debug_assertions) {
-        LevelFilter::Debug
-    } else {
-        LevelFilter::Info
-    };
-
     CombinedLogger::init(vec![
         TermLogger::new(
-            logger_level,
+            LevelFilter::Info,
             Config::default(),
             TerminalMode::Mixed,
             ColorChoice::Auto,
         ),
         WriteLogger::new(
-            logger_level,
+            LevelFilter::Info,
             Config::default(),
             std::fs::File::create("y-server.log").unwrap(),
         ),
     ])
     .unwrap();
-
-    if logger_level == LevelFilter::Debug {
-        info!("Logging level set to debug");
-    }
 
     let pool = db::connect_to_database().await;
 
