@@ -57,8 +57,8 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
 
     return queryClient.invalidateQueries([
       storageEntriesKey,
-      props.endpointId,
-      props.folderId,
+      props.endpointId(),
+      props.folderId(),
     ])
   }
 
