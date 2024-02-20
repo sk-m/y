@@ -44,7 +44,7 @@ import {
   useStorageEntries,
   useStorageFolderPath,
 } from "../../storage-entry/storage-entry.service"
-import { retrieveFiles } from "../../upload"
+import { FileWithPath, retrieveFiles } from "../../upload"
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
 import "./file-explorer.less"
@@ -252,16 +252,17 @@ const FileExplorerPage: Component = () => {
     if (!event.dataTransfer) return
 
     const promises = []
+    const files: FileWithPath[] = []
 
     for (const item of event.dataTransfer.items) {
       if (item.kind === "file") {
         const entry = item.webkitGetAsEntry()
 
-        if (entry) promises.push(retrieveFiles(entry, []))
+        if (entry) promises.push(retrieveFiles(entry, files))
       }
     }
 
-    const files = await Promise.all(promises)
+    await Promise.all(promises)
 
     // TODO This is slow and should really be done on the server side.
     const filesToUpload = files.flat(1).sort((a, b) => {
