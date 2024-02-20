@@ -1,0 +1,61 @@
+.ui-drop-files-here-container {
+  display: flex;
+}
+
+.ui-drop-files-here {
+  position: fixed;
+  z-index: 100;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  pointer-events: none;
+
+  // Hidden state
+  opacity: 0;
+
+  transition: 0.2s ease-in-out;
+
+  .content {
+    color: var(--color-primary-d-1);
+
+    .icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 0.5em;
+
+      background-color: var(--color-primary-t-1);
+      border-radius: 6px;
+
+      transform: translateY(0) scale(0.95);
+
+      transition: 0.2s ease-in-out;
+    }
+
+    .ui-text {
+      padding: 0.4em 0.8em;
+
+      background-color: var(--color-primary-t-1);
+      border-radius: 6px;
+    }
+  }
+
+  &.active {
+    opacity: 1;
+    background-color: var(--color-primary-t-15);
+  }
+
+  &.active .icon {
+    transform: translateY(-5px) scale(1);
+  }
+}

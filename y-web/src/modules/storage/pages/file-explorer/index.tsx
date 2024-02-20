@@ -29,7 +29,9 @@ import {
 import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
+import { useFilesDrop } from "@/app/core/util/use-files-drop"
 
+import { DropFilesHere } from "../../components/drop-files-here"
 import { useFileExplorer } from "../../file-explorer/use-file-explorer"
 import {
   createStorageFolder,
@@ -38,7 +40,7 @@ import {
   downloadStorageFilesZip,
 } from "../../storage-entry/storage-entry.api"
 import { TUploadEntries } from "../../storage-entry/storage-entry.codecs"
-import { FileWithPath, retrieveFiles } from "../../upload"
+import { FileWithPath } from "../../upload"
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
 import { NewFolderEntry } from "./components/new-folder-entry"
@@ -52,6 +54,9 @@ const closeTabConfirmation = (event: BeforeUnloadEvent) => {
 const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
   const params = useParams()
+
+  const { onDragLeave, onDragOver, isAboutToDrop, onDrop } = useFilesDrop()
+
   const {
     open: openEntryContextMenu,
     close: closeEntryContextMenu,
@@ -140,32 +145,7 @@ const FileExplorerPage: Component = () => {
     }
   })
 
-  const onDrop = async (event: DragEvent) => {
-    event.preventDefault()
-
-    if (!event.dataTransfer) return
-
-    const promises = []
-    const files: FileWithPath[] = []
-
-    for (const item of event.dataTransfer.items) {
-      if (item.kind === "file") {
-        const entry = item.webkitGetAsEntry()
-
-        if (entry) promises.push(retrieveFiles(entry, files))
-      }
-    }
-
-    await Promise.all(promises)
-
-    // TODO This is slow and should really be done on the server side.
-    const filesToUpload = files.flat(1).sort((a, b) => {
-      const aParts = a.path.split("/").length
-      const bParts = b.path.split("/").length
-
-      return aParts > bParts ? 1 : -1
-    })
-
+  const handleDrop = (filesToUpload: FileWithPath[]) => {
     let totalSizeBytes = 0
 
     for (const file of filesToUpload) {
@@ -243,14 +223,6 @@ const FileExplorerPage: Component = () => {
     request.send(data)
   }
 
-  const onDragOver = (event: DragEvent) => {
-    event.preventDefault()
-  }
-
-  const onDragLeave = (event: DragEvent) => {
-    event.preventDefault()
-  }
-
   const navigateToFolder = (folderId: number) => {
     setSearchParams({ folderId: folderId.toString() })
   }
@@ -297,10 +269,12 @@ const FileExplorerPage: Component = () => {
   return (
     <div
       id="page-storage-file-explorer"
-      onDrop={(event) => void onDrop(event)}
+      onDrop={onDrop(handleDrop)}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
     >
+      <DropFilesHere active={isAboutToDrop()} />
+
       <Show when={uploadStatus.numberOfFiles !== 0}>
         <FileExplorerUploadStatusToast
           percentageUploaded={uploadStatus.percentageUploaded}
