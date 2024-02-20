@@ -112,64 +112,115 @@
   },
   "error": {
     "code": {
-      "auth.passwords_do_not_match": "Incorrect password",
-      "auth.other": "Other",
-      "auth.authentication_forbidden": "Authentication forbidden",
-      "auth.user_does_not_exist": "User does not exist",
-      "create_user_group.unauthorized": "Permission denied",
-      "create_user_group.other": "Other",
-      "create_user.unauthorized": "Permission denied",
-      "create_user.username_taken": "Username is already taken",
-      "create_user.other": "Other",
-      "delete_user_group.unauthorized": "Permission denied",
-      "delete_user_group.other": "Other",
-      "delete_user.unauthorized": "Permission denied",
-      "update_password.unauthorized": "Permission denied",
-      "update_password.user_not_found": "User not found",
-      "update_password.other": "Other",
-      "update_user_group_membership.unauthorized": "Permission denied",
-      "update_user_group_membership.other": "Other",
-      "update_user_groups.unauthorized": "Permission denied",
-      "update_user_groups.other": "Other",
-      "user_group.not_found": "User group not found",
-      "users.not_found": "User not found",
-      "features.unauthorized": "Permission denied",
-      "update_feature.unauthorized": "Permission denied",
-      "update_feature.other": "Other",
-      "create_storage_endpoint.unauthorized": "Permission denied",
-      "create_storage_endpoint.other": "Other",
-      "create_storage_endpoint.base_path_does_not_exist": "Base path points to a non-existing directory",
-      "create_storage_endpoint.base_path_not_a_directory": "Base path does not point to a directory",
-      "create_storage_endpoint.base_path_not_absolute": "Base path must be an absolute path",
-      "storage_endpoints.unauthorized": "Permission denied",
-      "storage_endpoints.internal": "Other",
-      "storage_endpoint.unauthorized": "Permission denied",
-      "storage_endpoint.internal": "Other",
-      "update_storage_endpoint.unauthorized": "Permission denied",
-      "update_storage_endpoint.other": "Other",
-      "update_storage_endpoint.invalid_status": "Invalid status",
-      "storage.upload.unauthorized": "Permission denied",
-      "storage.upload.internal": "Other",
-      "storage.upload.no_filename": "No filename provided",
-      "storage.upload.endpoint_not_found": "Target endpoint not found",
-      "storage_entries.unauthorized": "Permission denied",
-      "storage_entries.internal": "Other",
-      "storage_download.unauthorized": "Permission denied",
-      "storage_download.file_id_required": "file_id parameter is required",
-      "storage_download.internal": "Other",
-      "storage.create_folder.unauthorized": "Permission denied",
-      "storage.create_folder.endpoint_not_found": "Target endpoint not found",
-      "storage.create_folder.endpoint_not_active": "Target endpoint is not active",
-      "storage.create_folder.internal": "Other",
-      "storage.delete_entries.unauthorized": "Permission denied",
-      "storage.delete_entries.endpoint_not_found": "Target endpoint not found",
-      "storage.delete_entries.endpoint_not_active": "Target endpoint is not active",
-      "storage.delete_entries.internal": "Other",
-      "storage.download_zip.unauthorized": "Permission denied",
-      "storage.download_zip.endpoint_not_found": "Target endpoint not found",
-      "storage.download_zip.internal": "Other",
-      "storage.get_folder_path.unauthorized": "Permission denied",
-      "storage.get_folder_path.internal": "Other"
+      "auth": {
+        "passwords_do_not_match": "Incorrect password",
+        "other": "Other",
+        "authentication_forbidden": "Authentication forbidden",
+        "user_does_not_exist": "User does not exist"
+      },
+      "create_user_group": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "create_user": {
+        "unauthorized": "Permission denied",
+        "username_taken": "Username is already taken",
+        "other": "Other"
+      },
+      "delete_user_group": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "delete_user": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "update_password": {
+        "unauthorized": "Permission denied",
+        "user_not_found": "User not found",
+        "other": "Other"
+      },
+      "update_user_group_membership": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "update_user_groups": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "user_group": {
+        "not_found": "User group not found"
+      },
+      "users": {
+        "not_found": "User not found"
+      },
+      "features": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "update_feature": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "create_storage_endpoint": {
+        "base_path_does_not_exist": "Base path points to a non-existing directory",
+        "base_path_not_a_directory": "Base path does not point to a directory",
+        "base_path_not_absolute": "Base path must be an absolute path",
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "storage_endpoints": {
+        "unauthorized": "Permission denied",
+        "internal": "Other"
+      },
+      "storage_endpoint": {
+        "unauthorized": "Permission denied",
+        "internal": "Other"
+      },
+      "update_storage_endpoint": {
+        "unauthorized": "Permission denied",
+        "other": "Other",
+        "invalid_status": "Invalid status"
+      },
+      "storage": {
+        "upload": {
+          "unauthorized": "Permission denied",
+          "internal": "Other",
+          "no_filename": "No filename provided",
+          "endpoint_not_found": "Target endpoint not found",
+          "endpoint_not_active": "Target endpoint is not active"
+        },
+        "create_folder": {
+          "unauthorized": "Permission denied",
+          "internal": "Other",
+          "endpoint_not_found": "Target endpoint not found",
+          "endpoint_not_active": "Target endpoint is not active"
+        },
+        "delete_entries": {
+          "unauthorized": "Permission denied",
+          "internal": "Other",
+          "endpoint_not_found": "Target endpoint not found",
+          "endpoint_not_active": "Target endpoint is not active"
+        },
+        "download_zip": {
+          "unauthorized": "Permission denied",
+          "endpoint_not_found": "Target endpoint not found",
+          "internal": "Other"
+        },
+        "get_folder_path": {
+          "unauthorized": "Permission denied",
+          "internal": "Other"
+        },
+        "entries": {
+          "unauthorized": "Permission denied",
+          "internal": "Other"
+        },
+        "download": {
+          "unauthorized": "Permission denied",
+          "file_id_required": "file_id parameter is required",
+          "internal": "Other"
+        }
+      }
     }
   }
 }

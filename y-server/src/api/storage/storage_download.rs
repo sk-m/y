@@ -39,14 +39,14 @@ async fn storage_download(
         .is_some();
 
     if !action_allowed {
-        return error("storage_download.unauthorized");
+        return error("storage.download.unauthorized");
     }
 
     let file_id = query.file_id;
     let endpoint_id = path.into_inner();
 
     if file_id.is_none() {
-        return error("storage_download.file_id_required");
+        return error("storage.download.file_id_required");
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePath>(
@@ -79,7 +79,7 @@ async fn storage_download(
         }
 
         Err(_) => {
-            return error("storage_download.internal");
+            return error("storage.download.internal");
         }
     }
 }

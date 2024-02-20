@@ -42,7 +42,7 @@ async fn storage_entries(
         .is_some();
 
     if !action_allowed {
-        return error("storage_entries.unauthorized");
+        return error("storage.entries.unauthorized");
     }
 
     let endpoint_id = query.endpoint_id;
@@ -70,7 +70,7 @@ async fn storage_entries(
     };
 
     if entries.is_err() {
-        return error("storage_entries.internal");
+        return error("storage.entries.internal");
     }
 
     HttpResponse::Ok().json(web::Json(StorageEntriesOutput {
