@@ -1,5 +1,3 @@
-import download from "downloadjs"
-
 import { del, get, post } from "@/app/core/request"
 
 import {
@@ -7,6 +5,7 @@ import {
   TGetStorageEntries,
   TGetStorageFolderPath,
 } from "./storage-entry.codecs"
+import { downloadResponseBlob } from "./storage-entry.util"
 
 export const apiStorageFolderPath = "/storage/folder-path" as const
 export const apiStorageEntries = "/storage/entries" as const
@@ -109,23 +108,7 @@ export const downloadStorageFile = async (input: DownloadStorageFileInput) => {
       credentials: "same-origin",
       referrerPolicy: "same-origin",
     }
-  ).then(async (response) => {
-    const blob = await response.blob()
-    const contentDispositionHeader = response.headers.get("Content-Disposition")
-
-    if (contentDispositionHeader) {
-      const regExpFilename = /filename="(?<filename>.*)"/
-
-      const filename: string | null =
-        regExpFilename.exec(contentDispositionHeader)?.groups?.filename ?? null
-
-      if (filename) {
-        download(blob, filename)
-      }
-    } else {
-      download(blob)
-    }
-  })
+  ).then(downloadResponseBlob)
 }
 
 export type DownloadStorageFilesZipInput = {
@@ -151,21 +134,5 @@ export const downloadStorageFilesZip = async (
       folder_ids: input.folderIds,
       file_ids: input.fileIds,
     }),
-  }).then(async (response) => {
-    const blob = await response.blob()
-    const contentDispositionHeader = response.headers.get("Content-Disposition")
-
-    if (contentDispositionHeader) {
-      const regExpFilename = /filename="(?<filename>.*)"/
-
-      const filename: string | null =
-        regExpFilename.exec(contentDispositionHeader)?.groups?.filename ?? null
-
-      if (filename) {
-        download(blob, filename)
-      }
-    } else {
-      download(blob)
-    }
-  })
+  }).then(downloadResponseBlob)
 }
