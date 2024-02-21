@@ -1,3 +1,4 @@
+use log::*;
 use std::{collections::HashMap, fs::OpenOptions, ops::Deref, path::Path};
 
 use actix_multipart::Multipart;
@@ -258,6 +259,8 @@ async fn storage_upload(
 
                         skipped_files.push(file_filename);
 
+                        warn!("{}", create_file_result.unwrap_err());
+
                         let rollback_result = file_transaction.rollback().await;
 
                         if rollback_result.is_err() {
@@ -278,9 +281,13 @@ async fn storage_upload(
                                     let res = file.write(&chunk);
 
                                     if res.is_err() {
+                                        error!("{}", res.unwrap_err());
+
                                         return error("storage.upload.internal");
                                     }
                                 } else {
+                                    error!("{}", chunk.unwrap_err());
+
                                     return error("storage.upload.internal");
                                 }
                             }

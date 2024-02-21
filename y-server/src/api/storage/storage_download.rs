@@ -1,3 +1,4 @@
+use log::*;
 use std::path::Path;
 
 use actix_web::http::header::{ContentDisposition, DispositionParam, DispositionType};
@@ -78,7 +79,9 @@ async fn storage_download(
             return file.into_response(&req);
         }
 
-        Err(_) => {
+        Err(err) => {
+            error!("{}", err);
+
             return error("storage.download.internal");
         }
     }

@@ -1,4 +1,5 @@
 use actix_web::{post, web, HttpResponse, Responder};
+use log::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -71,6 +72,9 @@ async fn storage_create_folder(
         Ok(new_folder_id) => {
             HttpResponse::Ok().json(web::Json(StorageCreateFolderOutput { new_folder_id }))
         }
-        Err(_) => error("storage.create_folder.internal"),
+        Err(err) => {
+            error!("{}", err);
+            return error("storage.create_folder.internal");
+        }
     }
 }

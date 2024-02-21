@@ -1,5 +1,6 @@
 use actix_web::web::Query;
 use actix_web::{get, web, HttpResponse, Responder};
+use log::*;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
@@ -8,7 +9,7 @@ use crate::request::error;
 use crate::user::get_client_rights;
 use crate::util::RequestPool;
 
-#[derive(Serialize, FromRow)]
+#[derive(Serialize, FromRow, Debug)]
 struct Entry {
     id: i64,
     parent_folder: Option<i64>,
@@ -70,6 +71,8 @@ async fn storage_entries(
     };
 
     if entries.is_err() {
+        error!("{:?}", entries.unwrap_err());
+
         return error("storage.entries.internal");
     }
 

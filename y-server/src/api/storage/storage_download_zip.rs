@@ -1,3 +1,4 @@
+use log::*;
 use std::path::Path;
 
 use crate::request::error;
@@ -126,7 +127,9 @@ async fn storage_download_zip(
             return download_file.into_response(&req);
         }
 
-        Err(_) => {
+        Err(err) => {
+            error!("{}", err);
+
             return error("storage.download_zip.internal");
         }
     }

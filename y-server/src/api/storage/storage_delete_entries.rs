@@ -1,4 +1,5 @@
 use actix_web::{delete, web, HttpResponse, Responder};
+use log::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -60,7 +61,8 @@ async fn storage_delete_entries(
                 deleted_folders,
             });
         }
-        Err(_) => {
+        Err(err) => {
+            error!("{}", err);
             return error("storage.delete_entries.internal");
         }
     }
