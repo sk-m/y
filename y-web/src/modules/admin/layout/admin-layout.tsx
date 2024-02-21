@@ -105,7 +105,7 @@ const AdminLayout: Component = () => {
               </AsideEntry>
             </Show>
 
-            <AsideEntry icon="tune" title="Instance config" to="config" />
+            {/* <AsideEntry icon="tune" title="Instance config" to="config" /> */}
 
             <Show when={featuresPageAllowed()}>
               <AsideEntry icon="bolt" title="Features" to="features" />
