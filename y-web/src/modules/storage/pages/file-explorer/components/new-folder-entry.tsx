@@ -8,6 +8,7 @@ export type NewFolderEntryProps = {
   folderId?: number
 
   onCreate: (folderName: string) => void
+  onClose: () => void
 }
 
 export const NewFolderEntry: Component<NewFolderEntryProps> = (props) => {
@@ -31,7 +32,12 @@ export const NewFolderEntry: Component<NewFolderEntryProps> = (props) => {
   })
 
   return (
-    <div class="item" hidden={!props.show}>
+    <div
+      class="item"
+      hidden={!props.show}
+      onClick={() => props.onClose()}
+      title="Click to cancel"
+    >
       <div class="item-thumb">
         <div class="icon">
           <Icon
