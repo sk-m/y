@@ -539,6 +539,7 @@ const FileExplorerPage: Component = () => {
                 onCreate={(folderName) => {
                   createFolder(folderName)
                 }}
+                onClose={() => setFolderCreationInitiated(false)}
               />
             </div>
           </div>
