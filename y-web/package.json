@@ -1,6 +1,5 @@
 {
   "name": "y-web",
-  "version": "0.0.0",
   "description": "Web client for y",
   "scripts": {
     "dev": "vite",
@@ -24,16 +23,18 @@
     "prettier": "^2.8.8",
     "source-map-explorer": "^2.5.3",
     "typescript": "^5.1.6",
-    "vite": "^4.5.1",
+    "vite": "^4.5.2",
     "vite-plugin-solid": "^2.5.0"
   },
   "dependencies": {
     "@solid-primitives/i18n": "^2.0.0",
     "@solidjs/router": "^0.8.3",
     "@tanstack/solid-query": "^4.32.6",
+    "@types/downloadjs": "^1.4.6",
     "date-fns": "^2.30.0",
+    "downloadjs": "^1.4.7",
     "material-symbols": "^0.10.0",
     "solid-js": "^1.8.7",
-    "zod": "^3.21.4"
+    "zod": "^3.22.4"
   }
 }

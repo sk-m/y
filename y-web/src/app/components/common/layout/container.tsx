@@ -5,7 +5,9 @@ import { ComponentWithChildren } from "@/module"
 import "./container.less"
 
 export type ContainerProps = {
-  size: "s" | "m" | "l" | "xl"
+  id?: string
+
+  size: "xs" | "s" | "m" | "l" | "xl" | "full"
 
   style?: JSX.CSSProperties
 }
@@ -13,6 +15,7 @@ export type ContainerProps = {
 export const Container: ComponentWithChildren<ContainerProps> = (props) => {
   return (
     <div
+      id={props.id}
       classList={{
         "ui-container": true,
         [props.size]: true,

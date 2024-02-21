@@ -5,6 +5,8 @@ type RequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 export type RequestData = {
   query?: URLSearchParams
   body?: Record<string, unknown>
+  rawBody?: BodyInit
+  contentType?: string
 }
 
 export type ResponseError = {
@@ -29,10 +31,10 @@ const request = async (
     credentials: "same-origin",
     referrerPolicy: "same-origin",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": data?.contentType ?? "application/json",
     },
 
-    body: data?.body && JSON.stringify(data.body),
+    body: data?.rawBody ?? (data?.body && JSON.stringify(data.body)),
 
     ...requestOptions,
   })

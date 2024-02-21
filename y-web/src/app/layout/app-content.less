@@ -1,3 +1,14 @@
+@keyframes page-show {
+  0% {
+    opacity: 0;
+    transform: translateY(0.15em);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 #app-content {
   display: flex;
 
@@ -8,4 +19,8 @@
   max-height: 100%;
 
   overflow-y: auto;
+
+  > * {
+    animation: page-show 0.15s ease-out 0s 1 forwards;
+  }
 }

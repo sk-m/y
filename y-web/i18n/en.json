@@ -5,6 +5,10 @@
         "name": "Basic",
         "description": "Common rights most users should probably have."
       },
+      "instance_administration": {
+        "name": "Instance administration",
+        "description": "Rights for administrating this instance."
+      },
       "user_administration": {
         "name": "User administration",
         "description": "Rights for administrating other user's accounts."
@@ -12,12 +16,20 @@
       "user_rights": {
         "name": "Rights and groups",
         "description": "User groups administration."
+      },
+      "storage_feature": {
+        "name": "Storage",
+        "description": "Storage feature-related rights."
       }
     },
     "userRight": {
       "create_account": {
         "name": "Create user accounts",
         "description": "Create new users. Already existing users will be able to create other accounts as well."
+      },
+      "update_features": {
+        "name": "Toggle features",
+        "description": "Allows enabling and disabling y's features via the Features page."
       },
       "delete_user": {
         "name": "Delete users",
@@ -34,6 +46,26 @@
       "assign_user_groups": {
         "name": "Update user's groups",
         "description": "Allows assigning and removing groups from a user."
+      },
+      "manage_storage_endpoints": {
+        "name": "Manage storage endpoints",
+        "description": "Allows control over storage endpoints."
+      },
+      "storage_upload": {
+        "name": "Upload files",
+        "description": "A general right to upload data onto a storage endpoint. This is a \"first check\" right, meaning that it is required for any upload action. Users that do not have this right are guranteed to not be able to upload anything anywhere, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
+      },
+      "storage_list": {
+        "name": "List files",
+        "description": "A general right to see files on a storage endpoint. This is a \"first check\" right, meaning that it is required to list files on any endpoint. Users that do not have this right are guranteed to not be able to see files on any endpoint, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
+      },
+      "storage_delete": {
+        "name": "Delete files",
+        "description": "A general right to delete files and folders from a storage endpoint. This is a \"first check\" right, meaning that it is required in order to delete any entry from any endpoint. Users that do not have this right are guranteed to not be able to delete entries, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
+      },
+      "storage_download": {
+        "name": "Download files",
+        "description": "A general right to download files from a storage endpoint. This is a \"first check\" right, meaning that it is required to download any file from any endpoint. Users that do not have this right are guranteed to not be able to download files, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
       }
     },
     "userRightTagDescription": {
@@ -69,31 +101,126 @@
           "description": "List of user groups that are allowed to be assigned or removed from a user."
         }
       }
+    },
+    "storage_feature": {
+      "endpoint_status": {
+        "active": "Active",
+        "read_only": "Read-only",
+        "disabled": "Disabled"
+      }
     }
   },
   "error": {
     "code": {
-      "auth.passwords_do_not_match": "Incorrect password",
-      "auth.other": "Other",
-      "auth.authentication_forbidden": "Authentication forbidden",
-      "auth.user_does_not_exist": "User does not exist",
-      "create_user_group.unauthorized": "Permission denied",
-      "create_user_group.other": "Other",
-      "create_user.unauthorized": "Permission denied",
-      "create_user.username_taken": "Username is already taken",
-      "create_user.other": "Other",
-      "delete_user_group.unauthorized": "Permission denied",
-      "delete_user_group.other": "Other",
-      "delete_user.unauthorized": "Permission denied",
-      "update_password.unauthorized": "Permission denied",
-      "update_password.user_not_found": "User not found",
-      "update_password.other": "Other",
-      "update_user_group_membership.unauthorized": "Permission denied",
-      "update_user_group_membership.other": "Other",
-      "update_user_groups.unauthorized": "Permission denied",
-      "update_user_groups.other": "Other",
-      "user_group.not_found": "User group not found",
-      "users.not_found": "User not found"
+      "auth": {
+        "passwords_do_not_match": "Incorrect password",
+        "other": "Other",
+        "authentication_forbidden": "Authentication forbidden",
+        "user_does_not_exist": "User does not exist"
+      },
+      "create_user_group": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "create_user": {
+        "unauthorized": "Permission denied",
+        "username_taken": "Username is already taken",
+        "other": "Other"
+      },
+      "delete_user_group": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "delete_user": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "update_password": {
+        "unauthorized": "Permission denied",
+        "user_not_found": "User not found",
+        "other": "Other"
+      },
+      "update_user_group_membership": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "update_user_groups": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "user_group": {
+        "not_found": "User group not found"
+      },
+      "users": {
+        "not_found": "User not found"
+      },
+      "features": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "update_feature": {
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "create_storage_endpoint": {
+        "base_path_does_not_exist": "Base path points to a non-existing directory",
+        "base_path_not_a_directory": "Base path does not point to a directory",
+        "base_path_not_absolute": "Base path must be an absolute path",
+        "unauthorized": "Permission denied",
+        "other": "Other"
+      },
+      "storage_endpoints": {
+        "unauthorized": "Permission denied",
+        "internal": "Other"
+      },
+      "storage_endpoint": {
+        "unauthorized": "Permission denied",
+        "internal": "Other"
+      },
+      "update_storage_endpoint": {
+        "unauthorized": "Permission denied",
+        "other": "Other",
+        "invalid_status": "Invalid status"
+      },
+      "storage": {
+        "upload": {
+          "unauthorized": "Permission denied",
+          "internal": "Other",
+          "no_filename": "No filename provided",
+          "endpoint_not_found": "Target endpoint not found",
+          "endpoint_not_active": "Target endpoint is not active"
+        },
+        "create_folder": {
+          "unauthorized": "Permission denied",
+          "internal": "Other",
+          "endpoint_not_found": "Target endpoint not found",
+          "endpoint_not_active": "Target endpoint is not active"
+        },
+        "delete_entries": {
+          "unauthorized": "Permission denied",
+          "internal": "Other",
+          "endpoint_not_found": "Target endpoint not found",
+          "endpoint_not_active": "Target endpoint is not active"
+        },
+        "download_zip": {
+          "unauthorized": "Permission denied",
+          "endpoint_not_found": "Target endpoint not found",
+          "internal": "Other"
+        },
+        "get_folder_path": {
+          "unauthorized": "Permission denied",
+          "internal": "Other"
+        },
+        "entries": {
+          "unauthorized": "Permission denied",
+          "internal": "Other"
+        },
+        "download": {
+          "unauthorized": "Permission denied",
+          "file_id_required": "file_id parameter is required",
+          "internal": "Other"
+        }
+      }
     }
   }
 }

@@ -43,6 +43,11 @@ hr {
   background: var(--color-border-15);
 }
 
+i {
+  font-style: normal;
+  font-variation-settings: "slnt" -10;
+}
+
 :root {
   --text-sm: 12px;
   --text-body: 13px;
@@ -93,6 +98,7 @@ hr {
 
   --color-warning: #faf200;
   --color-warning-d-1: hsl(36, 80%, 60%);
+  --color-warning-d-2: hsl(36, 100%, 45%);
   --color-warning-t-1: rgba(250, 242, 0, 0.1);
   --color-warning-t-3: rgba(250, 242, 0, 0.3);
 

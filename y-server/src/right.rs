@@ -32,6 +32,7 @@ pub struct Right {
     name: &'static str,
     options: Vec<RightOption>,
     tags: Vec<RightTag>,
+    feature: Option<&'static str>,
 }
 
 #[derive(Serialize)]
@@ -48,6 +49,16 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                 name: "create_account",
                 options: vec![],
                 tags: vec![],
+                feature: None,
+            }],
+        },
+        RightCategory {
+            name: "instance_administration",
+            rights: vec![Right {
+                name: "update_features",
+                options: vec![],
+                tags: vec![RightTag::Administrative],
+                feature: None,
             }],
         },
         RightCategory {
@@ -61,11 +72,13 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                         value_source: Some("user_groups"),
                     }],
                     tags: vec![RightTag::Administrative],
+                    feature: None,
                 },
                 Right {
                     name: "delete_user",
                     options: vec![],
                     tags: vec![RightTag::Administrative],
+                    feature: None,
                 },
             ],
         },
@@ -92,6 +105,7 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                         },
                     ],
                     tags: vec![RightTag::Administrative],
+                    feature: None,
                 },
                 Right {
                     name: "assign_user_groups",
@@ -108,6 +122,42 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                         },
                     ],
                     tags: vec![RightTag::Administrative],
+                    feature: None,
+                },
+            ],
+        },
+        RightCategory {
+            name: "storage_feature",
+            rights: vec![
+                Right {
+                    name: "manage_storage_endpoints",
+                    options: vec![],
+                    tags: vec![RightTag::Administrative],
+                    feature: Some("storage"),
+                },
+                Right {
+                    name: "storage_list",
+                    options: vec![],
+                    tags: vec![],
+                    feature: Some("storage"),
+                },
+                Right {
+                    name: "storage_upload",
+                    options: vec![],
+                    tags: vec![],
+                    feature: Some("storage"),
+                },
+                Right {
+                    name: "storage_delete",
+                    options: vec![],
+                    tags: vec![],
+                    feature: Some("storage"),
+                },
+                Right {
+                    name: "storage_download",
+                    options: vec![],
+                    tags: vec![],
+                    feature: Some("storage"),
                 },
             ],
         },

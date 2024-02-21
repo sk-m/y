@@ -5,15 +5,27 @@
 
   &.secondary {
     color: var(--color-text-grey-05);
-    font-weight: 450;
 
     background-color: var(--color-grey-15);
   }
 
+  &.warning {
+    color: var(--color-warning-d-2);
+
+    background-color: var(--color-warning-t-3);
+  }
+
   &.critical {
     color: var(--color-error);
-    font-weight: 500;
 
     background-color: var(--color-error-o-1);
+  }
+
+  p:first-of-type {
+    margin-top: 0;
+  }
+
+  p:last-of-type {
+    margin-bottom: 0;
   }
 }

@@ -1,12 +1,54 @@
 .ui-pill {
-  padding: 0.2em 0.4em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+
+  width: fit-content;
+
+  padding: 0.2em 0.5em;
 
   font-weight: 450;
 
-  border-radius: 5px;
+  border-radius: 4px;
+
+  &.success {
+    color: var(--color-success);
+    background-color: var(--color-success-t-1);
+
+    box-shadow: inset 0 0 0 1px var(--color-success-t-1);
+
+    > .dot {
+      background-color: var(--color-success);
+    }
+  }
 
   &.secondary {
     color: var(--color-text-grey-1);
     background-color: var(--color-grey-2);
+
+    box-shadow: inset 0 0 0 1px var(--color-border-15);
+
+    > .dot {
+      background-color: var(--color-text-grey-1);
+    }
+  }
+
+  &.warning {
+    color: var(--color-warning-d-2);
+    background-color: var(--color-warning-t-3);
+
+    box-shadow: inset 0 0 0 1px var(--color-warning);
+
+    > .dot {
+      background-color: var(--color-warning-d-2);
+    }
+  }
+
+  > .dot {
+    width: 5px;
+    height: 5px;
+
+    margin-left: 0.25em;
+    border-radius: 50%;
   }
 }

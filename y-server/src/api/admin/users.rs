@@ -61,8 +61,7 @@ async fn users(pool: web::Data<RequestPool>, query: web::Query<TableInput>) -> i
                 total_count: users_count.unwrap_or(0),
             }));
         }
-        Err(err) => {
-            dbg!(err);
+        Err(_) => {
             return error("users.internal");
         }
     }

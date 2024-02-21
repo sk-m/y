@@ -1,4 +1,4 @@
-import { Component, createSignal } from "solid-js"
+import { Component, Show, createMemo, createSignal } from "solid-js"
 
 import { Link } from "@solidjs/router"
 
@@ -7,6 +7,7 @@ import { Icon } from "@/app/components/common/icon/icon"
 import { Popup } from "@/app/components/common/popup/popup"
 import { PopupContainer } from "@/app/components/common/popup/popup-container"
 import { domainIcon, domainName, useDomain } from "@/app/core/util/use-domain"
+import { useFeatures } from "@/modules/admin/feature/feature.service"
 
 import "./domain-selector.less"
 
@@ -21,7 +22,7 @@ const DomainLink: Component<DomainLinkProps> = (props) => {
   return (
     <Link onClick={props.onHide} href={props.to} class="domain-option">
       <div class="link">
-        <Icon name={domainIcon[props.domain]} size={18} wght={400} />
+        <Icon name={domainIcon[props.domain]} size={18} wght={500} />
         {domainName[props.domain]}
       </div>
 
@@ -31,7 +32,15 @@ const DomainLink: Component<DomainLinkProps> = (props) => {
 }
 
 export const DomainSelector: Component = () => {
+  const $features = useFeatures()
   const { domain } = useDomain()
+
+  const storageFeatureEnabled = createMemo(
+    () =>
+      $features.data?.features.some(
+        (feature) => feature.feature === "storage" && feature.enabled
+      ) ?? false
+  )
 
   const [popupShown, setPopupShown] = createSignal(false)
 
@@ -57,6 +66,13 @@ export const DomainSelector: Component = () => {
         <Popup show={popupShown()} position="left">
           <div class="popup-list">
             <DomainLink onHide={() => setPopupShown(false)} domain="" to="/" />
+            <Show when={storageFeatureEnabled()}>
+              <DomainLink
+                onHide={() => setPopupShown(false)}
+                domain="files"
+                to="/files"
+              />
+            </Show>
             <DomainLink
               onHide={() => setPopupShown(false)}
               domain="admin"

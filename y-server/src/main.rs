@@ -2,14 +2,22 @@ mod api;
 mod db;
 mod request;
 mod right;
+mod storage_archives;
+mod storage_endpoint;
+mod storage_entry;
 mod user;
 mod user_group;
 mod util;
 
+use crate::storage_archives::cleanup_storage_archives;
 use actix_web::{web, App, HttpServer};
+use chrono::{FixedOffset, Local};
 use dotenvy::dotenv;
+use log::*;
+use simplelog::*;
 use std::env;
 use std::process::exit;
+use std::{str::FromStr, time::Duration};
 use util::RequestPool;
 
 async fn process_cli_arguments(pool: &RequestPool) {
@@ -34,11 +42,11 @@ async fn process_cli_arguments(pool: &RequestPool) {
 
                 match create_user {
                     Ok(_) => {
-                        println!("No errors reported.");
+                        println!("No errors reported");
                         exit(0);
                     }
                     Err(error) => {
-                        println!("Error reported: {}", error);
+                        println!("{}", error);
                         exit(1);
                     }
                 }
@@ -51,9 +59,45 @@ async fn process_cli_arguments(pool: &RequestPool) {
     }
 }
 
+fn setup_job_scheduler(pool: RequestPool) {
+    actix_rt::spawn(async move {
+        // At 0 minutes past the hour, every 12 hours
+        let schedule = cron::Schedule::from_str("0 0 0/12 * * * *").unwrap();
+        let offset = FixedOffset::east_opt(0).unwrap();
+
+        loop {
+            let mut upcoming = schedule.upcoming(offset).take(1);
+            actix_rt::time::sleep(Duration::from_secs(30)).await;
+
+            let local = &Local::now();
+
+            if let Some(datetime) = upcoming.next() {
+                if datetime.timestamp() <= local.timestamp() {
+                    cleanup_storage_archives(&pool).await;
+                }
+            }
+        }
+    });
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
+
+    CombinedLogger::init(vec![
+        TermLogger::new(
+            LevelFilter::Info,
+            Config::default(),
+            TerminalMode::Mixed,
+            ColorChoice::Auto,
+        ),
+        WriteLogger::new(
+            LevelFilter::Info,
+            Config::default(),
+            std::fs::File::create("y-server.log").unwrap(),
+        ),
+    ])
+    .unwrap();
 
     let pool = db::connect_to_database().await;
 
@@ -71,18 +115,20 @@ async fn main() -> std::io::Result<()> {
 
     match migration_result {
         Ok(_) => {
-            println!("Migrations ran successfully.")
+            info!("Migrations ran successfully")
         }
         Err(error) => {
-            println!("Error running migrations: {}", error);
+            error!("Error running migrations. {}", error);
             exit(1);
         }
     }
 
-    println!(
-        "Starting the server on {}:{}...",
-        server_address, server_port
-    );
+    info!("Setting up the job scheduler");
+
+    let jobs_database_pool = pool.clone();
+    setup_job_scheduler(jobs_database_pool);
+
+    info!("Starting the server on {}:{}", server_address, server_port);
 
     HttpServer::new(move || {
         App::new()
@@ -92,6 +138,17 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::auth::login::login)
                     .service(crate::api::auth::me::me)
                     .service(crate::api::auth::logout::logout),
+            )
+            .service(
+                web::scope("/api/storage")
+                    .service(crate::api::storage::storage_upload::storage_upload)
+                    .service(crate::api::storage::storage_endpoints::storage_endpoints)
+                    .service(crate::api::storage::storage_entries::storage_entries)
+                    .service(crate::api::storage::storage_download::storage_download)
+                    .service(crate::api::storage::storage_download_zip::storage_download_zip)
+                    .service(crate::api::storage::storage_create_folder::storage_create_folder)
+                    .service(crate::api::storage::storage_get_folder_path::storage_get_folder_path)
+                    .service(crate::api::storage::storage_delete_entries::storage_delete_entries)
             )
             .service(
                 web::scope("/api/admin")
@@ -106,6 +163,12 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::admin::create_user_group::create_user_group)
                     .service(crate::api::admin::delete_user_group::delete_user_group)
                     .service(crate::api::admin::update_user_group_membership::update_user_group_membership)
+                    .service(crate::api::admin::features::features)
+                    .service(crate::api::admin::update_feature::update_feature)
+                    .service(crate::api::admin::create_storage_endpoint::create_storage_endpoint)
+                    .service(crate::api::admin::storage_endpoints::storage_enpoints)
+                    .service(crate::api::admin::storage_endpoint::storage_enpoint)
+                    .service(crate::api::admin::update_storage_endpoint::update_storage_endpoint)
                     ,
             )
             .service(web::scope("/api").service(crate::api::user_rights::user_rights))

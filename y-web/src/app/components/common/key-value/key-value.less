@@ -11,6 +11,16 @@
 
   font-size: var(--text-sm);
 
+  &:not(.readonly) > .value > .value-display:hover {
+    background-color: var(--color-grey-15);
+  }
+
+  &.readonly {
+    > .value > .value-display {
+      cursor: text;
+    }
+  }
+
   > .key {
     flex-shrink: 0;
 
@@ -48,10 +58,6 @@
       cursor: pointer;
 
       transition: 0.15s;
-
-      &:hover {
-        background-color: var(--color-grey-15);
-      }
     }
 
     > .value-input {

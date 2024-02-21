@@ -12,6 +12,10 @@ const AdminLayout = lazy(
   async () => import("@/modules/admin/layout/admin-layout")
 )
 
+const StorageLayout = lazy(
+  async () => import("@/modules/storage/layout/storage-layout")
+)
+
 export const AppLayout: Component = () => {
   const navigate = useNavigate()
 
@@ -31,6 +35,7 @@ export const AppLayout: Component = () => {
           <Routes>
             <Route path="/" />
             <Route path="/admin/*" component={AdminLayout} />
+            <Route path="/files/*" component={StorageLayout} />
           </Routes>
         </div>
       </div>

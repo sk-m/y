@@ -1,2 +1,5 @@
 target
 .env
+*.log
+upload_staging/*
+!upload_staging/DO_NOT_DELETE

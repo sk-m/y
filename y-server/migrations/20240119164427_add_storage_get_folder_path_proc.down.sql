@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.storage_get_folder_path(integer, bigint);

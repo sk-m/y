@@ -20,3 +20,13 @@ serde_with = { version = "3.3.0", features = ["chrono"] }
 sqlx = { version = "0.7", features = ["runtime-async-std", "postgres", "migrate", "chrono", "uuid", "json"] }
 futures = "0.3.28"
 serde_json = "1.0.107"
+actix-multipart = "0.6.1"
+futures-util = "0.3.30"
+actix-files = "0.6.5"
+regex = "1.10.2"
+async-recursion = "1.0.5"
+zip = "0.6.6"
+actix-rt = "2.9.0"
+cron = "0.12.0"
+simplelog = "0.12.1"
+log = "0.4.20"

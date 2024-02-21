@@ -4,7 +4,7 @@ import { Icon } from "../icon/icon"
 import "./checkbox.less"
 
 export type CheckboxProps = {
-  onChange?: (checked: boolean) => void
+  onChange?: (checked: boolean, event?: MouseEvent) => void
 
   /** Use if you want this checkbox to be uncontrolled. */
   ref?: HTMLInputElement | ((inputRef: HTMLInputElement) => unknown)
@@ -44,14 +44,20 @@ export const Checkbox: Component<CheckboxProps> = (props) => {
     }
   })
 
-  const toggle = () => {
+  createEffect(() => {
+    if (isControlled) {
+      setChecked(props.value!)
+    }
+  })
+
+  const toggle = (event: MouseEvent) => {
     if (props.disabled) return
 
     if (isControlled) {
       setChecked((value) => !value)
 
       ref.checked = checked()
-      props.onChange?.(checked())
+      props.onChange?.(checked(), event)
     } else {
       ref.checked = !ref.checked
     }

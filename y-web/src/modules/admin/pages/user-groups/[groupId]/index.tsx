@@ -50,7 +50,7 @@ import {
   userGroupsKey,
 } from "@/modules/admin/user-groups/user-groups.service"
 import { useUserRights } from "@/modules/admin/user-rights/user-rights.service"
-import { useAuth } from "@/modules/core/auth/auth.service"
+import { authKey, useAuth } from "@/modules/core/auth/auth.service"
 
 import { UserGroupRight } from "../../../components/user-group/user-group-right"
 import { UserGroupRightCategory } from "../../../components/user-group/user-group-right-category"
@@ -167,6 +167,7 @@ const UserGroupPage: Component = () => {
             icon: "check",
           })
 
+          void queryClient.invalidateQueries(authKey)
           void queryClient.invalidateQueries([userGroupsKey])
           void queryClient.invalidateQueries([userGroupKey, $userGroup.data.id])
         },

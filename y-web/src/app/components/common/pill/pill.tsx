@@ -1,11 +1,12 @@
-import { JSX } from "solid-js"
+import { JSX, Show } from "solid-js"
 
 import { ComponentWithChildren } from "@/module"
 
 import "./pill.less"
 
 export type PillProps = {
-  variant?: "secondary" | "info"
+  variant?: "secondary" | "warning" | "success"
+  dot?: boolean
 
   style?: JSX.CSSProperties
 }
@@ -19,7 +20,10 @@ export const Pill: ComponentWithChildren<PillProps> = (props) => {
       }}
       style={props.style}
     >
-      {props.children}
+      <Show when={props.dot}>
+        <div class="dot" />
+      </Show>
+      <div class="text">{props.children}</div>
     </div>
   )
 }

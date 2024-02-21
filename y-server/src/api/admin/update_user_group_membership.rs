@@ -53,7 +53,6 @@ async fn update_user_group_membership(
             .find(|group_id| **group_id == group.id)
             .is_some()
         {
-            dbg!("removed group {}!", group.id);
             mutated_groups.push(group.id.clone());
         }
     }
@@ -83,8 +82,6 @@ async fn update_user_group_membership(
     }
 
     let mut action_allowed = true;
-
-    dbg!(&mutated_groups);
 
     if !all_groups_allowed {
         for group_id in &mutated_groups {
