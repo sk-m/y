@@ -163,9 +163,9 @@
         "other": "Other"
       },
       "create_storage_endpoint": {
-        "base_path_does_not_exist": "Base path points to a non-existing directory",
-        "base_path_not_a_directory": "Base path does not point to a directory",
-        "base_path_not_absolute": "Base path must be an absolute path",
+        "path_does_not_exist": "Path points to a non-existing directory",
+        "path_not_a_directory": "Path does not point to a directory",
+        "path_not_absolute": "Path must be an absolute path",
         "unauthorized": "Permission denied",
         "other": "Other"
       },

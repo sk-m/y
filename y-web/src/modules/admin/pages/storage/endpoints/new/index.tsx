@@ -32,6 +32,7 @@ type StorageEndpointFieldValues = {
   type: IStorageEndpointType
   preserveFileStructure: boolean
   basePath: string
+  artifactsPath: string
   description: string
 }
 
@@ -51,6 +52,7 @@ const NewStorageEndpointPage: Component = () => {
       type: "local_fs",
       preserveFileStructure: false,
       basePath: "/var/y_storage",
+      artifactsPath: "/var/y_artifacts",
       description: "",
     },
     watch: ["type", "preserveFileStructure"],
@@ -220,6 +222,39 @@ const NewStorageEndpointPage: Component = () => {
                     required: true,
                   })}
                   subtext="Absolute path to the location where the files will be written to."
+                />
+              </Stack>
+
+              <Stack
+                direction="row"
+                spacing={"1.5em"}
+                alignItems="center"
+                justifyContent="flex-start"
+              >
+                <Icon
+                  name="photo_library"
+                  wght={500}
+                  size={24}
+                  fill={1}
+                  style={{
+                    "margin-left": "0.5em",
+                    color: "var(--color-text-grey-05)",
+                  }}
+                />
+
+                <InputField
+                  label="Artifacts path"
+                  error={errors().artifactsPath}
+                  width="100%"
+                  maxLength={511}
+                  inputProps={{
+                    autofocus: false,
+                    autocomplete: "artifactsPath",
+                  }}
+                  {...register("artifactsPath", {
+                    required: true,
+                  })}
+                  subtext="Absolute path to the location where this endpoint's artifacts (ex. thumbnails) will be stored."
                 />
               </Stack>
 
