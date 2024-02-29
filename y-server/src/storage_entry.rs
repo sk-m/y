@@ -1,10 +1,10 @@
-use std::{collections::HashMap, fs::remove_file, path::Path};
+use std::{collections::HashMap, env, fs::remove_file, path::Path, process::Command};
 
 use async_recursion::async_recursion;
 use serde::Serialize;
 use sqlx::FromRow;
 
-use crate::util::RequestPool;
+use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
 use log::*;
 
 #[derive(FromRow, Serialize)]
@@ -250,17 +250,17 @@ pub async fn delete_entries(
     pool: &RequestPool,
 ) -> Result<(usize, usize), String> {
     // Find the endpoint so we know where the files we find will be stored
-    let target_endpoint =
-        sqlx::query_scalar::<_, String>("SELECT base_path FROM storage_endpoints WHERE id = $1")
-            .bind(endpoint_id)
-            .fetch_one(pool)
-            .await;
+    let target_endpoint = get_storage_endpoint(endpoint_id, pool).await;
 
     if target_endpoint.is_err() {
         return Err("Could not get target endpoint".to_string());
     }
 
-    let endpoint_base_path = target_endpoint.unwrap();
+    let target_endpoint = target_endpoint.unwrap();
+
+    let endpoint_base_path = target_endpoint.base_path;
+    let endpoint_artifacts_path = target_endpoint.artifacts_path;
+
     let endpoint_files_path = Path::new(&endpoint_base_path);
 
     // Recursively find all the folders that reside inside target folders
@@ -374,6 +374,25 @@ pub async fn delete_entries(
                         fs_remove_result.unwrap_err()
                     );
                 }
+
+                if let Some(endpoint_artifacts_path) = &endpoint_artifacts_path {
+                    let thumbnail_path = Path::new(&endpoint_artifacts_path)
+                        .join(file_filesystem_id)
+                        .with_extension("webp");
+
+                    if thumbnail_path.exists() {
+                        let fs_remove_thumbnail_result = remove_file(thumbnail_path);
+
+                        if fs_remove_thumbnail_result.is_err() {
+                            error!(
+                                "(storage entry -> delete entries) Could not remove a thumbnail from the filesystem. endpoint_id = {}. filesystem_id = {}. {}",
+                                endpoint_id,
+                                file_filesystem_id,
+                                fs_remove_thumbnail_result.unwrap_err()
+                            );
+                        }
+                    }
+                }
             }
 
             return Ok((file_filesystem_ids.len(), all_folders.len()));
@@ -381,5 +400,53 @@ pub async fn delete_entries(
         Err(_) => {
             return Err("Could not start a transaction".to_string());
         }
+    }
+}
+
+pub fn generate_entry_thumbnail(
+    filesystem_id: &str,
+    endpoint_path: &str,
+    endpoint_artifacts_path: &str,
+) -> Result<(), String> {
+    let convert_bin_path = env::var("IMAGEMAGICK_BIN");
+
+    if let Ok(convert_bin_path) = &convert_bin_path {
+        let convert_bin_path = Path::new(&convert_bin_path);
+
+        if convert_bin_path.exists() {
+            let file_path = Path::new(endpoint_path).join(&filesystem_id);
+            let endpoint_artifacts_path = Path::new(endpoint_artifacts_path);
+
+            let convert_result = Command::new(convert_bin_path)
+                .arg("-quality")
+                .arg("50")
+                .arg("-resize")
+                .arg("240x240")
+                .arg("-define")
+                .arg("webp:lossless=false")
+                .arg(file_path.to_str().unwrap())
+                .arg(
+                    endpoint_artifacts_path
+                        .join(&filesystem_id)
+                        .with_extension("webp")
+                        .to_str()
+                        .unwrap(),
+                )
+                .output();
+
+            if let Ok(convert_result) = convert_result {
+                if convert_result.status.success() {
+                    Ok(())
+                } else {
+                    Err("Could not generate a thumbnail for the storage entry".to_string())
+                }
+            } else {
+                Err("Could not execute the convert command".to_string())
+            }
+        } else {
+            Err("Could not find the convert binary".to_string())
+        }
+    } else {
+        Ok(())
     }
 }
