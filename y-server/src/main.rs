@@ -149,6 +149,7 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_create_folder::storage_create_folder)
                     .service(crate::api::storage::storage_get_folder_path::storage_get_folder_path)
                     .service(crate::api::storage::storage_delete_entries::storage_delete_entries)
+                    .service(crate::api::storage::storage_entry_thumbnails::storage_entry_thumbnails)
             )
             .service(
                 web::scope("/api/admin")

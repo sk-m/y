@@ -4,5 +4,6 @@ pub mod storage_download;
 pub mod storage_download_zip;
 pub mod storage_endpoints;
 pub mod storage_entries;
+pub mod storage_entry_thumbnails;
 pub mod storage_get_folder_path;
 pub mod storage_upload;
