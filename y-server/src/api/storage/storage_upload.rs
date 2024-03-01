@@ -1,6 +1,6 @@
 use log::*;
+use std::fs;
 use std::{collections::HashMap, fs::OpenOptions, path::Path};
-use std::{env, fs};
 
 use actix_multipart::Multipart;
 use actix_web::{
@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::time::Instant;
 
-use crate::storage_entry::generate_entry_thumbnail;
+use crate::storage_entry::{generate_image_entry_thumbnail, generate_video_entry_thumbnail};
 use crate::{
     request::error, storage_endpoint::get_storage_endpoint, user::get_client_rights,
     util::RequestPool,
@@ -335,44 +335,55 @@ async fn storage_upload(
 
     // Generate thumbnails
     std::thread::spawn(move || {
-        let convert_bin_path = env::var("IMAGEMAGICK_BIN");
+        if let Some(target_endpoint_artifacts_path) = &target_endpoint.artifacts_path {
+            for filesystem_id in uploaded_files {
+                let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
 
-        if convert_bin_path.is_ok() {
-            if let Some(target_endpoint_artifacts_path) = &target_endpoint.artifacts_path {
-                for filesystem_id in uploaded_files {
-                    let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
+                let file_kind = infer::get_from_path(&path);
 
-                    let file_kind = infer::get_from_path(&path);
+                if !file_kind.is_err() {
+                    if let Some(file_kind) = file_kind.unwrap() {
+                        let mime_type = file_kind.mime_type();
 
-                    if !file_kind.is_err() {
-                        if let Some(file_kind) = file_kind.unwrap() {
-                            let mime_type = file_kind.mime_type();
+                        match mime_type {
+                            "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+                            | "image/bmp" => {
+                                let file_metadata =
+                                    fs::File::open(&path).unwrap().metadata().unwrap();
 
-                            match mime_type {
-                                "image/jpeg" | "image/png" | "image/gif" | "image/webp"
-                                | "image/bmp" => {
-                                    let file_metadata =
-                                        fs::File::open(&path).unwrap().metadata().unwrap();
+                                if file_metadata.len() <= MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION {
+                                    let generate_thumbnail_result = generate_image_entry_thumbnail(
+                                        &filesystem_id,
+                                        &target_endpoint.base_path.as_str(),
+                                        &target_endpoint_artifacts_path.as_str(),
+                                    );
 
-                                    if file_metadata.len() <= MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION
-                                    {
-                                        let generate_thumbnail_result = generate_entry_thumbnail(
-                                            &filesystem_id,
-                                            &target_endpoint.base_path.as_str(),
-                                            &target_endpoint_artifacts_path.as_str(),
+                                    if generate_thumbnail_result.is_err() {
+                                        error!(
+                                            "Failed to create a thumbnail for an uploaded image file. {}",
+                                            generate_thumbnail_result.unwrap_err()
                                         );
-
-                                        if generate_thumbnail_result.is_err() {
-                                            error!(
-                                                "Failed to create a thumbnail for an uploaded image file. {}",
-                                                generate_thumbnail_result.unwrap_err()
-                                            );
-                                        }
                                     }
                                 }
-
-                                _ => {}
                             }
+
+                            "video/mp4" | "video/webm" | "video/mov" | "video/avi"
+                            | "video/mpeg" | "video/quicktime" => {
+                                let generate_thumbnail_result = generate_video_entry_thumbnail(
+                                    &filesystem_id,
+                                    &target_endpoint.base_path.as_str(),
+                                    &target_endpoint_artifacts_path.as_str(),
+                                );
+
+                                if generate_thumbnail_result.is_err() {
+                                    error!(
+                                        "Failed to create a thumbnail for an uploaded video file. {}",
+                                        generate_thumbnail_result.unwrap_err()
+                                    );
+                                }
+                            }
+
+                            _ => {}
                         }
                     }
                 }

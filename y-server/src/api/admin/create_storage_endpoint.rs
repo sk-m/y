@@ -1,3 +1,5 @@
+use std::fs;
+
 use crate::request::error;
 use crate::user::get_client_rights;
 use crate::util::RequestPool;
@@ -61,15 +63,19 @@ async fn create_storage_endpoint(
         .bind("active")
         .bind(form.preserve_file_structure)
         .bind(form.base_path)
-        .bind(form.artifacts_path)
+        .bind(&form.artifacts_path)
         .bind(form.description)
         .fetch_one(&**pool)
         .await;
 
     return match result {
-        Ok(new_endpoint_id) => HttpResponse::Ok().json(web::Json(CreateStorageEndpointOutput {
-            id: new_endpoint_id,
-        })),
+        Ok(new_endpoint_id) => {
+            fs::create_dir(artifacts_path.join("thumbnails")).unwrap();
+
+            HttpResponse::Ok().json(web::Json(CreateStorageEndpointOutput {
+                id: new_endpoint_id,
+            }))
+        }
         Err(_) => error("create_storage_endpoint.other"),
     };
 }

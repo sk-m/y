@@ -108,6 +108,7 @@ async fn storage_entry_thumbnails(
         Ok(entries) => {
             for entry in entries {
                 let thumbnail_path = Path::new(endpoint_artifacts_path.as_str())
+                    .join("thumbnails")
                     .join(entry.filesystem_id)
                     .with_extension("webp");
 

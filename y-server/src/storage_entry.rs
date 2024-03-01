@@ -377,6 +377,7 @@ pub async fn delete_entries(
 
                 if let Some(endpoint_artifacts_path) = &endpoint_artifacts_path {
                     let thumbnail_path = Path::new(&endpoint_artifacts_path)
+                        .join("thumbnails")
                         .join(file_filesystem_id)
                         .with_extension("webp");
 
@@ -403,7 +404,7 @@ pub async fn delete_entries(
     }
 }
 
-pub fn generate_entry_thumbnail(
+pub fn generate_image_entry_thumbnail(
     filesystem_id: &str,
     endpoint_path: &str,
     endpoint_artifacts_path: &str,
@@ -415,7 +416,7 @@ pub fn generate_entry_thumbnail(
 
         if convert_bin_path.exists() {
             let file_path = Path::new(endpoint_path).join(&filesystem_id);
-            let endpoint_artifacts_path = Path::new(endpoint_artifacts_path);
+            let endpoint_thumbnails_path = Path::new(endpoint_artifacts_path).join("thumbnails");
 
             let convert_result = Command::new(convert_bin_path)
                 .arg("-quality")
@@ -426,7 +427,7 @@ pub fn generate_entry_thumbnail(
                 .arg("webp:lossless=false")
                 .arg(file_path.to_str().unwrap())
                 .arg(
-                    endpoint_artifacts_path
+                    endpoint_thumbnails_path
                         .join(&filesystem_id)
                         .with_extension("webp")
                         .to_str()
@@ -438,13 +439,62 @@ pub fn generate_entry_thumbnail(
                 if convert_result.status.success() {
                     Ok(())
                 } else {
-                    Err("Could not generate a thumbnail for the storage entry".to_string())
+                    Err("Could not generate a thumbnail for an image storage entry".to_string())
                 }
             } else {
                 Err("Could not execute the convert command".to_string())
             }
         } else {
             Err("Could not find the convert binary".to_string())
+        }
+    } else {
+        Ok(())
+    }
+}
+
+pub fn generate_video_entry_thumbnail(
+    filesystem_id: &str,
+    endpoint_path: &str,
+    endpoint_artifacts_path: &str,
+) -> Result<(), String> {
+    let ffmpeg_bin_path = env::var("FFMPEG_BIN");
+
+    if let Ok(ffmpeg_bin_path) = &ffmpeg_bin_path {
+        let ffmpeg_bin_path = Path::new(&ffmpeg_bin_path);
+
+        if ffmpeg_bin_path.exists() {
+            let file_path = Path::new(endpoint_path).join(&filesystem_id);
+            let endpoint_thumbnails_path = Path::new(endpoint_artifacts_path).join("thumbnails");
+
+            let ffmpeg_result = Command::new(ffmpeg_bin_path)
+                .arg("-ss")
+                .arg("00:00:01")
+                .arg("-i")
+                .arg(file_path.to_str().unwrap())
+                .arg("-frames:v")
+                .arg("1")
+                .arg("-c:v")
+                .arg("libwebp")
+                .arg(
+                    endpoint_thumbnails_path
+                        .join(&filesystem_id)
+                        .with_extension("webp")
+                        .to_str()
+                        .unwrap(),
+                )
+                .output();
+
+            if let Ok(ffmpeg_result) = ffmpeg_result {
+                if ffmpeg_result.status.success() {
+                    Ok(())
+                } else {
+                    Err("Could not generate a thumbnail for a video storage entry".to_string())
+                }
+            } else {
+                Err("Could not execute the ffmpeg command".to_string())
+            }
+        } else {
+            Err("Could not find the ffmpeg binary".to_string())
         }
     } else {
         Ok(())
