@@ -18,8 +18,6 @@ import { createStore } from "solid-js/store"
 import { useParams, useSearchParams } from "@solidjs/router"
 import { createMutation } from "@tanstack/solid-query"
 
-import { Checkbox } from "@/app/components/common/checkbox/checkbox"
-import { Icon } from "@/app/components/common/icon/icon"
 import { Text } from "@/app/components/common/text/text"
 import {
   ContextMenu,
@@ -30,20 +28,22 @@ import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 import { useFilesDrop } from "@/app/core/util/use-files-drop"
-
-import { DropFilesHere } from "../../components/drop-files-here"
-import { useFileExplorer } from "../../file-explorer/use-file-explorer"
+import { DropFilesHere } from "@/modules/storage/components/drop-files-here"
+import { useFileExplorer } from "@/modules/storage/file-explorer/use-file-explorer"
+import { useFileExplorerThumbnails } from "@/modules/storage/file-explorer/use-file-explorer-thumbnails"
 import {
   createStorageFolder,
   deleteStorageEntries,
   downloadStorageFile,
   downloadStorageFilesZip,
-} from "../../storage-entry/storage-entry.api"
-import { TUploadEntries } from "../../storage-entry/storage-entry.codecs"
-import { FileWithPath } from "../../upload"
+} from "@/modules/storage/storage-entry/storage-entry.api"
+import { TUploadEntries } from "@/modules/storage/storage-entry/storage-entry.codecs"
+import { FileWithPath } from "@/modules/storage/upload"
+
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
 import { NewFolderEntry } from "./components/new-folder-entry"
+import { StorageEntry } from "./components/storage-entry"
 import "./file-explorer.less"
 
 const closeTabConfirmation = (event: BeforeUnloadEvent) => {
@@ -54,6 +54,9 @@ const closeTabConfirmation = (event: BeforeUnloadEvent) => {
 const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
   const params = useParams()
+
+  let browserContentsRef: HTMLDivElement
+  const entryRefs: HTMLDivElement[] = []
 
   const { onDragLeave, onDragOver, isAboutToDrop, onDrop } = useFilesDrop()
 
@@ -97,6 +100,15 @@ const FileExplorerPage: Component = () => {
   } = useFileExplorer({
     endpointId: () => params.endpointId as string,
     folderId: () => searchParams.folderId,
+  })
+
+  const { thumbnails } = useFileExplorerThumbnails({
+    endpointId: () => Number.parseInt(params.endpointId as string, 10),
+
+    browserContentsRef: () => browserContentsRef,
+    entryRefs: () => entryRefs,
+
+    entries: folderEntries,
   })
 
   const createFolder = (newFolderName: string) => {
@@ -294,6 +306,7 @@ const FileExplorerPage: Component = () => {
             />
           </div>
           <div
+            ref={browserContentsRef!}
             class="browser-contents"
             onContextMenu={(event) => {
               event.preventDefault()
@@ -465,66 +478,28 @@ const FileExplorerPage: Component = () => {
             <div class="items">
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
-                {(entry, idx) => {
+                {(entry, index) => {
                   const selected = createMemo(() =>
                     selectedEntries().has(entry.id)
                   )
 
                   return (
-                    // TODO: Should be a clickable <button />
-                    <div
-                      classList={{ item: true, selected: selected() }}
-                      onClick={() =>
-                        entry.entry_type === "folder" &&
-                        navigateToFolder(entry.id)
-                      }
-                      onContextMenu={(event) => {
-                        event.preventDefault()
-                        event.stopPropagation()
-                        event.stopImmediatePropagation()
-
+                    <StorageEntry
+                      ref={(entryRef: HTMLDivElement) => {
+                        entryRefs[index()] = entryRef
+                      }}
+                      entry={entry}
+                      selected={selected()}
+                      thumbnails={thumbnails()}
+                      onNavigateToFolder={navigateToFolder}
+                      onOpenContextMenu={(event) => {
                         setTemporarySelectedEntry(entry)
                         openEntryContextMenu(event)
                       }}
-                    >
-                      <div class="item-select-container">
-                        <Checkbox
-                          size="m"
-                          value={selected()}
-                          onChange={(_, event) => {
-                            onSelect(idx(), event)
-                          }}
-                        />
-                      </div>
-                      <div class="item-thumb">
-                        <div class="icon">
-                          <Icon
-                            name={
-                              entry.entry_type === "folder"
-                                ? "folder_open"
-                                : "draft"
-                            }
-                            type="outlined"
-                            fill={1}
-                            wght={500}
-                            size={40}
-                          />
-                        </div>
-                      </div>
-                      <div class="item-info">
-                        <div
-                          class="item-name"
-                          title={`${entry.name}${
-                            entry.extension ? `.${entry.extension}` : ""
-                          }`}
-                        >
-                          <div class="name">{entry.name}</div>
-                          <Show when={entry.extension}>
-                            <div class="extension">{entry.extension}</div>
-                          </Show>
-                        </div>
-                      </div>
-                    </div>
+                      onSelect={(event) => {
+                        onSelect(index(), event)
+                      }}
+                    />
                   )
                 }}
               </For>

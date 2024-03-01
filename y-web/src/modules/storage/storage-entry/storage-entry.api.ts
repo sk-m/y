@@ -3,12 +3,14 @@ import { del, get, post } from "@/app/core/request"
 import {
   TCreateStorageFolder,
   TGetStorageEntries,
+  TGetStorageEntryThumbnails,
   TGetStorageFolderPath,
 } from "./storage-entry.codecs"
 import { downloadResponseBlob } from "./storage-entry.util"
 
 export const apiStorageFolderPath = "/storage/folder-path" as const
 export const apiStorageEntries = "/storage/entries" as const
+export const apiStorageEntryThumbnails = "/storage/entry-thumbnails" as const
 
 // TODO move to POST /folder
 export const apiStorageCreateFoler = "/storage/create-folder" as const
@@ -52,6 +54,24 @@ export const storageFolderPath = async (input: GetStorageFolderPathInput) => {
   return get(apiStorageFolderPath, {
     query,
   }).then((data) => TGetStorageFolderPath.parse(data))
+}
+
+export type GetStorageEntryThumbnails = {
+  endpointId: number | string
+  entryIds: number[]
+}
+
+export const storageEntryThumbnails = async (
+  input: GetStorageEntryThumbnails
+) => {
+  const query = new URLSearchParams()
+
+  query.set("endpoint_id", input.endpointId.toString())
+  query.set("entry_ids", input.entryIds.join(","))
+
+  return get(apiStorageEntryThumbnails, {
+    query,
+  }).then((data) => TGetStorageEntryThumbnails.parse(data))
 }
 
 export type CreateStorageFolderInput = {
