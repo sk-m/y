@@ -34,7 +34,26 @@
 
         box-sizing: border-box;
 
-        overflow-y: auto;
+        overflow-y: overlay;
+
+        &::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: var(--color-border-15);
+
+          border: 2px solid white;
+          border-radius: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+          background: var(--color-border-2);
+        }
 
         > .items {
           display: flex;
