@@ -154,6 +154,12 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                     feature: Some("storage"),
                 },
                 Right {
+                    name: "storage_rename",
+                    options: vec![],
+                    tags: vec![],
+                    feature: Some("storage"),
+                },
+                Right {
                     name: "storage_delete",
                     options: vec![],
                     tags: vec![],

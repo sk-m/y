@@ -1,4 +1,11 @@
-import { Component, Show, createMemo } from "solid-js"
+import {
+  Component,
+  Show,
+  createEffect,
+  createMemo,
+  onCleanup,
+  onMount,
+} from "solid-js"
 
 import { Checkbox } from "@/app/components/common/checkbox/checkbox"
 import { Icon } from "@/app/components/common/icon/icon"
@@ -12,14 +19,44 @@ export type StorageEntryProps = {
   selected?: boolean
   temporarySelected?: boolean
   thumbnails?: Record<number, string>
+  isRenaming?: boolean
 
   onNavigateToFolder: (folderId: number) => void
   onOpenContextMenu?: (event: MouseEvent) => void
   onSelect?: (event: MouseEvent | undefined) => void
+  onRename?: (newName: string) => void
+  onCancelRename?: () => void
 }
 
 export const StorageEntry: Component<StorageEntryProps> = (props) => {
+  let nameFieldRef: HTMLInputElement
+
   const thumbnail = createMemo(() => props.thumbnails?.[props.entry.id])
+
+  createEffect(() => {
+    if (props.isRenaming) {
+      nameFieldRef.value = props.entry.name
+      nameFieldRef.select()
+    }
+  })
+
+  onMount(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        props.onRename?.(nameFieldRef!.value)
+      }
+
+      if (event.key === "Escape") {
+        props.onCancelRename?.()
+      }
+    }
+
+    nameFieldRef.addEventListener("keyup", handler)
+
+    onCleanup(() => {
+      nameFieldRef.removeEventListener("keyup", handler)
+    })
+  })
 
   return (
     // TODO: Should be a clickable <button />
@@ -32,6 +69,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       }}
       onClick={() =>
         props.entry.entry_type === "folder" &&
+        !props.isRenaming &&
         props.onNavigateToFolder(props.entry.id)
       }
       onContextMenu={(event) => {
@@ -80,14 +118,27 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       <div class="item-info">
         <div
           class="item-name"
-          title={`${props.entry.name}${
-            props.entry.extension ? `.${props.entry.extension}` : ""
-          }`}
+          title={
+            props.isRenaming
+              ? // eslint-disable-next-line no-undefined
+                undefined
+              : `${props.entry.name}${
+                  props.entry.extension ? `.${props.entry.extension}` : ""
+                }`
+          }
         >
-          <div class="name">{props.entry.name}</div>
-          <Show when={props.entry.extension}>
+          <div hidden={props.isRenaming} class="name">
+            {props.entry.name}
+          </div>
+          <Show when={!props.isRenaming && props.entry.extension}>
             <div class="extension">{props.entry.extension}</div>
           </Show>
+          <input
+            hidden={!props.isRenaming}
+            ref={(ref) => (nameFieldRef = ref)}
+            type="text"
+            class="name-input"
+          />
         </div>
       </div>
     </div>

@@ -455,6 +455,43 @@ pub async fn move_entries(
     Ok(())
 }
 
+pub async fn rename_entry(
+    endpoint_id: i32,
+    entry_id: i64,
+    new_name: &str,
+    pool: &RequestPool,
+) -> Result<(), String> {
+    let mut transaction = pool.begin().await.unwrap();
+
+    let file_result =
+        sqlx::query("UPDATE storage_files SET name = $1 WHERE id = $2 AND endpoint_id = $3")
+            .bind(new_name)
+            .bind(entry_id)
+            .bind(endpoint_id)
+            .execute(&mut *transaction)
+            .await;
+
+    let folder_result =
+        sqlx::query("UPDATE storage_folders SET name = $1 WHERE id = $2 AND endpoint_id = $3")
+            .bind(new_name)
+            .bind(entry_id)
+            .bind(endpoint_id)
+            .execute(&mut *transaction)
+            .await;
+
+    if file_result.is_err() || folder_result.is_err() {
+        return Err("Could not rename storage entry".to_string());
+    }
+
+    let transaction_result = transaction.commit().await;
+
+    if transaction_result.is_err() {
+        return Err("Could not commit the rename transaction".to_string());
+    }
+
+    Ok(())
+}
+
 pub fn generate_image_entry_thumbnail(
     filesystem_id: &str,
     endpoint_path: &str,

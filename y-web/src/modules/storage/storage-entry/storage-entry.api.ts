@@ -1,4 +1,4 @@
-import { del, get, post } from "@/app/core/request"
+import { del, get, patch, post } from "@/app/core/request"
 
 import {
   TCreateStorageFolder,
@@ -11,6 +11,7 @@ import { downloadResponseBlob } from "./storage-entry.util"
 export const apiStorageFolderPath = "/storage/folder-path" as const
 export const apiStorageEntries = "/storage/entries" as const
 export const apiStorageMoveEntries = "/storage/move-entries" as const
+export const apiStorageRenameEntry = "/storage/rename-entry" as const
 export const apiStorageEntryThumbnails = "/storage/entry-thumbnails" as const
 
 // TODO move to POST /folder
@@ -104,6 +105,22 @@ export const moveStorageEntries = async (input: MoveStorageEntriesInput) => {
       endpoint_id: input.endpointId,
       entry_ids: input.entryIds,
       target_folder_id: input.targetFolderId,
+    },
+  })
+}
+
+export type RenameStorageEntryInput = {
+  endpointId: number
+  entryId: number
+  name: string
+}
+
+export const renameStorageEntry = async (input: RenameStorageEntryInput) => {
+  return patch(apiStorageRenameEntry, {
+    body: {
+      endpoint_id: input.endpointId,
+      entry_id: input.entryId,
+      name: input.name,
     },
   })
 }

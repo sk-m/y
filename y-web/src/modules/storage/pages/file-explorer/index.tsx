@@ -10,6 +10,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  on,
 } from "solid-js"
 import { createStore } from "solid-js/store"
 
@@ -36,6 +37,7 @@ import {
   downloadStorageFile,
   downloadStorageFilesZip,
   moveStorageEntries,
+  renameStorageEntry,
 } from "@/modules/storage/storage-entry/storage-entry.api"
 import { TUploadEntries } from "@/modules/storage/storage-entry/storage-entry.codecs"
 import { FileWithPath } from "@/modules/storage/upload"
@@ -114,9 +116,11 @@ const FileExplorerPage: Component = () => {
     totalSizeBytes: 0,
   })
 
+  const [entryToRename, setEntryToRename] = createSignal<number | null>(null)
   const [folderCreationInitiated, setFolderCreationInitiated] =
     createSignal(false)
 
+  const $renameEntry = createMutation(renameStorageEntry)
   const $moveEntries = createMutation(moveStorageEntries)
   const $deleteEntries = createMutation(deleteStorageEntries)
   const $createFolder = createMutation(createStorageFolder)
@@ -129,6 +133,24 @@ const FileExplorerPage: Component = () => {
 
     entries: folderEntries,
   })
+
+  createEffect(() => {
+    if (uploadStatus.numberOfFiles === 0) {
+      window.removeEventListener("beforeunload", closeTabConfirmation)
+    } else {
+      window.addEventListener("beforeunload", closeTabConfirmation)
+    }
+  })
+
+  createEffect(
+    on(
+      () => folderId(),
+      () => {
+        setFolderCreationInitiated(false)
+        setEntryToRename(null)
+      }
+    )
+  )
 
   const createFolder = (newFolderName: string) => {
     $createFolder.mutate(
@@ -166,6 +188,23 @@ const FileExplorerPage: Component = () => {
     )
   }
 
+  const renameEntry = (entryId: number, name: string) => {
+    $renameEntry.mutate(
+      {
+        endpointId: Number.parseInt(params.endpointId as string, 10),
+        entryId,
+        name,
+      },
+      {
+        onSuccess: () => {
+          setEntryToRename(null)
+          void invalidateEntries()
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
+  }
+
   const moveEntries = (entryIds: number[]) => {
     if (entryIds.length === 0) return
 
@@ -184,14 +223,6 @@ const FileExplorerPage: Component = () => {
       }
     )
   }
-
-  createEffect(() => {
-    if (uploadStatus.numberOfFiles === 0) {
-      window.removeEventListener("beforeunload", closeTabConfirmation)
-    } else {
-      window.addEventListener("beforeunload", closeTabConfirmation)
-    }
-  })
 
   const handleDrop = (filesToUpload: FileWithPath[]) => {
     let totalSizeBytes = 0
@@ -530,6 +561,16 @@ const FileExplorerPage: Component = () => {
                     <div class="separator" />
 
                     <ContextMenuLink
+                      icon="edit"
+                      onClick={() => {
+                        setEntryToRename(temporarySelectedEntry()!.id)
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Rename folder
+                    </ContextMenuLink>
+
+                    <ContextMenuLink
                       icon="delete"
                       onClick={() => {
                         deleteEntries([temporarySelectedEntry()!.id], [])
@@ -586,6 +627,16 @@ const FileExplorerPage: Component = () => {
                     <div class="separator" />
 
                     <ContextMenuLink
+                      icon="edit"
+                      onClick={() => {
+                        setEntryToRename(temporarySelectedEntry()!.id)
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Rename file
+                    </ContextMenuLink>
+
+                    <ContextMenuLink
                       icon="delete"
                       onClick={() => {
                         deleteEntries([], [temporarySelectedEntry()!.id])
@@ -610,11 +661,16 @@ const FileExplorerPage: Component = () => {
                     () => temporarySelectedEntry()?.id === entry.id
                   )
 
+                  const isRenaming = createMemo(
+                    () => entryToRename() === entry.id
+                  )
+
                   return (
                     <StorageEntry
                       ref={(entryRef: HTMLDivElement) => {
                         entryRefs[index()] = entryRef
                       }}
+                      isRenaming={isRenaming()}
                       entry={entry}
                       selected={selected()}
                       temporarySelected={temporarySelected()}
@@ -627,6 +683,14 @@ const FileExplorerPage: Component = () => {
                       onSelect={(event) => {
                         onSelect(index(), event)
                       }}
+                      onRename={(newName) => {
+                        if (entry.name === newName || newName === "") {
+                          setEntryToRename(null)
+                        } else {
+                          renameEntry(entry.id, newName)
+                        }
+                      }}
+                      onCancelRename={() => setEntryToRename(null)}
                     />
                   )
                 }}
