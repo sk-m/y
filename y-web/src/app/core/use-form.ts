@@ -199,6 +199,7 @@ export const useForm = <
         ) {
           debug("[use-form] registering a watcher", { name })
 
+          // TODO I don't think we are ever removing the event listeners we set in use-form!
           if (ref.type === "checkbox") {
             ref.addEventListener("change", () => {
               controller[1](ref.checked as FieldValues[keyof FieldValues])

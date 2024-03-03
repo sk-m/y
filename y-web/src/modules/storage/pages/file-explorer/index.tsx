@@ -11,6 +11,7 @@ import {
   createMemo,
   createSignal,
   on,
+  onCleanup,
 } from "solid-js"
 import { createStore } from "solid-js/store"
 
@@ -140,6 +141,10 @@ const FileExplorerPage: Component = () => {
     } else {
       window.addEventListener("beforeunload", closeTabConfirmation)
     }
+
+    onCleanup(() => {
+      window.removeEventListener("beforeunload", closeTabConfirmation)
+    })
   })
 
   createEffect(

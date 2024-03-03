@@ -1,4 +1,11 @@
-import { Component, JSX, Show, createSignal, onMount } from "solid-js"
+import {
+  Component,
+  JSX,
+  Show,
+  createSignal,
+  onCleanup,
+  onMount,
+} from "solid-js"
 
 import {
   InputError,
@@ -34,10 +41,16 @@ export const InputField: Component<InputFieldProps> = (props) => {
   let ref: HTMLInputElement
 
   onMount(() => {
-    setValue(ref.value)
-
-    ref.addEventListener("input", () => {
+    const handler = () => {
       setValue(ref.value)
+    }
+
+    handler()
+
+    ref.addEventListener("input", handler)
+
+    onCleanup(() => {
+      ref.removeEventListener("input", handler)
     })
   })
 

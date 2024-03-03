@@ -1,4 +1,4 @@
-import { Component, createEffect, onMount } from "solid-js"
+import { Component, createEffect, onCleanup, onMount } from "solid-js"
 
 import { Icon } from "@/app/components/common/icon/icon"
 
@@ -22,11 +22,17 @@ export const NewFolderEntry: Component<NewFolderEntryProps> = (props) => {
 
   onMount(() => {
     if (newFolderNameInputRef) {
-      newFolderNameInputRef.addEventListener("keyup", (event) => {
+      const handler = (event: KeyboardEvent) => {
         if (event.key === "Enter") {
           props.onCreate(newFolderNameInputRef!.value)
           newFolderNameInputRef!.value = ""
         }
+      }
+
+      newFolderNameInputRef.addEventListener("keyup", handler)
+
+      onCleanup(() => {
+        newFolderNameInputRef?.removeEventListener("keyup", handler)
       })
     }
   })
