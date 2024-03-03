@@ -63,7 +63,8 @@ async fn storage_download(
     match entry {
         Ok(entry) => {
             let file_path = Path::new(&entry.base_path).join(&entry.filesystem_id);
-            let mut file = actix_files::NamedFile::open_async(file_path).await.unwrap();
+
+            let mut file = actix_files::NamedFile::open(file_path).unwrap();
 
             let raw_filename = format!(
                 "{}.{}",
