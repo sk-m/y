@@ -59,6 +59,10 @@
         "name": "List files",
         "description": "A general right to see files on a storage endpoint. This is a \"first check\" right, meaning that it is required to list files on any endpoint. Users that do not have this right are guranteed to not be able to see files on any endpoint, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
       },
+      "storage_move": {
+        "name": "Move files",
+        "description": "Allows moving (cut and paste) files within an endpoint."
+      },
       "storage_delete": {
         "name": "Delete files",
         "description": "A general right to delete files and folders from a storage endpoint. This is a \"first check\" right, meaning that it is required in order to delete any entry from any endpoint. Users that do not have this right are guranteed to not be able to delete entries, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
@@ -212,6 +216,10 @@
           "internal": "Other"
         },
         "entries": {
+          "unauthorized": "Permission denied",
+          "internal": "Other"
+        },
+        "move": {
           "unauthorized": "Permission denied",
           "internal": "Other"
         },

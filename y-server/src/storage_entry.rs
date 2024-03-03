@@ -404,6 +404,57 @@ pub async fn delete_entries(
     }
 }
 
+/**
+ * Move enties to a new folder
+ *
+ * @param endpoint_id - Storage endpoint id
+ * @param entry_ids - Entries to move
+ * @param target_folder_id - Id of the folder where the entries will be moved to
+ * @param pool - Database connection pool
+*/
+pub async fn move_entries(
+    endpoint_id: i32,
+    entry_ids: Vec<i64>,
+    target_folder_id: Option<i64>,
+    pool: &RequestPool,
+) -> Result<(), String> {
+    if entry_ids.len() == 0 {
+        return Ok(());
+    }
+
+    let mut transaction = pool.begin().await.unwrap();
+
+    let files_result = sqlx::query(
+        "UPDATE storage_files SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
+    )
+    .bind(target_folder_id)
+    .bind(&entry_ids)
+    .bind(endpoint_id)
+    .execute(&mut *transaction)
+    .await;
+
+    let folders_result = sqlx::query(
+        "UPDATE storage_folders SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
+    )
+    .bind(target_folder_id)
+    .bind(&entry_ids)
+    .bind(endpoint_id)
+    .execute(&mut *transaction)
+    .await;
+
+    if files_result.is_err() || folders_result.is_err() {
+        return Err("Could not move storage entries".to_string());
+    }
+
+    let transaction_result = transaction.commit().await;
+
+    if transaction_result.is_err() {
+        return Err("Could not commit the move transaction".to_string());
+    }
+
+    Ok(())
+}
+
 pub fn generate_image_entry_thumbnail(
     filesystem_id: &str,
     endpoint_path: &str,

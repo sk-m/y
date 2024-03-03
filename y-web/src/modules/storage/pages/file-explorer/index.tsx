@@ -35,11 +35,13 @@ import {
   deleteStorageEntries,
   downloadStorageFile,
   downloadStorageFilesZip,
+  moveStorageEntries,
 } from "@/modules/storage/storage-entry/storage-entry.api"
 import { TUploadEntries } from "@/modules/storage/storage-entry/storage-entry.codecs"
 import { FileWithPath } from "@/modules/storage/upload"
 
 import { FileExplorerPath } from "./components/file-explorer-path"
+import { FileExplorerSelectionInfo } from "./components/file-explorer-selection-info"
 import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
 import { NewFolderEntry } from "./components/new-folder-entry"
 import { StorageEntry } from "./components/storage-entry"
@@ -100,6 +102,12 @@ const FileExplorerPage: Component = () => {
     contextMenuProps: generalContextMenuProps,
   } = useContextMenu()
 
+  const {
+    open: openSelectionContextMenu,
+    close: closeSelectionContextMenu,
+    contextMenuProps: selectionContextMenuProps,
+  } = useContextMenu()
+
   const [uploadStatus, setUploadStatus] = createStore({
     numberOfFiles: 0,
     percentageUploaded: 0,
@@ -109,6 +117,7 @@ const FileExplorerPage: Component = () => {
   const [folderCreationInitiated, setFolderCreationInitiated] =
     createSignal(false)
 
+  const $moveEntries = createMutation(moveStorageEntries)
   const $deleteEntries = createMutation(deleteStorageEntries)
   const $createFolder = createMutation(createStorageFolder)
 
@@ -146,6 +155,25 @@ const FileExplorerPage: Component = () => {
         endpointId: Number.parseInt(params.endpointId as string, 10),
         fileIds,
         folderIds,
+      },
+      {
+        onSuccess: () => {
+          resetSelection()
+          void invalidateEntries()
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
+  }
+
+  const moveEntries = (entryIds: number[]) => {
+    if (entryIds.length === 0) return
+
+    $moveEntries.mutate(
+      {
+        endpointId: Number.parseInt(params.endpointId as string, 10),
+        entryIds,
+        targetFolderId: folderId(),
       },
       {
         onSuccess: () => {
@@ -312,6 +340,12 @@ const FileExplorerPage: Component = () => {
                 setSearchParams({ folderId: newFolderId })
               }
             />
+            <Show when={selectedEntries().size > 0}>
+              <FileExplorerSelectionInfo
+                selectedEntriesCount={selectedEntries().size}
+                onClick={openSelectionContextMenu}
+              />
+            </Show>
           </div>
           <div
             ref={browserContentsRef!}
@@ -337,6 +371,20 @@ const FileExplorerPage: Component = () => {
                   New Folder
                 </ContextMenuLink>
 
+                <Show when={selectedEntries().size > 0}>
+                  <div class="separator" />
+
+                  <ContextMenuLink
+                    icon="arrow_downward"
+                    onClick={() => {
+                      moveEntries([...selectedEntries()])
+                      closeGeneralContextMenu()
+                    }}
+                  >
+                    Move {selectedEntries().size} entries here
+                  </ContextMenuLink>
+                </Show>
+
                 <div class="separator" />
 
                 <ContextMenuLink
@@ -347,6 +395,32 @@ const FileExplorerPage: Component = () => {
                   }}
                 >
                   Refresh
+                </ContextMenuLink>
+              </ContextMenuSection>
+            </ContextMenu>
+
+            <ContextMenu {...selectionContextMenuProps()}>
+              <ContextMenuSection>
+                <ContextMenuLink
+                  icon="remove_selection"
+                  onClick={() => {
+                    setSelectedEntries(new Set<number>())
+                    closeSelectionContextMenu()
+                  }}
+                >
+                  Remove selection
+                </ContextMenuLink>
+
+                <div class="separator" />
+
+                <ContextMenuLink
+                  icon="arrow_downward"
+                  onClick={() => {
+                    moveEntries([...selectedEntries()])
+                    closeSelectionContextMenu()
+                  }}
+                >
+                  Move here
                 </ContextMenuLink>
               </ContextMenuSection>
             </ContextMenu>
@@ -379,7 +453,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Download {selectedEntries().size} entries
+                      Download selected entries
                     </ContextMenuLink>
 
                     <ContextMenuLink
@@ -406,7 +480,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Delete {selectedEntries().size} entries
+                      Delete selected entries
                     </ContextMenuLink>
                   </ContextMenuSection>
                 }

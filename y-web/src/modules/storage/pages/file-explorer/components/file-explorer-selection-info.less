@@ -1,0 +1,35 @@
+.file-explorer-selection-info {
+  .info-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5em;
+
+    padding: 0.5em 1em;
+
+    color: var(--color-primary-d-1);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    font-family: "Inter", sans-serif;
+
+    cursor: pointer;
+
+    border-radius: 6px;
+    border: none;
+    background-color: var(--color-primary-t-1);
+
+    transition: 0.15s;
+
+    .ui-icon {
+      transition: 0.15s;
+    }
+
+    &:hover {
+      background-color: var(--color-primary-t-15);
+
+      > .ui-icon {
+        transform: translateY(2px);
+      }
+    }
+  }
+}

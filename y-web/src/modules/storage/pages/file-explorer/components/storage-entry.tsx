@@ -71,6 +71,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
           }
         >
           <img
+            draggable={false}
             class="thumbnail"
             src={`data:image/jpeg;base64, ${thumbnail() ?? ""}`}
           />

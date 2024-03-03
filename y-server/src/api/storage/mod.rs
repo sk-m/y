@@ -6,4 +6,5 @@ pub mod storage_endpoints;
 pub mod storage_entries;
 pub mod storage_entry_thumbnails;
 pub mod storage_get_folder_path;
+pub mod storage_move_entries;
 pub mod storage_upload;

@@ -10,6 +10,7 @@ import { downloadResponseBlob } from "./storage-entry.util"
 
 export const apiStorageFolderPath = "/storage/folder-path" as const
 export const apiStorageEntries = "/storage/entries" as const
+export const apiStorageMoveEntries = "/storage/move-entries" as const
 export const apiStorageEntryThumbnails = "/storage/entry-thumbnails" as const
 
 // TODO move to POST /folder
@@ -89,6 +90,22 @@ export const createStorageFolder = async (input: CreateStorageFolderInput) => {
       new_folder_name: input.newFolderName,
     },
   }).then((data) => TCreateStorageFolder.parse(data))
+}
+
+export type MoveStorageEntriesInput = {
+  endpointId: number
+  entryIds: number[]
+  targetFolderId: number | undefined
+}
+
+export const moveStorageEntries = async (input: MoveStorageEntriesInput) => {
+  return post(apiStorageMoveEntries, {
+    body: {
+      endpoint_id: input.endpointId,
+      entry_ids: input.entryIds,
+      target_folder_id: input.targetFolderId,
+    },
+  })
 }
 
 export type DeleteStorageEntriesInput = {
