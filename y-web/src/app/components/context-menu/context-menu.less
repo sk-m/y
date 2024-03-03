@@ -1,11 +1,11 @@
 @keyframes show-context-menu {
   0% {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: scale(0.97);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
   }
 }
 
@@ -37,14 +37,15 @@
 
   background-color: white;
 
-  border: 1px solid var(--color-border-15);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
   border-radius: 6px;
 
-  padding: 0.5em 0;
+  padding: 0.33em 0;
 
-  animation: show-context-menu 0.2s cubic-bezier(0.68, -1.6, 0.32, 2.6) 0s 1
-    forwards;
+  // animation: show-context-menu 0.2s cubic-bezier(0.68, -1.6, 0.32, 2.6) 0s 1
+  //   forwards;
+
+  animation: show-context-menu 0.2s ease-in-out 0s 1 forwards;
 
   > .menu-list {
     display: flex;
@@ -59,7 +60,7 @@
         > .separator {
           height: 1px;
           background-color: var(--color-border-1);
-          margin: 0.5em 0;
+          margin: 0.33em 0;
         }
 
         > .link {

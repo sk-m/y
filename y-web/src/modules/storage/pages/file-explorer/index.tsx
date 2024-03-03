@@ -1,7 +1,5 @@
 /* eslint-disable unicorn/prevent-abbreviations */
 
-/* eslint-disable no-undefined */
-
 /* eslint-disable no-warning-comments */
 
 /* eslint-disable unicorn/consistent-function-scoping */
@@ -18,6 +16,7 @@ import { createStore } from "solid-js/store"
 import { useParams, useSearchParams } from "@solidjs/router"
 import { createMutation } from "@tanstack/solid-query"
 
+import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import {
   ContextMenu,
@@ -54,37 +53,18 @@ const closeTabConfirmation = (event: BeforeUnloadEvent) => {
 const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
   const params = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // prettier-ignore
+  const folderId = createMemo(() =>
+    (searchParams.folderId
+      ? Number.parseInt(searchParams.folderId, 10)
+      // eslint-disable-next-line no-undefined
+      : undefined)
+  )
 
   let browserContentsRef: HTMLDivElement
   const entryRefs: HTMLDivElement[] = []
-
-  const { onDragLeave, onDragOver, isAboutToDrop, onDrop } = useFilesDrop()
-
-  const {
-    open: openEntryContextMenu,
-    close: closeEntryContextMenu,
-    contextMenuProps: entryContextMenuProps,
-  } = useContextMenu()
-
-  const {
-    open: openGeneralContextMenu,
-    close: closeGeneralContextMenu,
-    contextMenuProps: generalContextMenuProps,
-  } = useContextMenu()
-
-  const [uploadStatus, setUploadStatus] = createStore({
-    numberOfFiles: 0,
-    percentageUploaded: 0,
-    totalSizeBytes: 0,
-  })
-
-  const [folderCreationInitiated, setFolderCreationInitiated] =
-    createSignal(false)
-
-  const [searchParams, setSearchParams] = useSearchParams()
-
-  const $deleteEntries = createMutation(deleteStorageEntries)
-  const $createFolder = createMutation(createStorageFolder)
 
   const {
     folderEntries,
@@ -102,6 +82,36 @@ const FileExplorerPage: Component = () => {
     folderId: () => searchParams.folderId,
   })
 
+  const { onDragLeave, onDragOver, isAboutToDrop, onDrop } = useFilesDrop()
+
+  const {
+    open: openEntryContextMenu,
+    close: closeEntryContextMenu,
+    contextMenuProps: entryContextMenuProps,
+  } = useContextMenu({
+    onClose: () => {
+      setTemporarySelectedEntry(null)
+    },
+  })
+
+  const {
+    open: openGeneralContextMenu,
+    close: closeGeneralContextMenu,
+    contextMenuProps: generalContextMenuProps,
+  } = useContextMenu()
+
+  const [uploadStatus, setUploadStatus] = createStore({
+    numberOfFiles: 0,
+    percentageUploaded: 0,
+    totalSizeBytes: 0,
+  })
+
+  const [folderCreationInitiated, setFolderCreationInitiated] =
+    createSignal(false)
+
+  const $deleteEntries = createMutation(deleteStorageEntries)
+  const $createFolder = createMutation(createStorageFolder)
+
   const { thumbnails } = useFileExplorerThumbnails({
     endpointId: () => Number.parseInt(params.endpointId as string, 10),
 
@@ -115,9 +125,7 @@ const FileExplorerPage: Component = () => {
     $createFolder.mutate(
       {
         endpointId: Number.parseInt(params.endpointId as string, 10),
-        folderId: searchParams.folderId
-          ? Number.parseInt(searchParams.folderId, 10)
-          : undefined,
+        folderId: folderId(),
 
         newFolderName,
       },
@@ -235,8 +243,8 @@ const FileExplorerPage: Component = () => {
     request.send(data)
   }
 
-  const navigateToFolder = (folderId: number) => {
-    setSearchParams({ folderId: folderId.toString() })
+  const navigateToFolder = (targetFolderId: number) => {
+    setSearchParams({ folderId: targetFolderId.toString() })
   }
 
   const downloadFile = (fileId: number) => {
@@ -407,6 +415,34 @@ const FileExplorerPage: Component = () => {
                   <Show
                     when={temporarySelectedEntry()?.entry_type === "folder"}
                   >
+                    <Stack
+                      style={{
+                        padding: "0.5em 1.5em",
+                      }}
+                      spacing={"0.25em"}
+                    >
+                      <Text
+                        fontWeight={500}
+                        fontSize="var(--text-sm)"
+                        color="var(--color-text-grey-05)"
+                      >
+                        Folder
+                      </Text>
+                      <Text
+                        variant="secondary"
+                        fontSize="var(--text-sm)"
+                        fontWeight={450}
+                        style={{
+                          "max-width": "20em",
+                          "word-break": "break-all",
+                        }}
+                      >
+                        {temporarySelectedEntry()!.name}
+                      </Text>
+                    </Stack>
+
+                    <div class="separator" />
+
                     <ContextMenuLink
                       icon="download"
                       onClick={() => {
@@ -430,21 +466,34 @@ const FileExplorerPage: Component = () => {
                     </ContextMenuLink>
                   </Show>
                   <Show when={temporarySelectedEntry()?.entry_type === "file"}>
-                    <Text
-                      variant="secondary"
-                      fontSize={"var(--text-sm)"}
-                      fontWeight={450}
+                    <Stack
+                      spacing={"0.25em"}
                       style={{
-                        "max-width": "20em",
-                        "word-break": "break-all",
                         padding: "0.5em 1.5em",
                       }}
                     >
-                      {temporarySelectedEntry()!.name}
-                      {temporarySelectedEntry()!.extension
-                        ? `.${temporarySelectedEntry()!.extension!}`
-                        : ""}
-                    </Text>
+                      <Text
+                        fontWeight={500}
+                        fontSize={"var(--text-sm)"}
+                        color="var(--color-text-grey-05)"
+                      >
+                        File
+                      </Text>
+                      <Text
+                        variant="secondary"
+                        fontSize={"var(--text-sm)"}
+                        fontWeight={450}
+                        style={{
+                          "max-width": "20em",
+                          "word-break": "break-all",
+                        }}
+                      >
+                        {temporarySelectedEntry()!.name}
+                        {temporarySelectedEntry()!.extension
+                          ? `.${temporarySelectedEntry()!.extension!}`
+                          : ""}
+                      </Text>
+                    </Stack>
 
                     <div class="separator" />
 
@@ -483,6 +532,10 @@ const FileExplorerPage: Component = () => {
                     selectedEntries().has(entry.id)
                   )
 
+                  const temporarySelected = createMemo(
+                    () => temporarySelectedEntry()?.id === entry.id
+                  )
+
                   return (
                     <StorageEntry
                       ref={(entryRef: HTMLDivElement) => {
@@ -490,6 +543,7 @@ const FileExplorerPage: Component = () => {
                       }}
                       entry={entry}
                       selected={selected()}
+                      temporarySelected={temporarySelected()}
                       thumbnails={thumbnails()}
                       onNavigateToFolder={navigateToFolder}
                       onOpenContextMenu={(event) => {
@@ -505,11 +559,7 @@ const FileExplorerPage: Component = () => {
               </For>
               <NewFolderEntry
                 endpointId={Number.parseInt(params.endpointId as string, 10)}
-                folderId={
-                  searchParams.folderId
-                    ? Number.parseInt(searchParams.folderId, 10)
-                    : undefined
-                }
+                folderId={folderId()}
                 show={folderCreationInitiated()}
                 onCreate={(folderName) => {
                   createFolder(folderName)

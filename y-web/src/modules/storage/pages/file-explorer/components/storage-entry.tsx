@@ -10,6 +10,7 @@ export type StorageEntryProps = {
   entry: IStorageEntry
 
   selected?: boolean
+  temporarySelected?: boolean
   thumbnails?: Record<number, string>
 
   onNavigateToFolder: (folderId: number) => void
@@ -24,7 +25,11 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
     // TODO: Should be a clickable <button />
     <div
       ref={props.ref}
-      classList={{ item: true, selected: props.selected }}
+      classList={{
+        item: true,
+        selected: props.selected,
+        "temporary-selected": props.temporarySelected,
+      }}
       onClick={() =>
         props.entry.entry_type === "folder" &&
         props.onNavigateToFolder(props.entry.id)

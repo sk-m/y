@@ -2,7 +2,11 @@ import { createMemo, createSignal } from "solid-js"
 
 type Position = { x: number; y: number }
 
-export const useContextMenu = () => {
+type UseContextMenuProps = {
+  onClose?: () => void
+}
+
+export const useContextMenu = (props?: UseContextMenuProps) => {
   const [position, setPosition] = createSignal<Position | null>(null)
 
   const open = (event: MouseEvent) => {
@@ -11,6 +15,7 @@ export const useContextMenu = () => {
 
   const close = () => {
     setPosition(null)
+    props?.onClose?.()
   }
 
   const contextMenuProps = createMemo(() => ({

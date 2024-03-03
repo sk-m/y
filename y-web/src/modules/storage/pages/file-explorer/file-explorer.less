@@ -70,23 +70,23 @@
 
             border-radius: 6px;
 
-            background-color: var(--color-grey-1);
-            box-shadow: 0 0 0 1px var(--color-border-15);
+            background-color: var(--color-grey-15);
 
             transition: 0.15s;
 
             cursor: pointer;
 
+            &.temporary-selected,
             &:hover {
-              box-shadow: 0 0 0 1px var(--color-border-2),
+              box-shadow: 0 0 0 1px var(--color-border-25),
                 0 3px 15px rgba(21, 23, 46, 0.1);
 
               background-color: var(--color-grey-2);
 
               > .item-info {
-                background-color: var(--color-grey-1);
-                // border-color: var(--color-border-2);
-                box-shadow: 0 0 0 1px var(--color-border-2);
+                box-shadow: 0 0 0 1px var(--color-border-25);
+
+                background-color: var(--color-grey-15);
               }
             }
 
@@ -99,14 +99,23 @@
             }
 
             &.selected {
-              background-color: var(--color-primary-t-15);
+              background-color: var(--color-primary-t-2);
+              box-shadow: 0 0 0 2px var(--color-primary-t-2),
+                0 3px 15px var(--color-primary-t-15);
 
               &:hover {
-                box-shadow: 0 0 0 2px var(--color-primary-t-2),
+                background-color: var(--color-primary-t-25);
+
+                box-shadow: 0 0 0 2px var(--color-primary-t-25),
                   0 3px 15px var(--color-primary-t-15);
+
+                > .item-info {
+                  background-color: var(--color-primary-o-1);
+                }
               }
 
               > .item-info {
+                background-color: var(--color-primary-o-1);
                 box-shadow: none;
               }
 
@@ -115,6 +124,10 @@
                   color: var(--color-primary-d-1);
                 }
               }
+            }
+
+            &.temporary-selected {
+              transform: scale(0.95);
             }
 
             > .item-select-container {
