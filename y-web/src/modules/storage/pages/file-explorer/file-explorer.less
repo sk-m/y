@@ -1,6 +1,7 @@
+@appMenubarHeight: 50px;
+
 #page-storage-file-explorer {
   width: 100%;
-  height: 100%;
 
   > .page-container {
     display: flex;
@@ -9,8 +10,11 @@
     height: 100%;
 
     > .browser-container {
+      display: flex;
+      flex-direction: column;
+
       width: 100%;
-      height: 100%;
+      height: calc(100vh - @appMenubarHeight);
 
       > .top-container {
         display: flex;
@@ -18,13 +22,13 @@
         align-items: center;
         gap: 1em;
 
+        flex-shrink: 0;
+
         padding: 1em;
-        padding-bottom: 0;
       }
 
       > .browser-contents {
         padding: 0.5em 1em;
-        margin-top: 1em;
 
         height: 100%;
 
@@ -36,15 +40,12 @@
           display: flex;
 
           flex-flow: wrap;
-          gap: 1em;
+          gap: 0.8em;
 
           > .item {
             position: relative;
 
-            width: 5%;
-
-            min-width: 120px;
-            max-width: 200px;
+            width: 120px;
 
             height: fit-content;
 
