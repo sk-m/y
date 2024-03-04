@@ -372,6 +372,7 @@ const FileExplorerPage: Component = () => {
     })
   }
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   onMount(() => {
     const keydownHandler = (event: KeyboardEvent) => {
       // Reset selection
@@ -398,12 +399,16 @@ const FileExplorerPage: Component = () => {
       if (event.key === "s" && event.ctrlKey) {
         event.preventDefault()
 
+        if (selectedEntries().size === 0) return
+
         downloadSelectedEntries()
       }
 
       // Quick delete selected entries (no confirmation)
       if (event.key === "Delete" && event.shiftKey) {
         event.preventDefault()
+
+        if (selectedEntries().size === 0) return
 
         const { folderIds, fileIds } = partitionEntries([...selectedEntries()])
 
