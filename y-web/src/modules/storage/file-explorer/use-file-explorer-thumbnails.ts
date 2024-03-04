@@ -59,6 +59,12 @@ export const useFileExplorerThumbnails = (
       endpointId: props.endpointId(),
       entryIds,
     }).catch((error) => {
+      const errorCode = (error as { code: string }).code
+
+      if (errorCode === "storage.entry_thumbnails.artifacts_disabled") {
+        return
+      }
+
       genericErrorToast(error)
     })
 
