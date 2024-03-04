@@ -67,7 +67,10 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
     ])
   }
 
-  const selectRange = (firstEntryIndex: number, lastEntryIndex: number) => {
+  const selectRange = (aIndex: number, bIndex: number) => {
+    const firstEntryIndex = Math.min(aIndex, bIndex)
+    const lastEntryIndex = Math.max(aIndex, bIndex)
+
     const entries = folderEntries()
     const entriesToSelect: IStorageEntry[] = []
 
