@@ -241,7 +241,7 @@
           "internal": "Other",
           "endpoint_not_found": "Target endpoint not found",
           "artifacts_disabled": "Artifacts are disabled for this endpoint",
-          "invalid_entry_ids_param": "Invalid entry_ids parameter",
+          "invalid_file_ids_param": "Invalid entry_ids parameter",
           "too_many_entries_requested": "Too many entries requested"
         }
       }

@@ -124,20 +124,11 @@ async fn get_subfolders_level(
     folder_ids: Vec<i64>,
     pool: &RequestPool,
 ) -> Result<(), String> {
-    let target_folder_ids_param = folder_ids
-        .iter()
-        .map(|id| id.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
-
     let next_level_folders = sqlx::query_as::<_, StorageFolderIdRow>(
-        format!(
-            "SELECT id FROM storage_folders WHERE endpoint_id = $1 AND parent_folder IN ({})",
-            target_folder_ids_param
-        )
-        .as_str(),
+        "SELECT id FROM storage_folders WHERE endpoint_id = $1 AND parent_folder = ANY($2)",
     )
     .bind(endpoint_id)
+    .bind(folder_ids)
     .fetch_all(pool)
     .await;
 
@@ -202,20 +193,11 @@ pub async fn resolve_entries(
 
     // Proccess files
     if target_files.len() > 0 {
-        let target_files_param = target_files
-            .iter()
-            .map(|id| id.to_string())
-            .collect::<Vec<String>>()
-            .join(",");
-
         let files = sqlx::query_as::<_, PartialStorageFileRow>(
-            format!(
-                "SELECT filesystem_id, name, extension FROM storage_files WHERE endpoint_id = $1 AND id IN ({})",
-                target_files_param
-            )
-            .as_str(),
+                "SELECT filesystem_id, name, extension FROM storage_files WHERE endpoint_id = $1 AND id = ANY($2)",
         )
         .bind(endpoint_id)
+        .bind(target_files)
         .fetch_all(pool)
         .await;
 
@@ -286,18 +268,6 @@ pub async fn delete_entries(
     // Delete the files from all of the folders we have found
     // At this point, we have travesed the storage tree and have found
     // all the entries that reside inside the target folders, on any level
-    let folder_ids_param = all_folders
-        .iter()
-        .map(|id| id.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
-
-    let target_files_param = target_files
-        .iter()
-        .map(|id| id.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
-
     let transaction = pool.begin().await;
 
     match transaction {
@@ -307,13 +277,10 @@ pub async fn delete_entries(
             // Delete files inside target folders
             if all_folders.len() > 0 {
                 let delete_folder_files_result = sqlx::query_scalar::<_, String>(
-                    format!(
-                        "DELETE FROM storage_files WHERE endpoint_id = $1 AND parent_folder IN ({}) RETURNING filesystem_id",
-                        folder_ids_param
-                    )
-                    .as_str(),
+                    "DELETE FROM storage_files WHERE endpoint_id = $1 AND parent_folder = ANY($2) RETURNING filesystem_id",
                 )
                 .bind(endpoint_id)
+                .bind(&all_folders)
                 .fetch_all(&mut *transaction)
                 .await;
 
@@ -327,13 +294,10 @@ pub async fn delete_entries(
             // Delete target files
             if target_files.len() > 0 {
                 let delete_target_files_result = sqlx::query_scalar::<_, String>(
-                    format!(
-                        "DELETE FROM storage_files WHERE endpoint_id = $1 AND id IN ({}) RETURNING filesystem_id",
-                        target_files_param
-                    )
-                    .as_str(),
+                        "DELETE FROM storage_files WHERE endpoint_id = $1 AND id = ANY($2) RETURNING filesystem_id",
                 )
                 .bind(endpoint_id)
+                .bind(target_files)
                 .fetch_all(&mut *transaction)
                 .await;
 
@@ -347,13 +311,10 @@ pub async fn delete_entries(
             // Delete target folders & subfolders
             if all_folders.len() > 0 {
                 let delete_folders_result = sqlx::query(
-                    format!(
-                        "DELETE FROM storage_folders WHERE endpoint_id = $1 AND id IN ({})",
-                        folder_ids_param
-                    )
-                    .as_str(),
+                    "DELETE FROM storage_folders WHERE endpoint_id = $1 AND id = ANY($2)",
                 )
                 .bind(endpoint_id)
+                .bind(&all_folders)
                 .execute(&mut *transaction)
                 .await;
 
