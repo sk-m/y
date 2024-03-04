@@ -1,6 +1,7 @@
 import { del, get, patch, post } from "@/app/core/request"
 
 import {
+  IStorageEntry,
   TCreateStorageFolder,
   TGetStorageEntries,
   TGetStorageEntryThumbnails,
@@ -60,7 +61,7 @@ export const storageFolderPath = async (input: GetStorageFolderPathInput) => {
 
 export type GetStorageEntryThumbnails = {
   endpointId: number | string
-  entryIds: number[]
+  fileIds: number[]
 }
 
 export const storageEntryThumbnails = async (
@@ -69,7 +70,7 @@ export const storageEntryThumbnails = async (
   const query = new URLSearchParams()
 
   query.set("endpoint_id", input.endpointId.toString())
-  query.set("entry_ids", input.entryIds.join(","))
+  query.set("file_ids", input.fileIds.join(","))
 
   return get(apiStorageEntryThumbnails, {
     query,
@@ -95,7 +96,8 @@ export const createStorageFolder = async (input: CreateStorageFolderInput) => {
 
 export type MoveStorageEntriesInput = {
   endpointId: number
-  entryIds: number[]
+  fileIds: number[]
+  folderIds: number[]
   targetFolderId: number | undefined
 }
 
@@ -103,7 +105,8 @@ export const moveStorageEntries = async (input: MoveStorageEntriesInput) => {
   return post(apiStorageMoveEntries, {
     body: {
       endpoint_id: input.endpointId,
-      entry_ids: input.entryIds,
+      file_ids: input.fileIds,
+      folder_ids: input.folderIds,
       target_folder_id: input.targetFolderId,
     },
   })
@@ -111,6 +114,7 @@ export const moveStorageEntries = async (input: MoveStorageEntriesInput) => {
 
 export type RenameStorageEntryInput = {
   endpointId: number
+  entryType: IStorageEntry["entry_type"]
   entryId: number
   name: string
 }
@@ -119,6 +123,7 @@ export const renameStorageEntry = async (input: RenameStorageEntryInput) => {
   return patch(apiStorageRenameEntry, {
     body: {
       endpoint_id: input.endpointId,
+      entry_type: input.entryType,
       entry_id: input.entryId,
       name: input.name,
     },

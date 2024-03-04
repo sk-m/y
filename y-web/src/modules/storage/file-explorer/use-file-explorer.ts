@@ -10,6 +10,8 @@ import {
   useStorageFolderPath,
 } from "../storage-entry/storage-entry.service"
 
+export type SelectedEntry = `${IStorageEntry["entry_type"]}:${number}`
+
 export type UseFileExplorerProps = {
   endpointId: () => string
   folderId: () => string | undefined
@@ -32,12 +34,11 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
 
   const folderPath = createMemo(() => $folderPath.data?.folder_path ?? [])
 
-  const [selectedEntries, setSelectedEntries] = createSignal<Set<number>>(
-    new Set(),
-    {
-      equals: false,
-    }
-  )
+  const [selectedEntries, setSelectedEntries] = createSignal<
+    Set<SelectedEntry>
+  >(new Set(), {
+    equals: false,
+  })
 
   const [lastSelectedEntryIndex, setLastSelectedEntryIndex] = createSignal<
     number | null
@@ -49,7 +50,11 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
   const temporarySelectedEntryIsInMultiselect = createMemo(
     () =>
       temporarySelectedEntry() !== null &&
-      selectedEntries().has(temporarySelectedEntry()!.id)
+      selectedEntries().has(
+        `${temporarySelectedEntry()!.entry_type}:${
+          temporarySelectedEntry()!.id
+        }`
+      )
   )
 
   const invalidateEntries = async () => {
@@ -63,27 +68,26 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
   }
 
   const selectRange = (firstEntryIndex: number, lastEntryIndex: number) => {
-    const entryIdsToSelect: number[] = []
-
     const entries = folderEntries()
+    const entriesToSelect: IStorageEntry[] = []
 
     for (let index = firstEntryIndex; index <= lastEntryIndex; index++) {
       if (entries[index] !== undefined) {
-        entryIdsToSelect.push(entries[index]!.id)
+        entriesToSelect.push(entries[index]!)
       }
     }
 
-    const firstEntryId = entryIdsToSelect[0]
+    const firstEntryId = entriesToSelect[0]
     // eslint-disable-next-line unicorn/prefer-at
-    const lastEntryId = entryIdsToSelect[entryIdsToSelect.length - 1]
+    const lastEntryId = entriesToSelect[entriesToSelect.length - 1]
 
     if (firstEntryId === undefined || lastEntryId === undefined) return
 
     batch(() => {
       setLastSelectedEntryIndex(lastEntryIndex)
       setSelectedEntries((currentEntries) => {
-        for (const entry of entryIdsToSelect) {
-          currentEntries.add(entry)
+        for (const entry of entriesToSelect) {
+          currentEntries.add(`${entry.entry_type}:${entry.id}`)
         }
 
         return currentEntries
@@ -92,18 +96,20 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
   }
 
   const selectEntry = (entryIndex: number) => {
-    const entryId = folderEntries()[entryIndex]?.id
+    const targetEntry = folderEntries()[entryIndex]
 
-    if (entryId === undefined) return
+    if (targetEntry === undefined) return
 
     batch(() => {
       setLastSelectedEntryIndex(entryIndex)
 
       setSelectedEntries((entries) => {
-        if (entries.has(entryId)) {
-          entries.delete(entryId)
+        const targetEntrySignature: SelectedEntry = `${targetEntry.entry_type}:${targetEntry.id}`
+
+        if (entries.has(targetEntrySignature)) {
+          entries.delete(targetEntrySignature)
         } else {
-          entries.add(entryId)
+          entries.add(targetEntrySignature)
         }
 
         return entries

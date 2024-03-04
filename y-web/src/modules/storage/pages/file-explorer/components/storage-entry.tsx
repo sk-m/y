@@ -31,7 +31,12 @@ export type StorageEntryProps = {
 export const StorageEntry: Component<StorageEntryProps> = (props) => {
   let nameFieldRef: HTMLInputElement
 
-  const thumbnail = createMemo(() => props.thumbnails?.[props.entry.id])
+  // prettier-ignore
+  const thumbnail = createMemo(() =>
+    (props.entry.entry_type === "file"
+      ? props.thumbnails?.[props.entry.id]
+      : null)
+  )
 
   createEffect(() => {
     if (props.isRenaming) {

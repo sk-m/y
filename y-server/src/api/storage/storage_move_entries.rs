@@ -9,7 +9,8 @@ use crate::util::RequestPool;
 #[derive(Deserialize)]
 struct StorageMoveEntriesInput {
     endpoint_id: i32,
-    entry_ids: Vec<i64>,
+    file_ids: Vec<i64>,
+    folder_ids: Vec<i64>,
     target_folder_id: Option<i64>,
 }
 
@@ -33,9 +34,10 @@ async fn storage_move_entries(
     let form = form.into_inner();
     let endpoint_id = form.endpoint_id;
     let target_folder_id = form.target_folder_id;
-    let entry_ids = form.entry_ids;
+    let file_ids = form.file_ids;
+    let folder_ids = form.folder_ids;
 
-    let result = move_entries(endpoint_id, entry_ids, target_folder_id, &**pool).await;
+    let result = move_entries(endpoint_id, folder_ids, file_ids, target_folder_id, &**pool).await;
 
     match result {
         Ok(_) => HttpResponse::Ok().body("{}"),

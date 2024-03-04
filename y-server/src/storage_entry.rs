@@ -1,11 +1,19 @@
 use std::{collections::HashMap, env, fs::remove_file, path::Path, process::Command};
 
 use async_recursion::async_recursion;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
 use log::*;
+
+#[derive(Serialize, Deserialize)]
+pub enum StorageEntryType {
+    #[serde(rename = "file")]
+    File,
+    #[serde(rename = "folder")]
+    Folder,
+}
 
 #[derive(FromRow, Serialize)]
 pub struct StorageFolder {
@@ -408,42 +416,52 @@ pub async fn delete_entries(
  * Move enties to a new folder
  *
  * @param endpoint_id - Storage endpoint id
- * @param entry_ids - Entries to move
+ * @param folder_ids - Folders to move
+ * @param file_ids - Files to move
  * @param target_folder_id - Id of the folder where the entries will be moved to
  * @param pool - Database connection pool
 */
 pub async fn move_entries(
     endpoint_id: i32,
-    entry_ids: Vec<i64>,
+    folder_ids: Vec<i64>,
+    file_ids: Vec<i64>,
     target_folder_id: Option<i64>,
     pool: &RequestPool,
 ) -> Result<(), String> {
-    if entry_ids.len() == 0 {
+    if file_ids.len() == 0 && folder_ids.len() == 0 {
         return Ok(());
     }
 
     let mut transaction = pool.begin().await.unwrap();
 
-    let files_result = sqlx::query(
-        "UPDATE storage_files SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
-    )
-    .bind(target_folder_id)
-    .bind(&entry_ids)
-    .bind(endpoint_id)
-    .execute(&mut *transaction)
-    .await;
+    if file_ids.len() > 0 {
+        let files_result = sqlx::query(
+            "UPDATE storage_files SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
+        )
+        .bind(target_folder_id)
+        .bind(file_ids)
+        .bind(endpoint_id)
+        .execute(&mut *transaction)
+        .await;
 
-    let folders_result = sqlx::query(
-        "UPDATE storage_folders SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
-    )
-    .bind(target_folder_id)
-    .bind(&entry_ids)
-    .bind(endpoint_id)
-    .execute(&mut *transaction)
-    .await;
+        if files_result.is_err() {
+            return Err("Could not move storage files".to_string());
+        }
+    }
 
-    if files_result.is_err() || folders_result.is_err() {
-        return Err("Could not move storage entries".to_string());
+    if folder_ids.len() > 0 {
+        let folders_result = sqlx::query(
+            "UPDATE storage_folders SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
+        )
+        .bind(target_folder_id)
+        .bind(folder_ids)
+        .bind(endpoint_id)
+        .execute(&mut *transaction)
+        .await;
+
+        if folders_result.is_err() {
+            return Err("Could not move storage folders".to_string());
+        }
     }
 
     let transaction_result = transaction.commit().await;
@@ -457,30 +475,42 @@ pub async fn move_entries(
 
 pub async fn rename_entry(
     endpoint_id: i32,
+    entry_type: StorageEntryType,
     entry_id: i64,
     new_name: &str,
     pool: &RequestPool,
 ) -> Result<(), String> {
     let mut transaction = pool.begin().await.unwrap();
 
-    let file_result =
-        sqlx::query("UPDATE storage_files SET name = $1 WHERE id = $2 AND endpoint_id = $3")
+    match entry_type {
+        StorageEntryType::File => {
+            let file_result = sqlx::query(
+                "UPDATE storage_files SET name = $1 WHERE id = $2 AND endpoint_id = $3",
+            )
             .bind(new_name)
             .bind(entry_id)
             .bind(endpoint_id)
             .execute(&mut *transaction)
             .await;
 
-    let folder_result =
-        sqlx::query("UPDATE storage_folders SET name = $1 WHERE id = $2 AND endpoint_id = $3")
+            if file_result.is_err() {
+                return Err("Could not rename a storage file".to_string());
+            }
+        }
+        StorageEntryType::Folder => {
+            let folder_result = sqlx::query(
+                "UPDATE storage_folders SET name = $1 WHERE id = $2 AND endpoint_id = $3",
+            )
             .bind(new_name)
             .bind(entry_id)
             .bind(endpoint_id)
             .execute(&mut *transaction)
             .await;
 
-    if file_result.is_err() || folder_result.is_err() {
-        return Err("Could not rename storage entry".to_string());
+            if folder_result.is_err() {
+                return Err("Could not rename a storage folder".to_string());
+            }
+        }
     }
 
     let transaction_result = transaction.commit().await;

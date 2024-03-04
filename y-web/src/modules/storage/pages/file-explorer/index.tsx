@@ -30,7 +30,10 @@ import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 import { useFilesDrop } from "@/app/core/util/use-files-drop"
 import { DropFilesHere } from "@/modules/storage/components/drop-files-here"
-import { useFileExplorer } from "@/modules/storage/file-explorer/use-file-explorer"
+import {
+  SelectedEntry,
+  useFileExplorer,
+} from "@/modules/storage/file-explorer/use-file-explorer"
 import { useFileExplorerThumbnails } from "@/modules/storage/file-explorer/use-file-explorer-thumbnails"
 import {
   createStorageFolder,
@@ -40,7 +43,10 @@ import {
   moveStorageEntries,
   renameStorageEntry,
 } from "@/modules/storage/storage-entry/storage-entry.api"
-import { TUploadEntries } from "@/modules/storage/storage-entry/storage-entry.codecs"
+import {
+  IStorageEntry,
+  TUploadEntries,
+} from "@/modules/storage/storage-entry/storage-entry.codecs"
 import { FileWithPath } from "@/modules/storage/upload"
 
 import { FileExplorerPath } from "./components/file-explorer-path"
@@ -193,10 +199,15 @@ const FileExplorerPage: Component = () => {
     )
   }
 
-  const renameEntry = (entryId: number, name: string) => {
+  const renameEntry = (
+    entryId: number,
+    entryType: IStorageEntry["entry_type"],
+    name: string
+  ) => {
     $renameEntry.mutate(
       {
         endpointId: Number.parseInt(params.endpointId as string, 10),
+        entryType,
         entryId,
         name,
       },
@@ -210,13 +221,28 @@ const FileExplorerPage: Component = () => {
     )
   }
 
-  const moveEntries = (entryIds: number[]) => {
-    if (entryIds.length === 0) return
+  const moveEntries = (entries: SelectedEntry[]) => {
+    if (entries.length === 0) return
+
+    const fileIds = []
+    const folderIds = []
+
+    for (const entry of entries) {
+      const entrySignatureSegments = entry.split(":")
+      const entryId = Number.parseInt(entrySignatureSegments[1]!, 10)
+
+      if (entrySignatureSegments[0] === "file") {
+        fileIds.push(entryId)
+      } else {
+        folderIds.push(entryId)
+      }
+    }
 
     $moveEntries.mutate(
       {
         endpointId: Number.parseInt(params.endpointId as string, 10),
-        entryIds,
+        fileIds,
+        folderIds,
         targetFolderId: folderId(),
       },
       {
@@ -318,20 +344,18 @@ const FileExplorerPage: Component = () => {
     })
   }
 
-  // TODO This should be refactored, its horribly inefficient.
   const downloadSelectedEntries = () => {
-    const folderIds: number[] = []
-    const fileIds: number[] = []
+    const folderIds = []
+    const fileIds = []
 
-    for (const entryId of selectedEntries()) {
-      const entry = folderEntries().find((e) => e.id === entryId)
+    for (const selectedEntry of selectedEntries()) {
+      const entrySignatureSegments = selectedEntry.split(":")
+      const entryId = Number.parseInt(entrySignatureSegments[1]!, 10)
 
-      if (entry) {
-        if (entry.entry_type === "folder") {
-          folderIds.push(entryId)
-        } else {
-          fileIds.push(entryId)
-        }
+      if (entrySignatureSegments[0] === "file") {
+        fileIds.push(entryId)
+      } else {
+        folderIds.push(entryId)
       }
     }
 
@@ -440,7 +464,7 @@ const FileExplorerPage: Component = () => {
                 <ContextMenuLink
                   icon="remove_selection"
                   onClick={() => {
-                    setSelectedEntries(new Set<number>())
+                    setSelectedEntries(new Set<SelectedEntry>())
                     closeSelectionContextMenu()
                   }}
                 >
@@ -474,7 +498,7 @@ const FileExplorerPage: Component = () => {
                     <ContextMenuLink
                       icon="remove_selection"
                       onClick={() => {
-                        setSelectedEntries(new Set<number>())
+                        setSelectedEntries(new Set<SelectedEntry>())
                       }}
                     >
                       Remove selection
@@ -495,20 +519,20 @@ const FileExplorerPage: Component = () => {
                     <ContextMenuLink
                       icon="delete_sweep"
                       onClick={() => {
-                        const folderIds: number[] = []
-                        const fileIds: number[] = []
+                        const folderIds = []
+                        const fileIds = []
 
-                        for (const entryId of selectedEntries()) {
-                          const entry = folderEntries().find(
-                            (e) => e.id === entryId
+                        for (const entry of selectedEntries()) {
+                          const entrySignatureSegments = entry.split(":")
+                          const entryId = Number.parseInt(
+                            entrySignatureSegments[1]!,
+                            10
                           )
 
-                          if (entry) {
-                            if (entry.entry_type === "folder") {
-                              folderIds.push(entryId)
-                            } else {
-                              fileIds.push(entryId)
-                            }
+                          if (entrySignatureSegments[0] === "file") {
+                            fileIds.push(entryId)
+                          } else {
+                            folderIds.push(entryId)
                           }
                         }
 
@@ -659,7 +683,7 @@ const FileExplorerPage: Component = () => {
               <For each={folderEntries()}>
                 {(entry, index) => {
                   const selected = createMemo(() =>
-                    selectedEntries().has(entry.id)
+                    selectedEntries().has(`${entry.entry_type}:${entry.id}`)
                   )
 
                   const temporarySelected = createMemo(
@@ -692,7 +716,7 @@ const FileExplorerPage: Component = () => {
                         if (entry.name === newName || newName === "") {
                           setEntryToRename(null)
                         } else {
-                          renameEntry(entry.id, newName)
+                          renameEntry(entry.id, entry.entry_type, newName)
                         }
                       }}
                       onCancelRename={() => setEntryToRename(null)}

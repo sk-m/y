@@ -46,18 +46,18 @@ export const useFileExplorerThumbnails = (
     }
 
     // Don't load thumbnails that we have already loaded
-    const entryIds = fileIds()
+    const newFileIds = fileIds()
       .slice(fromIndex, toIndex)
       .filter((id) => !thumbnails()[id])
 
-    if (entryIds.length === 0) {
+    if (newFileIds.length === 0) {
       setLastThumbnailIndex(toIndex)
       return
     }
 
     const newThumbnailsResponse = await storageEntryThumbnails({
       endpointId: props.endpointId(),
-      entryIds,
+      fileIds: newFileIds,
     }).catch((error) => {
       const errorCode = (error as { code: string }).code
 

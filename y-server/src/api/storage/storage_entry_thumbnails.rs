@@ -27,7 +27,7 @@ struct EntryRow {
 #[derive(Deserialize)]
 struct QueryParams {
     endpoint_id: i32,
-    entry_ids: String,
+    file_ids: String,
 }
 
 #[derive(Serialize)]
@@ -71,17 +71,17 @@ async fn storage_entry_thumbnails(
 
     let endpoint_artifacts_path = endpoint.artifacts_path.unwrap();
 
-    let entry_ids_regex = Regex::new(r"^[0-9\,]+$").unwrap();
-    if !entry_ids_regex.is_match(&query.entry_ids) {
-        return error("storage.entry_thumbnails.invalid_entry_ids_param");
+    let file_ids_regex = Regex::new(r"^[0-9\,]+$").unwrap();
+    if !file_ids_regex.is_match(&query.file_ids) {
+        return error("storage.entry_thumbnails.invalid_file_ids_param");
     }
 
-    let entry_ids_split = query.entry_ids.split(",");
+    let file_ids_split = query.file_ids.split(",");
     let mut entries_count = 0;
 
-    for entry_id in entry_ids_split {
-        if entry_id.parse::<i64>().is_err() {
-            return error("storage.entry_thumbnails.invalid_entry_ids_param");
+    for file_id in file_ids_split {
+        if file_id.parse::<i64>().is_err() {
+            return error("storage.entry_thumbnails.invalid_file_ids_param");
         }
 
         if entries_count > MAX_ENTRIES_PER_REEQUEST {
@@ -93,10 +93,10 @@ async fn storage_entry_thumbnails(
 
     let mut thumbnails: HashMap<String, String> = HashMap::new();
 
-    let entries = sqlx::query_as::<_, EntryRow>(
+    let file_entries = sqlx::query_as::<_, EntryRow>(
         format!(
             "SELECT id, filesystem_id FROM storage_files WHERE endpoint_id = $1 AND id IN ({})",
-            query.entry_ids
+            query.file_ids
         )
         .as_str(),
     )
@@ -104,12 +104,12 @@ async fn storage_entry_thumbnails(
     .fetch_all(&**pool)
     .await;
 
-    match entries {
-        Ok(entries) => {
-            for entry in entries {
+    match file_entries {
+        Ok(file_entries) => {
+            for file_entry in file_entries {
                 let thumbnail_path = Path::new(endpoint_artifacts_path.as_str())
                     .join("thumbnails")
-                    .join(entry.filesystem_id)
+                    .join(file_entry.filesystem_id)
                     .with_extension("webp");
 
                 if thumbnail_path.exists() {
@@ -118,7 +118,7 @@ async fn storage_entry_thumbnails(
                     if thumbnail.is_ok() {
                         let thumbnail_base64 = BASE64_STANDARD.encode(thumbnail.unwrap());
 
-                        thumbnails.insert(entry.id.to_string(), thumbnail_base64);
+                        thumbnails.insert(file_entry.id.to_string(), thumbnail_base64);
                     }
                 }
             }
