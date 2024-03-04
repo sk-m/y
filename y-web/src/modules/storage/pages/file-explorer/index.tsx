@@ -12,6 +12,7 @@ import {
   createSignal,
   on,
   onCleanup,
+  onMount,
 } from "solid-js"
 import { createStore } from "solid-js/store"
 
@@ -163,6 +164,29 @@ const FileExplorerPage: Component = () => {
     )
   )
 
+  const partitionEntries = (entries: SelectedEntry[]) => {
+    if (entries.length === 0) return { folderIds: [], fileIds: [] }
+
+    const folderIds = []
+    const fileIds = []
+
+    for (const entry of entries) {
+      const entrySignatureSegments = entry.split(":")
+      const entryId = Number.parseInt(entrySignatureSegments[1]!, 10)
+
+      if (entrySignatureSegments[0] === "file") {
+        fileIds.push(entryId)
+      } else {
+        folderIds.push(entryId)
+      }
+    }
+
+    return {
+      folderIds,
+      fileIds,
+    }
+  }
+
   const createFolder = (newFolderName: string) => {
     $createFolder.mutate(
       {
@@ -222,21 +246,7 @@ const FileExplorerPage: Component = () => {
   }
 
   const moveEntries = (entries: SelectedEntry[]) => {
-    if (entries.length === 0) return
-
-    const fileIds = []
-    const folderIds = []
-
-    for (const entry of entries) {
-      const entrySignatureSegments = entry.split(":")
-      const entryId = Number.parseInt(entrySignatureSegments[1]!, 10)
-
-      if (entrySignatureSegments[0] === "file") {
-        fileIds.push(entryId)
-      } else {
-        folderIds.push(entryId)
-      }
-    }
+    const { fileIds, folderIds } = partitionEntries(entries)
 
     $moveEntries.mutate(
       {
@@ -345,19 +355,7 @@ const FileExplorerPage: Component = () => {
   }
 
   const downloadSelectedEntries = () => {
-    const folderIds = []
-    const fileIds = []
-
-    for (const selectedEntry of selectedEntries()) {
-      const entrySignatureSegments = selectedEntry.split(":")
-      const entryId = Number.parseInt(entrySignatureSegments[1]!, 10)
-
-      if (entrySignatureSegments[0] === "file") {
-        fileIds.push(entryId)
-      } else {
-        folderIds.push(entryId)
-      }
-    }
+    const { folderIds, fileIds } = partitionEntries([...selectedEntries()])
 
     void downloadStorageFilesZip({
       endpointId: params.endpointId as string,
@@ -373,6 +371,52 @@ const FileExplorerPage: Component = () => {
       fileIds: [],
     })
   }
+
+  onMount(() => {
+    const keydownHandler = (event: KeyboardEvent) => {
+      // Reset selection
+      if (event.key === "Escape") {
+        event.preventDefault()
+
+        resetSelection()
+      }
+
+      // Select all
+      if (event.key === "a" && event.ctrlKey) {
+        event.preventDefault()
+
+        setSelectedEntries(
+          new Set<SelectedEntry>(
+            folderEntries().map(
+              (entry) => `${entry.entry_type}:${entry.id}`
+            ) as SelectedEntry[]
+          )
+        )
+      }
+
+      // Download selected entries
+      if (event.key === "s" && event.ctrlKey) {
+        event.preventDefault()
+
+        downloadSelectedEntries()
+      }
+
+      // Quick delete selected entries (no confirmation)
+      if (event.key === "Delete" && event.shiftKey) {
+        event.preventDefault()
+
+        const { folderIds, fileIds } = partitionEntries([...selectedEntries()])
+
+        deleteEntries(folderIds, fileIds)
+      }
+    }
+
+    window.addEventListener("keydown", keydownHandler)
+
+    onCleanup(() => {
+      window.removeEventListener("keydown", keydownHandler)
+    })
+  })
 
   return (
     <div
@@ -519,22 +563,9 @@ const FileExplorerPage: Component = () => {
                     <ContextMenuLink
                       icon="delete_sweep"
                       onClick={() => {
-                        const folderIds = []
-                        const fileIds = []
-
-                        for (const entry of selectedEntries()) {
-                          const entrySignatureSegments = entry.split(":")
-                          const entryId = Number.parseInt(
-                            entrySignatureSegments[1]!,
-                            10
-                          )
-
-                          if (entrySignatureSegments[0] === "file") {
-                            fileIds.push(entryId)
-                          } else {
-                            folderIds.push(entryId)
-                          }
-                        }
+                        const { folderIds, fileIds } = partitionEntries([
+                          ...selectedEntries(),
+                        ])
 
                         deleteEntries(folderIds, fileIds)
                         closeEntryContextMenu()
