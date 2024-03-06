@@ -8,11 +8,16 @@ You can download the latest version of y on the [releases](https://github.com/sk
 
 ### 1. Prerequisites
 
-In order to set up y on your server, you first will need:
+In order to set up y on your server, you will first need:
 
 1. A linux machine.
-2. PostgreSQL.
+2. PostgreSQL (version 16.0 or higher).
 3. A web server (nginx/apache/etc.).
+
+"Storage" feature _optional_ dependencies:
+
+1. `imagemagick` - thumbnail generation for image files.
+2. `ffmpeg` - thumbnail generation for video files.
 
 ### 2. Setting up PostgreSQL
 

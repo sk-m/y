@@ -6,6 +6,7 @@ import {
   createMemo,
   createSignal,
   on,
+  onCleanup,
   onMount,
 } from "solid-js"
 
@@ -75,7 +76,7 @@ export const KeyValue = <TValue,>(props: KeyValueProps<TValue>) => {
   })
 
   onMount(() => {
-    inputRef?.addEventListener("keydown", (event) => {
+    const handler = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setValue(() => props.value)
         return setActive(false)
@@ -85,6 +86,12 @@ export const KeyValue = <TValue,>(props: KeyValueProps<TValue>) => {
         setActive(false)
         props.onChange(inputRef!.value as TValue)
       }
+    }
+
+    inputRef?.addEventListener("keydown", handler)
+
+    onCleanup(() => {
+      inputRef?.removeEventListener("keydown", handler)
     })
   })
 

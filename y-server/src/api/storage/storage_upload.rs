@@ -1,5 +1,6 @@
 use log::*;
-use std::{collections::HashMap, fs::OpenOptions, ops::Deref, path::Path};
+use std::fs;
+use std::{collections::HashMap, fs::OpenOptions, path::Path};
 
 use actix_multipart::Multipart;
 use actix_web::{
@@ -8,15 +9,29 @@ use actix_web::{
     HttpResponse, Responder,
 };
 use futures::StreamExt;
-use log::*;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::time::Instant;
 
-use crate::{
-    request::error, storage_endpoint::get_storage_endpoint, user::get_client_rights,
-    util::RequestPool,
-};
+use crate::storage_entry::{generate_image_entry_thumbnail, generate_video_entry_thumbnail};
+use crate::{storage_endpoint::get_storage_endpoint, user::get_client_rights, util::RequestPool};
+
+const MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION: u64 = 50_000_000;
+
+// Actix Multipart does not like us returning from a handler early, before the whole `Multipart` stream is consumed.
+// If we do that, the connection will be dropped and the server will panic. We definitely do not want that to happen...
+// So, we need to sink the whole stream and only then return an error response.
+async fn sink_and_error(error_code: &str, payload: &mut Multipart) -> HttpResponse {
+    use crate::request;
+
+    payload
+        .map(Ok)
+        .forward(futures::sink::drain())
+        .await
+        .unwrap();
+
+    request::error(error_code)
+}
 
 #[derive(Serialize)]
 struct StorageUploadOutput {
@@ -41,6 +56,7 @@ async fn storage_upload(
     req: actix_web::HttpRequest,
 ) -> impl Responder {
     let now = Instant::now();
+    let mut uploaded_files: Vec<String> = Vec::new();
 
     // Check the rights
     let client_rights = get_client_rights(&pool, &req).await;
@@ -51,7 +67,7 @@ async fn storage_upload(
         .is_some();
 
     if !action_allowed {
-        return error("storage.upload.unauthorized");
+        return sink_and_error("storage.upload.unauthorized", &mut payload).await;
     }
 
     // Get the target endpoint's base path, so we know where to save the files
@@ -61,13 +77,13 @@ async fn storage_upload(
     let target_endpoint = get_storage_endpoint(endpoint_id, &pool).await;
 
     if target_endpoint.is_err() {
-        return error("storage.upload.endpoint_not_found");
+        return sink_and_error("storage.upload.endpoint_not_found", &mut payload).await;
     }
 
     let target_endpoint = target_endpoint.unwrap();
 
     if target_endpoint.status != "active" {
-        return error("storage.upload.endpoint_not_active");
+        return sink_and_error("storage.upload.endpoint_not_active", &mut payload).await;
     }
 
     let target_endpoint_base_path = Path::new(&target_endpoint.base_path);
@@ -134,7 +150,7 @@ async fn storage_upload(
                 // Id of the folder, to which the file's path (`filename`) is relative to.
                 // This is `null` if the target destination of the whole upload is root, or an id,
                 // if a user is uploading all the files into some (already existing) folder.
-                let mut parent_folder_id: Option<i64> = target_folder_id.clone();
+                let mut parent_folder_id = target_folder_id.clone();
 
                 if file_relative_path.len() != 0 {
                     // This file is not being uploaded to the relative root, it has a relative path!
@@ -153,13 +169,13 @@ async fn storage_upload(
                         // findings. No need to traverse the relative path again, just use the
                         // folder_id we've found before.
 
-                        Some(cached_path_id.unwrap().deref().clone())
+                        Some(cached_path_id.unwrap().clone())
                     } else {
                         let file_relative_path_segments = file_relative_path.split("/");
 
-                        let mut folder_id: Option<i64> = target_folder_id.clone();
+                        let mut folder_id = target_folder_id.clone();
 
-                        let mut path_so_far = Vec::<&str>::new();
+                        let mut path_so_far: Vec<&str> = Vec::new();
 
                         // As long as it's true, we'll try to query the database for each path
                         // segment in order to find that segment's actual folder id.
@@ -226,7 +242,11 @@ async fn storage_upload(
                                             path_ids_cache.insert(path_to_cache, id);
                                         }
                                         Err(_) => {
-                                            return error("storage.upload.internal");
+                                            return sink_and_error(
+                                                "storage.upload.internal",
+                                                &mut payload,
+                                            )
+                                            .await;
                                         }
                                     }
                                 }
@@ -264,13 +284,13 @@ async fn storage_upload(
                         let rollback_result = file_transaction.rollback().await;
 
                         if rollback_result.is_err() {
-                            return error("storage.upload.internal");
+                            return sink_and_error("storage.upload.internal", &mut payload).await;
                         }
                     } else {
                         // We created a row in the database, now let's actually write the
                         // file onto the filesystem
-                        let path = target_endpoint_base_path.join(file_id);
-                        let file = OpenOptions::new().write(true).create_new(true).open(path);
+                        let path = target_endpoint_base_path.join(&file_id);
+                        let file = OpenOptions::new().write(true).create_new(true).open(&path);
 
                         if let Ok(mut file) = file {
                             while let Some(chunk) = field.next().await {
@@ -283,20 +303,28 @@ async fn storage_upload(
                                     if res.is_err() {
                                         error!("{}", res.unwrap_err());
 
-                                        return error("storage.upload.internal");
+                                        return sink_and_error(
+                                            "storage.upload.internal",
+                                            &mut payload,
+                                        )
+                                        .await;
                                     }
                                 } else {
                                     error!("{}", chunk.unwrap_err());
 
-                                    return error("storage.upload.internal");
+                                    return sink_and_error("storage.upload.internal", &mut payload)
+                                        .await;
                                 }
                             }
 
                             let commit_result = file_transaction.commit().await;
 
                             if commit_result.is_err() {
-                                return error("storage.upload.internal");
+                                return sink_and_error("storage.upload.internal", &mut payload)
+                                    .await;
                             }
+
+                            uploaded_files.push(file_id);
                         } else {
                             // For some reason, we could not write the file onto the filesystem.
                             // This is not critical, so we will just rollback the transaction
@@ -307,24 +335,84 @@ async fn storage_upload(
                             let rollback_result = file_transaction.rollback().await;
 
                             if rollback_result.is_err() {
-                                return error("storage.upload.internal");
+                                return sink_and_error("storage.upload.internal", &mut payload)
+                                    .await;
                             }
                         }
                     }
                 } else {
-                    return error("storage.upload.internal");
+                    return sink_and_error("storage.upload.internal", &mut payload).await;
                 }
             } else {
-                return error("storage.upload.no_filename");
+                return sink_and_error("storage.upload.no_filename", &mut payload).await;
             }
         } else {
-            return error("storage.upload.internal");
+            return sink_and_error("storage.upload.internal", &mut payload).await;
         }
     }
 
     if cfg!(debug_assertions) {
         info!("storage/upload: {}ms", now.elapsed().as_millis());
+        dbg!(&uploaded_files);
     }
+
+    // Generate thumbnails
+    std::thread::spawn(move || {
+        if let Some(target_endpoint_artifacts_path) = &target_endpoint.artifacts_path {
+            for filesystem_id in uploaded_files {
+                let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
+
+                let file_kind = infer::get_from_path(&path);
+
+                if !file_kind.is_err() {
+                    if let Some(file_kind) = file_kind.unwrap() {
+                        let mime_type = file_kind.mime_type();
+
+                        match mime_type {
+                            "image/jpeg" | "image/png" | "image/gif" | "image/webp"
+                            | "image/bmp" => {
+                                let file_metadata =
+                                    fs::File::open(&path).unwrap().metadata().unwrap();
+
+                                if file_metadata.len() <= MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION {
+                                    let generate_thumbnail_result = generate_image_entry_thumbnail(
+                                        &filesystem_id,
+                                        &target_endpoint.base_path.as_str(),
+                                        &target_endpoint_artifacts_path.as_str(),
+                                    );
+
+                                    if generate_thumbnail_result.is_err() {
+                                        error!(
+                                            "Failed to create a thumbnail for an uploaded image file. {}",
+                                            generate_thumbnail_result.unwrap_err()
+                                        );
+                                    }
+                                }
+                            }
+
+                            "video/mp4" | "video/webm" | "video/mov" | "video/avi"
+                            | "video/mpeg" | "video/quicktime" => {
+                                let generate_thumbnail_result = generate_video_entry_thumbnail(
+                                    &filesystem_id,
+                                    &target_endpoint.base_path.as_str(),
+                                    &target_endpoint_artifacts_path.as_str(),
+                                );
+
+                                if generate_thumbnail_result.is_err() {
+                                    error!(
+                                        "Failed to create a thumbnail for an uploaded video file. {}",
+                                        generate_thumbnail_result.unwrap_err()
+                                    );
+                                }
+                            }
+
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+    });
 
     HttpResponse::Ok().json(web::Json(StorageUploadOutput { skipped_files }))
 }

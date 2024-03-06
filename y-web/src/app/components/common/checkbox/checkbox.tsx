@@ -1,4 +1,11 @@
-import { Component, Show, createEffect, createSignal, onMount } from "solid-js"
+import {
+  Component,
+  Show,
+  createEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+} from "solid-js"
 
 import { Icon } from "../icon/icon"
 import "./checkbox.less"
@@ -31,9 +38,16 @@ export const Checkbox: Component<CheckboxProps> = (props) => {
 
   onMount(() => {
     if (!isControlled) {
-      setChecked(ref.checked)
-      ref.addEventListener("change", () => {
+      const handler = () => {
         setChecked(ref.checked)
+      }
+
+      handler()
+
+      ref.addEventListener("change", handler)
+
+      onCleanup(() => {
+        ref.removeEventListener("change", handler)
       })
     }
   })

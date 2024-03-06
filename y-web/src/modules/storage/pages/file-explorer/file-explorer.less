@@ -1,6 +1,7 @@
+@appMenubarHeight: 50px;
+
 #page-storage-file-explorer {
   width: 100%;
-  height: 100%;
 
   > .page-container {
     display: flex;
@@ -9,8 +10,11 @@
     height: 100%;
 
     > .browser-container {
+      display: flex;
+      flex-direction: column;
+
       width: 100%;
-      height: 100%;
+      height: calc(100vh - @appMenubarHeight);
 
       > .top-container {
         display: flex;
@@ -18,55 +22,73 @@
         align-items: center;
         gap: 1em;
 
-        padding: 1em;
-        padding-bottom: 0;
+        min-height: 30px;
+
+        flex-shrink: 0;
+
+        padding: 0.5em 1em;
       }
 
       > .browser-contents {
         padding: 0.5em 1em;
-        margin-top: 1em;
 
         height: 100%;
 
         box-sizing: border-box;
 
-        overflow-y: auto;
+        overflow-y: overlay;
+
+        &::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: var(--color-border-15);
+
+          border: 2px solid white;
+          border-radius: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+          background: var(--color-border-2);
+        }
 
         > .items {
           display: flex;
 
           flex-flow: wrap;
-          gap: 1em;
+          gap: 0.8em;
 
           > .item {
             position: relative;
 
-            width: 5%;
-
-            min-width: 120px;
-            max-width: 200px;
+            width: 120px;
 
             height: fit-content;
 
             border-radius: 6px;
 
-            background-color: var(--color-grey-1);
-            box-shadow: 0 0 0 1px var(--color-border-15);
+            background-color: var(--color-grey-15);
 
             transition: 0.15s;
 
             cursor: pointer;
 
+            &.temporary-selected,
             &:hover {
-              box-shadow: 0 0 0 1px var(--color-border-2),
+              box-shadow: 0 0 0 1px var(--color-border-25),
                 0 3px 15px rgba(21, 23, 46, 0.1);
 
               background-color: var(--color-grey-2);
 
               > .item-info {
-                background-color: var(--color-grey-1);
-                // border-color: var(--color-border-2);
-                box-shadow: 0 0 0 1px var(--color-border-2);
+                box-shadow: 0 0 0 1px var(--color-border-25);
+
+                background-color: var(--color-grey-15);
               }
             }
 
@@ -79,14 +101,23 @@
             }
 
             &.selected {
-              background-color: var(--color-primary-t-15);
+              background-color: var(--color-primary-t-2);
+              box-shadow: 0 0 0 2px var(--color-primary-t-2),
+                0 3px 15px var(--color-primary-t-15);
 
               &:hover {
-                box-shadow: 0 0 0 2px var(--color-primary-t-2),
+                background-color: var(--color-primary-t-25);
+
+                box-shadow: 0 0 0 2px var(--color-primary-t-25),
                   0 3px 15px var(--color-primary-t-15);
+
+                > .item-info {
+                  background-color: var(--color-primary-o-1);
+                }
               }
 
               > .item-info {
+                background-color: var(--color-primary-o-1);
                 box-shadow: none;
               }
 
@@ -97,11 +128,23 @@
               }
             }
 
+            &.temporary-selected {
+              transform: scale(0.95);
+            }
+
             > .item-select-container {
               position: absolute;
+              z-index: 2;
 
               top: 0.5em;
               left: 0.5em;
+
+              padding: 2px;
+
+              background-color: rgba(255, 255, 255, 0.6);
+              // box-shadow: 0 0 0 1px var(--color-border-2);
+
+              border-radius: 6px;
 
               // hidden state
               opacity: 0;
@@ -109,6 +152,9 @@
             }
 
             > .item-thumb {
+              position: relative;
+              z-index: 0;
+
               width: 100%;
               height: 6em;
 
@@ -116,6 +162,16 @@
               border-top-left-radius: 6px;
 
               transition: 0.15s;
+
+              > .thumbnail {
+                width: 100%;
+                height: calc(100% + 4px);
+
+                border-top-right-radius: inherit;
+                border-top-left-radius: inherit;
+
+                object-fit: cover;
+              }
 
               > .icon {
                 width: 100%;
@@ -134,6 +190,9 @@
             }
 
             > .item-info {
+              position: relative;
+              z-index: 1;
+
               flex-shrink: 0;
               padding: 0.5em 0.75em;
 
@@ -156,7 +215,7 @@
 
                 > .name-input {
                   color: var(--color-text);
-                  font-size: var(--text-sm);
+                  font-size: var(--text-body);
                   font-weight: 500;
                   font-family: "Inter", sans-serif;
 

@@ -1,11 +1,19 @@
-use std::{collections::HashMap, fs::remove_file, path::Path};
+use std::{collections::HashMap, env, fs::remove_file, path::Path, process::Command};
 
 use async_recursion::async_recursion;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
-use crate::util::RequestPool;
+use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
 use log::*;
+
+#[derive(Serialize, Deserialize)]
+pub enum StorageEntryType {
+    #[serde(rename = "file")]
+    File,
+    #[serde(rename = "folder")]
+    Folder,
+}
 
 #[derive(FromRow, Serialize)]
 pub struct StorageFolder {
@@ -116,20 +124,11 @@ async fn get_subfolders_level(
     folder_ids: Vec<i64>,
     pool: &RequestPool,
 ) -> Result<(), String> {
-    let target_folder_ids_param = folder_ids
-        .iter()
-        .map(|id| id.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
-
     let next_level_folders = sqlx::query_as::<_, StorageFolderIdRow>(
-        format!(
-            "SELECT id FROM storage_folders WHERE endpoint_id = $1 AND parent_folder IN ({})",
-            target_folder_ids_param
-        )
-        .as_str(),
+        "SELECT id FROM storage_folders WHERE endpoint_id = $1 AND parent_folder = ANY($2)",
     )
     .bind(endpoint_id)
+    .bind(folder_ids)
     .fetch_all(pool)
     .await;
 
@@ -194,20 +193,11 @@ pub async fn resolve_entries(
 
     // Proccess files
     if target_files.len() > 0 {
-        let target_files_param = target_files
-            .iter()
-            .map(|id| id.to_string())
-            .collect::<Vec<String>>()
-            .join(",");
-
         let files = sqlx::query_as::<_, PartialStorageFileRow>(
-            format!(
-                "SELECT filesystem_id, name, extension FROM storage_files WHERE endpoint_id = $1 AND id IN ({})",
-                target_files_param
-            )
-            .as_str(),
+                "SELECT filesystem_id, name, extension FROM storage_files WHERE endpoint_id = $1 AND id = ANY($2)",
         )
         .bind(endpoint_id)
+        .bind(target_files)
         .fetch_all(pool)
         .await;
 
@@ -250,17 +240,17 @@ pub async fn delete_entries(
     pool: &RequestPool,
 ) -> Result<(usize, usize), String> {
     // Find the endpoint so we know where the files we find will be stored
-    let target_endpoint =
-        sqlx::query_scalar::<_, String>("SELECT base_path FROM storage_endpoints WHERE id = $1")
-            .bind(endpoint_id)
-            .fetch_one(pool)
-            .await;
+    let target_endpoint = get_storage_endpoint(endpoint_id, pool).await;
 
     if target_endpoint.is_err() {
         return Err("Could not get target endpoint".to_string());
     }
 
-    let endpoint_base_path = target_endpoint.unwrap();
+    let target_endpoint = target_endpoint.unwrap();
+
+    let endpoint_base_path = target_endpoint.base_path;
+    let endpoint_artifacts_path = target_endpoint.artifacts_path;
+
     let endpoint_files_path = Path::new(&endpoint_base_path);
 
     // Recursively find all the folders that reside inside target folders
@@ -278,18 +268,6 @@ pub async fn delete_entries(
     // Delete the files from all of the folders we have found
     // At this point, we have travesed the storage tree and have found
     // all the entries that reside inside the target folders, on any level
-    let folder_ids_param = all_folders
-        .iter()
-        .map(|id| id.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
-
-    let target_files_param = target_files
-        .iter()
-        .map(|id| id.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
-
     let transaction = pool.begin().await;
 
     match transaction {
@@ -299,13 +277,10 @@ pub async fn delete_entries(
             // Delete files inside target folders
             if all_folders.len() > 0 {
                 let delete_folder_files_result = sqlx::query_scalar::<_, String>(
-                    format!(
-                        "DELETE FROM storage_files WHERE endpoint_id = $1 AND parent_folder IN ({}) RETURNING filesystem_id",
-                        folder_ids_param
-                    )
-                    .as_str(),
+                    "DELETE FROM storage_files WHERE endpoint_id = $1 AND parent_folder = ANY($2) RETURNING filesystem_id",
                 )
                 .bind(endpoint_id)
+                .bind(&all_folders)
                 .fetch_all(&mut *transaction)
                 .await;
 
@@ -319,13 +294,10 @@ pub async fn delete_entries(
             // Delete target files
             if target_files.len() > 0 {
                 let delete_target_files_result = sqlx::query_scalar::<_, String>(
-                    format!(
-                        "DELETE FROM storage_files WHERE endpoint_id = $1 AND id IN ({}) RETURNING filesystem_id",
-                        target_files_param
-                    )
-                    .as_str(),
+                        "DELETE FROM storage_files WHERE endpoint_id = $1 AND id = ANY($2) RETURNING filesystem_id",
                 )
                 .bind(endpoint_id)
+                .bind(target_files)
                 .fetch_all(&mut *transaction)
                 .await;
 
@@ -339,13 +311,10 @@ pub async fn delete_entries(
             // Delete target folders & subfolders
             if all_folders.len() > 0 {
                 let delete_folders_result = sqlx::query(
-                    format!(
-                        "DELETE FROM storage_folders WHERE endpoint_id = $1 AND id IN ({})",
-                        folder_ids_param
-                    )
-                    .as_str(),
+                    "DELETE FROM storage_folders WHERE endpoint_id = $1 AND id = ANY($2)",
                 )
                 .bind(endpoint_id)
+                .bind(&all_folders)
                 .execute(&mut *transaction)
                 .await;
 
@@ -374,6 +343,26 @@ pub async fn delete_entries(
                         fs_remove_result.unwrap_err()
                     );
                 }
+
+                if let Some(endpoint_artifacts_path) = &endpoint_artifacts_path {
+                    let thumbnail_path = Path::new(&endpoint_artifacts_path)
+                        .join("thumbnails")
+                        .join(file_filesystem_id)
+                        .with_extension("webp");
+
+                    if thumbnail_path.exists() {
+                        let fs_remove_thumbnail_result = remove_file(thumbnail_path);
+
+                        if fs_remove_thumbnail_result.is_err() {
+                            error!(
+                                "(storage entry -> delete entries) Could not remove a thumbnail from the filesystem. endpoint_id = {}. filesystem_id = {}. {}",
+                                endpoint_id,
+                                file_filesystem_id,
+                                fs_remove_thumbnail_result.unwrap_err()
+                            );
+                        }
+                    }
+                }
             }
 
             return Ok((file_filesystem_ids.len(), all_folders.len()));
@@ -381,5 +370,212 @@ pub async fn delete_entries(
         Err(_) => {
             return Err("Could not start a transaction".to_string());
         }
+    }
+}
+
+/**
+ * Move enties to a new folder
+ *
+ * @param endpoint_id - Storage endpoint id
+ * @param folder_ids - Folders to move
+ * @param file_ids - Files to move
+ * @param target_folder_id - Id of the folder where the entries will be moved to
+ * @param pool - Database connection pool
+*/
+pub async fn move_entries(
+    endpoint_id: i32,
+    folder_ids: Vec<i64>,
+    file_ids: Vec<i64>,
+    target_folder_id: Option<i64>,
+    pool: &RequestPool,
+) -> Result<(), String> {
+    if file_ids.len() == 0 && folder_ids.len() == 0 {
+        return Ok(());
+    }
+
+    let mut transaction = pool.begin().await.unwrap();
+
+    if file_ids.len() > 0 {
+        let files_result = sqlx::query(
+            "UPDATE storage_files SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
+        )
+        .bind(target_folder_id)
+        .bind(file_ids)
+        .bind(endpoint_id)
+        .execute(&mut *transaction)
+        .await;
+
+        if files_result.is_err() {
+            return Err("Could not move storage files".to_string());
+        }
+    }
+
+    if folder_ids.len() > 0 {
+        let folders_result = sqlx::query(
+            "UPDATE storage_folders SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
+        )
+        .bind(target_folder_id)
+        .bind(folder_ids)
+        .bind(endpoint_id)
+        .execute(&mut *transaction)
+        .await;
+
+        if folders_result.is_err() {
+            return Err("Could not move storage folders".to_string());
+        }
+    }
+
+    let transaction_result = transaction.commit().await;
+
+    if transaction_result.is_err() {
+        return Err("Could not commit the move transaction".to_string());
+    }
+
+    Ok(())
+}
+
+pub async fn rename_entry(
+    endpoint_id: i32,
+    entry_type: StorageEntryType,
+    entry_id: i64,
+    new_name: &str,
+    pool: &RequestPool,
+) -> Result<(), String> {
+    let mut transaction = pool.begin().await.unwrap();
+
+    match entry_type {
+        StorageEntryType::File => {
+            let file_result = sqlx::query(
+                "UPDATE storage_files SET name = $1 WHERE id = $2 AND endpoint_id = $3",
+            )
+            .bind(new_name)
+            .bind(entry_id)
+            .bind(endpoint_id)
+            .execute(&mut *transaction)
+            .await;
+
+            if file_result.is_err() {
+                return Err("Could not rename a storage file".to_string());
+            }
+        }
+        StorageEntryType::Folder => {
+            let folder_result = sqlx::query(
+                "UPDATE storage_folders SET name = $1 WHERE id = $2 AND endpoint_id = $3",
+            )
+            .bind(new_name)
+            .bind(entry_id)
+            .bind(endpoint_id)
+            .execute(&mut *transaction)
+            .await;
+
+            if folder_result.is_err() {
+                return Err("Could not rename a storage folder".to_string());
+            }
+        }
+    }
+
+    let transaction_result = transaction.commit().await;
+
+    if transaction_result.is_err() {
+        return Err("Could not commit the rename transaction".to_string());
+    }
+
+    Ok(())
+}
+
+pub fn generate_image_entry_thumbnail(
+    filesystem_id: &str,
+    endpoint_path: &str,
+    endpoint_artifacts_path: &str,
+) -> Result<(), String> {
+    let convert_bin_path = env::var("IMAGEMAGICK_BIN");
+
+    if let Ok(convert_bin_path) = &convert_bin_path {
+        let convert_bin_path = Path::new(&convert_bin_path);
+
+        if convert_bin_path.exists() {
+            let file_path = Path::new(endpoint_path).join(&filesystem_id);
+            let endpoint_thumbnails_path = Path::new(endpoint_artifacts_path).join("thumbnails");
+
+            let convert_result = Command::new(convert_bin_path)
+                .arg("-quality")
+                .arg("50")
+                .arg("-resize")
+                .arg("240x240")
+                .arg("-define")
+                .arg("webp:lossless=false")
+                .arg(file_path.to_str().unwrap())
+                .arg(
+                    endpoint_thumbnails_path
+                        .join(&filesystem_id)
+                        .with_extension("webp")
+                        .to_str()
+                        .unwrap(),
+                )
+                .output();
+
+            if let Ok(convert_result) = convert_result {
+                if convert_result.status.success() {
+                    Ok(())
+                } else {
+                    Err("Could not generate a thumbnail for an image storage entry".to_string())
+                }
+            } else {
+                Err("Could not execute the convert command".to_string())
+            }
+        } else {
+            Err("Could not find the convert binary".to_string())
+        }
+    } else {
+        Ok(())
+    }
+}
+
+pub fn generate_video_entry_thumbnail(
+    filesystem_id: &str,
+    endpoint_path: &str,
+    endpoint_artifacts_path: &str,
+) -> Result<(), String> {
+    let ffmpeg_bin_path = env::var("FFMPEG_BIN");
+
+    if let Ok(ffmpeg_bin_path) = &ffmpeg_bin_path {
+        let ffmpeg_bin_path = Path::new(&ffmpeg_bin_path);
+
+        if ffmpeg_bin_path.exists() {
+            let file_path = Path::new(endpoint_path).join(&filesystem_id);
+            let endpoint_thumbnails_path = Path::new(endpoint_artifacts_path).join("thumbnails");
+
+            let ffmpeg_result = Command::new(ffmpeg_bin_path)
+                .arg("-ss")
+                .arg("00:00:01")
+                .arg("-i")
+                .arg(file_path.to_str().unwrap())
+                .arg("-frames:v")
+                .arg("1")
+                .arg("-c:v")
+                .arg("libwebp")
+                .arg(
+                    endpoint_thumbnails_path
+                        .join(&filesystem_id)
+                        .with_extension("webp")
+                        .to_str()
+                        .unwrap(),
+                )
+                .output();
+
+            if let Ok(ffmpeg_result) = ffmpeg_result {
+                if ffmpeg_result.status.success() {
+                    Ok(())
+                } else {
+                    Err("Could not generate a thumbnail for a video storage entry".to_string())
+                }
+            } else {
+                Err("Could not execute the ffmpeg command".to_string())
+            }
+        } else {
+            Err("Could not find the ffmpeg binary".to_string())
+        }
+    } else {
+        Ok(())
     }
 }

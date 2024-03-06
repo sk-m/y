@@ -50,6 +50,7 @@ export type CreateStorageEndpointInput = {
   type: string
   preserveFileStructure: boolean
   basePath: string
+  artifactsPath: string
   description?: string
 }
 
@@ -62,6 +63,7 @@ export const createStorageEndpoint = async (
       endpoint_type: input.type,
       preserve_file_structure: input.preserveFileStructure,
       base_path: input.basePath.trim(),
+      artifacts_path: input.artifactsPath.trim(),
       description: input.description?.trim(),
     },
   }).then((data) => TCreateStorageEndpoint.parse(data))

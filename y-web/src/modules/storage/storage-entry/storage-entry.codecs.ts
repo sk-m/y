@@ -30,6 +30,10 @@ export const TGetStorageEntries = z.object({
   entries: z.array(TStorageEntry),
 })
 
+export const TGetStorageEntryThumbnails = z.object({
+  thumbnails: z.record(z.string()),
+})
+
 export const TCreateStorageFolder = z.object({
   new_folder_id: z.number(),
 })

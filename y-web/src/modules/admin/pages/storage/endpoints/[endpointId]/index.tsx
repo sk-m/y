@@ -183,6 +183,13 @@ const StorageEndpointPage = () => {
                 value={$storageEndpoint.data?.base_path ?? ""}
                 onChange={() => void 0}
               />
+              <KeyValue
+                readonly
+                keyWidth="100px"
+                label="Artifacts path"
+                value={$storageEndpoint.data?.artifacts_path ?? ""}
+                onChange={() => void 0}
+              />
             </KeyValueFields>
           </Stack>
         </Stack>

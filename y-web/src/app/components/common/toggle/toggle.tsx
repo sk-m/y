@@ -3,6 +3,7 @@ import {
   Component,
   createEffect,
   createSignal,
+  onCleanup,
   onMount,
 } from "solid-js"
 
@@ -35,9 +36,16 @@ export const Toggle: Component<ToggleProps> = (props) => {
 
   onMount(() => {
     if (!isControlled) {
-      setToggled(ref.checked)
-      ref.addEventListener("change", () => {
+      const handler = () => {
         setToggled(ref.checked)
+      }
+
+      handler()
+
+      ref.addEventListener("change", handler)
+
+      onCleanup(() => {
+        ref.removeEventListener("change", handler)
       })
     }
   })

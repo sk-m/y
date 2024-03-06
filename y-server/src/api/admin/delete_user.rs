@@ -28,17 +28,10 @@ async fn delete_user(
 
     let user_ids = form.into_inner().user_ids;
 
-    // ! TODO refactor. I don't like this one bit
-    let user_ids_param = user_ids
-        .iter()
-        .map(|id| id.to_string())
-        .collect::<Vec<String>>()
-        .join(",");
-
-    let delete_users_result =
-        sqlx::query(format!("DELETE FROM users WHERE id IN ({})", user_ids_param).as_str())
-            .execute(&**pool)
-            .await;
+    let delete_users_result = sqlx::query("DELETE FROM users WHERE id = ANY($1)")
+        .bind(user_ids)
+        .execute(&**pool)
+        .await;
 
     if delete_users_result.is_err() {
         return error("delete_user.other");

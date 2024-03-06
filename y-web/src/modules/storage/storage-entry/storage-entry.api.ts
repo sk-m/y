@@ -1,14 +1,19 @@
-import { del, get, post } from "@/app/core/request"
+import { del, get, patch, post } from "@/app/core/request"
 
 import {
+  IStorageEntry,
   TCreateStorageFolder,
   TGetStorageEntries,
+  TGetStorageEntryThumbnails,
   TGetStorageFolderPath,
 } from "./storage-entry.codecs"
 import { downloadResponseBlob } from "./storage-entry.util"
 
 export const apiStorageFolderPath = "/storage/folder-path" as const
 export const apiStorageEntries = "/storage/entries" as const
+export const apiStorageMoveEntries = "/storage/move-entries" as const
+export const apiStorageRenameEntry = "/storage/rename-entry" as const
+export const apiStorageEntryThumbnails = "/storage/entry-thumbnails" as const
 
 // TODO move to POST /folder
 export const apiStorageCreateFoler = "/storage/create-folder" as const
@@ -54,6 +59,24 @@ export const storageFolderPath = async (input: GetStorageFolderPathInput) => {
   }).then((data) => TGetStorageFolderPath.parse(data))
 }
 
+export type GetStorageEntryThumbnails = {
+  endpointId: number | string
+  fileIds: number[]
+}
+
+export const storageEntryThumbnails = async (
+  input: GetStorageEntryThumbnails
+) => {
+  const query = new URLSearchParams()
+
+  query.set("endpoint_id", input.endpointId.toString())
+  query.set("file_ids", input.fileIds.join(","))
+
+  return get(apiStorageEntryThumbnails, {
+    query,
+  }).then((data) => TGetStorageEntryThumbnails.parse(data))
+}
+
 export type CreateStorageFolderInput = {
   endpointId: number
   folderId?: number
@@ -69,6 +92,42 @@ export const createStorageFolder = async (input: CreateStorageFolderInput) => {
       new_folder_name: input.newFolderName,
     },
   }).then((data) => TCreateStorageFolder.parse(data))
+}
+
+export type MoveStorageEntriesInput = {
+  endpointId: number
+  fileIds: number[]
+  folderIds: number[]
+  targetFolderId: number | undefined
+}
+
+export const moveStorageEntries = async (input: MoveStorageEntriesInput) => {
+  return post(apiStorageMoveEntries, {
+    body: {
+      endpoint_id: input.endpointId,
+      file_ids: input.fileIds,
+      folder_ids: input.folderIds,
+      target_folder_id: input.targetFolderId,
+    },
+  })
+}
+
+export type RenameStorageEntryInput = {
+  endpointId: number
+  entryType: IStorageEntry["entry_type"]
+  entryId: number
+  name: string
+}
+
+export const renameStorageEntry = async (input: RenameStorageEntryInput) => {
+  return patch(apiStorageRenameEntry, {
+    body: {
+      endpoint_id: input.endpointId,
+      entry_type: input.entryType,
+      entry_id: input.entryId,
+      name: input.name,
+    },
+  })
 }
 
 export type DeleteStorageEntriesInput = {
