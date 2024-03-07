@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-nested-ternary */
 import { Component, Setter, batch, createSignal } from "solid-js"
 
 import { DropdownPill } from "@/app/components/common/dropdown-pill/dropdown-pill"
@@ -71,6 +72,28 @@ export const FileExplorerDisplaySettings: Component<
               class="item"
               onClick={() => {
                 batch(() => {
+                  if (props.sortBy === "mime_type") {
+                    // prettier-ignore
+                    props.setSortDirection((value) =>
+                      (value === "asc" ? "desc" : "asc")
+                    )
+                  } else {
+                    props.setSortBy("mime_type")
+                    props.setSortDirection("desc")
+                  }
+                })
+              }}
+            >
+              <div class="icon">
+                <Icon name="picture_as_pdf" size={14} wght={500} />
+              </div>
+              <div class="label">MIME type</div>
+            </button>
+
+            <button
+              class="item"
+              onClick={() => {
+                batch(() => {
                   if (props.sortBy === "size") {
                     // prettier-ignore
                     props.setSortDirection((value) =>
@@ -91,7 +114,11 @@ export const FileExplorerDisplaySettings: Component<
           </div>
         }
       >
-        {props.sortBy === "name" ? "name" : "file size"}
+        {props.sortBy === "mime_type"
+          ? "MIME type"
+          : props.sortBy === "name"
+          ? "name"
+          : "file size"}
       </DropdownPill>
 
       <DropdownPill

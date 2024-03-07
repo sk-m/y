@@ -4,7 +4,7 @@ import { createMemo, createSignal } from "solid-js"
 import { IStorageEntry } from "../storage-entry/storage-entry.codecs"
 
 export type Layout = "grid" | "slates"
-export type SortBy = "name" | "size"
+export type SortBy = "name" | "mime_type" | "size"
 export type SortDirection = "asc" | "desc"
 
 export const useFileExplorerDisplayConfig = () => {
@@ -12,10 +12,17 @@ export const useFileExplorerDisplayConfig = () => {
   const [sortBy, setSortBy] = createSignal<SortBy>("name")
   const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc")
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   const sortFn = createMemo(() => {
     if (sortBy() === "name") {
       return (a: IStorageEntry, b: IStorageEntry) =>
         a.name.localeCompare(b.name) * (sortDirection() === "desc" ? 1 : -1)
+    }
+
+    if (sortBy() === "mime_type") {
+      return (a: IStorageEntry, b: IStorageEntry) =>
+        (a.mime_type ?? "").localeCompare(b.mime_type ?? "") *
+        (sortDirection() === "desc" ? 1 : -1)
     }
 
     if (sortBy() === "size") {
