@@ -44,15 +44,15 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
     number | null
   >(null)
 
-  const [temporarySelectedEntry, setTemporarySelectedEntry] =
+  const [contextMenuTargetEntry, setContextMenuTargetEntry] =
     createSignal<IStorageEntry | null>(null)
 
-  const temporarySelectedEntryIsInMultiselect = createMemo(
+  const contextMenuTargetEntryIsInMultiselect = createMemo(
     () =>
-      temporarySelectedEntry() !== null &&
+      contextMenuTargetEntry() !== null &&
       selectedEntries().has(
-        `${temporarySelectedEntry()!.entry_type}:${
-          temporarySelectedEntry()!.id
+        `${contextMenuTargetEntry()!.entry_type}:${
+          contextMenuTargetEntry()!.id
         }`
       )
   )
@@ -151,9 +151,9 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
     resetSelection,
     selectedEntries,
     lastSelectedEntryIndex,
-    temporarySelectedEntryIsInMultiselect,
-    setTemporarySelectedEntry,
+    contextMenuTargetEntryIsInMultiselect,
+    setContextMenuTargetEntry,
     setSelectedEntries,
-    temporarySelectedEntry,
+    contextMenuTargetEntry,
   }
 }

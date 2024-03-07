@@ -17,7 +17,7 @@ export type StorageEntryProps = {
   entry: IStorageEntry
 
   selected?: boolean
-  temporarySelected?: boolean
+  isContextMenuTarget?: boolean
   thumbnails?: Record<number, string>
   isRenaming?: boolean
 
@@ -25,6 +25,7 @@ export type StorageEntryProps = {
   onOpenContextMenu?: (event: MouseEvent) => void
   onSelect?: (event: MouseEvent | undefined) => void
   onRename?: (newName: string) => void
+  onClick?: (event: MouseEvent) => void
   onCancelRename?: () => void
 }
 
@@ -70,12 +71,16 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       classList={{
         item: true,
         selected: props.selected,
-        "temporary-selected": props.temporarySelected,
+        "context-menu-target": props.isContextMenuTarget,
       }}
-      onClick={() =>
+      onDblClick={() =>
         props.entry.entry_type === "folder" &&
         !props.isRenaming &&
         props.onNavigateToFolder(props.entry.id)
+      }
+      // prettier-ignore
+      onClick={(event) =>
+        props.onClick?.(event)
       }
       onContextMenu={(event) => {
         event.preventDefault()

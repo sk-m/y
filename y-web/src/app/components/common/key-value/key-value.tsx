@@ -30,6 +30,7 @@ export type KeyValueProps<TValue> = {
     value: Accessor<TValue>
   }) => JSX.Element
 
+  direction?: "row" | "column"
   keyWidth?: string
 }
 
@@ -99,14 +100,19 @@ export const KeyValue = <TValue,>(props: KeyValueProps<TValue>) => {
     <div
       classList={{
         "ui-keyvalue": true,
+        [`direction-${props.direction ?? "row"}`]: true,
         readonly: props.readonly,
       }}
     >
       <div
         class="key"
-        style={{
-          width: props.keyWidth ?? "200px",
-        }}
+        style={
+          (props.direction ?? "row") === "row"
+            ? {
+                width: props.keyWidth ?? "200px",
+              }
+            : {}
+        }
       >
         {props.label}
       </div>

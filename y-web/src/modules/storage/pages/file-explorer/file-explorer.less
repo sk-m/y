@@ -8,6 +8,7 @@
     align-items: flex-start;
 
     height: 100%;
+    overflow-x: hidden;
 
     > .browser-container {
       display: flex;
@@ -76,9 +77,14 @@
 
             transition: 0.15s;
 
+            user-select: none;
             cursor: pointer;
 
-            &.temporary-selected,
+            * {
+              user-select: none;
+            }
+
+            &.context-menu-target,
             &:hover {
               box-shadow: 0 0 0 1px var(--color-border-25),
                 0 3px 15px rgba(21, 23, 46, 0.1);
@@ -128,7 +134,7 @@
               }
             }
 
-            &.temporary-selected {
+            &.context-menu-target {
               transform: scale(0.95);
             }
 
@@ -250,7 +256,7 @@
     > .side-panel {
       flex-shrink: 0;
 
-      width: 220px;
+      width: 250px;
       height: 100%;
 
       border-left: 1px solid var(--color-border-1);
