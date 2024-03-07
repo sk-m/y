@@ -15,6 +15,8 @@ export type SelectedEntry = `${IStorageEntry["entry_type"]}:${number}`
 export type UseFileExplorerProps = {
   endpointId: () => string
   folderId: () => string | undefined
+
+  entriesSortFn?: () => (a: IStorageEntry, b: IStorageEntry) => number
 }
 
 export const useFileExplorer = (props: UseFileExplorerProps) => {
@@ -25,7 +27,17 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
     endpointId: props.endpointId(),
   }))
 
-  const folderEntries = createMemo(() => $folderEntries.data?.entries ?? [])
+  const folderEntries = createMemo(
+    () => {
+      return props.entriesSortFn
+        ? ($folderEntries.data?.entries ?? []).sort(props.entriesSortFn())
+        : $folderEntries.data?.entries ?? []
+    },
+    undefined,
+    {
+      equals: false,
+    }
+  )
 
   const $folderPath = useStorageFolderPath(() => ({
     folderId: props.folderId(),

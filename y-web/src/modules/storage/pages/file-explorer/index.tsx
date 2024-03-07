@@ -50,6 +50,8 @@ import {
 } from "@/modules/storage/storage-entry/storage-entry.codecs"
 import { FileWithPath } from "@/modules/storage/upload"
 
+import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
+import { FileExplorerDisplaySettings } from "./components/file-explorer-display-settings"
 import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerSelectionInfo } from "./components/file-explorer-selection-info"
@@ -85,6 +87,19 @@ const FileExplorerPage: Component = () => {
   )
 
   const {
+    layout,
+    setLayout,
+
+    sortBy,
+    setSortBy,
+
+    sortDirection,
+    setSortDirection,
+
+    sortFn,
+  } = useFileExplorerDisplayConfig()
+
+  const {
     folderEntries,
     folderPath,
     invalidateEntries,
@@ -98,6 +113,8 @@ const FileExplorerPage: Component = () => {
   } = useFileExplorer({
     endpointId: () => params.endpointId as string,
     folderId: () => searchParams.folderId,
+
+    entriesSortFn: sortFn,
   })
 
   const { onDragLeave, onDragOver, isAboutToDrop, onDrop } = useFilesDrop()
@@ -465,12 +482,23 @@ const FileExplorerPage: Component = () => {
                 setSearchParams({ folderId: newFolderId })
               }
             />
-            <Show when={selectedEntries().size > 0}>
-              <FileExplorerSelectionInfo
-                selectedEntriesCount={selectedEntries().size}
-                onClick={openSelectionContextMenu}
+            <Stack direction="row" alignItems="center" spacing="1em">
+              <FileExplorerDisplaySettings
+                layout={layout()}
+                setLayout={setLayout}
+                sortBy={sortBy()}
+                setSortBy={setSortBy}
+                sortDirection={sortDirection()}
+                setSortDirection={setSortDirection}
               />
-            </Show>
+              <Show when={selectedEntries().size > 0}>
+                <div class="top-container-separator" />
+                <FileExplorerSelectionInfo
+                  selectedEntriesCount={selectedEntries().size}
+                  onClick={openSelectionContextMenu}
+                />
+              </Show>
+            </Stack>
           </div>
           <div
             ref={browserContentsRef!}
@@ -730,7 +758,12 @@ const FileExplorerPage: Component = () => {
                 </ContextMenuSection>
               </Show>
             </ContextMenu>
-            <div class="items">
+            <div
+              classList={{
+                items: true,
+                [`layout-${layout()}`]: true,
+              }}
+            >
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
                 {(entry, index) => {

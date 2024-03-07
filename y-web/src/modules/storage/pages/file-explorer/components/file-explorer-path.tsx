@@ -34,7 +34,7 @@ export const FileExplorerPath: Component<FileExplorerPathProps> = (props) => {
         <Icon name="reply" size={14} wght={500} />
         {/* <div class="text">back</div> */}
       </button>
-      <div class="separator" />
+      <div class="top-container-separator" />
       <div class="path-segments">
         <button class="path-segment" onClick={() => props.onNavigate?.(null)}>
           /

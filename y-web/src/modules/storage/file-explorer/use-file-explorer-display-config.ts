@@ -1,0 +1,42 @@
+/* eslint-disable solid/reactivity */
+import { createMemo, createSignal } from "solid-js"
+
+import { IStorageEntry } from "../storage-entry/storage-entry.codecs"
+
+export type Layout = "grid" | "slates"
+export type SortBy = "name" | "size"
+export type SortDirection = "asc" | "desc"
+
+export const useFileExplorerDisplayConfig = () => {
+  const [layout, setLayout] = createSignal<Layout>("grid")
+  const [sortBy, setSortBy] = createSignal<SortBy>("name")
+  const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc")
+
+  const sortFn = createMemo(() => {
+    if (sortBy() === "name") {
+      return (a: IStorageEntry, b: IStorageEntry) =>
+        a.name.localeCompare(b.name) * (sortDirection() === "desc" ? 1 : -1)
+    }
+
+    if (sortBy() === "size") {
+      return (a: IStorageEntry, b: IStorageEntry) =>
+        ((a.size_bytes ?? 0) < (b.size_bytes ?? 0) ? -1 : 1) *
+        (sortDirection() === "desc" ? 1 : -1)
+    }
+
+    return () => 0
+  })
+
+  return {
+    layout,
+    setLayout,
+
+    sortBy,
+    setSortBy,
+
+    sortDirection,
+    setSortDirection,
+
+    sortFn,
+  }
+}
