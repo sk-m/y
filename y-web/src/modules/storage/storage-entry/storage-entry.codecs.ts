@@ -22,6 +22,11 @@ export const TStorageEntry = z.object({
   name: z.string(),
   extension: z.string().nullable(),
   entry_type: z.enum(["file", "folder"]),
+
+  mime_type: z.string().nullable(),
+  size_bytes: z.number().nullable(),
+  created_at: z.string().nullable(),
+  created_by: z.number().nullable(),
 })
 
 export type IStorageEntry = z.infer<typeof TStorageEntry>
