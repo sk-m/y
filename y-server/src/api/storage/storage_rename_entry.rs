@@ -1,16 +1,19 @@
 use actix_web::{patch, web, HttpResponse, Responder};
 use serde::Deserialize;
+use validator::Validate;
 
 use crate::request::error;
 use crate::storage_entry::{rename_entry, StorageEntryType};
 use crate::user::get_client_rights;
 use crate::util::RequestPool;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 struct StorageRenameEntryInput {
     endpoint_id: i32,
     entry_type: StorageEntryType,
     entry_id: i64,
+
+    #[validate(length(min = 1, max = 255))]
     name: String,
 }
 
@@ -20,6 +23,12 @@ async fn storage_rename_entry(
     form: web::Json<StorageRenameEntryInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let form = form.into_inner();
+
+    if form.validate().is_err() {
+        return error("storage.rename.invalid_input");
+    }
+
     let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights
@@ -31,7 +40,6 @@ async fn storage_rename_entry(
         return error("storage.rename.unauthorized");
     }
 
-    let form = form.into_inner();
     let endpoint_id = form.endpoint_id;
     let entry_type = form.entry_type;
     let entry_id = form.entry_id;

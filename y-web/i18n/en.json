@@ -127,10 +127,12 @@
         "user_does_not_exist": "User does not exist"
       },
       "create_user_group": {
+        "invalid_input": "Invalid input",
         "unauthorized": "Permission denied",
         "other": "Other"
       },
       "create_user": {
+        "invalid_input": "Invalid input",
         "unauthorized": "Permission denied",
         "username_taken": "Username is already taken",
         "other": "Other"
@@ -152,7 +154,8 @@
         "unauthorized": "Permission denied",
         "other": "Other"
       },
-      "update_user_groups": {
+      "update_user_group": {
+        "invalid_input": "Invalid input",
         "unauthorized": "Permission denied",
         "other": "Other"
       },
@@ -171,6 +174,7 @@
         "other": "Other"
       },
       "create_storage_endpoint": {
+        "invalid_data": "Invalid data",
         "path_does_not_exist": "Path points to a non-existing directory",
         "path_not_a_directory": "Path does not point to a directory",
         "path_not_absolute": "Path must be an absolute path",
@@ -186,6 +190,7 @@
         "internal": "Other"
       },
       "update_storage_endpoint": {
+        "invalid_input": "Invalid input",
         "unauthorized": "Permission denied",
         "other": "Other",
         "invalid_status": "Invalid status"
@@ -199,6 +204,7 @@
           "endpoint_not_active": "Target endpoint is not active"
         },
         "create_folder": {
+          "invalid_input": "Invalid input",
           "unauthorized": "Permission denied",
           "internal": "Other",
           "endpoint_not_found": "Target endpoint not found",
@@ -228,6 +234,7 @@
           "internal": "Other"
         },
         "rename": {
+          "invalid_input": "Invalid input",
           "unauthorized": "Permission denied",
           "internal": "Other"
         },

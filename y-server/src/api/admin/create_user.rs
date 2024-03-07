@@ -1,5 +1,6 @@
 use actix_web::{post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 use crate::request::error;
 
@@ -11,8 +12,9 @@ use pbkdf2::{
     Pbkdf2,
 };
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 struct CreateUserInput {
+    #[validate(length(min = 1, max = 127))]
     username: String,
     password: String,
 }
@@ -28,6 +30,12 @@ async fn create_user(
     form: web::Json<CreateUserInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let form = form.into_inner();
+
+    if form.validate().is_err() {
+        return error("create_user.invalid_input");
+    }
+
     let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights

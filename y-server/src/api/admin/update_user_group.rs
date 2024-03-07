@@ -6,6 +6,7 @@ use crate::util::RequestPool;
 use actix_web::{patch, web, HttpResponse, Responder};
 use serde::Deserialize;
 use sqlx::QueryBuilder;
+use validator::Validate;
 
 #[derive(Deserialize)]
 struct Right {
@@ -13,8 +14,9 @@ struct Right {
     options: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 struct UpdateUserGroupInput {
+    #[validate(length(min = 1, max = 255))]
     name: Option<String>,
     rights: Option<HashMap<String, Right>>,
 }
@@ -26,6 +28,12 @@ async fn update_user_group(
     path: web::Path<i32>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let form = form.into_inner();
+
+    if form.validate().is_err() {
+        return error("update_user_group.invalid_input");
+    }
+
     let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights
@@ -38,8 +46,6 @@ async fn update_user_group(
     }
 
     let user_group_id = path.into_inner();
-
-    let form = form.into_inner();
 
     let updated_name = &form.name.is_some();
     let updated_rights = &form.rights.is_some().clone();
