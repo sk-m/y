@@ -17,6 +17,7 @@ export type UseFileExplorerProps = {
   folderId: () => string | undefined
 
   entriesSortFn?: () => (a: IStorageEntry, b: IStorageEntry) => number
+  entriesFilterFn?: () => (entry: IStorageEntry) => boolean
 }
 
 export const useFileExplorer = (props: UseFileExplorerProps) => {
@@ -29,9 +30,13 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
 
   const folderEntries = createMemo(
     () => {
-      return props.entriesSortFn
-        ? ($folderEntries.data?.entries ?? []).sort(props.entriesSortFn())
+      const filter = props.entriesFilterFn?.()
+
+      const entries = filter
+        ? ($folderEntries.data?.entries ?? []).filter((entry) => filter(entry))
         : $folderEntries.data?.entries ?? []
+
+      return props.entriesSortFn ? entries.sort(props.entriesSortFn()) : entries
     },
     undefined,
     {

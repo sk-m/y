@@ -23,11 +23,14 @@
         align-items: center;
         gap: 1em;
 
-        min-height: 30px;
-
         flex-shrink: 0;
 
         padding: 0.5em 1em;
+
+        min-height: 30px;
+
+        border-bottom: 1px solid var(--color-border-15);
+        box-shadow: 0 2px 15px rgba(21, 23, 46, 0.05);
 
         .top-container-separator {
           width: 2px;
@@ -38,8 +41,45 @@
           border-radius: 2px;
         }
 
-        border-bottom: 1px solid var(--color-border-15);
-        box-shadow: 0 2px 15px rgba(21, 23, 46, 0.05);
+        .entries-search-container {
+          > input {
+            padding: 0.33em 0.66em;
+
+            width: 5em;
+
+            color: var(--color-text);
+            font-family: "Inter", sans-serif;
+            font-size: var(--text-sm);
+            font-weight: 450;
+
+            background-color: var(--color-grey-15);
+            border: none;
+            border-radius: 4px;
+
+            outline: none;
+
+            transition: 0.15s;
+
+            &::placeholder {
+              color: var(--color-text-grey-075);
+              font-family: "Inter", sans-serif;
+              font-size: var(--text-sm);
+              font-weight: 500;
+            }
+
+            &:focus {
+              box-shadow: 0 0 0 1px var(--color-border-3);
+              background-color: var(--color-grey-1);
+            }
+
+            &.non-empty,
+            &:active,
+            &:focus,
+            &:hover {
+              width: 10em;
+            }
+          }
+        }
       }
 
       > .browser-contents {

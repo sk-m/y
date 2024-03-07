@@ -60,6 +60,8 @@ import { NewFolderEntry } from "./components/new-folder-entry"
 import { StorageEntry } from "./components/storage-entry"
 import "./file-explorer.less"
 
+const SEARCH_DEBOUNCE_MS = 300
+
 const closeTabConfirmation = (event: BeforeUnloadEvent) => {
   event.preventDefault()
   event.returnValue = ""
@@ -75,6 +77,7 @@ const FileExplorerPage: Component = () => {
   const $deleteEntries = createMutation(deleteStorageEntries)
   const $createFolder = createMutation(createStorageFolder)
 
+  let searchInputFieldRef: HTMLInputElement
   let browserContentsRef: HTMLDivElement
   const entryRefs: HTMLDivElement[] = []
 
@@ -99,6 +102,8 @@ const FileExplorerPage: Component = () => {
     sortFn,
   } = useFileExplorerDisplayConfig()
 
+  const [search, setSearch] = createSignal("")
+
   const {
     folderEntries,
     folderPath,
@@ -115,6 +120,12 @@ const FileExplorerPage: Component = () => {
     folderId: () => searchParams.folderId,
 
     entriesSortFn: sortFn,
+    // eslint-disable-next-line solid/reactivity
+    entriesFilterFn: () => (entry) => {
+      if (!search()) return true
+
+      return entry.name.toLowerCase().includes(search()!.toLowerCase())
+    },
   })
 
   const { onDragLeave, onDragOver, isAboutToDrop, onDrop } = useFilesDrop()
@@ -447,11 +458,50 @@ const FileExplorerPage: Component = () => {
 
         deleteEntries(folderIds, fileIds)
       }
+
+      // Focus onto search field
+      if (event.key === "f" && event.ctrlKey) {
+        event.preventDefault()
+
+        searchInputFieldRef.select()
+      }
     }
 
+    let searchDebounce = 0
+
+    const searchInputFieldInputHandler = () => {
+      clearTimeout(searchDebounce)
+
+      searchDebounce = setTimeout(() => {
+        setSearch(searchInputFieldRef.value)
+      }, SEARCH_DEBOUNCE_MS)
+    }
+
+    const searchInputFieldKeydownHandler = (event: KeyboardEvent) => {
+      if (event.key === "Escape" || event.key === "Enter") {
+        searchInputFieldRef.blur()
+      }
+
+      event.stopImmediatePropagation()
+      event.stopPropagation()
+    }
+
+    searchInputFieldRef.addEventListener("input", searchInputFieldInputHandler)
+    searchInputFieldRef.addEventListener(
+      "keydown",
+      searchInputFieldKeydownHandler
+    )
     window.addEventListener("keydown", keydownHandler)
 
     onCleanup(() => {
+      searchInputFieldRef.removeEventListener(
+        "input",
+        searchInputFieldInputHandler
+      )
+      searchInputFieldRef.removeEventListener(
+        "keydown",
+        searchInputFieldKeydownHandler
+      )
       window.removeEventListener("keydown", keydownHandler)
     })
   })
@@ -483,6 +533,19 @@ const FileExplorerPage: Component = () => {
               }
             />
             <Stack direction="row" alignItems="center" spacing="1em">
+              <div class="entries-search-container">
+                <input
+                  classList={{
+                    "non-empty": search() !== "",
+                  }}
+                  ref={searchInputFieldRef!}
+                  type="text"
+                  placeholder="Search..."
+                />
+              </div>
+
+              <div class="top-container-separator" />
+
               <FileExplorerDisplaySettings
                 layout={layout()}
                 setLayout={setLayout}
