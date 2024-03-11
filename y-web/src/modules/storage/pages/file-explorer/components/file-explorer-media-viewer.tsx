@@ -42,13 +42,7 @@ export const FileExplorerMediaViewer: Component<
   const [showZoomHint, setShowZoomHint] = createSignal(false)
 
   const previewUrl = createMemo(() => {
-    const query = new URLSearchParams()
-
-    query.set("file_id", props.entry.id.toString())
-
-    return `/api${apiStorageEntries}/${
-      props.endpointId
-    }/download?${query.toString()}`
+    return `/api${apiStorageEntries}/${props.endpointId}/get/${props.entry.id}`
   })
 
   createEffect(
