@@ -4,6 +4,7 @@ import {
   KeyValue,
   KeyValueFields,
 } from "@/app/components/common/key-value/key-value"
+import { formatBytes } from "@/app/core/format-utils"
 import { IStorageEntry } from "@/modules/storage/storage-entry/storage-entry.codecs"
 
 import "./file-explorer-info-panel.less"
@@ -59,7 +60,7 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
               direction="column"
               label="Size"
               readonly
-              value={props.entry.size_bytes}
+              value={formatBytes(props.entry.size_bytes!)}
               onChange={() => void 0}
             />
           </Show>
