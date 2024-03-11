@@ -21,7 +21,7 @@ export type StorageEntryProps = {
   thumbnails?: Record<number, string>
   isRenaming?: boolean
 
-  onNavigateToFolder: (folderId: number) => void
+  onDblClick: (event: MouseEvent) => void
   onOpenContextMenu?: (event: MouseEvent) => void
   onSelect?: (event: MouseEvent | undefined) => void
   onRename?: (newName: string) => void
@@ -73,11 +73,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
         selected: props.selected,
         "context-menu-target": props.isContextMenuTarget,
       }}
-      onDblClick={() =>
-        props.entry.entry_type === "folder" &&
-        !props.isRenaming &&
-        props.onNavigateToFolder(props.entry.id)
-      }
+      onDblClick={(event) => props.onDblClick(event)}
       // prettier-ignore
       onClick={(event) =>
         props.onClick?.(event)

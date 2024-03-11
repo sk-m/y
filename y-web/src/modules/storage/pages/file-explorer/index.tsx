@@ -53,6 +53,7 @@ import { FileWithPath } from "@/modules/storage/upload"
 import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
 import { FileExplorerDisplaySettings } from "./components/file-explorer-display-settings"
 import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
+import { FileExplorerMediaViewer } from "./components/file-explorer-media-viewer"
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerSelectionInfo } from "./components/file-explorer-selection-info"
 import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
@@ -158,6 +159,9 @@ const FileExplorerPage: Component = () => {
     totalSizeBytes: 0,
   })
 
+  const [entryIndexToPreview, setEntryIndexToPreview] = createSignal<
+    number | null
+  >(null)
   const [entryToRename, setEntryToRename] = createSignal<number | null>(null)
   const [folderCreationInitiated, setFolderCreationInitiated] =
     createSignal(false)
@@ -206,6 +210,36 @@ const FileExplorerPage: Component = () => {
       }
     )
   )
+
+  const previewableEntries = createMemo(() =>
+    folderEntries().filter((entry) => entry.mime_type?.startsWith("image/"))
+  )
+
+  const entryToPreview = createMemo(() => {
+    if (entryIndexToPreview() === null) return null
+
+    return previewableEntries()[entryIndexToPreview()!]
+  })
+
+  const getEntryForPreview = (direction: "prev" | "next") => {
+    const currentIndex = entryIndexToPreview()
+
+    if (currentIndex === null) return
+
+    if (direction === "prev") {
+      if (currentIndex === 0) {
+        setEntryIndexToPreview(previewableEntries().length - 1)
+      } else {
+        setEntryIndexToPreview(currentIndex - 1)
+      }
+    } else {
+      if (currentIndex === previewableEntries().length - 1) {
+        setEntryIndexToPreview(0)
+      } else {
+        setEntryIndexToPreview(currentIndex + 1)
+      }
+    }
+  }
 
   const partitionEntries = (entries: SelectedEntry[]) => {
     if (entries.length === 0) return { folderIds: [], fileIds: [] }
@@ -513,6 +547,31 @@ const FileExplorerPage: Component = () => {
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
     >
+      <Show when={entryToPreview()}>
+        <FileExplorerMediaViewer
+          endpointId={params.endpointId as string}
+          entry={entryToPreview()!}
+          onPrev={() => getEntryForPreview("prev")}
+          onNext={() => getEntryForPreview("next")}
+          onDelete={() => {
+            deleteEntries([], [entryToPreview()!.id])
+          }}
+          onDownload={() => downloadFile(entryToPreview()!.id)}
+          onInfoPanelSelect={() =>
+            setInfoPanelSelectedEntryId(entryToPreview()!.id)
+          }
+          onSelect={() => {
+            // TODO refactor
+            onSelect(
+              folderEntries().findIndex(
+                (entry) => entry.id === entryToPreview()!.id
+              )
+            )
+          }}
+          onClose={() => setEntryIndexToPreview(null)}
+        />
+      </Show>
+
       <DropFilesHere active={isAboutToDrop()} />
 
       <Show when={uploadStatus.numberOfFiles !== 0}>
@@ -852,7 +911,25 @@ const FileExplorerPage: Component = () => {
                       selected={selected()}
                       isContextMenuTarget={isContextMenuTarget()}
                       thumbnails={thumbnails()}
-                      onNavigateToFolder={navigateToFolder}
+                      onDblClick={() => {
+                        if (entry.entry_type === "folder" && !isRenaming()) {
+                          navigateToFolder(entry.id)
+                        } else {
+                          if (previewableEntries().length === 0) return
+
+                          for (
+                            let i = 0;
+                            i < previewableEntries().length;
+                            i++
+                          ) {
+                            if (previewableEntries()[i]?.id === entry.id) {
+                              setEntryIndexToPreview(i)
+
+                              return
+                            }
+                          }
+                        }
+                      }}
                       onOpenContextMenu={(event) => {
                         setContextMenuTargetEntry(entry)
                         openEntryContextMenu(event)
