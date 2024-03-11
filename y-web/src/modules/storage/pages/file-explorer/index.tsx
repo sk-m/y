@@ -212,7 +212,11 @@ const FileExplorerPage: Component = () => {
   )
 
   const previewableEntries = createMemo(() =>
-    folderEntries().filter((entry) => entry.mime_type?.startsWith("image/"))
+    folderEntries().filter(
+      (entry) =>
+        entry.mime_type?.startsWith("image/") ||
+        entry.mime_type?.startsWith("video/")
+    )
   )
 
   const entryToPreview = createMemo(() => {

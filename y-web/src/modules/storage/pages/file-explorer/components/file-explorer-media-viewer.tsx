@@ -201,6 +201,15 @@ export const FileExplorerMediaViewer: Component<
                   style={{ transform: `scale(${zoom()})` }}
                 />
               </Match>
+              <Match when={props.entry.mime_type?.startsWith("video/")}>
+                <video
+                  class="preview-video"
+                  src={previewUrl()}
+                  controls
+                  autoplay
+                  onClick={(event) => event.stopPropagation()}
+                />
+              </Match>
             </Switch>
           </div>
           <div class="right">
