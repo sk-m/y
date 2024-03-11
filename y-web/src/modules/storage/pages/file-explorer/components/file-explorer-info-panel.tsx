@@ -14,6 +14,7 @@ export type FileExplorerInfoPanelProps = {
   thumbnails?: Record<number, string>
 
   onRename?: (newName: string) => void
+  onThumbnailClick?: () => void
 }
 
 export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
@@ -29,7 +30,12 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
   return (
     <div class="file-explorer-info-panel">
       <Show when={thumbnail()}>
-        <div class="thumbnail-container">
+        <div
+          class="thumbnail-container"
+          onClick={() => {
+            props.onThumbnailClick?.()
+          }}
+        >
           <img
             draggable={false}
             class="thumbnail"

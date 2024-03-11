@@ -245,6 +245,18 @@ const FileExplorerPage: Component = () => {
     }
   }
 
+  const findPreviewableEntryIndex = (entryId: number) => {
+    if (previewableEntries().length === 0) return null
+
+    for (let i = 0; i < previewableEntries().length; i++) {
+      if (previewableEntries()[i]?.id === entryId) {
+        return i
+      }
+    }
+
+    return null
+  }
+
   const partitionEntries = (entries: SelectedEntry[]) => {
     if (entries.length === 0) return { folderIds: [], fileIds: [] }
 
@@ -919,18 +931,11 @@ const FileExplorerPage: Component = () => {
                         if (entry.entry_type === "folder" && !isRenaming()) {
                           navigateToFolder(entry.id)
                         } else {
-                          if (previewableEntries().length === 0) return
+                          const previewableEntryIndex =
+                            findPreviewableEntryIndex(entry.id)
 
-                          for (
-                            let i = 0;
-                            i < previewableEntries().length;
-                            i++
-                          ) {
-                            if (previewableEntries()[i]?.id === entry.id) {
-                              setEntryIndexToPreview(i)
-
-                              return
-                            }
+                          if (previewableEntryIndex !== null) {
+                            setEntryIndexToPreview(previewableEntryIndex)
                           }
                         }
                       }}
@@ -980,6 +985,15 @@ const FileExplorerPage: Component = () => {
                   name
                 )
               }
+              onThumbnailClick={() => {
+                const previewableEntryIndex = findPreviewableEntryIndex(
+                  infoPanelSelectedEntry()!.id
+                )
+
+                if (previewableEntryIndex !== null) {
+                  setEntryIndexToPreview(previewableEntryIndex)
+                }
+              }}
             />
           </Show>
         </div>
