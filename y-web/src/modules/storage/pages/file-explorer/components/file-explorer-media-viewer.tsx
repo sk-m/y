@@ -52,98 +52,105 @@ export const FileExplorerMediaViewer: Component<
     )
   )
 
-  // eslint-disable-next-line sonarjs/cognitive-complexity
-  onMount(() => {
-    // eslint-disable-next-line unicorn/consistent-function-scoping
-    const keyupHandler = (event: KeyboardEvent) => {
-      event.stopPropagation()
-      event.stopImmediatePropagation()
+  const keyupHandler = (event: KeyboardEvent) => {
+    event.stopPropagation()
+    event.stopImmediatePropagation()
 
-      if (event.key === "Shift") {
-        setShowZoomHint(false)
-      }
+    if (event.key === "Shift") {
+      setShowZoomHint(false)
+    }
+  }
+
+  const keydownHandler = (event: KeyboardEvent) => {
+    event.stopPropagation()
+    event.stopImmediatePropagation()
+
+    if (event.key === "Shift") {
+      setShowZoomHint(true)
     }
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
-    const keydownHandler = (event: KeyboardEvent) => {
-      event.stopPropagation()
-      event.stopImmediatePropagation()
+    if (event.key === "Escape") {
+      event.preventDefault()
 
-      if (event.key === "Shift") {
-        setShowZoomHint(true)
+      props.onClose()
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault()
+
+      props.onInfoPanelSelect()
+      props.onClose()
+    }
+
+    if (event.key === " ") {
+      event.preventDefault()
+
+      props.onSelect()
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault()
+
+      props.onPrev()
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault()
+
+      props.onNext()
+    }
+
+    if (event.key === "s" && event.ctrlKey) {
+      event.preventDefault()
+
+      props.onDownload()
+    }
+
+    if (event.key === "Delete" && event.shiftKey) {
+      event.preventDefault()
+
+      props.onDelete()
+    }
+  }
+
+  const scrollHandler = (event: MouseEvent & { deltaY: number }) => {
+    if (event.shiftKey) {
+      if (event.deltaY > 0) {
+        // prettier-ignore
+        setZoom((previous) => previous - (ZOOM_STEP * previous))
+      } else {
+        // prettier-ignore
+        setZoom((previous) => previous + (ZOOM_STEP * previous))
       }
-
-      if (event.key === "Escape") {
-        event.preventDefault()
-
-        props.onClose()
-      }
-
-      if (event.key === "Enter") {
-        event.preventDefault()
-
-        props.onInfoPanelSelect()
-        props.onClose()
-      }
-
-      if (event.key === " ") {
-        event.preventDefault()
-
-        props.onSelect()
-      }
-
-      if (event.key === "ArrowLeft") {
-        event.preventDefault()
-
+    } else {
+      if (event.deltaY > 0) {
+        props.onNext()
+      } else {
         props.onPrev()
       }
-
-      if (event.key === "ArrowRight") {
-        event.preventDefault()
-
-        props.onNext()
-      }
-
-      if (event.key === "s" && event.ctrlKey) {
-        event.preventDefault()
-
-        props.onDownload()
-      }
-
-      if (event.key === "Delete" && event.shiftKey) {
-        event.preventDefault()
-
-        props.onDelete()
-      }
     }
+  }
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
-    const scrollHandler = (event: MouseEvent & { deltaY: number }) => {
-      if (event.shiftKey) {
-        if (event.deltaY > 0) {
-          // prettier-ignore
-          setZoom((previous) => previous - (ZOOM_STEP * previous))
-        } else {
-          // prettier-ignore
-          setZoom((previous) => previous + (ZOOM_STEP * previous))
-        }
-      } else {
-        if (event.deltaY > 0) {
-          props.onNext()
-        } else {
-          props.onPrev()
-        }
-      }
+  const mouseHandler = (event: MouseEvent) => {
+    // Middle mouse button - reset zoom
+    if (event.button === 1) {
+      event.preventDefault()
+      setZoom(1)
     }
+  }
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
+  onMount(() => {
     document.addEventListener("keydown", keydownHandler)
     document.addEventListener("keyup", keyupHandler)
     document.addEventListener("wheel", scrollHandler)
+    document.addEventListener("pointerdown", mouseHandler)
 
     onCleanup(() => {
       document.removeEventListener("keydown", keydownHandler)
       document.removeEventListener("keyup", keyupHandler)
       document.removeEventListener("wheel", scrollHandler)
+      document.removeEventListener("pointerdown", mouseHandler)
     })
   })
 
@@ -208,6 +215,8 @@ export const FileExplorerMediaViewer: Component<
                   controls
                   autoplay
                   onClick={(event) => event.stopPropagation()}
+                  draggable={false}
+                  style={{ transform: `scale(${zoom()})` }}
                 />
               </Match>
             </Switch>
@@ -223,7 +232,8 @@ export const FileExplorerMediaViewer: Component<
           <div
             classList={{ hint: true, "zoom-hint": true, show: showZoomHint() }}
           >
-            scroll to zoom
+            {/* eslint-disable-next-line @typescript-eslint/no-magic-numbers */}
+            {Math.floor(zoom() * 100)}%
           </div>
         </div>
       </div>

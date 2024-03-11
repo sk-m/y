@@ -102,14 +102,15 @@
     .navigation-button {
       flex-shrink: 0;
 
-      background-color: transparent;
-      border: none;
-
       height: 100%;
 
       padding: 2em;
 
       color: rgba(255, 255, 255, 0.33);
+
+      background-color: transparent;
+      border: none;
+      outline: none;
 
       cursor: pointer;
 
@@ -147,6 +148,8 @@
         overflow: hidden;
 
         box-shadow: 0 5px 15px rgba(21, 23, 46, 0.25);
+
+        transition: 0.05s linear;
       }
 
       .preview-video {
@@ -162,6 +165,8 @@
         outline: none;
 
         box-shadow: 0 5px 15px rgba(21, 23, 46, 0.25);
+
+        transition: 0.05s linear;
       }
 
       .not-available-text {
