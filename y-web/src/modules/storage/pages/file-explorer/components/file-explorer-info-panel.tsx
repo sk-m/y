@@ -1,5 +1,7 @@
 import { Component, Show, createMemo } from "solid-js"
 
+import { format } from "date-fns"
+
 import {
   KeyValue,
   KeyValueFields,
@@ -76,6 +78,9 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
               label="Created at"
               readonly
               value={props.entry.created_at}
+              getValueString={(value) =>
+                format(new Date(value!), "dd.MM.yyyy HH:mm")
+              }
               onChange={() => void 0}
             />
           </Show>

@@ -25,7 +25,10 @@ export const TStorageEntry = z.object({
 
   mime_type: z.string().nullable(),
   size_bytes: z.number().nullable(),
-  created_at: z.string().nullable(),
+  created_at: z
+    .string()
+    .refine((x) => x && !Number.isNaN(Date.parse(x)))
+    .nullable(),
   created_by: z.number().nullable(),
 })
 
