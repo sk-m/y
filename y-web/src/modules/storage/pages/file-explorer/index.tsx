@@ -129,7 +129,8 @@ const FileExplorerPage: Component = () => {
     },
   })
 
-  const { onDragLeave, onDragOver, isAboutToDrop, onDrop } = useFilesDrop()
+  const { onDragOver, onDragLeave, onDragEnter, isAboutToDrop, onDrop } =
+    useFilesDrop()
 
   const {
     open: openEntryContextMenu,
@@ -338,7 +339,10 @@ const FileExplorerPage: Component = () => {
     )
   }
 
-  const moveEntries = (entries: SelectedEntry[]) => {
+  const moveEntries = (
+    entries: SelectedEntry[],
+    targetFolderId?: number | null
+  ) => {
     const { fileIds, folderIds } = partitionEntries(entries)
 
     $moveEntries.mutate(
@@ -346,7 +350,9 @@ const FileExplorerPage: Component = () => {
         endpointId: Number.parseInt(params.endpointId as string, 10),
         fileIds,
         folderIds,
-        targetFolderId: folderId(),
+        targetFolderId:
+          // eslint-disable-next-line no-undefined
+          targetFolderId === null ? undefined : targetFolderId ?? folderId(),
       },
       {
         onSuccess: () => {
@@ -560,8 +566,9 @@ const FileExplorerPage: Component = () => {
     <div
       id="page-storage-file-explorer"
       onDrop={onDrop(handleDrop)}
-      onDragOver={onDragOver}
+      onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
     >
       <Show when={entryToPreview()}>
         <FileExplorerMediaViewer
@@ -606,6 +613,16 @@ const FileExplorerPage: Component = () => {
               onNavigate={(newFolderId) =>
                 setSearchParams({ folderId: newFolderId })
               }
+              onMove={(sourceEntrySignature, targetFolderId) => {
+                const isInMultiselect =
+                  selectedEntries().has(sourceEntrySignature)
+
+                if (isInMultiselect) {
+                  moveEntries([...selectedEntries()], targetFolderId)
+                } else {
+                  moveEntries([sourceEntrySignature], targetFolderId)
+                }
+              }}
             />
             <Stack direction="row" alignItems="center" spacing="1em">
               <div class="entries-search-container">
@@ -954,6 +971,16 @@ const FileExplorerPage: Component = () => {
                           setEntryToRename(null)
                         } else {
                           renameEntry(entry.id, entry.entry_type, newName)
+                        }
+                      }}
+                      onMove={(sourceEntrySignature, targetFolderId) => {
+                        const isInMultiselect =
+                          selectedEntries().has(sourceEntrySignature)
+
+                        if (isInMultiselect) {
+                          moveEntries([...selectedEntries()], targetFolderId)
+                        } else {
+                          moveEntries([sourceEntrySignature], targetFolderId)
                         }
                       }}
                       onCancelRename={() => setEntryToRename(null)}

@@ -1,14 +1,17 @@
+/* eslint-disable unicorn/consistent-function-scoping */
 import {
   Component,
   Show,
   createEffect,
   createMemo,
+  createSignal,
   onCleanup,
   onMount,
 } from "solid-js"
 
 import { Checkbox } from "@/app/components/common/checkbox/checkbox"
 import { Icon } from "@/app/components/common/icon/icon"
+import { SelectedEntry } from "@/modules/storage/file-explorer/use-file-explorer"
 import { IStorageEntry } from "@/modules/storage/storage-entry/storage-entry.codecs"
 
 export type StorageEntryProps = {
@@ -25,6 +28,7 @@ export type StorageEntryProps = {
   onOpenContextMenu?: (event: MouseEvent) => void
   onSelect?: (event: MouseEvent | undefined) => void
   onRename?: (newName: string) => void
+  onMove?: (sourceEntrySignature: SelectedEntry, targetEntryId: number) => void
   onClick?: (event: MouseEvent) => void
   onCancelRename?: () => void
 }
@@ -32,12 +36,62 @@ export type StorageEntryProps = {
 export const StorageEntry: Component<StorageEntryProps> = (props) => {
   let nameFieldRef: HTMLInputElement
 
+  const [isAboutToRecieve, setIsAboutToReceive] = createSignal(false)
+  const [isDragging, setIsDragging] = createSignal(false)
+
   // prettier-ignore
   const thumbnail = createMemo(() =>
     (props.entry.entry_type === "file"
       ? props.thumbnails?.[props.entry.id]
       : null)
   )
+
+  const onDragStart = (event: DragEvent) => {
+    setIsDragging(true)
+
+    event.dataTransfer?.setData(
+      "text/plain",
+      `${props.entry.entry_type}:${props.entry.id}`
+    )
+  }
+
+  const onDragEnd = () => {
+    setIsDragging(false)
+  }
+
+  const onDragOver = (event: DragEvent) => {
+    event.preventDefault()
+
+    if (props.entry.entry_type === "folder") {
+      setIsAboutToReceive(true)
+    }
+  }
+
+  const onDragLeave = (event: DragEvent) => {
+    event.preventDefault()
+
+    setIsAboutToReceive(false)
+  }
+
+  const onDrop = (event: DragEvent) => {
+    event.preventDefault()
+
+    if (props.entry.entry_type !== "folder") return
+
+    setIsAboutToReceive(false)
+
+    const droppedEntrySignature = event.dataTransfer?.getData("text/plain") as
+      | SelectedEntry
+      | undefined
+
+    if (!droppedEntrySignature) return
+
+    const [, droppedEntryId] = droppedEntrySignature.split(":")
+
+    if (droppedEntryId === props.entry.id.toString()) return
+
+    props.onMove?.(droppedEntrySignature, props.entry.id)
+  }
 
   createEffect(() => {
     if (props.isRenaming) {
@@ -68,10 +122,18 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
     // TODO: Should be a clickable <button />
     <div
       ref={props.ref}
+      draggable={true}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       classList={{
         item: true,
         selected: props.selected,
         "context-menu-target": props.isContextMenuTarget,
+        "about-to-receive": isAboutToRecieve(),
+        dragging: isDragging(),
       }}
       onDblClick={(event) => props.onDblClick(event)}
       // prettier-ignore
@@ -86,6 +148,10 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
         props.onOpenContextMenu?.(event)
       }}
     >
+      <div class="item-drop-here-hint">
+        <Icon name="place_item" wght={600} size={32} />
+        <div class="folder-name">{props.entry.name}</div>
+      </div>
       <Show when={props.onSelect}>
         <div class="item-select-container">
           <Checkbox
