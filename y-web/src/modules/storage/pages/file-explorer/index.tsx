@@ -7,6 +7,7 @@ import {
   Component,
   For,
   Show,
+  batch,
   createEffect,
   createMemo,
   createSignal,
@@ -206,8 +207,13 @@ const FileExplorerPage: Component = () => {
     on(
       () => folderId(),
       () => {
-        setFolderCreationInitiated(false)
-        setEntryToRename(null)
+        batch(() => {
+          setFolderCreationInitiated(false)
+          setEntryToRename(null)
+
+          setSearch("")
+          searchInputFieldRef.value = ""
+        })
       }
     )
   )
