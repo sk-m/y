@@ -1,4 +1,5 @@
 import {
+  batch,
   createEffect,
   createMemo,
   createSignal,
@@ -36,7 +37,7 @@ export const useFileExplorerThumbnails = (
       .map((entry) => entry.id)
   )
 
-  const getNextThumbnails = async () => {
+  const getNextThumbnails = async (ignoreCache = false) => {
     const fromIndex = lastThumbnailIndex()
     const toIndex = fromIndex + THUMBNAILS_PER_LOAD_REQUEST
 
@@ -55,10 +56,15 @@ export const useFileExplorerThumbnails = (
       return
     }
 
-    const newThumbnailsResponse = await storageEntryThumbnails({
-      endpointId: props.endpointId(),
-      fileIds: newFileIds,
-    }).catch((error) => {
+    const newThumbnailsResponse = await storageEntryThumbnails(
+      {
+        endpointId: props.endpointId(),
+        fileIds: newFileIds,
+      },
+      {
+        ignoreCache,
+      }
+    ).catch((error) => {
       const errorCode = (error as { code: string }).code
 
       if (errorCode === "storage.entry_thumbnails.artifacts_disabled") {
@@ -79,7 +85,7 @@ export const useFileExplorerThumbnails = (
   /**
    * @returns {Promise<boolean>} Whether or not new thumbnails were loaded. If `false`, we have already loaded all of them for this view (scroll position).
    */
-  const checkAndLoad = async () => {
+  const checkAndLoad = async (ignoreCache = false) => {
     // eslint-disable-next-line sonarjs/no-empty-collection
     const elementWithLastThumbnail = props.entryRefs()[lastThumbnailIndex()]
 
@@ -87,7 +93,7 @@ export const useFileExplorerThumbnails = (
       const elementRect = elementWithLastThumbnail.getBoundingClientRect()
 
       if (elementRect.top < window.innerHeight) {
-        await getNextThumbnails()
+        await getNextThumbnails(ignoreCache)
 
         return true
       }
@@ -119,6 +125,23 @@ export const useFileExplorerThumbnails = (
     })
   })
 
+  const refresh = () => {
+    // eslint-disable-next-line solid/reactivity
+    void batch(async () => {
+      setLastThumbnailIndex(0)
+      setThumbnails({})
+
+      if (fileIds().length > 0) {
+        let shouldLoadMore = true
+
+        while (shouldLoadMore) {
+          // eslint-disable-next-line no-await-in-loop
+          shouldLoadMore = await checkAndLoad(true)
+        }
+      }
+    })
+  }
+
   createEffect(
     on(fileIds, async () => {
       setLastThumbnailIndex(0)
@@ -136,5 +159,6 @@ export const useFileExplorerThumbnails = (
 
   return {
     thumbnails,
+    refresh,
   }
 }

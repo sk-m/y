@@ -129,7 +129,6 @@ async fn storage_entry_thumbnails(
             res.headers_mut().insert(
                 header::CACHE_CONTROL,
                 HeaderValue::from_static(
-                    // TODO we can also use the `immutable` directive
                     "private, stale-while-revalidate, max-age=432000", // 432000 = 5 days
                 ),
             );

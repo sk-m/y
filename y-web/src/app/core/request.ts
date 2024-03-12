@@ -30,13 +30,15 @@ const request = async (
     mode: "cors",
     credentials: "same-origin",
     referrerPolicy: "same-origin",
-    headers: {
-      "Content-Type": data?.contentType ?? "application/json",
-    },
 
     body: data?.rawBody ?? (data?.body && JSON.stringify(data.body)),
 
     ...requestOptions,
+
+    headers: {
+      "Content-Type": data?.contentType ?? "application/json",
+      ...requestOptions?.headers,
+    },
   })
 
   return response.json().then((json: ResponseData) => {

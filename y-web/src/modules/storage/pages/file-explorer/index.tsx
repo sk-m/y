@@ -182,7 +182,7 @@ const FileExplorerPage: Component = () => {
     )
   })
 
-  const { thumbnails } = useFileExplorerThumbnails({
+  const { thumbnails, refresh: refreshThumbnails } = useFileExplorerThumbnails({
     endpointId: () => Number.parseInt(params.endpointId as string, 10),
 
     browserContentsRef: () => browserContentsRef,
@@ -507,7 +507,23 @@ const FileExplorerPage: Component = () => {
 
         if (selectedEntries().size === 0) return
 
-        downloadSelectedEntries()
+        if (selectedEntries().size === 1) {
+          const entry = selectedEntries().values().next().value as
+            | SelectedEntry
+            | undefined
+
+          if (!entry) return
+
+          const [entryType, entryId] = entry.split(":")
+
+          if (entryType === "file" && entryId) {
+            downloadFile(Number.parseInt(entryId, 10))
+          } else {
+            downloadSelectedEntries()
+          }
+        } else {
+          downloadSelectedEntries()
+        }
       }
 
       // Quick delete selected entries (no confirmation)
@@ -705,6 +721,7 @@ const FileExplorerPage: Component = () => {
                   icon="cached"
                   onClick={() => {
                     void invalidateEntries()
+                    void refreshThumbnails()
                     closeGeneralContextMenu()
                   }}
                 >
