@@ -30,7 +30,7 @@ export type FileExplorerMediaViewerProps = {
 
   onInfoPanelSelect: () => void
   onSelect: () => void
-  onDelete: () => void
+  onDelete: (force: boolean) => void
   onDownload: () => void
 
   onClose: () => void
@@ -107,10 +107,10 @@ export const FileExplorerMediaViewer: Component<
       props.onDownload()
     }
 
-    if (event.key === "Delete" && event.shiftKey) {
+    if (event.key === "Delete") {
       event.preventDefault()
 
-      props.onDelete()
+      props.onDelete(event.shiftKey)
     }
   }
 
@@ -161,7 +161,7 @@ export const FileExplorerMediaViewer: Component<
         <div class="top-container">
           <div class="left">
             <div class="container-block">
-              <button class="button" onClick={props.onDelete}>
+              <button class="button" onClick={() => props.onDelete(false)}>
                 <Icon name="delete" wght={500} size={20} />
               </button>
             </div>

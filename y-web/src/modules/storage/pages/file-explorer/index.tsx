@@ -571,15 +571,15 @@ const FileExplorerPage: Component = () => {
         }
       }
 
-      // Quick delete selected entries (no confirmation)
-      if (event.key === "Delete" && event.shiftKey) {
+      // delete selected entries
+      if (event.key === "Delete") {
         event.preventDefault()
 
         if (selectedEntries().size === 0) return
 
         const { folderIds, fileIds } = partitionEntries([...selectedEntries()])
 
-        deleteEntries(folderIds, fileIds)
+        deleteEntries(folderIds, fileIds, event.shiftKey)
       }
 
       // Focus onto search field
@@ -644,7 +644,7 @@ const FileExplorerPage: Component = () => {
         } entries selected`}
         open={entriesToDelete() !== null}
         onClose={() => setEntriesToDelete(null)}
-        onConfirm={performDeletion}
+        onConfirm={() => performDeletion()}
       />
       <Show when={entryToPreview()}>
         <FileExplorerMediaViewer
@@ -652,8 +652,8 @@ const FileExplorerPage: Component = () => {
           entry={entryToPreview()!}
           onPrev={() => getEntryForPreview("prev")}
           onNext={() => getEntryForPreview("next")}
-          onDelete={() => {
-            deleteEntries([], [entryToPreview()!.id], true)
+          onDelete={(force) => {
+            deleteEntries([], [entryToPreview()!.id], force)
           }}
           onDownload={() => downloadFile(entryToPreview()!.id)}
           onInfoPanelSelect={() =>

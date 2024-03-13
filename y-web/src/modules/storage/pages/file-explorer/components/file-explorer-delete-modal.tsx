@@ -69,7 +69,7 @@ export const FileExplorerDeleteModal: Component<
           <Button variant="secondary" onClick={props.onClose}>
             Cancel
           </Button>
-          <Button onClick={props.onConfirm}>Delete</Button>
+          <Button onClick={() => props.onConfirm()}>Delete</Button>
         </Stack>
       </Stack>
     </Modal>
