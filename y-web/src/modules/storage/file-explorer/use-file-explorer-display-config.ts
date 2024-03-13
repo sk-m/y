@@ -4,7 +4,7 @@ import { createMemo, createSignal } from "solid-js"
 import { IStorageEntry } from "../storage-entry/storage-entry.codecs"
 
 export type Layout = "grid" | "slates"
-export type SortBy = "name" | "mime_type" | "size"
+export type SortBy = "name" | "mime_type" | "size" | "created_at"
 export type SortDirection = "asc" | "desc"
 
 export const useFileExplorerDisplayConfig = () => {
@@ -29,6 +29,13 @@ export const useFileExplorerDisplayConfig = () => {
       return (a: IStorageEntry, b: IStorageEntry) =>
         ((a.size_bytes ?? 0) < (b.size_bytes ?? 0) ? -1 : 1) *
         (sortDirection() === "desc" ? 1 : -1)
+    }
+
+    if (sortBy() === "created_at") {
+      return (a: IStorageEntry, b: IStorageEntry) =>
+        (Date.parse(a.created_at ?? "") < Date.parse(b.created_at ?? "")
+          ? -1
+          : 1) * (sortDirection() === "desc" ? 1 : -1)
     }
 
     return () => 0
