@@ -2,6 +2,7 @@
 import {
   Component,
   Match,
+  Show,
   Switch,
   createEffect,
   createMemo,
@@ -219,6 +220,15 @@ export const FileExplorerMediaViewer: Component<
                   style={{ transform: `scale(${zoom()})` }}
                 />
               </Match>
+              <Match when={props.entry.mime_type?.startsWith("audio/")}>
+                <audio
+                  class="preview-audio"
+                  src={previewUrl()}
+                  controls
+                  autoplay
+                  onClick={(event) => event.stopPropagation()}
+                />
+              </Match>
             </Switch>
           </div>
           <div class="right">
@@ -229,12 +239,18 @@ export const FileExplorerMediaViewer: Component<
         </div>
         <div class="bottom-container" />
         <div class="hints-container">
-          <div
-            classList={{ hint: true, "zoom-hint": true, show: showZoomHint() }}
-          >
-            {/* eslint-disable-next-line @typescript-eslint/no-magic-numbers */}
-            {Math.floor(zoom() * 100)}%
-          </div>
+          <Show when={!props.entry.mime_type?.startsWith("audio/")}>
+            <div
+              classList={{
+                hint: true,
+                "zoom-hint": true,
+                show: showZoomHint(),
+              }}
+            >
+              {/* eslint-disable-next-line @typescript-eslint/no-magic-numbers */}
+              {Math.floor(zoom() * 100)}%
+            </div>
+          </Show>
         </div>
       </div>
     </Portal>

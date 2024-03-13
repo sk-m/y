@@ -222,7 +222,8 @@ const FileExplorerPage: Component = () => {
     folderEntries().filter(
       (entry) =>
         entry.mime_type?.startsWith("image/") ||
-        entry.mime_type?.startsWith("video/")
+        entry.mime_type?.startsWith("video/") ||
+        entry.mime_type?.startsWith("audio/")
     )
   )
 
