@@ -1,0 +1,34 @@
+.file-explorer-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+
+  padding: 1em 1em;
+
+  > .thumbnail-container {
+    width: 100%;
+    height: 220px;
+
+    border: 1px solid rgba(21, 23, 46, 0.1);
+    box-shadow: 0 5px 10px rgba(21, 23, 46, 0.1);
+    border-radius: 6px;
+
+    overflow: hidden;
+
+    cursor: pointer;
+
+    transition: 0.2s ease-in-out;
+
+    &:hover {
+      transform: translateY(-1px);
+      border-color: rgba(21, 23, 46, 0.2);
+      box-shadow: 0 10px 15px rgba(21, 23, 46, 0.15);
+    }
+
+    > img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+}

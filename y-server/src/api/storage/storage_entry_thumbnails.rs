@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+use actix_web::http::header::{self, HeaderValue};
 use actix_web::web::Query;
 use actix_web::{get, web, HttpResponse, Responder};
 use base64::prelude::*;
@@ -123,7 +124,16 @@ async fn storage_entry_thumbnails(
                 }
             }
 
-            return HttpResponse::Ok().json(StorageEntryThumbnaisOutput { thumbnails });
+            let mut res = HttpResponse::Ok().json(StorageEntryThumbnaisOutput { thumbnails });
+
+            res.headers_mut().insert(
+                header::CACHE_CONTROL,
+                HeaderValue::from_static(
+                    "private, stale-while-revalidate, max-age=432000", // 432000 = 5 days
+                ),
+            );
+
+            return res;
         }
         Err(e) => {
             error!("{:?}", e);

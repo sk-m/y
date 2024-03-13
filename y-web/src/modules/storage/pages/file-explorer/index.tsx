@@ -7,6 +7,7 @@ import {
   Component,
   For,
   Show,
+  batch,
   createEffect,
   createMemo,
   createSignal,
@@ -50,12 +51,18 @@ import {
 } from "@/modules/storage/storage-entry/storage-entry.codecs"
 import { FileWithPath } from "@/modules/storage/upload"
 
+import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
+import { FileExplorerDisplaySettings } from "./components/file-explorer-display-settings"
+import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
+import { FileExplorerMediaViewer } from "./components/file-explorer-media-viewer"
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerSelectionInfo } from "./components/file-explorer-selection-info"
 import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
 import { NewFolderEntry } from "./components/new-folder-entry"
 import { StorageEntry } from "./components/storage-entry"
 import "./file-explorer.less"
+
+const SEARCH_DEBOUNCE_MS = 300
 
 const closeTabConfirmation = (event: BeforeUnloadEvent) => {
   event.preventDefault()
@@ -67,6 +74,15 @@ const FileExplorerPage: Component = () => {
   const params = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
 
+  const $renameEntry = createMutation(renameStorageEntry)
+  const $moveEntries = createMutation(moveStorageEntries)
+  const $deleteEntries = createMutation(deleteStorageEntries)
+  const $createFolder = createMutation(createStorageFolder)
+
+  let searchInputFieldRef: HTMLInputElement
+  let browserContentsRef: HTMLDivElement
+  const entryRefs: HTMLDivElement[] = []
+
   // prettier-ignore
   const folderId = createMemo(() =>
     (searchParams.folderId
@@ -75,8 +91,20 @@ const FileExplorerPage: Component = () => {
       : undefined)
   )
 
-  let browserContentsRef: HTMLDivElement
-  const entryRefs: HTMLDivElement[] = []
+  const {
+    layout,
+    setLayout,
+
+    sortBy,
+    setSortBy,
+
+    sortDirection,
+    setSortDirection,
+
+    sortFn,
+  } = useFileExplorerDisplayConfig()
+
+  const [search, setSearch] = createSignal("")
 
   const {
     folderEntries,
@@ -84,17 +112,26 @@ const FileExplorerPage: Component = () => {
     invalidateEntries,
     selectedEntries,
     onSelect,
-    setTemporarySelectedEntry,
-    temporarySelectedEntryIsInMultiselect,
+    setContextMenuTargetEntry,
+    contextMenuTargetEntryIsInMultiselect,
     resetSelection,
     setSelectedEntries,
-    temporarySelectedEntry,
+    contextMenuTargetEntry,
   } = useFileExplorer({
     endpointId: () => params.endpointId as string,
     folderId: () => searchParams.folderId,
+
+    entriesSortFn: sortFn,
+    // eslint-disable-next-line solid/reactivity
+    entriesFilterFn: () => (entry) => {
+      if (!search()) return true
+
+      return entry.name.toLowerCase().includes(search()!.toLowerCase())
+    },
   })
 
-  const { onDragLeave, onDragOver, isAboutToDrop, onDrop } = useFilesDrop()
+  const { onDragOver, onDragLeave, onDragEnter, isAboutToDrop, onDrop } =
+    useFilesDrop()
 
   const {
     open: openEntryContextMenu,
@@ -102,7 +139,7 @@ const FileExplorerPage: Component = () => {
     contextMenuProps: entryContextMenuProps,
   } = useContextMenu({
     onClose: () => {
-      setTemporarySelectedEntry(null)
+      setContextMenuTargetEntry(null)
     },
   })
 
@@ -124,16 +161,28 @@ const FileExplorerPage: Component = () => {
     totalSizeBytes: 0,
   })
 
+  const [entryIndexToPreview, setEntryIndexToPreview] = createSignal<
+    number | null
+  >(null)
   const [entryToRename, setEntryToRename] = createSignal<number | null>(null)
   const [folderCreationInitiated, setFolderCreationInitiated] =
     createSignal(false)
 
-  const $renameEntry = createMutation(renameStorageEntry)
-  const $moveEntries = createMutation(moveStorageEntries)
-  const $deleteEntries = createMutation(deleteStorageEntries)
-  const $createFolder = createMutation(createStorageFolder)
+  const [infoPanelSelectedEntryId, setInfoPanelSelectedEntryId] = createSignal<
+    number | null
+  >(null)
 
-  const { thumbnails } = useFileExplorerThumbnails({
+  const infoPanelSelectedEntry = createMemo(() => {
+    if (infoPanelSelectedEntryId() === null) {
+      return null
+    }
+
+    return folderEntries().find(
+      (entry) => entry.id === infoPanelSelectedEntryId()
+    )
+  })
+
+  const { thumbnails, refresh: refreshThumbnails } = useFileExplorerThumbnails({
     endpointId: () => Number.parseInt(params.endpointId as string, 10),
 
     browserContentsRef: () => browserContentsRef,
@@ -158,11 +207,62 @@ const FileExplorerPage: Component = () => {
     on(
       () => folderId(),
       () => {
-        setFolderCreationInitiated(false)
-        setEntryToRename(null)
+        batch(() => {
+          setFolderCreationInitiated(false)
+          setEntryToRename(null)
+
+          setSearch("")
+          searchInputFieldRef.value = ""
+        })
       }
     )
   )
+
+  const previewableEntries = createMemo(() =>
+    folderEntries().filter(
+      (entry) =>
+        entry.mime_type?.startsWith("image/") ||
+        entry.mime_type?.startsWith("video/")
+    )
+  )
+
+  const entryToPreview = createMemo(() => {
+    if (entryIndexToPreview() === null) return null
+
+    return previewableEntries()[entryIndexToPreview()!]
+  })
+
+  const getEntryForPreview = (direction: "prev" | "next") => {
+    const currentIndex = entryIndexToPreview()
+
+    if (currentIndex === null) return
+
+    if (direction === "prev") {
+      if (currentIndex === 0) {
+        setEntryIndexToPreview(previewableEntries().length - 1)
+      } else {
+        setEntryIndexToPreview(currentIndex - 1)
+      }
+    } else {
+      if (currentIndex === previewableEntries().length - 1) {
+        setEntryIndexToPreview(0)
+      } else {
+        setEntryIndexToPreview(currentIndex + 1)
+      }
+    }
+  }
+
+  const findPreviewableEntryIndex = (entryId: number) => {
+    if (previewableEntries().length === 0) return null
+
+    for (let i = 0; i < previewableEntries().length; i++) {
+      if (previewableEntries()[i]?.id === entryId) {
+        return i
+      }
+    }
+
+    return null
+  }
 
   const partitionEntries = (entries: SelectedEntry[]) => {
     if (entries.length === 0) return { folderIds: [], fileIds: [] }
@@ -245,7 +345,10 @@ const FileExplorerPage: Component = () => {
     )
   }
 
-  const moveEntries = (entries: SelectedEntry[]) => {
+  const moveEntries = (
+    entries: SelectedEntry[],
+    targetFolderId?: number | null
+  ) => {
     const { fileIds, folderIds } = partitionEntries(entries)
 
     $moveEntries.mutate(
@@ -253,7 +356,9 @@ const FileExplorerPage: Component = () => {
         endpointId: Number.parseInt(params.endpointId as string, 10),
         fileIds,
         folderIds,
-        targetFolderId: folderId(),
+        targetFolderId:
+          // eslint-disable-next-line no-undefined
+          targetFolderId === null ? undefined : targetFolderId ?? folderId(),
       },
       {
         onSuccess: () => {
@@ -379,6 +484,7 @@ const FileExplorerPage: Component = () => {
       if (event.key === "Escape") {
         event.preventDefault()
 
+        setInfoPanelSelectedEntryId(null)
         resetSelection()
       }
 
@@ -401,7 +507,23 @@ const FileExplorerPage: Component = () => {
 
         if (selectedEntries().size === 0) return
 
-        downloadSelectedEntries()
+        if (selectedEntries().size === 1) {
+          const entry = selectedEntries().values().next().value as
+            | SelectedEntry
+            | undefined
+
+          if (!entry) return
+
+          const [entryType, entryId] = entry.split(":")
+
+          if (entryType === "file" && entryId) {
+            downloadFile(Number.parseInt(entryId, 10))
+          } else {
+            downloadSelectedEntries()
+          }
+        } else {
+          downloadSelectedEntries()
+        }
       }
 
       // Quick delete selected entries (no confirmation)
@@ -414,11 +536,50 @@ const FileExplorerPage: Component = () => {
 
         deleteEntries(folderIds, fileIds)
       }
+
+      // Focus onto search field
+      if (event.key === "f" && event.ctrlKey) {
+        event.preventDefault()
+
+        searchInputFieldRef.select()
+      }
     }
 
+    let searchDebounce = 0
+
+    const searchInputFieldInputHandler = () => {
+      clearTimeout(searchDebounce)
+
+      searchDebounce = setTimeout(() => {
+        setSearch(searchInputFieldRef.value)
+      }, SEARCH_DEBOUNCE_MS)
+    }
+
+    const searchInputFieldKeydownHandler = (event: KeyboardEvent) => {
+      if (event.key === "Escape" || event.key === "Enter") {
+        searchInputFieldRef.blur()
+      }
+
+      event.stopImmediatePropagation()
+      event.stopPropagation()
+    }
+
+    searchInputFieldRef.addEventListener("input", searchInputFieldInputHandler)
+    searchInputFieldRef.addEventListener(
+      "keydown",
+      searchInputFieldKeydownHandler
+    )
     window.addEventListener("keydown", keydownHandler)
 
     onCleanup(() => {
+      searchInputFieldRef.removeEventListener(
+        "input",
+        searchInputFieldInputHandler
+      )
+      searchInputFieldRef.removeEventListener(
+        "keydown",
+        searchInputFieldKeydownHandler
+      )
       window.removeEventListener("keydown", keydownHandler)
     })
   })
@@ -427,9 +588,35 @@ const FileExplorerPage: Component = () => {
     <div
       id="page-storage-file-explorer"
       onDrop={onDrop(handleDrop)}
-      onDragOver={onDragOver}
+      onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
     >
+      <Show when={entryToPreview()}>
+        <FileExplorerMediaViewer
+          endpointId={params.endpointId as string}
+          entry={entryToPreview()!}
+          onPrev={() => getEntryForPreview("prev")}
+          onNext={() => getEntryForPreview("next")}
+          onDelete={() => {
+            deleteEntries([], [entryToPreview()!.id])
+          }}
+          onDownload={() => downloadFile(entryToPreview()!.id)}
+          onInfoPanelSelect={() =>
+            setInfoPanelSelectedEntryId(entryToPreview()!.id)
+          }
+          onSelect={() => {
+            // TODO refactor
+            onSelect(
+              folderEntries().findIndex(
+                (entry) => entry.id === entryToPreview()!.id
+              )
+            )
+          }}
+          onClose={() => setEntryIndexToPreview(null)}
+        />
+      </Show>
+
       <DropFilesHere active={isAboutToDrop()} />
 
       <Show when={uploadStatus.numberOfFiles !== 0}>
@@ -448,13 +635,47 @@ const FileExplorerPage: Component = () => {
               onNavigate={(newFolderId) =>
                 setSearchParams({ folderId: newFolderId })
               }
+              onMove={(sourceEntrySignature, targetFolderId) => {
+                const isInMultiselect =
+                  selectedEntries().has(sourceEntrySignature)
+
+                if (isInMultiselect) {
+                  moveEntries([...selectedEntries()], targetFolderId)
+                } else {
+                  moveEntries([sourceEntrySignature], targetFolderId)
+                }
+              }}
             />
-            <Show when={selectedEntries().size > 0}>
-              <FileExplorerSelectionInfo
-                selectedEntriesCount={selectedEntries().size}
-                onClick={openSelectionContextMenu}
+            <Stack direction="row" alignItems="center" spacing="1em">
+              <div class="entries-search-container">
+                <input
+                  classList={{
+                    "non-empty": search() !== "",
+                  }}
+                  ref={searchInputFieldRef!}
+                  type="text"
+                  placeholder="Search..."
+                />
+              </div>
+
+              <div class="top-container-separator" />
+
+              <FileExplorerDisplaySettings
+                layout={layout()}
+                setLayout={setLayout}
+                sortBy={sortBy()}
+                setSortBy={setSortBy}
+                sortDirection={sortDirection()}
+                setSortDirection={setSortDirection}
               />
-            </Show>
+              <Show when={selectedEntries().size > 0}>
+                <div class="top-container-separator" />
+                <FileExplorerSelectionInfo
+                  selectedEntriesCount={selectedEntries().size}
+                  onClick={openSelectionContextMenu}
+                />
+              </Show>
+            </Stack>
           </div>
           <div
             ref={browserContentsRef!}
@@ -500,6 +721,7 @@ const FileExplorerPage: Component = () => {
                   icon="cached"
                   onClick={() => {
                     void invalidateEntries()
+                    void refreshThumbnails()
                     closeGeneralContextMenu()
                   }}
                 >
@@ -539,7 +761,7 @@ const FileExplorerPage: Component = () => {
                 when={
                   !(
                     selectedEntries().size > 1 &&
-                    temporarySelectedEntryIsInMultiselect()
+                    contextMenuTargetEntryIsInMultiselect()
                   )
                 }
                 fallback={
@@ -583,7 +805,7 @@ const FileExplorerPage: Component = () => {
               >
                 <ContextMenuSection>
                   <Show
-                    when={temporarySelectedEntry()?.entry_type === "folder"}
+                    when={contextMenuTargetEntry()?.entry_type === "folder"}
                   >
                     <Stack
                       style={{
@@ -607,7 +829,7 @@ const FileExplorerPage: Component = () => {
                           "word-break": "break-all",
                         }}
                       >
-                        {temporarySelectedEntry()!.name}
+                        {contextMenuTargetEntry()!.name}
                       </Text>
                     </Stack>
 
@@ -616,7 +838,7 @@ const FileExplorerPage: Component = () => {
                     <ContextMenuLink
                       icon="download"
                       onClick={() => {
-                        downloadFolder(temporarySelectedEntry()!.id)
+                        downloadFolder(contextMenuTargetEntry()!.id)
                         closeEntryContextMenu()
                       }}
                     >
@@ -628,7 +850,7 @@ const FileExplorerPage: Component = () => {
                     <ContextMenuLink
                       icon="edit"
                       onClick={() => {
-                        setEntryToRename(temporarySelectedEntry()!.id)
+                        setEntryToRename(contextMenuTargetEntry()!.id)
                         closeEntryContextMenu()
                       }}
                     >
@@ -638,14 +860,14 @@ const FileExplorerPage: Component = () => {
                     <ContextMenuLink
                       icon="delete"
                       onClick={() => {
-                        deleteEntries([temporarySelectedEntry()!.id], [])
+                        deleteEntries([contextMenuTargetEntry()!.id], [])
                         closeEntryContextMenu()
                       }}
                     >
                       Delete folder
                     </ContextMenuLink>
                   </Show>
-                  <Show when={temporarySelectedEntry()?.entry_type === "file"}>
+                  <Show when={contextMenuTargetEntry()?.entry_type === "file"}>
                     <Stack
                       spacing={"0.25em"}
                       style={{
@@ -668,9 +890,9 @@ const FileExplorerPage: Component = () => {
                           "word-break": "break-all",
                         }}
                       >
-                        {temporarySelectedEntry()!.name}
-                        {temporarySelectedEntry()!.extension
-                          ? `.${temporarySelectedEntry()!.extension!}`
+                        {contextMenuTargetEntry()!.name}
+                        {contextMenuTargetEntry()!.extension
+                          ? `.${contextMenuTargetEntry()!.extension!}`
                           : ""}
                       </Text>
                     </Stack>
@@ -680,8 +902,8 @@ const FileExplorerPage: Component = () => {
                     <ContextMenuLink
                       icon="download"
                       onClick={() => {
-                        if (temporarySelectedEntry()) {
-                          downloadFile(temporarySelectedEntry()!.id)
+                        if (contextMenuTargetEntry()) {
+                          downloadFile(contextMenuTargetEntry()!.id)
                           closeEntryContextMenu()
                         }
                       }}
@@ -694,7 +916,7 @@ const FileExplorerPage: Component = () => {
                     <ContextMenuLink
                       icon="edit"
                       onClick={() => {
-                        setEntryToRename(temporarySelectedEntry()!.id)
+                        setEntryToRename(contextMenuTargetEntry()!.id)
                         closeEntryContextMenu()
                       }}
                     >
@@ -704,7 +926,7 @@ const FileExplorerPage: Component = () => {
                     <ContextMenuLink
                       icon="delete"
                       onClick={() => {
-                        deleteEntries([], [temporarySelectedEntry()!.id])
+                        deleteEntries([], [contextMenuTargetEntry()!.id])
                         closeEntryContextMenu()
                       }}
                     >
@@ -714,7 +936,12 @@ const FileExplorerPage: Component = () => {
                 </ContextMenuSection>
               </Show>
             </ContextMenu>
-            <div class="items">
+            <div
+              classList={{
+                items: true,
+                [`layout-${layout()}`]: true,
+              }}
+            >
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
                 {(entry, index) => {
@@ -722,8 +949,8 @@ const FileExplorerPage: Component = () => {
                     selectedEntries().has(`${entry.entry_type}:${entry.id}`)
                   )
 
-                  const temporarySelected = createMemo(
-                    () => temporarySelectedEntry()?.id === entry.id
+                  const isContextMenuTarget = createMemo(
+                    () => contextMenuTargetEntry()?.id === entry.id
                   )
 
                   const isRenaming = createMemo(
@@ -738,21 +965,45 @@ const FileExplorerPage: Component = () => {
                       isRenaming={isRenaming()}
                       entry={entry}
                       selected={selected()}
-                      temporarySelected={temporarySelected()}
+                      isContextMenuTarget={isContextMenuTarget()}
                       thumbnails={thumbnails()}
-                      onNavigateToFolder={navigateToFolder}
+                      onDblClick={() => {
+                        if (entry.entry_type === "folder" && !isRenaming()) {
+                          navigateToFolder(entry.id)
+                        } else {
+                          const previewableEntryIndex =
+                            findPreviewableEntryIndex(entry.id)
+
+                          if (previewableEntryIndex !== null) {
+                            setEntryIndexToPreview(previewableEntryIndex)
+                          }
+                        }
+                      }}
                       onOpenContextMenu={(event) => {
-                        setTemporarySelectedEntry(entry)
+                        setContextMenuTargetEntry(entry)
                         openEntryContextMenu(event)
                       }}
                       onSelect={(event) => {
                         onSelect(index(), event)
+                      }}
+                      onClick={() => {
+                        setInfoPanelSelectedEntryId(entry.id)
                       }}
                       onRename={(newName) => {
                         if (entry.name === newName || newName === "") {
                           setEntryToRename(null)
                         } else {
                           renameEntry(entry.id, entry.entry_type, newName)
+                        }
+                      }}
+                      onMove={(sourceEntrySignature, targetFolderId) => {
+                        const isInMultiselect =
+                          selectedEntries().has(sourceEntrySignature)
+
+                        if (isInMultiselect) {
+                          moveEntries([...selectedEntries()], targetFolderId)
+                        } else {
+                          moveEntries([sourceEntrySignature], targetFolderId)
                         }
                       }}
                       onCancelRename={() => setEntryToRename(null)}
@@ -772,7 +1023,30 @@ const FileExplorerPage: Component = () => {
             </div>
           </div>
         </div>
-        <div class="side-panel" />
+        <div class="side-panel">
+          <Show when={infoPanelSelectedEntry()}>
+            <FileExplorerInfoPanel
+              thumbnails={thumbnails()}
+              entry={infoPanelSelectedEntry()!}
+              onRename={(name) =>
+                renameEntry(
+                  infoPanelSelectedEntry()!.id,
+                  infoPanelSelectedEntry()!.entry_type,
+                  name
+                )
+              }
+              onThumbnailClick={() => {
+                const previewableEntryIndex = findPreviewableEntryIndex(
+                  infoPanelSelectedEntry()!.id
+                )
+
+                if (previewableEntryIndex !== null) {
+                  setEntryIndexToPreview(previewableEntryIndex)
+                }
+              }}
+            />
+          </Show>
+        </div>
       </div>
     </div>
   )

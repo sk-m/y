@@ -14,6 +14,7 @@ use std::io::Write;
 use std::time::Instant;
 
 use crate::storage_entry::{generate_image_entry_thumbnail, generate_video_entry_thumbnail};
+use crate::user::get_user_from_request;
 use crate::{storage_endpoint::get_storage_endpoint, user::get_client_rights, util::RequestPool};
 
 const MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION: u64 = 50_000_000;
@@ -59,7 +60,15 @@ async fn storage_upload(
     let mut uploaded_files: Vec<String> = Vec::new();
 
     // Check the rights
+    // TODO we call to get_user_from_request twice. Refactor get_client_rights and allow it to consume the user session.
+    let client_session = get_user_from_request(&pool, &req).await;
     let client_rights = get_client_rights(&pool, &req).await;
+
+    let client_user_id = if client_session.is_some() {
+        Some(client_session.unwrap().0.id)
+    } else {
+        None
+    };
 
     let action_allowed = client_rights
         .iter()
@@ -107,6 +116,7 @@ async fn storage_upload(
                 let mut file_filename_parts = file_filename.split(".").collect::<Vec<&str>>();
 
                 // Extract the file's name and extension
+                // TODO we can extract the file's extension using the `infer` crate
                 let file_extension = if file_filename_parts.len() == 0 {
                     None
                 } else {
@@ -258,90 +268,87 @@ async fn storage_upload(
                 }
 
                 // Now that we have determined what the `parent_folder` for this file should be,
-                // let's create a new row for it and actually upload it onto the filesystem.
-                let file_transaction = pool.begin().await;
+                // let's actually write it onto the filesystem and create a new row in the databse for it.
 
-                if let Ok(mut file_transaction) = file_transaction {
-                    // Create a new file row
-                    let create_file_result = sqlx::query("INSERT INTO storage_files (endpoint_id, filesystem_id, parent_folder, name, extension) VALUES ($1, $2, $3, $4, $5)")
-                        .bind(endpoint_id)
-                        .bind(file_id.clone())
-                        .bind(parent_folder_id)
-                        .bind(file_name)
-                        .bind(file_extension)
-                        .execute(&mut *file_transaction).await;
+                // 1. Write the file onto the filesystem
+                let path = target_endpoint_base_path.join(&file_id);
+                let file = OpenOptions::new().write(true).create_new(true).open(&path);
+
+                if let Ok(mut file) = file {
+                    let mut file_kind: Option<infer::Type> = None;
+                    let mut file_size_bytes: i64 = 0;
+
+                    let mut first_chunk = true;
+
+                    while let Some(chunk) = field.next().await {
+                        // TODO maybe instead of failing the whole request just because of a
+                        // single chunk error, we should just rollback the transaction and
+                        // continue on to the next file in the request?
+                        if let Ok(chunk) = chunk {
+                            if first_chunk {
+                                first_chunk = false;
+                                file_kind = infer::get(&chunk);
+                            }
+
+                            file_size_bytes += chunk.len() as i64;
+                            let res = file.write(&chunk);
+
+                            if res.is_err() {
+                                error!("{}", res.unwrap_err());
+
+                                fs::remove_file(&path).unwrap_or(());
+
+                                return sink_and_error("storage.upload.internal", &mut payload)
+                                    .await;
+                            }
+                        } else {
+                            error!("{}", chunk.unwrap_err());
+
+                            fs::remove_file(&path).unwrap_or(());
+
+                            return sink_and_error("storage.upload.internal", &mut payload).await;
+                        }
+                    }
+
+                    // 2. Create a new row in the database
+                    let file_mime_type = if file_kind.is_some() {
+                        Some(file_kind.unwrap().mime_type())
+                    } else {
+                        None
+                    };
+
+                    let create_file_result = sqlx::query("INSERT INTO storage_files (endpoint_id, filesystem_id, parent_folder, name, extension, mime_type, size_bytes, created_by, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())")
+                    .bind(endpoint_id)
+                    .bind(&file_id)
+                    .bind(parent_folder_id)
+                    .bind(file_name)
+                    .bind(file_extension)
+                    .bind(file_mime_type)
+                    .bind(file_size_bytes)
+                    .bind(client_user_id)
+                    .execute(&**pool).await;
 
                     if create_file_result.is_err() {
                         // The most likely scenario for an error here is that the
                         // file with the same filename in the same folder already exists.
-                        // This is not critical, so we will just rollback the transaction and
+                        // This is not critical, so we will just delete the file we just wrote and
                         // continue on to the next file in the request.
+
+                        // TODO: it's kind of dumb to upload a file only to delete it later if it already exists...
 
                         skipped_files.push(file_filename);
 
                         warn!("{}", create_file_result.unwrap_err());
 
-                        let rollback_result = file_transaction.rollback().await;
-
-                        if rollback_result.is_err() {
-                            return sink_and_error("storage.upload.internal", &mut payload).await;
-                        }
+                        fs::remove_file(&path).unwrap_or(());
                     } else {
-                        // We created a row in the database, now let's actually write the
-                        // file onto the filesystem
-                        let path = target_endpoint_base_path.join(&file_id);
-                        let file = OpenOptions::new().write(true).create_new(true).open(&path);
-
-                        if let Ok(mut file) = file {
-                            while let Some(chunk) = field.next().await {
-                                // TODO maybe instead of failing the whole request just because of a
-                                // single chunk error, we should just rollback the transaction and
-                                // continue on to the next file in the request?
-                                if let Ok(chunk) = chunk {
-                                    let res = file.write(&chunk);
-
-                                    if res.is_err() {
-                                        error!("{}", res.unwrap_err());
-
-                                        return sink_and_error(
-                                            "storage.upload.internal",
-                                            &mut payload,
-                                        )
-                                        .await;
-                                    }
-                                } else {
-                                    error!("{}", chunk.unwrap_err());
-
-                                    return sink_and_error("storage.upload.internal", &mut payload)
-                                        .await;
-                                }
-                            }
-
-                            let commit_result = file_transaction.commit().await;
-
-                            if commit_result.is_err() {
-                                return sink_and_error("storage.upload.internal", &mut payload)
-                                    .await;
-                            }
-
-                            uploaded_files.push(file_id);
-                        } else {
-                            // For some reason, we could not write the file onto the filesystem.
-                            // This is not critical, so we will just rollback the transaction
-                            // for the current file and continue on.
-
-                            skipped_files.push(file_filename);
-
-                            let rollback_result = file_transaction.rollback().await;
-
-                            if rollback_result.is_err() {
-                                return sink_and_error("storage.upload.internal", &mut payload)
-                                    .await;
-                            }
-                        }
+                        uploaded_files.push(file_id.clone());
                     }
                 } else {
-                    return sink_and_error("storage.upload.internal", &mut payload).await;
+                    // For some reason, we could not write the file onto the filesystem.
+                    // This is not critical, we can continue.
+
+                    skipped_files.push(file_filename.clone());
                 }
             } else {
                 return sink_and_error("storage.upload.no_filename", &mut payload).await;

@@ -1,17 +1,19 @@
 use actix_web::{post, web, HttpResponse, Responder};
 use log::*;
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 use crate::{
     request::error, storage_endpoint::get_storage_endpoint, user::get_client_rights,
     util::RequestPool,
 };
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 struct StorageCreateFolderInput {
     endpoint_id: i32,
     target_folder: Option<i64>,
 
+    #[validate(length(min = 1, max = 255))]
     new_folder_name: String,
 }
 
@@ -26,6 +28,12 @@ async fn storage_create_folder(
     form: web::Json<StorageCreateFolderInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let form = form.into_inner();
+
+    if form.validate().is_err() {
+        return error("storage.create_folder.invalid_input");
+    }
+
     let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights
@@ -36,7 +44,6 @@ async fn storage_create_folder(
         return error("storage.create_folder.unauthorized");
     }
 
-    let form = form.into_inner();
     let is_root = form.target_folder.is_none();
 
     let target_endpoint = get_storage_endpoint(form.endpoint_id, &pool).await;

@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/consistent-function-scoping */
 import { createSignal } from "solid-js"
 
 import { FileWithPath, retrieveFiles } from "@/modules/storage/upload"
@@ -8,21 +9,37 @@ export const useFilesDrop = () => {
   const [isAboutToDrop, setIsAboutToDrop] = createSignal(false)
 
   const onDragOver = (event: DragEvent) => {
-    setIsAboutToDrop(true)
     event.preventDefault()
   }
 
-  const onDragLeave = (event: DragEvent) => {
-    setIsAboutToDrop(false)
+  const onDragEnter = (event: DragEvent) => {
     event.preventDefault()
+
+    if (
+      !event.dataTransfer?.items ||
+      event.dataTransfer.items[0]?.kind !== "file"
+    )
+      return
+
+    setIsAboutToDrop(true)
+  }
+
+  const onDragLeave = (event: DragEvent) => {
+    event.preventDefault()
+
+    setIsAboutToDrop(false)
   }
 
   const onDrop = async (event: DragEvent, dropHandler: DropHandler) => {
     event.preventDefault()
 
-    setIsAboutToDrop(false)
+    if (
+      !event.dataTransfer?.items ||
+      event.dataTransfer.items[0]?.kind !== "file"
+    )
+      return
 
-    if (!event.dataTransfer) return
+    setIsAboutToDrop(false)
 
     const promises = []
     const files: FileWithPath[] = []
@@ -50,6 +67,7 @@ export const useFilesDrop = () => {
 
   return {
     onDragOver,
+    onDragEnter,
     onDragLeave,
     isAboutToDrop,
     onDrop: (dropHandler: DropHandler) => (event: DragEvent) => {

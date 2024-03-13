@@ -64,17 +64,32 @@ export type GetStorageEntryThumbnails = {
   fileIds: number[]
 }
 
+export type GetStorageEntryThumbnailsOptions = {
+  ignoreCache?: boolean
+}
+
 export const storageEntryThumbnails = async (
-  input: GetStorageEntryThumbnails
+  input: GetStorageEntryThumbnails,
+  options?: GetStorageEntryThumbnailsOptions
 ) => {
   const query = new URLSearchParams()
 
   query.set("endpoint_id", input.endpointId.toString())
   query.set("file_ids", input.fileIds.join(","))
 
-  return get(apiStorageEntryThumbnails, {
-    query,
-  }).then((data) => TGetStorageEntryThumbnails.parse(data))
+  return get(
+    apiStorageEntryThumbnails,
+    {
+      query,
+    },
+    {
+      headers: options?.ignoreCache
+        ? {
+            "Cache-Control": "no-cache",
+          }
+        : {},
+    }
+  ).then((data) => TGetStorageEntryThumbnails.parse(data))
 }
 
 export type CreateStorageFolderInput = {

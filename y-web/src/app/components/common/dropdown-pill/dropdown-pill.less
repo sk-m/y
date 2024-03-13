@@ -1,0 +1,154 @@
+.ui-dropdown-pill-container {
+  position: relative;
+
+  > .dropdown-pill {
+    position: relative;
+    z-index: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 0.5em;
+
+    padding: 0.33em 0.66em;
+
+    color: var(--color-text-grey-025);
+    font-weight: 500;
+    font-size: var(--text-sm);
+    font-family: "Inter", sans-serif;
+
+    border: none;
+    border-radius: 4px;
+    background: none;
+    border: 1px solid var(--color-border-15);
+
+    cursor: pointer;
+
+    transition: 0.15s;
+
+    > .icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    > .spacer-dot {
+      width: 3px;
+      height: 3px;
+
+      background-color: var(--color-border-3);
+      border-radius: 50%;
+
+      transition: 0.15s;
+    }
+
+    &:hover {
+      background-color: var(--color-grey-1);
+
+      border: 1px solid var(--color-border-2);
+      border-bottom-color: var(--color-border-2);
+
+      box-shadow: 0 5px 10px rgba(21, 23, 46, 0.1);
+    }
+
+    &:active {
+      transition: 0s;
+
+      box-shadow: 0 2px 5px rgba(21, 23, 46, 0.1);
+      background-color: var(--color-border-1);
+
+      border-color: var(--color-border-25);
+    }
+  }
+
+  &.expanded > .dropdown-pill {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+
+    border-bottom-color: white;
+
+    box-shadow: 0 5px 10px rgba(21, 23, 46, 0.1);
+  }
+
+  > .dropdown-content {
+    position: absolute;
+    z-index: 100;
+
+    margin-top: -1px;
+
+    width: fit-content;
+    min-width: 125%;
+
+    top: 100%;
+    right: 0;
+
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+
+    border: 1px solid var(--color-border-15);
+    box-shadow: 0 5px 10px rgba(21, 23, 46, 0.1);
+    background-color: white;
+
+    overflow: hidden;
+
+    // hidden state
+    opacity: 0;
+    pointer-events: none;
+
+    transition: 0.15s;
+
+    > .items {
+      display: flex;
+      flex-direction: column;
+
+      > .item {
+        display: flex;
+        align-items: center;
+
+        padding: 0.33em 0.66em;
+
+        color: var(--color-text-grey-025);
+        font-weight: 500;
+        font-size: var(--text-sm);
+        font-family: "Inter", sans-serif;
+
+        background: none;
+        border: none;
+
+        cursor: pointer;
+
+        transition: 0.15s;
+
+        > .icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          margin-right: 0.5em;
+
+          > .ui-icon {
+            transition: 0.15s;
+          }
+        }
+
+        > .label {
+          white-space: nowrap;
+        }
+
+        &:hover {
+          background-color: var(--color-border-1);
+
+          > .icon > .ui-icon {
+            font-variation-settings: "FILL" 1, "wght" 500, "GRAD" -25, "opsz" 14 !important;
+          }
+        }
+      }
+    }
+  }
+
+  &.expanded > .dropdown-content {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

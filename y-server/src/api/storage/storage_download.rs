@@ -13,7 +13,7 @@ use crate::user::get_client_rights;
 use crate::util::RequestPool;
 
 #[derive(Serialize, FromRow)]
-struct StorageEntryAndBasePath {
+struct StorageEntryAndBasePathRow {
     name: String,
     extension: Option<String>,
     filesystem_id: String,
@@ -50,7 +50,7 @@ async fn storage_download(
         return error("storage.download.file_id_required");
     }
 
-    let entry = sqlx::query_as::<_, StorageEntryAndBasePath>(
+    let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
         "SELECT storage_files.name, storage_files.extension, storage_files.filesystem_id, storage_endpoints.base_path FROM storage_files
         RIGHT OUTER JOIN storage_endpoints ON storage_files.endpoint_id = storage_endpoints.id
         WHERE storage_files.id = $1 AND endpoint_id = $2",

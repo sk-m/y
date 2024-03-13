@@ -15,6 +15,9 @@ export type SelectedEntry = `${IStorageEntry["entry_type"]}:${number}`
 export type UseFileExplorerProps = {
   endpointId: () => string
   folderId: () => string | undefined
+
+  entriesSortFn?: () => (a: IStorageEntry, b: IStorageEntry) => number
+  entriesFilterFn?: () => (entry: IStorageEntry) => boolean
 }
 
 export const useFileExplorer = (props: UseFileExplorerProps) => {
@@ -25,7 +28,21 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
     endpointId: props.endpointId(),
   }))
 
-  const folderEntries = createMemo(() => $folderEntries.data?.entries ?? [])
+  const folderEntries = createMemo(
+    () => {
+      const filter = props.entriesFilterFn?.()
+
+      const entries = filter
+        ? ($folderEntries.data?.entries ?? []).filter((entry) => filter(entry))
+        : $folderEntries.data?.entries ?? []
+
+      return props.entriesSortFn ? entries.sort(props.entriesSortFn()) : entries
+    },
+    undefined,
+    {
+      equals: false,
+    }
+  )
 
   const $folderPath = useStorageFolderPath(() => ({
     folderId: props.folderId(),
@@ -44,15 +61,15 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
     number | null
   >(null)
 
-  const [temporarySelectedEntry, setTemporarySelectedEntry] =
+  const [contextMenuTargetEntry, setContextMenuTargetEntry] =
     createSignal<IStorageEntry | null>(null)
 
-  const temporarySelectedEntryIsInMultiselect = createMemo(
+  const contextMenuTargetEntryIsInMultiselect = createMemo(
     () =>
-      temporarySelectedEntry() !== null &&
+      contextMenuTargetEntry() !== null &&
       selectedEntries().has(
-        `${temporarySelectedEntry()!.entry_type}:${
-          temporarySelectedEntry()!.id
+        `${contextMenuTargetEntry()!.entry_type}:${
+          contextMenuTargetEntry()!.id
         }`
       )
   )
@@ -151,9 +168,9 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
     resetSelection,
     selectedEntries,
     lastSelectedEntryIndex,
-    temporarySelectedEntryIsInMultiselect,
-    setTemporarySelectedEntry,
+    contextMenuTargetEntryIsInMultiselect,
+    setContextMenuTargetEntry,
     setSelectedEntries,
-    temporarySelectedEntry,
+    contextMenuTargetEntry,
   }
 }

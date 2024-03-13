@@ -15,15 +15,6 @@
   align-items: center;
   gap: 1.5em;
 
-  > .separator {
-    width: 2px;
-    height: 15px;
-
-    background-color: var(--color-border-15);
-
-    border-radius: 2px;
-  }
-
   > .back-button {
     display: flex;
     align-items: center;
@@ -40,9 +31,10 @@
     transition: 0.15s;
 
     &:hover {
-      background-color: var(--color-primary-t-15);
-
       color: var(--color-primary);
+
+      background-color: var(--color-primary-t-15);
+      box-shadow: 0 2px 8px var(--color-primary-t-15);
 
       > .text {
         color: var(--color-primary);
@@ -100,6 +92,7 @@
         border-bottom-right-radius: 4px;
       }
 
+      &.about-to-receive,
       &:hover {
         color: var(--color-primary);
 
@@ -109,8 +102,10 @@
         border-radius: 4px;
 
         background-color: var(--color-primary-t-15);
+        box-shadow: 0 2px 8px var(--color-primary-t-15);
       }
 
+      &.about-to-receive + *,
       &:hover + * {
         padding-left: 0.66em;
 
@@ -118,6 +113,7 @@
         border-bottom-left-radius: 4px;
       }
 
+      &:has(+ *.about-to-receive),
       &:has(+ *:hover) {
         padding-right: 0.66em;
 

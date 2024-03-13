@@ -41,6 +41,8 @@ async fn storage_delete_entries(
     let target_folders = form.folder_ids;
     let target_files = form.file_ids;
 
+    // TODO we query for the endpoint twice, we should only do it once
+    // (second time in the delete_entries function)
     let target_endpoint = get_storage_endpoint(endpoint_id, &pool).await;
 
     if target_endpoint.is_err() {

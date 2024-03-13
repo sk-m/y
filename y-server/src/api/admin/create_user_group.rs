@@ -3,14 +3,16 @@ use crate::user::get_client_rights;
 use crate::util::RequestPool;
 use actix_web::{post, web, HttpResponse, Responder};
 use serde::Deserialize;
+use validator::Validate;
 
 #[derive(serde::Serialize)]
 struct CreateUserGroupOutput {
     id: i32,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 struct CreateUserGroupInput {
+    #[validate(length(min = 1, max = 255))]
     name: String,
 }
 
@@ -20,6 +22,12 @@ async fn create_user_group(
     form: web::Json<CreateUserGroupInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let form = form.into_inner();
+
+    if form.validate().is_err() {
+        return error("create_user_group.invalid_input");
+    }
+
     let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights
@@ -38,7 +46,7 @@ async fn create_user_group(
         return error("create_user_group.unauthorized");
     }
 
-    let name = form.name.clone();
+    let name = form.name;
 
     let result = sqlx::query_scalar("INSERT INTO user_groups (name) VALUES ($1) RETURNING id")
         .bind(name)

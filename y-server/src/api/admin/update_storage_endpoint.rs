@@ -3,10 +3,13 @@ use crate::user::get_client_rights;
 use crate::util::RequestPool;
 use actix_web::{patch, web, HttpResponse, Responder};
 use serde::Deserialize;
+use validator::Validate;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 struct UpdateStorageEndpointInput {
+    #[validate(length(min = 1, max = 127))]
     name: Option<String>,
+    #[validate(length(min = 0, max = 255))]
     description: Option<String>,
     status: Option<String>,
 }
@@ -18,6 +21,12 @@ async fn update_storage_endpoint(
     path: web::Path<i32>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let form = form.into_inner();
+
+    if form.validate().is_err() {
+        return error("update_storage_endpoint.invalid_input");
+    }
+
     let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights
@@ -30,8 +39,6 @@ async fn update_storage_endpoint(
     }
 
     let storage_endpoint_id = path.into_inner();
-
-    let form = form.into_inner();
 
     let updated_name = &form.name.is_some();
     let updated_description = &form.description.is_some();

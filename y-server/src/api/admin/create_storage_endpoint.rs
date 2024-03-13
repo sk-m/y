@@ -5,19 +5,28 @@ use crate::user::get_client_rights;
 use crate::util::RequestPool;
 use actix_web::{post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 #[derive(Serialize)]
 struct CreateStorageEndpointOutput {
     id: i32,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 struct CreateStorageEndpointInput {
+    #[validate(length(min = 1, max = 127))]
     name: String,
+
     endpoint_type: String,
     preserve_file_structure: bool,
+
+    #[validate(length(min = 1, max = 511))]
     base_path: String,
+
+    #[validate(length(min = 1, max = 511))]
     artifacts_path: String,
+
+    #[validate(length(min = 0, max = 255))]
     description: String,
 }
 
@@ -27,6 +36,12 @@ async fn create_storage_endpoint(
     form: web::Json<CreateStorageEndpointInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let form = form.into_inner();
+
+    if form.validate().is_err() || form.endpoint_type != "local_fs" {
+        return error("create_storage_endpoint.invalid_input");
+    }
+
     let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights
@@ -37,8 +52,6 @@ async fn create_storage_endpoint(
     if !action_allowed {
         return error("create_storage_endpoint.unauthorized");
     }
-
-    let form = form.into_inner();
 
     let base_path = std::path::Path::new(&form.base_path);
     let artifacts_path = std::path::Path::new(&form.artifacts_path);
