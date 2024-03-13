@@ -52,6 +52,7 @@ import {
 import { FileWithPath } from "@/modules/storage/upload"
 
 import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
+import { FileExplorerDeleteModal } from "./components/file-explorer-delete-modal"
 import { FileExplorerDisplaySettings } from "./components/file-explorer-display-settings"
 import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
 import { FileExplorerMediaViewer } from "./components/file-explorer-media-viewer"
@@ -160,6 +161,11 @@ const FileExplorerPage: Component = () => {
     percentageUploaded: 0,
     totalSizeBytes: 0,
   })
+
+  const [entriesToDelete, setEntriesToDelete] = createSignal<{
+    folderIds: number[]
+    fileIds: number[]
+  } | null>(null)
 
   const [entryIndexToPreview, setEntryIndexToPreview] = createSignal<
     number | null
@@ -307,7 +313,26 @@ const FileExplorerPage: Component = () => {
     )
   }
 
-  const deleteEntries = (folderIds: number[], fileIds: number[]) => {
+  /**
+   * Deltes entries passed via arguments. If no arguments are passed, deletes entries that are currently selected for deletion
+   */
+  const performDeletion = (
+    requestedFolderIds?: number[],
+    requestedFileIds?: number[]
+  ) => {
+    let folderIds = []
+    let fileIds = []
+
+    if (requestedFileIds || requestedFolderIds) {
+      folderIds = requestedFolderIds ?? []
+      fileIds = requestedFileIds ?? []
+    } else if (entriesToDelete() === null) {
+      return
+    } else {
+      folderIds = entriesToDelete()!.folderIds
+      fileIds = entriesToDelete()!.fileIds
+    }
+
     $deleteEntries.mutate(
       {
         endpointId: Number.parseInt(params.endpointId as string, 10),
@@ -316,12 +341,31 @@ const FileExplorerPage: Component = () => {
       },
       {
         onSuccess: () => {
-          resetSelection()
-          void invalidateEntries()
+          batch(() => {
+            setEntriesToDelete(null)
+
+            resetSelection()
+            void invalidateEntries()
+          })
         },
         onError: (error) => genericErrorToast(error),
       }
     )
+  }
+
+  const deleteEntries = (
+    folderIds: number[],
+    fileIds: number[],
+    skipConfirmation = false
+  ) => {
+    if (skipConfirmation) {
+      performDeletion(folderIds, fileIds)
+    } else {
+      setEntriesToDelete({
+        folderIds,
+        fileIds,
+      })
+    }
   }
 
   const renameEntry = (
@@ -593,6 +637,15 @@ const FileExplorerPage: Component = () => {
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
     >
+      <FileExplorerDeleteModal
+        subtitle={`${
+          (entriesToDelete()?.fileIds.length ?? 0) +
+          (entriesToDelete()?.folderIds.length ?? 0)
+        } entries selected`}
+        open={entriesToDelete() !== null}
+        onClose={() => setEntriesToDelete(null)}
+        onConfirm={performDeletion}
+      />
       <Show when={entryToPreview()}>
         <FileExplorerMediaViewer
           endpointId={params.endpointId as string}
@@ -600,7 +653,7 @@ const FileExplorerPage: Component = () => {
           onPrev={() => getEntryForPreview("prev")}
           onNext={() => getEntryForPreview("next")}
           onDelete={() => {
-            deleteEntries([], [entryToPreview()!.id])
+            deleteEntries([], [entryToPreview()!.id], true)
           }}
           onDownload={() => downloadFile(entryToPreview()!.id)}
           onInfoPanelSelect={() =>
