@@ -525,6 +525,20 @@ const FileExplorerPage: Component = () => {
   // eslint-disable-next-line sonarjs/cognitive-complexity
   onMount(() => {
     const keydownHandler = (event: KeyboardEvent) => {
+      // Go up one folder
+      if (event.ctrlKey && event.key === "Backspace") {
+        event.preventDefault()
+
+        if (folderPath().length === 0) return
+
+        // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+        const parentFolder = folderPath()[folderPath().length - 2]
+
+        setSearchParams({
+          folderId: parentFolder?.id.toString() ?? null,
+        })
+      }
+
       // Reset selection
       if (event.key === "Escape") {
         event.preventDefault()
@@ -1080,6 +1094,7 @@ const FileExplorerPage: Component = () => {
         <div class="side-panel">
           <Show when={infoPanelSelectedEntry()}>
             <FileExplorerInfoPanel
+              endpointId={Number.parseInt(params.endpointId as string, 10)}
               thumbnails={thumbnails()}
               entry={infoPanelSelectedEntry()!}
               onRename={(name) =>
