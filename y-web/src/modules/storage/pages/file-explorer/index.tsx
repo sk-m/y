@@ -15,7 +15,6 @@ import {
   onCleanup,
   onMount,
 } from "solid-js"
-import { createStore } from "solid-js/store"
 
 import { useParams, useSearchParams } from "@solidjs/router"
 import { createMutation } from "@tanstack/solid-query"
@@ -31,6 +30,7 @@ import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 import { useFilesDrop } from "@/app/core/util/use-files-drop"
+import { globalUploadProgressCtl } from "@/app/storage/global-upload-progress"
 import { DropFilesHere } from "@/modules/storage/components/drop-files-here"
 import {
   SelectedEntry,
@@ -58,7 +58,6 @@ import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
 import { FileExplorerMediaViewer } from "./components/file-explorer-media-viewer"
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerSelectionInfo } from "./components/file-explorer-selection-info"
-import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
 import { NewFolderEntry } from "./components/new-folder-entry"
 import { StorageEntry } from "./components/storage-entry"
 import "./file-explorer.less"
@@ -74,6 +73,9 @@ const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
   const params = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
+
+  const { status: uploadStatus, setStatus: setUploadStatus } =
+    globalUploadProgressCtl
 
   const $renameEntry = createMutation(renameStorageEntry)
   const $moveEntries = createMutation(moveStorageEntries)
@@ -155,12 +157,6 @@ const FileExplorerPage: Component = () => {
     close: closeSelectionContextMenu,
     contextMenuProps: selectionContextMenuProps,
   } = useContextMenu()
-
-  const [uploadStatus, setUploadStatus] = createStore({
-    numberOfFiles: 0,
-    percentageUploaded: 0,
-    totalSizeBytes: 0,
-  })
 
   const [entriesToDelete, setEntriesToDelete] = createSignal<{
     folderIds: number[]
@@ -687,14 +683,6 @@ const FileExplorerPage: Component = () => {
 
       <DropFilesHere active={isAboutToDrop()} />
 
-      <Show when={uploadStatus.numberOfFiles !== 0}>
-        <FileExplorerUploadStatusToast
-          percentageUploaded={uploadStatus.percentageUploaded}
-          numberOfFiles={uploadStatus.numberOfFiles}
-          totalSizeBytes={uploadStatus.totalSizeBytes}
-        />
-      </Show>
-
       <div class="page-container">
         <div class="browser-container">
           <div class="top-container">
@@ -802,6 +790,7 @@ const FileExplorerPage: Component = () => {
               <ContextMenuSection>
                 <ContextMenuLink
                   icon="remove_selection"
+                  tip="esc"
                   onClick={() => {
                     setSelectedEntries(new Set<SelectedEntry>())
                     closeSelectionContextMenu()
@@ -836,6 +825,7 @@ const FileExplorerPage: Component = () => {
                   <ContextMenuSection>
                     <ContextMenuLink
                       icon="remove_selection"
+                      tip="esc"
                       onClick={() => {
                         setSelectedEntries(new Set<SelectedEntry>())
                       }}
@@ -847,6 +837,7 @@ const FileExplorerPage: Component = () => {
 
                     <ContextMenuLink
                       icon="download"
+                      tip="ctrl+s"
                       onClick={() => {
                         downloadSelectedEntries()
                         closeEntryContextMenu()
@@ -857,6 +848,7 @@ const FileExplorerPage: Component = () => {
 
                     <ContextMenuLink
                       icon="delete_sweep"
+                      tip="del"
                       onClick={() => {
                         const { folderIds, fileIds } = partitionEntries([
                           ...selectedEntries(),
@@ -904,6 +896,18 @@ const FileExplorerPage: Component = () => {
                     <div class="separator" />
 
                     <ContextMenuLink
+                      icon="folder_open"
+                      onClick={() => {
+                        navigateToFolder(contextMenuTargetEntry()!.id)
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Open folder
+                    </ContextMenuLink>
+
+                    <div class="separator" />
+
+                    <ContextMenuLink
                       icon="download"
                       onClick={() => {
                         downloadFolder(contextMenuTargetEntry()!.id)
@@ -922,7 +926,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Rename folder
+                      Rename
                     </ContextMenuLink>
 
                     <ContextMenuLink
@@ -932,7 +936,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Delete folder
+                      Delete
                     </ContextMenuLink>
                   </Show>
                   <Show when={contextMenuTargetEntry()?.entry_type === "file"}>
@@ -988,7 +992,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Rename file
+                      Rename
                     </ContextMenuLink>
 
                     <ContextMenuLink
@@ -998,7 +1002,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Delete file
+                      Delete
                     </ContextMenuLink>
                   </Show>
                 </ContextMenuSection>

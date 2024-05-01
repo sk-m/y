@@ -43,12 +43,7 @@ const StorageEndpointEntry: Component<StorageEndpointEntryProps> = (props) => {
           <ListEntryLink href={`${props.endpoint.id}`}>
             <Text fontWeight={500}>{props.endpoint.name}</Text>
           </ListEntryLink>
-          <Stack
-            spacing="0.75em"
-            style={{
-              "margin-left": "0.5em",
-            }}
-          >
+          <Stack spacing="0.75em">
             <Stack direction="row" spacing={"0.5em"}>
               <StorageEndpointStatusPill status={props.endpoint.status} />
               <StorageEndpointTypePill type={props.endpoint.endpoint_type} />

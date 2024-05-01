@@ -27,7 +27,7 @@ export const DropdownPill: ComponentWithChildren<DropdownPillProps> = (
         class="dropdown-pill"
         onClick={() => props.onExpand(!props.expanded)}
       >
-        <div class="spacer-dot" />
+        {/* <div class="spacer-dot" /> */}
         <Show when={props.icon}>
           <div class="icon">{props.icon}</div>
         </Show>

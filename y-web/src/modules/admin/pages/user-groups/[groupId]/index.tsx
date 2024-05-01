@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import {
   Component,
   For,
@@ -15,11 +16,6 @@ import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Button } from "@/app/components/common/button/button"
 import { Card } from "@/app/components/common/card/card"
-import { ExpandButton } from "@/app/components/common/expand-button/expand-button"
-import {
-  ExpandButtonEntries,
-  ExpandButtonEntry,
-} from "@/app/components/common/expand-button/expand-button-entry"
 import { Icon } from "@/app/components/common/icon/icon"
 import {
   KeyValue,
@@ -386,60 +382,90 @@ const UserGroupPage: Component = () => {
           </Breadcrumbs>
 
           <Stack spacing="2em">
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Stack spacing={"0.5em"}>
-                <Text
-                  variant="h1"
-                  style={{
-                    display: "flex",
-                    "align-items": "center",
-                    gap: "0.5em",
-                  }}
+            <Stack spacing={"0.5em"}>
+              <Text
+                variant="h1"
+                style={{
+                  display: "flex",
+                  "align-items": "center",
+                  gap: "0.5em",
+                }}
+              >
+                <Icon name="groups" grad={25} wght={500} />
+                {$userGroup.data?.name ?? ""}
+              </Text>
+              <Switch>
+                <Match
+                  when={$userGroup.data?.group_type === userGroupType.everyone}
                 >
-                  <Icon name="groups" grad={25} wght={500} />
-                  {$userGroup.data?.name ?? ""}
-                </Text>
-                <Switch>
-                  <Match
-                    when={
-                      $userGroup.data?.group_type === userGroupType.everyone
-                    }
-                  >
-                    <Text fontSize={"var(--text-sm)"}>
-                      <Pill>
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          spacing={"0.25em"}
-                        >
-                          <Icon name="settings" size={12} wght={500} />
-                          <span>System group</span>
-                        </Stack>
-                      </Pill>
-                    </Text>
-                  </Match>
-                  <Match
-                    when={$userGroup.data?.group_type === userGroupType.user}
-                  >
-                    <Text fontSize={"var(--text-sm)"}>
-                      <Pill>
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          spacing={"0.25em"}
-                        >
-                          <Icon name="settings" size={12} wght={500} />
-                          <span>System group</span>
-                        </Stack>
-                      </Pill>
-                    </Text>
-                  </Match>
-                </Switch>
-              </Stack>
+                  <Text fontSize={"var(--text-sm)"}>
+                    <Pill>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={"0.25em"}
+                      >
+                        <Icon name="settings" size={12} wght={500} />
+                        <span>System group</span>
+                      </Stack>
+                    </Pill>
+                  </Text>
+                </Match>
+                <Match
+                  when={$userGroup.data?.group_type === userGroupType.user}
+                >
+                  <Text fontSize={"var(--text-sm)"}>
+                    <Pill>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={"0.25em"}
+                      >
+                        <Icon name="settings" size={12} wght={500} />
+                        <span>System group</span>
+                      </Stack>
+                    </Pill>
+                  </Text>
+                </Match>
+              </Switch>
+            </Stack>
+
+            <Stack spacing={"1em"}>
+              <Show
+                when={
+                  groupManagementPermissions().groupManagementAllowed &&
+                  $userGroup.data?.group_type === null
+                }
+              >
+                <Card>
+                  <Stack direction="row" justifyContent="space-between">
+                    <div class="ui-card-label">
+                      <div class="label-strip" />
+                      <Text
+                        variant="h3"
+                        style={{
+                          margin: "0",
+                        }}
+                      >
+                        General configuration
+                      </Text>
+                    </div>
+
+                    <KeyValueFields
+                      style={{
+                        width: "500px",
+                      }}
+                    >
+                      <KeyValue
+                        keyWidth="100px"
+                        label="Group name"
+                        value={$userGroup.data?.name ?? ""}
+                        onChange={(value) => saveKeyValue("name", value)}
+                      />
+                    </KeyValueFields>
+                  </Stack>
+                </Card>
+              </Show>
 
               <Show
                 when={
@@ -447,43 +473,43 @@ const UserGroupPage: Component = () => {
                   $userGroup.data?.group_type === null
                 }
               >
-                <ExpandButton icon="bolt" label="Actions" position="left">
-                  <ExpandButtonEntries>
-                    <ExpandButtonEntry
-                      icon="delete"
-                      variant="danger"
+                <Card>
+                  <Stack
+                    direction="row"
+                    spacing={"1em"}
+                    justifyContent="space-between"
+                    alignItems="center"
+                  >
+                    <div class="ui-card-label">
+                      <div class="label-strip" />
+                      <Stack spacing={"0.33em"}>
+                        <Text
+                          variant="h3"
+                          style={{
+                            margin: "0",
+                          }}
+                        >
+                          Delete group
+                        </Text>
+                        <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                          Irreversibly delete this user group and unassign all
+                          users.
+                        </Text>
+                      </Stack>
+                    </div>
+                    <Button
+                      leadingIcon="delete"
                       onClick={() => setDeleteConfirmationModalOpen(true)}
+                      style={{
+                        color: "var(--color-error)",
+                      }}
                     >
-                      Delete
-                    </ExpandButtonEntry>
-                  </ExpandButtonEntries>
-                </ExpandButton>
+                      Delete group
+                    </Button>
+                  </Stack>
+                </Card>
               </Show>
             </Stack>
-
-            <Show
-              when={
-                groupManagementPermissions().groupManagementAllowed &&
-                $userGroup.data?.group_type === null
-              }
-            >
-              <Text variant="h3">General Information</Text>
-
-              <KeyValueFields
-                style={{
-                  width: "500px",
-                }}
-              >
-                <KeyValue
-                  keyWidth="100px"
-                  label="Group name"
-                  value={$userGroup.data?.name ?? ""}
-                  onChange={(value) => saveKeyValue("name", value)}
-                />
-              </KeyValueFields>
-            </Show>
-
-            <Text variant="h3">Group Rights</Text>
 
             <form ref={formRef as HTMLFormElement} onSubmit={submit}>
               <Stack spacing="2em">
@@ -511,36 +537,33 @@ const UserGroupPage: Component = () => {
                   )}
                 </For>
 
-                <Card>
-                  <Stack
-                    direction="row"
-                    spacing="1em"
-                    alignItems="center"
-                    justifyContent="space-between"
+                <Stack
+                  direction="row"
+                  spacing="1em"
+                  alignItems="center"
+                  justifyContent="space-between"
+                >
+                  <Button
+                    leadingIcon="chevron_left"
+                    variant="text"
+                    disabled={$updateUserGroup.isLoading}
+                    onClick={() => navigate(USER_GROUPS_ROUTE)}
                   >
-                    <Button
-                      variant="secondary"
-                      disabled={$updateUserGroup.isLoading}
-                      onClick={() => navigate(USER_GROUPS_ROUTE)}
+                    Back
+                  </Button>
+                  <Stack direction="row" spacing="1em">
+                    <Show
+                      when={groupManagementPermissions().groupManagementAllowed}
                     >
-                      Back
-                    </Button>
-                    <Stack direction="row" spacing="1em">
-                      <Show
-                        when={
-                          groupManagementPermissions().groupManagementAllowed
-                        }
+                      <Button
+                        disabled={$updateUserGroup.isLoading}
+                        onClick={() => setUpdateConfirmationModalOpen(true)}
                       >
-                        <Button
-                          disabled={$updateUserGroup.isLoading}
-                          onClick={() => setUpdateConfirmationModalOpen(true)}
-                        >
-                          Save changes
-                        </Button>
-                      </Show>
-                    </Stack>
+                        Save changes
+                      </Button>
+                    </Show>
                   </Stack>
-                </Card>
+                </Stack>
               </Stack>
             </form>
           </Stack>

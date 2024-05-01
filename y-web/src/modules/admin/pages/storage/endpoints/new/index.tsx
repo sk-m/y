@@ -211,6 +211,7 @@ const NewStorageEndpointPage: Component = () => {
                 />
                 <InputField
                   label="Base path"
+                  placeholder="/var/y_storage"
                   error={errors().basePath}
                   width="100%"
                   maxLength={511}
@@ -244,6 +245,7 @@ const NewStorageEndpointPage: Component = () => {
 
                 <InputField
                   label="Artifacts path"
+                  placeholder="/var/y_artifacts"
                   error={errors().artifactsPath}
                   width="100%"
                   maxLength={511}
@@ -327,7 +329,8 @@ const NewStorageEndpointPage: Component = () => {
               that the user that the server is running under:
               <ul
                 style={{
-                  margin: "1em 0",
+                  margin: "0.5em 0 0 0",
+                  padding: "0 3em",
                 }}
               >
                 <li>Has access to the target directory.</li>
@@ -339,8 +342,9 @@ const NewStorageEndpointPage: Component = () => {
 
             <Stack direction="row" justifyContent="space-between">
               <Button
+                leadingIcon="chevron_left"
                 onClick={() => navigate(ENDPOINTS_ROUTE)}
-                variant="secondary"
+                variant="text"
               >
                 Back
               </Button>

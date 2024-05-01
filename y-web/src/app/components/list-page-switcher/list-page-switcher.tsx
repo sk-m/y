@@ -16,7 +16,8 @@ export type ListPageSwitcherProps = {
 }
 
 export const ListPageSwitcher: Component<ListPageSwitcherProps> = (props) => {
-  const totalPages = () => Math.max(1, props.totalCount / props.rowsPerPage)
+  const totalPages = () =>
+    Math.ceil(Math.max(1, props.totalCount / props.rowsPerPage))
 
   const canGoBack = () => props.currentPage > 0
   const canGoForward = () => props.currentPage + 1 < totalPages()

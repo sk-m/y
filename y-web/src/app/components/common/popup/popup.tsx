@@ -2,7 +2,8 @@ import { ComponentWithChildren } from "@/module"
 
 export type PopupProps = {
   show?: boolean
-  position: "left" | "right"
+  xPosition: "left" | "right"
+  yPosition: "top" | "bottom"
 }
 
 export const Popup: ComponentWithChildren<PopupProps> = (props) => {
@@ -12,7 +13,14 @@ export const Popup: ComponentWithChildren<PopupProps> = (props) => {
         "ui-popup": true,
         shown: props.show,
       }}
-      style={props.position === "left" ? { left: 0 } : { right: 0 }}
+      style={{
+        ...(props.xPosition === "left"
+          ? { left: 0 }
+          : { left: "100%", "margin-left": "1em" }),
+        ...(props.yPosition === "top"
+          ? { top: "unset", bottom: "100%", "margin-bottom": "1em" }
+          : { top: "100%", bottom: "unset", "margin-top": "1em" }),
+      }}
     >
       <div class="ui-popup-block">
         <div class="content">{props.children}</div>

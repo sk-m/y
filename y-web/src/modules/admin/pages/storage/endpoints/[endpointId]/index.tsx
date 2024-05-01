@@ -3,6 +3,7 @@ import { Show, createEffect, createMemo } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
+import { Card } from "@/app/components/common/card/card"
 import { Icon } from "@/app/components/common/icon/icon"
 import {
   KeyValue,
@@ -123,74 +124,112 @@ const StorageEndpointPage = () => {
             </Stack>
           </Stack>
 
-          <Stack spacing={"1em"}>
-            <Text variant="secondary" fontWeight={500}>
-              General information
-            </Text>
-            <KeyValueFields
-              style={{
-                width: "500px",
-              }}
-            >
-              <KeyValue<IStorageEndpointStatus>
-                keyWidth="100px"
-                label="Status"
-                getValueString={(value) =>
-                  (
-                    unsafe_t(
-                      `main.storage_feature.endpoint_status.${value as string}`
-                    ) ??
-                    value ??
-                    ""
-                  ).toLowerCase()
-                }
-                value={$storageEndpoint.data?.status ?? "disabled"}
-                onChange={(value) => updateKeyValue("status", value)}
-                inputField={(inputProps) => (
-                  <SelectField<
-                    false,
-                    { name: string; id: IStorageEndpointStatus }
+          <Stack spacing={"1.5em"}>
+            <Card>
+              <Stack direction="row" justifyContent="space-between">
+                <div class="ui-card-label">
+                  <div class="label-strip" />
+                  <Text
+                    variant="h3"
+                    style={{
+                      margin: "0",
+                    }}
                   >
-                    multi={false}
-                    options={storageEndpointStatus.map((status) => ({
-                      name:
+                    General configuration
+                  </Text>
+                </div>
+
+                <KeyValueFields
+                  style={{
+                    width: "50%",
+                  }}
+                >
+                  <KeyValue<IStorageEndpointStatus>
+                    keyWidth="100px"
+                    label="Status"
+                    getValueString={(value) =>
+                      (
                         unsafe_t(
-                          `main.storage_feature.endpoint_status.${status}`
-                        ) ?? status,
-                      id: status,
-                    }))}
-                    width="100%"
-                    {...inputProps}
+                          `main.storage_feature.endpoint_status.${
+                            value as string
+                          }`
+                        ) ??
+                        value ??
+                        ""
+                      ).toLowerCase()
+                    }
+                    value={$storageEndpoint.data?.status ?? "disabled"}
+                    onChange={(value) => updateKeyValue("status", value)}
+                    inputField={(inputProps) => (
+                      <SelectField<
+                        false,
+                        { name: string; id: IStorageEndpointStatus }
+                      >
+                        multi={false}
+                        options={storageEndpointStatus.map((status) => ({
+                          name:
+                            unsafe_t(
+                              `main.storage_feature.endpoint_status.${status}`
+                            ) ?? status,
+                          id: status,
+                        }))}
+                        width="100%"
+                        {...inputProps}
+                      />
+                    )}
                   />
-                )}
-              />
-              <KeyValue
-                keyWidth="100px"
-                label="Name"
-                value={$storageEndpoint.data?.name ?? ""}
-                onChange={(value) => updateKeyValue("name", value)}
-              />
-              <KeyValue
-                keyWidth="100px"
-                label="Short description"
-                value={$storageEndpoint.data?.description ?? ""}
-                onChange={(value) => updateKeyValue("description", value)}
-              />
-              <KeyValue
-                readonly
-                keyWidth="100px"
-                label="Base path"
-                value={$storageEndpoint.data?.base_path ?? ""}
-                onChange={() => void 0}
-              />
-              <KeyValue
-                readonly
-                keyWidth="100px"
-                label="Artifacts path"
-                value={$storageEndpoint.data?.artifacts_path ?? ""}
-                onChange={() => void 0}
-              />
-            </KeyValueFields>
+                  <KeyValue
+                    keyWidth="100px"
+                    label="Name"
+                    value={$storageEndpoint.data?.name ?? ""}
+                    onChange={(value) => updateKeyValue("name", value)}
+                  />
+                  <KeyValue
+                    keyWidth="100px"
+                    label="Short description"
+                    value={$storageEndpoint.data?.description ?? ""}
+                    onChange={(value) => updateKeyValue("description", value)}
+                  />
+                </KeyValueFields>
+              </Stack>
+            </Card>
+
+            <Card>
+              <Stack direction="row" justifyContent="space-between">
+                <div class="ui-card-label">
+                  <div class="label-strip" />
+                  <Text
+                    variant="h3"
+                    style={{
+                      margin: "0",
+                    }}
+                  >
+                    Filesystem paths
+                  </Text>
+                </div>
+
+                <KeyValueFields
+                  style={{
+                    width: "50%",
+                  }}
+                >
+                  <KeyValue
+                    readonly
+                    keyWidth="100px"
+                    label="Base path"
+                    value={$storageEndpoint.data?.base_path ?? ""}
+                    onChange={() => void 0}
+                  />
+                  <KeyValue
+                    readonly
+                    keyWidth="100px"
+                    label="Artifacts path"
+                    value={$storageEndpoint.data?.artifacts_path ?? ""}
+                    onChange={() => void 0}
+                  />
+                </KeyValueFields>
+              </Stack>
+            </Card>
           </Stack>
         </Stack>
       </Show>

@@ -178,11 +178,11 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
           </Stack>
         </Stack>
       </Modal>
-      <Stack spacing={"2em"} id="page-user-groups-subpage">
+      <Stack spacing="2em" id="page-user-groups-subpage">
         <Stack spacing="0.33em">
           <For each={userGroups()}>
             {(userGroup) => {
-              const selected = createMemo(() =>
+              const isSelected = createMemo(() =>
                 selectedGroups().includes(userGroup.id)
               )
 
@@ -197,12 +197,12 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
                   classList={{
                     "group-option": true,
                     disabled: !isMutable(),
-                    selected: selected(),
+                    selected: isSelected(),
                   }}
                 >
                   <Checkbox
                     size="m"
-                    value={selected()}
+                    value={isSelected()}
                     onChange={(checked) =>
                       updateSelection(userGroup.id, checked)
                     }
@@ -230,9 +230,23 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
             justifyContent="space-between"
             spacing={"2em"}
           >
-            <Text variant="secondary">
-              User's permissions will be updated immediately after saving.
-            </Text>
+            <div class="ui-card-label">
+              <div class="label-strip" />
+              <Stack spacing={"0.33em"}>
+                <Text
+                  variant="h3"
+                  style={{
+                    margin: "0",
+                  }}
+                >
+                  Update group membership
+                </Text>
+                <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                  User's permissions will be updated immediately after saving.
+                </Text>
+              </Stack>
+            </div>
+
             <Button
               variant="primary"
               onClick={() => setConfirmationModalOpen(true)}

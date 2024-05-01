@@ -23,18 +23,30 @@ const StorageLayout: Component = () => {
     <>
       <AppAside>
         <AsideSection>
-          <For each={storageEndpoints()}>
-            {(endpoint) => (
-              <AsideEntry
-                icon="cloud"
-                title={endpoint.name}
-                to={`browse/${endpoint.id}`}
-              />
-            )}
-          </For>
+          <AsideEntry
+            icon="explore"
+            title="Browse"
+            to={
+              storageEndpoints()[0]
+                ? `browse/${storageEndpoints()[0]!.id}`
+                : "browse"
+            }
+            relatedPaths={["browse", "browse/*"]}
+          >
+            <For each={storageEndpoints()}>
+              {(endpoint) => (
+                <AsideEntry
+                  subEntry
+                  icon="folder_open"
+                  title={endpoint.name}
+                  to={`browse/${endpoint.id}`}
+                />
+              )}
+            </For>
+          </AsideEntry>
         </AsideSection>
       </AppAside>
-      <AppContent>
+      <AppContent noShadows>
         <Routes>
           <Route path="browse/:endpointId" component={FileExplorerPage} />
         </Routes>

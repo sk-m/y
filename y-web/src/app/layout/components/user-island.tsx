@@ -31,7 +31,12 @@ export const UserIsland: Component = () => {
   return (
     <Show when={$auth}>
       <PopupContainer>
-        <Button variant="text" leadingIcon="person" onClick={togglePopup}>
+        <Button
+          variant="secondary"
+          width="100%"
+          leadingIcon="person"
+          onClick={togglePopup}
+        >
           <div
             style={{
               "font-weight": 450,
@@ -40,7 +45,7 @@ export const UserIsland: Component = () => {
             {$auth.data?.username}
           </div>
         </Button>
-        <Popup position="right" show={popupShown()}>
+        <Popup yPosition="top" xPosition="left" show={popupShown()}>
           <div class="popup-list">
             <PopupEntry onClick={performLogout}>Log out</PopupEntry>
           </div>

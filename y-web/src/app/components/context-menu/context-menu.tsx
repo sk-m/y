@@ -16,6 +16,7 @@ export const ContextMenuSection: ComponentWithChildren = (props) => {
 
 export type ContextMenuLinkProps = {
   icon?: string
+  tip?: string
   onClick?: (event: MouseEvent) => void
 }
 
@@ -24,13 +25,20 @@ export const ContextMenuLink: ComponentWithChildren<ContextMenuLinkProps> = (
 ) => {
   return (
     <button onClick={(event) => props.onClick?.(event)} class="link">
-      <Show when={props.icon}>
-        <div class="icon">
-          <Icon name={props.icon!} size={16} wght={500} />
+      <div class="left">
+        <Show when={props.icon}>
+          <div class="icon">
+            <Icon name={props.icon!} size={16} wght={500} />
+          </div>
+        </Show>
+        <div class="text">
+          <div class="label">{props.children}</div>
         </div>
-      </Show>
-      <div class="text">
-        <div class="label">{props.children}</div>
+      </div>
+      <div class="right">
+        <Show when={props.tip}>
+          <div class="tip">{props.tip}</div>
+        </Show>
       </div>
     </button>
   )

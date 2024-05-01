@@ -7,6 +7,7 @@ import "./button.less"
 
 export type ButtonProps = {
   variant?: "primary" | "secondary" | "text"
+  size?: "md" | "sm" | "xs"
   leadingIcon?: string
 
   disabled?: boolean
@@ -25,6 +26,7 @@ export const Button: ComponentWithChildren<ButtonProps> = (props) => {
     <div
       classList={{
         "ui-button": true,
+        [props.size ?? "md"]: true,
         [props.variant ?? "primary"]: true,
         disabled: props.disabled,
       }}

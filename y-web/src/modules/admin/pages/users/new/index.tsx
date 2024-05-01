@@ -129,7 +129,11 @@ const NewUserPage: Component = () => {
               />
             </Stack>
             <Stack direction="row" justifyContent="space-between">
-              <Button onClick={() => navigate(USERS_ROUTE)} variant="secondary">
+              <Button
+                onClick={() => navigate(USERS_ROUTE)}
+                leadingIcon="chevron_left"
+                variant="text"
+              >
                 Back
               </Button>
               <Button buttonType="submit" disabled={$createUser.isLoading}>

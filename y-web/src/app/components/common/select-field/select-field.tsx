@@ -129,15 +129,24 @@ export const SelectField = <
               }
             >
               <For each={props.multi ? props.value() : []}>
-                {(selectedOptionId) => (
-                  <button
-                    type="button"
-                    class="option"
-                    onClick={() => toggleOption(selectedOptionId)}
-                  >
-                    {options()[selectedOptionId]?.name}
-                  </button>
-                )}
+                {(selectedOptionId) => {
+                  const selectedOption = createMemo(
+                    () => options()[selectedOptionId]
+                  )
+
+                  return (
+                    <button
+                      type="button"
+                      classList={{
+                        option: true,
+                        unknown: !selectedOption(),
+                      }}
+                      onClick={() => toggleOption(selectedOptionId)}
+                    >
+                      {selectedOption()?.name ?? "(unknown) "}
+                    </button>
+                  )
+                }}
               </For>
             </Show>
           </div>

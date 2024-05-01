@@ -43,25 +43,22 @@ const UsersListPage: Component = () => {
                 gap: "1em",
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  "flex-direction": "column",
-                  gap: "1em",
-                }}
-              >
-                <Text
-                  variant="h3"
-                  style={{
-                    margin: "0",
-                  }}
-                >
-                  New user
-                </Text>
-                <Text variant="secondary">
-                  Manually create a new user account. You can set a temporary
-                  password.
-                </Text>
+              <div class="ui-card-label">
+                <div class="label-strip" />
+                <Stack spacing={"0.33em"}>
+                  <Text
+                    variant="h3"
+                    style={{
+                      margin: "0",
+                    }}
+                  >
+                    New user
+                  </Text>
+                  <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                    Manually create a new user account. You can set a temporary
+                    password.
+                  </Text>
+                </Stack>
               </div>
               <Button
                 leadingIcon="person_add"
@@ -69,7 +66,7 @@ const UsersListPage: Component = () => {
                   navigate(routes["/admin/users/new"])
                 }}
               >
-                New user
+                Create user
               </Button>
             </div>
           </Card>

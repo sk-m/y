@@ -44,19 +44,24 @@ const UserGroupsListPage: Component = () => {
               alignItems="center"
               spacing="1em"
             >
-              <Stack spacing="1em">
-                <Text
-                  variant="h3"
-                  style={{
-                    margin: "0",
-                  }}
-                >
-                  New user group
-                </Text>
-                <Text variant="secondary">Create a new user group.</Text>
-              </Stack>
+              <div class="ui-card-label">
+                <div class="label-strip" />
+                <Stack spacing="0.33em">
+                  <Text
+                    variant="h3"
+                    style={{
+                      margin: "0",
+                    }}
+                  >
+                    New user group
+                  </Text>
+                  <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                    Create a new user group.
+                  </Text>
+                </Stack>
+              </div>
               <Button onClick={() => navigate("new")} leadingIcon="group_add">
-                New group
+                Create group
               </Button>
             </Stack>
           </Card>
