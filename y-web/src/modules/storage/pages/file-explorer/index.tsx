@@ -6,7 +6,9 @@
 import {
   Component,
   For,
+  Match,
   Show,
+  Switch,
   batch,
   createEffect,
   createMemo,
@@ -111,6 +113,7 @@ const FileExplorerPage: Component = () => {
 
   const {
     folderEntries,
+    folderEntriesError,
     folderPath,
     invalidateEntries,
     selectedEntries,
@@ -173,6 +176,8 @@ const FileExplorerPage: Component = () => {
   const [infoPanelSelectedEntryId, setInfoPanelSelectedEntryId] = createSignal<
     number | null
   >(null)
+
+  const isFolderEmpty = createMemo(() => folderEntries().length === 0)
 
   const infoPanelSelectedEntry = createMemo(() => {
     if (infoPanelSelectedEntryId() === null) {
@@ -744,6 +749,23 @@ const FileExplorerPage: Component = () => {
               openGeneralContextMenu(event)
             }}
           >
+            <Show when={isFolderEmpty()}>
+              <div class="folder-notice-container">
+                <Switch
+                  fallback={<div class="folder-notice">Empty folder</div>}
+                >
+                  <Match
+                    when={
+                      folderEntriesError()?.code ===
+                      "storage.entries.unauthorized"
+                    }
+                  >
+                    <div class="folder-notice error">Folder access denied</div>
+                  </Match>
+                </Switch>
+              </div>
+            </Show>
+
             <ContextMenu {...generalContextMenuProps()}>
               <ContextMenuSection>
                 <ContextMenuLink
