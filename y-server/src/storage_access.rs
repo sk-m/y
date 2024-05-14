@@ -39,7 +39,7 @@ async fn get_storage_entry_access_rule_cascade_up(
 ) -> Result<StorageAccessCheckResult, sqlx::Error> {
     #[derive(FromRow, Serialize, Debug)]
     pub struct StorageAccessRuleRow {
-        tree_step: i32,
+        tree_step: i64,
         access_type: String,
         executor_type: String,
         executor_id: i32,
