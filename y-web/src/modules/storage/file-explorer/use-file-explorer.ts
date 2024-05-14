@@ -28,6 +28,16 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
     endpointId: props.endpointId(),
   }))
 
+  const folderEntriesError = createMemo(
+    () =>
+      $folderEntries.error as
+        | {
+            code: string
+          }
+        | null
+        | undefined
+  )
+
   const folderEntries = createMemo(
     () => {
       const filter = props.entriesFilterFn?.()
@@ -162,6 +172,7 @@ export const useFileExplorer = (props: UseFileExplorerProps) => {
 
   return {
     folderEntries,
+    folderEntriesError,
     folderPath,
     invalidateEntries,
     onSelect,
