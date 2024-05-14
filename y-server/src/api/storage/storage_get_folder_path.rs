@@ -3,7 +3,13 @@ use log::*;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
-use crate::{request::error, user::get_client_rights, util::RequestPool};
+use crate::{
+    request::error,
+    storage_access::check_storage_entry_access,
+    storage_entry::StorageEntryType,
+    user::{get_user_from_request, get_user_groups},
+    util::RequestPool,
+};
 
 #[derive(Deserialize)]
 struct StorageGetFolderPathInput {
@@ -29,19 +35,33 @@ async fn storage_get_folder_path(
     query: web::Query<StorageGetFolderPathInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
-    let client_rights = get_client_rights(&pool, &req).await;
+    let query = query.into_inner();
+    let folder_id = query.folder_id;
+    let endpoint_id = query.endpoint_id;
 
-    let action_allowed = client_rights
-        .iter()
-        .any(|right| right.right_name == "storage_list");
+    // TODO: slow. This endpoint should be as fast as possible, this check is not ideal
+    let client = get_user_from_request(&**pool, &req).await;
+
+    let action_allowed = if let Some((client_user, _)) = client {
+        let user_groups = get_user_groups(&**pool, client_user.id).await;
+        let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+        check_storage_entry_access(
+            endpoint_id,
+            &StorageEntryType::Folder,
+            folder_id,
+            "list_entries",
+            &group_ids,
+            &**pool,
+        )
+        .await
+    } else {
+        false
+    };
 
     if !action_allowed {
         return error("storage.get_folder_path.unauthorized");
     }
-
-    let query = query.into_inner();
-    let folder_id = query.folder_id;
-    let endpoint_id = query.endpoint_id;
 
     // storage_get_folder_path() procedure returns us a path in reversed order, due to the way it's implemented
     let reversed_path =

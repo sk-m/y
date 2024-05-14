@@ -4,7 +4,11 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 use crate::{
-    request::error, storage_endpoint::get_storage_endpoint, user::get_client_rights,
+    request::error,
+    storage_access::check_storage_entry_access,
+    storage_endpoint::get_storage_endpoint,
+    storage_entry::StorageEntryType,
+    user::{get_client_rights, get_user_from_request, get_user_groups},
     util::RequestPool,
 };
 
@@ -34,6 +38,8 @@ async fn storage_create_folder(
         return error("storage.create_folder.invalid_input");
     }
 
+    let is_root = form.target_folder.is_none();
+
     let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights
@@ -44,7 +50,30 @@ async fn storage_create_folder(
         return error("storage.create_folder.unauthorized");
     }
 
-    let is_root = form.target_folder.is_none();
+    if !is_root {
+        let client = get_user_from_request(&pool, &req).await;
+
+        let action_allowed = if let Some((client_user, _)) = client {
+            let user_groups = get_user_groups(&**pool, client_user.id).await;
+            let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+            check_storage_entry_access(
+                form.endpoint_id,
+                &StorageEntryType::Folder,
+                form.target_folder.unwrap(),
+                "upload",
+                &group_ids,
+                &**pool,
+            )
+            .await
+        } else {
+            false
+        };
+
+        if !action_allowed {
+            return error("storage.create_folder.unauthorized");
+        }
+    }
 
     let target_endpoint = get_storage_endpoint(form.endpoint_id, &pool).await;
 

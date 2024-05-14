@@ -13,8 +13,11 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::time::Instant;
 
-use crate::storage_entry::{generate_image_entry_thumbnail, generate_video_entry_thumbnail};
-use crate::user::get_user_from_request;
+use crate::storage_access::check_storage_entry_access;
+use crate::storage_entry::{
+    generate_image_entry_thumbnail, generate_video_entry_thumbnail, StorageEntryType,
+};
+use crate::user::{get_user_from_request, get_user_groups};
 use crate::{storage_endpoint::get_storage_endpoint, user::get_client_rights, util::RequestPool};
 
 const MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION: u64 = 50_000_000;
@@ -59,13 +62,17 @@ async fn storage_upload(
     let now = Instant::now();
     let mut uploaded_files: Vec<String> = Vec::new();
 
+    let target_folder_id = query.target_folder;
+    let endpoint_id = query.endpoint_id;
+
     // Check the rights
-    // TODO we call to get_user_from_request twice. Refactor get_client_rights and allow it to consume the user session.
-    let client_session = get_user_from_request(&pool, &req).await;
+    let client = get_user_from_request(&pool, &req).await;
     let client_rights = get_client_rights(&pool, &req).await;
 
-    let client_user_id = if client_session.is_some() {
-        Some(client_session.unwrap().0.id)
+    let client_user_id = if client.is_some() {
+        let client_user = &client.as_ref().unwrap().0;
+
+        Some(client_user.id)
     } else {
         None
     };
@@ -79,9 +86,31 @@ async fn storage_upload(
         return sink_and_error("storage.upload.unauthorized", &mut payload).await;
     }
 
+    if let Some(target_folder_id) = target_folder_id {
+        let action_allowed = if let Some((client_user, _)) = client {
+            let user_groups = get_user_groups(&**pool, client_user.id).await;
+            let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+            check_storage_entry_access(
+                endpoint_id,
+                &StorageEntryType::Folder,
+                target_folder_id,
+                "upload",
+                &group_ids,
+                &**pool,
+            )
+            .await
+        } else {
+            false
+        };
+
+        if !action_allowed {
+            return sink_and_error("storage.upload.unauthorized", &mut payload).await;
+        }
+    }
+
     // Get the target endpoint's base path, so we know where to save the files
     // TODO: Cache all endpoints so we dont' have to query for them every time
-    let endpoint_id = query.endpoint_id;
 
     let target_endpoint = get_storage_endpoint(endpoint_id, &pool).await;
 
@@ -96,8 +125,6 @@ async fn storage_upload(
     }
 
     let target_endpoint_base_path = Path::new(&target_endpoint.base_path);
-
-    let target_folder_id = query.target_folder;
 
     let mut path_ids_cache: HashMap<String, i64> = HashMap::new();
     let mut skipped_files = Vec::<String>::new();

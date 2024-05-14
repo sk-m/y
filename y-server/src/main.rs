@@ -2,6 +2,7 @@ mod api;
 mod db;
 mod request;
 mod right;
+mod storage_access;
 mod storage_archives;
 mod storage_endpoint;
 mod storage_entry;
@@ -13,6 +14,7 @@ use crate::storage_archives::cleanup_storage_archives;
 use actix_web::{web, App, HttpServer};
 use chrono::{FixedOffset, Local};
 use dotenvy::dotenv;
+use futures::TryFutureExt;
 use log::*;
 use simplelog::*;
 use std::path::Path;
@@ -144,7 +146,7 @@ async fn main() -> std::io::Result<()> {
     setup_job_scheduler(jobs_database_pool);
 
     // Start actix web
-    info!("Starting the server on {}:{}", server_address, server_port);
+    info!("Starting server on {}:{}", server_address, server_port);
 
     HttpServer::new(move || {
         App::new()
@@ -169,6 +171,8 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_move_entries::storage_move_entries)
                     .service(crate::api::storage::storage_rename_entry::storage_rename_entry)
                     .service(crate::api::storage::storage_get::storage_get)
+                    .service(crate::api::storage::storage_create_access_rules::storage_create_access_rules)
+                    .service(crate::api::storage::storage_get_access_rules::storage_get_access_rules)
             )
             .service(
                 web::scope("/api/admin")
@@ -195,5 +199,9 @@ async fn main() -> std::io::Result<()> {
     })
     .bind((server_address, server_port))?
     .run()
+    .and_then(|_| async {
+        info!("Server stopped");
+        Ok(())
+    })
     .await
 }

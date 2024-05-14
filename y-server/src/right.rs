@@ -136,25 +136,13 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                     feature: Some("storage"),
                 },
                 Right {
-                    name: "storage_list",
+                    name: "storage_manage_access",
                     options: vec![],
-                    tags: vec![],
+                    tags: vec![RightTag::Administrative],
                     feature: Some("storage"),
                 },
                 Right {
                     name: "storage_upload",
-                    options: vec![],
-                    tags: vec![],
-                    feature: Some("storage"),
-                },
-                Right {
-                    name: "storage_move",
-                    options: vec![],
-                    tags: vec![],
-                    feature: Some("storage"),
-                },
-                Right {
-                    name: "storage_rename",
                     options: vec![],
                     tags: vec![],
                     feature: Some("storage"),
@@ -166,7 +154,7 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                     feature: Some("storage"),
                 },
                 Right {
-                    name: "storage_download",
+                    name: "storage_download_zip",
                     options: vec![],
                     tags: vec![],
                     feature: Some("storage"),
