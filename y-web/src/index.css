@@ -1,5 +1,6 @@
 @import "@/variables.less";
 
+/* Inter */
 @font-face {
   font-family: "Inter";
   src: url("/assets/fonts/Inter-VariableFont_slnt\,wght.ttf")
@@ -7,6 +8,7 @@
   font-weight: 1 999;
 }
 
+/* SourceCodePro */
 @font-face {
   font-family: "SourceCodePro";
   src: url("/assets/fonts/SourceCodePro-Italic-VariableFont_wght.ttf")
@@ -20,6 +22,32 @@
   src: url("/assets/fonts/SourceCodePro-VariableFont_wght.ttf")
     format("truetype-variations");
   font-weight: 1 999;
+}
+
+/* Fantasque Sans Mono */
+@font-face {
+  font-family: "FantasqueSansMono";
+  src: url("/assets/fonts/fantasquesansmono-regular.otf") format("opentype");
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "FantasqueSansMono";
+  src: url("/assets/fonts/fantasquesansmono-italic.otf") format("opentype");
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "FantasqueSansMono";
+  src: url("/assets/fonts/fantasquesansmono-bold.otf") format("opentype");
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: "FantasqueSansMono";
+  src: url("/assets/fonts/fantasquesansmono-bolditalic.otf") format("opentype");
+  font-weight: bold;
+  font-style: italic;
 }
 
 body {
@@ -36,6 +64,7 @@ body {
 
 code {
   font-family: "SourceCodePro", monospace;
+  /* font-family: "FantasqueSansMono", monospace; */
 }
 
 hr {
@@ -108,6 +137,7 @@ i {
   --color-warning-t-3: rgba(250, 242, 0, 0.3);
 
   --color-error: hsl(355, 100%, 49%);
+  --color-error-d-1: hsl(355, 100%, 35%);
   --color-error-o-1: rgb(255, 230, 232);
   --color-error-o-2: rgb(254, 204, 208);
   --color-error-t-1: rgba(252, 0, 21, 0.1);
