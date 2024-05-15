@@ -55,7 +55,7 @@ export const updateStorageEndpoint = async (
 export type CreateStorageEndpointInput = {
   name: string
   type: string
-  preserveFileStructure: boolean
+  accessRulesEnabled: boolean
   basePath: string
   artifactsPath: string
   description?: string
@@ -68,7 +68,7 @@ export const createStorageEndpoint = async (
     body: {
       name: input.name.trim(),
       endpoint_type: input.type,
-      preserve_file_structure: input.preserveFileStructure,
+      access_rules_enabled: input.accessRulesEnabled,
       base_path: input.basePath.trim(),
       artifacts_path: input.artifactsPath.trim(),
       description: input.description?.trim(),
