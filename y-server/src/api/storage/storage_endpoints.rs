@@ -10,6 +10,7 @@ struct StorageEndpointRow {
     id: i32,
     name: String,
     status: String,
+    access_rules_enabled: bool,
 }
 
 #[derive(Serialize)]
@@ -23,7 +24,7 @@ async fn storage_endpoints(pool: web::Data<RequestPool>) -> impl Responder {
     // ?      and give access only to the users with `storage_read` right, or something like that.
 
     let endpoints = sqlx::query_as::<_, StorageEndpointRow>(
-        "SELECT id, name, status::TEXT FROM storage_endpoints WHERE status NOT IN ('disabled')",
+        "SELECT id, name, status::TEXT, access_rules_enabled FROM storage_endpoints WHERE status NOT IN ('disabled')",
     )
     .fetch_all(&**pool)
     .await;

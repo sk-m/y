@@ -14,6 +14,7 @@ import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Button } from "@/app/components/common/button/button"
 import { Icon } from "@/app/components/common/icon/icon"
+import { Note } from "@/app/components/common/note/note"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { toastCtl } from "@/app/core/toast"
@@ -28,6 +29,7 @@ import {
   IStorageAccessRuleExecutorType,
 } from "../storage-access-rule/storage-access-rule.codecs"
 import { storageEntryAccessRulesKey } from "../storage-access-rule/storage-access-rule.service"
+import { useStorageEndpoints } from "../storage-endpoint/storage-endpoint.service"
 import "./storage-access-field.less"
 
 export type StorageEntryAccessActions = {
@@ -181,6 +183,15 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
   const { notify } = toastCtl
   const queryClient = useQueryClient()
 
+  const $storageEndpoints = useStorageEndpoints()
+
+  const areAccessRulesEnforced = createMemo(
+    () =>
+      $storageEndpoints.data?.endpoints.find(
+        (endpoint) => endpoint.id === props.endpointId
+      )?.access_rules_enabled ?? false
+  )
+
   // eslint-disable-next-line solid/reactivity
   const [state, setState] = createStore<StorageEntryAccessSettings>(props.value)
 
@@ -193,7 +204,6 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
   const toggleFieldExpanded = () => setIsFieldExpanded((value) => !value)
 
   const $createStorageAccessRules = createMutation(createStorageAccessRules)
-
   const $userGroups = useUserGroups(() => ({}))
 
   const userGroups = createMemo(() => $userGroups.data?.user_groups ?? [])
@@ -315,6 +325,24 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
           />
         </div>
       </div>
+
+      <Stack
+        style={{
+          padding: "0 0.75em 0.75em 0.75em",
+        }}
+      >
+        <Show when={!areAccessRulesEnforced()}>
+          <Note
+            type="critical"
+            fontSize="var(--text-sm)"
+            style={{
+              "font-weight": 500,
+            }}
+          >
+            Access rules are disabled
+          </Note>
+        </Show>
+      </Stack>
 
       <Show when={isFieldExpanded()}>
         <div class="value">

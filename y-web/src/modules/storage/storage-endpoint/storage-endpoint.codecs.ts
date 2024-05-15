@@ -6,6 +6,7 @@ export const TStorageEndpoint = z.object({
   id: z.number(),
   name: z.string(),
   status: TStorageEndpointStatus,
+  access_rules_enabled: z.boolean(),
 })
 
 export type IStorageEndpoint = z.infer<typeof TStorageEndpoint>

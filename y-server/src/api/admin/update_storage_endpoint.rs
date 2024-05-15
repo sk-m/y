@@ -12,6 +12,7 @@ struct UpdateStorageEndpointInput {
     #[validate(length(min = 0, max = 255))]
     description: Option<String>,
     status: Option<String>,
+    access_rules_enabled: Option<bool>,
 }
 
 #[patch("/storage/endpoints/{endpoint_id}")]
@@ -40,11 +41,13 @@ async fn update_storage_endpoint(
 
     let storage_endpoint_id = path.into_inner();
 
-    let updated_name = &form.name.is_some();
-    let updated_description = &form.description.is_some();
-    let updated_status = &form.status.is_some();
+    // TODO ew..
+    let has_updated_name = &form.name.is_some();
+    let has_updated_description = &form.description.is_some();
+    let has_updated_status = &form.status.is_some();
+    let has_updated_access_rules_enabled = &form.access_rules_enabled.is_some();
 
-    if *updated_name {
+    if *has_updated_name {
         let name = &form.name.unwrap();
 
         let result = sqlx::query("UPDATE storage_endpoints SET name = $1 WHERE id = $2")
@@ -58,7 +61,7 @@ async fn update_storage_endpoint(
         }
     }
 
-    if *updated_description {
+    if *has_updated_description {
         let description = &form.description.unwrap();
 
         let result = sqlx::query("UPDATE storage_endpoints SET description = $1 WHERE id = $2")
@@ -72,7 +75,7 @@ async fn update_storage_endpoint(
         }
     }
 
-    if *updated_status {
+    if *has_updated_status {
         let status = &form.status.unwrap();
 
         if status != "active" && status != "read_only" && status != "disabled" {
@@ -86,6 +89,21 @@ async fn update_storage_endpoint(
         .bind(storage_endpoint_id)
         .execute(&**pool)
         .await;
+
+        if result.is_err() {
+            return error("update_storage_endpoint.other");
+        }
+    }
+
+    if *has_updated_access_rules_enabled {
+        let access_rules_enabled = &form.access_rules_enabled.unwrap();
+
+        let result =
+            sqlx::query("UPDATE storage_endpoints SET access_rules_enabled = $1 WHERE id = $2")
+                .bind(access_rules_enabled)
+                .bind(storage_endpoint_id)
+                .execute(&**pool)
+                .await;
 
         if result.is_err() {
             return error("update_storage_endpoint.other");

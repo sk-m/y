@@ -14,6 +14,8 @@ import { Pill } from "@/app/components/common/pill/pill"
 import { SelectField } from "@/app/components/common/select-field/select-field"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { Toggle } from "@/app/components/common/toggle/toggle"
+import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
@@ -38,6 +40,7 @@ const StorageEndpointPage = () => {
   const navigate = useNavigate()
   const params = useParams()
   const queryClient = useQueryClient()
+  const { notify } = toastCtl
 
   const endpointId = createMemo(() => params.endpointId as string)
 
@@ -59,7 +62,11 @@ const StorageEndpointPage = () => {
     }
   })
 
-  const updateKeyValue = (key: string, value: string | null) => {
+  const updateKeyValue = (
+    key: string,
+    value: string | boolean | null,
+    onSuccess?: () => void
+  ) => {
     $updateStorageEndpoint.mutate(
       {
         endpointId: Number.parseInt(endpointId()!, 10),
@@ -72,6 +79,8 @@ const StorageEndpointPage = () => {
             adminStorageEndpointsKey,
             { endpointId: endpointId() },
           ])
+
+          onSuccess?.()
         },
         onError: (error) => genericErrorToast(error),
       }
@@ -112,6 +121,7 @@ const StorageEndpointPage = () => {
                 <Pill
                   variant="secondary"
                   style={{
+                    // eslint-disable-next-line sonarjs/no-duplicate-string
                     "font-size": "var(--text-sm)",
                   }}
                 >
@@ -198,14 +208,19 @@ const StorageEndpointPage = () => {
               <Stack direction="row" justifyContent="space-between">
                 <div class="ui-card-label">
                   <div class="label-strip" />
-                  <Text
-                    variant="h3"
-                    style={{
-                      margin: "0",
-                    }}
-                  >
-                    Filesystem paths
-                  </Text>
+                  <Stack spacing={"0.33"}>
+                    <Text
+                      variant="h3"
+                      style={{
+                        margin: "0",
+                      }}
+                    >
+                      Filesystem paths
+                    </Text>
+                    <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                      Endpoint's paths can not be updated after creation.
+                    </Text>
+                  </Stack>
                 </div>
 
                 <KeyValueFields
@@ -228,6 +243,55 @@ const StorageEndpointPage = () => {
                     onChange={() => void 0}
                   />
                 </KeyValueFields>
+              </Stack>
+            </Card>
+
+            <Card>
+              <Stack spacing={"1.5em"}>
+                <div class="ui-card-label">
+                  <div class="label-strip" />
+                  <Stack spacing={"0.33"}>
+                    <Stack
+                      direction="row"
+                      spacing={"0.33em"}
+                      alignItems="center"
+                    >
+                      <Text
+                        variant="h3"
+                        style={{
+                          margin: "0",
+                        }}
+                      >
+                        Access rules
+                      </Text>
+                      <Pill variant="warning">experimental</Pill>
+                    </Stack>
+                    <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                      Manage storage permissions on a per-entry basis.
+                    </Text>
+                  </Stack>
+                </div>
+                <Stack direction="row" spacing={"1em"} alignItems="center">
+                  <Toggle
+                    value={() =>
+                      $storageEndpoint.data?.access_rules_enabled ?? false
+                    }
+                    onChange={(value) => {
+                      updateKeyValue("access_rules_enabled", value, () => {
+                        notify({
+                          title: value ? "Enabled" : "Disabled",
+                          content: "Setting updated successfully.",
+                          severity: "success",
+                          icon: "check",
+                        })
+                      })
+                    }}
+                    size="m"
+                  />
+                  <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                    Enforce storage access rules for this endpoint.
+                  </Text>
+                </Stack>
               </Stack>
             </Card>
           </Stack>

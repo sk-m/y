@@ -3,7 +3,9 @@ use std::collections::{HashMap, HashSet};
 use serde::Serialize;
 use sqlx::FromRow;
 
-use crate::{storage_entry::StorageEntryType, util::RequestPool};
+use crate::{
+    storage_endpoint::get_storage_endpoint, storage_entry::StorageEntryType, util::RequestPool,
+};
 
 #[derive(PartialEq, Debug, Serialize)]
 pub enum StorageAccessType {
@@ -136,6 +138,19 @@ pub async fn check_storage_entry_access(
 
     pool: &RequestPool,
 ) -> bool {
+    let target_endpoint = get_storage_endpoint(endpoint_id, pool).await;
+
+    match target_endpoint {
+        Err(_) => {
+            return false;
+        }
+        Ok(target_endpoint) => {
+            if !target_endpoint.access_rules_enabled {
+                return true;
+            }
+        }
+    };
+
     let mut action_allowed = false;
 
     let mut explicitly_allowed = false;
@@ -235,6 +250,19 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
     pool: &RequestPool,
 ) -> bool {
+    let target_endpoint = get_storage_endpoint(endpoint_id, pool).await;
+
+    match target_endpoint {
+        Err(_) => {
+            return false;
+        }
+        Ok(target_endpoint) => {
+            if !target_endpoint.access_rules_enabled {
+                return true;
+            }
+        }
+    };
+
     let (file_ids, folder_ids) = entries;
 
     // TODO: Return a list of entries that have denied access
