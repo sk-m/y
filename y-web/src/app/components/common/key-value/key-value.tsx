@@ -12,7 +12,7 @@ import {
 
 import { ComponentWithChildren } from "@/module"
 
-import { Icon } from "../icon/icon"
+import { Button } from "../button/button"
 import "./key-value.less"
 
 export type KeyValueProps<TValue> = {
@@ -146,30 +146,27 @@ export const KeyValue = <TValue,>(props: KeyValueProps<TValue>) => {
           </Show>
 
           <div class="actions">
-            <button
-              class="action"
-              title="save"
+            <Button
+              leadingIcon="check"
+              size="xs-squared"
               onClick={(event) => {
                 event.stopPropagation()
 
                 setActive(false)
                 props.onChange(value())
               }}
-            >
-              <Icon size={14} wght={500} grad={25} name="check" />
-            </button>
-            <button
-              class="action"
-              title="discard"
+            />
+            <Button
+              leadingIcon="close"
+              size="xs-squared"
+              variant="secondary"
               onClick={(event) => {
                 event.stopPropagation()
 
                 setValue(() => props.value)
                 setActive(false)
               }}
-            >
-              <Icon size={14} wght={500} grad={25} name="close" />
-            </button>
+            />
           </div>
         </div>
       </div>

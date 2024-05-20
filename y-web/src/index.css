@@ -141,6 +141,7 @@ i {
   --color-error-o-1: rgb(255, 230, 232);
   --color-error-o-2: rgb(254, 204, 208);
   --color-error-t-1: rgba(252, 0, 21, 0.1);
+  --color-error-t-3: rgba(252, 0, 21, 0.33);
 
   --color-success: #22cc00;
   --color-success-t-1: rgba(34, 204, 0, 0.1);

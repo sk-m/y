@@ -1,8 +1,8 @@
 @import "@/variables.less";
 
 .default-box-shadow {
-  box-shadow: 0 0 1px 0 rgba(21, 23, 46, 0.1),
-    0 0 0.5em 0 rgba(21, 23, 46, 0.05);
+  box-shadow: 0 0 1px 0 rgba(@brand-black-rgb, 0.1),
+    0 0 0.5em 0 rgba(@brand-black-rgb, 0.05);
 }
 
 #page-storage-file-explorer {
@@ -189,7 +189,7 @@
               background-color: var(--color-grey-2);
 
               > .item-info {
-                box-shadow: 0 0 1px 0 rgba(21, 23, 46, 1);
+                box-shadow: @border-primary;
 
                 background-color: var(--color-grey-15);
               }
@@ -372,7 +372,7 @@
               user-select: none;
 
               background-color: white;
-              box-shadow: 0 0 1px 0 rgba(21, 23, 46, 0.66);
+              box-shadow: @border-light;
 
               border-radius: 6px;
 
@@ -453,8 +453,7 @@
       box-shadow: 0 0 1px 0 rgba(21, 23, 46, 0.1),
         0 0 0.5em 0 rgba(21, 23, 46, 0.05);
 
-      border-top-left-radius: 10px;
-      border-bottom-left-radius: 10px;
+      border-radius: 10px;
 
       overflow-y: auto;
 

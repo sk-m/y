@@ -21,8 +21,7 @@
     text-decoration: none;
 
     background-color: white;
-    box-shadow: 0 0 0 1px rgba(@brand-black-rgb, 0.066),
-      0 5px 15px 0 rgba(@brand-black-rgb, 0.075);
+    box-shadow: @border-light, 0 5px 15px 0 rgba(@brand-black-rgb, 0.075);
 
     border-radius: 7px;
 
@@ -32,7 +31,7 @@
 
     &:hover {
       background-color: rgba(@brand-black-rgb, 0.033);
-      box-shadow: 0 0 0 1px rgba(@brand-black-rgb, 0.25),
+      box-shadow: @border-primary-lighter,
         0 3px 9px 0 rgba(@brand-black-rgb, 0.15);
     }
 

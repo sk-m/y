@@ -3,7 +3,7 @@
 .ui-button {
   /* Normal state */
   &.primary > button {
-    box-shadow: 0 0 1px 0 @border-primary,
+    box-shadow: @border-primary-lighter,
       0 0 0.5em 0 rgba(@brand-black-rgb, 0.05);
     background-color: white;
   }
@@ -18,43 +18,37 @@
 
   /* Hovered state */
   &.primary > button:hover {
-    box-shadow: 0 0 1px 0 rgba(21, 23, 46, 1),
-      0 5px 10px 0 rgba(21, 23, 46, 0.066);
+    box-shadow: @border-active, 0 5px 10px 0 rgba(@brand-black-rgb, 0.075);
   }
 
   &.secondary > button:hover {
-    box-shadow: 0 0 1px 0 rgba(21, 23, 46, 0.5),
-      0 5px 10px 0 rgba(21, 23, 46, 0.066);
+    box-shadow: @border-active, 0 5px 10px 0 rgba(@brand-black-rgb, 0.075);
   }
 
   &.text > button:hover {
-    box-shadow: 0 0 1px 0 rgba(21, 23, 46, 0.5),
-      0 5px 10px 0 rgba(21, 23, 46, 0.066);
+    box-shadow: @border-active, 0 5px 10px 0 rgba(@brand-black-rgb, 0.075);
   }
 
   /* Active state */
   &.primary > button:active {
     transition: 0s;
 
-    background-color: rgba(@brand-black-rgb, 0.05);
-    box-shadow: 0 0 1px 0 rgba(21, 23, 46, 1),
-      0 2px 4px 0 rgba(21, 23, 46, 0.075);
+    background-color: rgba(@brand-black-rgb, 0.066);
+    box-shadow: @border-active-darker, 0 2px 3px 0 rgba(@brand-black-rgb, 0.2);
   }
 
   &.secondary > button:active {
     transition: 0s;
 
-    background-color: rgba(@brand-black-rgb, 0.05);
-    box-shadow: 0 0 1px 0 rgba(21, 23, 46, 0.75),
-      0 2px 4px 0 rgba(21, 23, 46, 0.075);
+    background-color: rgba(@brand-black-rgb, 0.066);
+    box-shadow: @border-active-darker, 0 2px 3px 0 rgba(@brand-black-rgb, 0.2);
   }
 
   &.text > button:active {
     transition: 0s;
 
-    background-color: rgba(@brand-black-rgb, 0.05);
-    box-shadow: 0 0 1px 0 rgba(21, 23, 46, 0.75),
-      0 2px 4px 0 rgba(21, 23, 46, 0.075);
+    background-color: rgba(@brand-black-rgb, 0.066);
+    box-shadow: @border-active-darker, 0 2px 3px 0 rgba(@brand-black-rgb, 0.2);
   }
 
   &.disabled > button {
@@ -62,8 +56,8 @@
 
     color: var(--color-text-grey-1);
 
-    background-color: var(--color-grey-15);
-    box-shadow: inset 0 0 0 1px var(--color-grey-15);
+    background-color: rgba(@brand-black-rgb, 0.033);
+    box-shadow: inset 0 0 0 1px rgba(@brand-black-rgb, 0);
   }
 
   &.md {
@@ -83,6 +77,14 @@
       padding: 0.25em 0.5em;
     }
   }
+
+  &.xs-squared {
+    > button {
+      padding: 0.25em 0.25em;
+      border-radius: 7px;
+    }
+  }
+
   > button {
     color: var(--color-text);
     font-family: "Inter", sans-serif;

@@ -33,8 +33,14 @@
     }
   }
 
+  &.error.dirty:not(.focused) > .container:hover {
+    > .input-label {
+      box-shadow: 0 0 0 1px var(--color-error-t-3) !important;
+    }
+  }
+
   &.error > .container {
-    box-shadow: 0 0 0 1px var(--color-error);
+    box-shadow: 0 0 0 1px var(--color-error) !important;
   }
 
   &.disabled > .container > .input-label,
@@ -47,10 +53,14 @@
       0px 0px 0 5px var(--color-error-o-1);
   }
 
-  &.error.focused > .container > .input-label,
   &.error:hover > .container > .input-label,
   &.error > .container > .input-label {
     color: var(--color-error);
+  }
+
+  &.error.focused > .container > .input-label {
+    color: white;
+    background-color: var(--color-error);
   }
 
   &:hover > .container > .input-label {
@@ -158,6 +168,7 @@
     }
 
     > input::placeholder {
+      color: rgba(@brand-black-rgb, 0.66);
       font-family: "Inter", sans-serif;
       font-weight: 420;
 

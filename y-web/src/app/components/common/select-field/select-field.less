@@ -33,7 +33,7 @@
 
       position: relative;
 
-      box-shadow: 0 0 0 1px rgba(@brand-black-rgb, 0.2);
+      box-shadow: @border-primary;
       background-color: white;
 
       border-radius: 5px;
@@ -44,13 +44,12 @@
 
       &:hover {
         background-color: rgba(@brand-black-rgb, 0.033);
-        box-shadow: 0 0 0 1px rgba(@brand-black-rgb, 0.25),
-          0 5px 10px rgba(@brand-black-rgb, 0.1);
+        box-shadow: @border-active, 0 5px 10px rgba(@brand-black-rgb, 0.1);
 
         > .floater {
           > .expand-button {
             color: var(--color-text);
-            background-color: var(--color-grey-15);
+            background-color: rgba(@brand-black-rgb, 0.066);
           }
         }
       }
@@ -77,7 +76,8 @@
           font-weight: 500;
           text-align: left;
 
-          border: 1px solid var(--color-border-2);
+          border: none;
+          box-shadow: @border-primary;
           background-color: white;
 
           border-radius: 5px;
@@ -148,8 +148,7 @@
 
         background-color: white;
         border-radius: 5px;
-        box-shadow: 0 0 1px 0 @border-primary,
-          0 5px 10px 0 rgba(@brand-black-rgb, 0.075);
+        box-shadow: @border-primary, 0 5px 10px 0 rgba(@brand-black-rgb, 0.075);
 
         > .available-options {
           display: flex;

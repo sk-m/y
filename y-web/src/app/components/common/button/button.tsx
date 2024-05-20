@@ -7,7 +7,7 @@ import "./button.less"
 
 export type ButtonProps = {
   variant?: "primary" | "secondary" | "text"
-  size?: "md" | "sm" | "xs"
+  size?: "md" | "sm" | "xs" | "xs-squared"
   leadingIcon?: string
 
   disabled?: boolean
