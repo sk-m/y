@@ -6,7 +6,9 @@
 import {
   Component,
   For,
+  Match,
   Show,
+  Switch,
   batch,
   createEffect,
   createMemo,
@@ -15,7 +17,6 @@ import {
   onCleanup,
   onMount,
 } from "solid-js"
-import { createStore } from "solid-js/store"
 
 import { useParams, useSearchParams } from "@solidjs/router"
 import { createMutation } from "@tanstack/solid-query"
@@ -31,6 +32,7 @@ import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 import { useFilesDrop } from "@/app/core/util/use-files-drop"
+import { globalUploadProgressCtl } from "@/app/storage/global-upload-progress"
 import { DropFilesHere } from "@/modules/storage/components/drop-files-here"
 import {
   SelectedEntry,
@@ -52,12 +54,12 @@ import {
 import { FileWithPath } from "@/modules/storage/upload"
 
 import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
+import { FileExplorerDeleteModal } from "./components/file-explorer-delete-modal"
 import { FileExplorerDisplaySettings } from "./components/file-explorer-display-settings"
 import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
 import { FileExplorerMediaViewer } from "./components/file-explorer-media-viewer"
 import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerSelectionInfo } from "./components/file-explorer-selection-info"
-import { FileExplorerUploadStatusToast } from "./components/file-explorer-upload-status-toast"
 import { NewFolderEntry } from "./components/new-folder-entry"
 import { StorageEntry } from "./components/storage-entry"
 import "./file-explorer.less"
@@ -73,6 +75,9 @@ const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
   const params = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
+
+  const { status: uploadStatus, setStatus: setUploadStatus } =
+    globalUploadProgressCtl
 
   const $renameEntry = createMutation(renameStorageEntry)
   const $moveEntries = createMutation(moveStorageEntries)
@@ -108,6 +113,7 @@ const FileExplorerPage: Component = () => {
 
   const {
     folderEntries,
+    folderEntriesError,
     folderPath,
     invalidateEntries,
     selectedEntries,
@@ -155,11 +161,10 @@ const FileExplorerPage: Component = () => {
     contextMenuProps: selectionContextMenuProps,
   } = useContextMenu()
 
-  const [uploadStatus, setUploadStatus] = createStore({
-    numberOfFiles: 0,
-    percentageUploaded: 0,
-    totalSizeBytes: 0,
-  })
+  const [entriesToDelete, setEntriesToDelete] = createSignal<{
+    folderIds: number[]
+    fileIds: number[]
+  } | null>(null)
 
   const [entryIndexToPreview, setEntryIndexToPreview] = createSignal<
     number | null
@@ -171,6 +176,8 @@ const FileExplorerPage: Component = () => {
   const [infoPanelSelectedEntryId, setInfoPanelSelectedEntryId] = createSignal<
     number | null
   >(null)
+
+  const isFolderEmpty = createMemo(() => folderEntries().length === 0)
 
   const infoPanelSelectedEntry = createMemo(() => {
     if (infoPanelSelectedEntryId() === null) {
@@ -222,7 +229,8 @@ const FileExplorerPage: Component = () => {
     folderEntries().filter(
       (entry) =>
         entry.mime_type?.startsWith("image/") ||
-        entry.mime_type?.startsWith("video/")
+        entry.mime_type?.startsWith("video/") ||
+        entry.mime_type?.startsWith("audio/")
     )
   )
 
@@ -306,7 +314,26 @@ const FileExplorerPage: Component = () => {
     )
   }
 
-  const deleteEntries = (folderIds: number[], fileIds: number[]) => {
+  /**
+   * Deltes entries passed via arguments. If no arguments are passed, deletes entries that are currently selected for deletion
+   */
+  const performDeletion = (
+    requestedFolderIds?: number[],
+    requestedFileIds?: number[]
+  ) => {
+    let folderIds = []
+    let fileIds = []
+
+    if (requestedFileIds || requestedFolderIds) {
+      folderIds = requestedFolderIds ?? []
+      fileIds = requestedFileIds ?? []
+    } else if (entriesToDelete() === null) {
+      return
+    } else {
+      folderIds = entriesToDelete()!.folderIds
+      fileIds = entriesToDelete()!.fileIds
+    }
+
     $deleteEntries.mutate(
       {
         endpointId: Number.parseInt(params.endpointId as string, 10),
@@ -315,12 +342,31 @@ const FileExplorerPage: Component = () => {
       },
       {
         onSuccess: () => {
-          resetSelection()
-          void invalidateEntries()
+          batch(() => {
+            setEntriesToDelete(null)
+
+            resetSelection()
+            void invalidateEntries()
+          })
         },
         onError: (error) => genericErrorToast(error),
       }
     )
+  }
+
+  const deleteEntries = (
+    folderIds: number[],
+    fileIds: number[],
+    skipConfirmation = false
+  ) => {
+    if (skipConfirmation) {
+      performDeletion(folderIds, fileIds)
+    } else {
+      setEntriesToDelete({
+        folderIds,
+        fileIds,
+      })
+    }
   }
 
   const renameEntry = (
@@ -480,6 +526,20 @@ const FileExplorerPage: Component = () => {
   // eslint-disable-next-line sonarjs/cognitive-complexity
   onMount(() => {
     const keydownHandler = (event: KeyboardEvent) => {
+      // Go up one folder
+      if (event.ctrlKey && event.key === "Backspace") {
+        event.preventDefault()
+
+        if (folderPath().length === 0) return
+
+        // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+        const parentFolder = folderPath()[folderPath().length - 2]
+
+        setSearchParams({
+          folderId: parentFolder?.id.toString() ?? null,
+        })
+      }
+
       // Reset selection
       if (event.key === "Escape") {
         event.preventDefault()
@@ -526,15 +586,15 @@ const FileExplorerPage: Component = () => {
         }
       }
 
-      // Quick delete selected entries (no confirmation)
-      if (event.key === "Delete" && event.shiftKey) {
+      // delete selected entries
+      if (event.key === "Delete") {
         event.preventDefault()
 
         if (selectedEntries().size === 0) return
 
         const { folderIds, fileIds } = partitionEntries([...selectedEntries()])
 
-        deleteEntries(folderIds, fileIds)
+        deleteEntries(folderIds, fileIds, event.shiftKey)
       }
 
       // Focus onto search field
@@ -592,14 +652,23 @@ const FileExplorerPage: Component = () => {
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
     >
+      <FileExplorerDeleteModal
+        subtitle={`${
+          (entriesToDelete()?.fileIds.length ?? 0) +
+          (entriesToDelete()?.folderIds.length ?? 0)
+        } entries selected`}
+        open={entriesToDelete() !== null}
+        onClose={() => setEntriesToDelete(null)}
+        onConfirm={() => performDeletion()}
+      />
       <Show when={entryToPreview()}>
         <FileExplorerMediaViewer
           endpointId={params.endpointId as string}
           entry={entryToPreview()!}
           onPrev={() => getEntryForPreview("prev")}
           onNext={() => getEntryForPreview("next")}
-          onDelete={() => {
-            deleteEntries([], [entryToPreview()!.id])
+          onDelete={(force) => {
+            deleteEntries([], [entryToPreview()!.id], force)
           }}
           onDownload={() => downloadFile(entryToPreview()!.id)}
           onInfoPanelSelect={() =>
@@ -618,14 +687,6 @@ const FileExplorerPage: Component = () => {
       </Show>
 
       <DropFilesHere active={isAboutToDrop()} />
-
-      <Show when={uploadStatus.numberOfFiles !== 0}>
-        <FileExplorerUploadStatusToast
-          percentageUploaded={uploadStatus.percentageUploaded}
-          numberOfFiles={uploadStatus.numberOfFiles}
-          totalSizeBytes={uploadStatus.totalSizeBytes}
-        />
-      </Show>
 
       <div class="page-container">
         <div class="browser-container">
@@ -688,6 +749,23 @@ const FileExplorerPage: Component = () => {
               openGeneralContextMenu(event)
             }}
           >
+            <Show when={isFolderEmpty()}>
+              <div class="folder-notice-container">
+                <Switch
+                  fallback={<div class="folder-notice">Empty folder</div>}
+                >
+                  <Match
+                    when={
+                      folderEntriesError()?.code ===
+                      "storage.entries.unauthorized"
+                    }
+                  >
+                    <div class="folder-notice error">Folder access denied</div>
+                  </Match>
+                </Switch>
+              </div>
+            </Show>
+
             <ContextMenu {...generalContextMenuProps()}>
               <ContextMenuSection>
                 <ContextMenuLink
@@ -734,6 +812,7 @@ const FileExplorerPage: Component = () => {
               <ContextMenuSection>
                 <ContextMenuLink
                   icon="remove_selection"
+                  tip="esc"
                   onClick={() => {
                     setSelectedEntries(new Set<SelectedEntry>())
                     closeSelectionContextMenu()
@@ -768,6 +847,7 @@ const FileExplorerPage: Component = () => {
                   <ContextMenuSection>
                     <ContextMenuLink
                       icon="remove_selection"
+                      tip="esc"
                       onClick={() => {
                         setSelectedEntries(new Set<SelectedEntry>())
                       }}
@@ -779,6 +859,7 @@ const FileExplorerPage: Component = () => {
 
                     <ContextMenuLink
                       icon="download"
+                      tip="ctrl+s"
                       onClick={() => {
                         downloadSelectedEntries()
                         closeEntryContextMenu()
@@ -789,6 +870,7 @@ const FileExplorerPage: Component = () => {
 
                     <ContextMenuLink
                       icon="delete_sweep"
+                      tip="del"
                       onClick={() => {
                         const { folderIds, fileIds } = partitionEntries([
                           ...selectedEntries(),
@@ -836,6 +918,18 @@ const FileExplorerPage: Component = () => {
                     <div class="separator" />
 
                     <ContextMenuLink
+                      icon="folder_open"
+                      onClick={() => {
+                        navigateToFolder(contextMenuTargetEntry()!.id)
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Open folder
+                    </ContextMenuLink>
+
+                    <div class="separator" />
+
+                    <ContextMenuLink
                       icon="download"
                       onClick={() => {
                         downloadFolder(contextMenuTargetEntry()!.id)
@@ -854,7 +948,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Rename folder
+                      Rename
                     </ContextMenuLink>
 
                     <ContextMenuLink
@@ -864,7 +958,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Delete folder
+                      Delete
                     </ContextMenuLink>
                   </Show>
                   <Show when={contextMenuTargetEntry()?.entry_type === "file"}>
@@ -920,7 +1014,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Rename file
+                      Rename
                     </ContextMenuLink>
 
                     <ContextMenuLink
@@ -930,7 +1024,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Delete file
+                      Delete
                     </ContextMenuLink>
                   </Show>
                 </ContextMenuSection>
@@ -1026,6 +1120,7 @@ const FileExplorerPage: Component = () => {
         <div class="side-panel">
           <Show when={infoPanelSelectedEntry()}>
             <FileExplorerInfoPanel
+              endpointId={Number.parseInt(params.endpointId as string, 10)}
               thumbnails={thumbnails()}
               entry={infoPanelSelectedEntry()!}
               onRename={(name) =>

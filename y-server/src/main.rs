@@ -2,6 +2,7 @@ mod api;
 mod db;
 mod request;
 mod right;
+mod storage_access;
 mod storage_archives;
 mod storage_endpoint;
 mod storage_entry;
@@ -13,10 +14,12 @@ use crate::storage_archives::cleanup_storage_archives;
 use actix_web::{web, App, HttpServer};
 use chrono::{FixedOffset, Local};
 use dotenvy::dotenv;
+use futures::TryFutureExt;
 use log::*;
 use simplelog::*;
-use std::env;
+use std::path::Path;
 use std::process::exit;
+use std::{env, fs};
 use std::{str::FromStr, time::Duration};
 use util::RequestPool;
 
@@ -82,8 +85,10 @@ fn setup_job_scheduler(pool: RequestPool) {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Load the .env file
     dotenv().ok();
 
+    // Initialize the logger
     CombinedLogger::init(vec![
         TermLogger::new(
             LevelFilter::Info,
@@ -99,10 +104,13 @@ async fn main() -> std::io::Result<()> {
     ])
     .unwrap();
 
+    // Connect to the database
     let pool = db::connect_to_database().await;
 
+    // Process command line arguments. We might want to do something and terminate
     process_cli_arguments(&pool).await;
 
+    // Make sure the server address and port are set by the user
     let server_address =
         env::var("SERVER_ADDRESS").expect("SERVER_ADDRESS env variable must be set");
 
@@ -111,6 +119,7 @@ async fn main() -> std::io::Result<()> {
         .parse()
         .expect("SERVER_PORT is not a valid port number");
 
+    // Run migrations
     let migration_result = sqlx::migrate!().run(&pool).await;
 
     match migration_result {
@@ -123,12 +132,21 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
+    // Make sure the environment is setup correctly
+    let upload_staging_folder = Path::new("upload_staging");
+
+    if !upload_staging_folder.exists() {
+        fs::create_dir(upload_staging_folder).unwrap();
+    }
+
+    // Start up the job scheduler
     info!("Setting up the job scheduler");
 
     let jobs_database_pool = pool.clone();
     setup_job_scheduler(jobs_database_pool);
 
-    info!("Starting the server on {}:{}", server_address, server_port);
+    // Start actix web
+    info!("Starting server on {}:{}", server_address, server_port);
 
     HttpServer::new(move || {
         App::new()
@@ -153,6 +171,8 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_move_entries::storage_move_entries)
                     .service(crate::api::storage::storage_rename_entry::storage_rename_entry)
                     .service(crate::api::storage::storage_get::storage_get)
+                    .service(crate::api::storage::storage_create_access_rules::storage_create_access_rules)
+                    .service(crate::api::storage::storage_get_access_rules::storage_get_access_rules)
             )
             .service(
                 web::scope("/api/admin")
@@ -179,5 +199,9 @@ async fn main() -> std::io::Result<()> {
     })
     .bind((server_address, server_port))?
     .run()
+    .and_then(|_| async {
+        info!("Server stopped");
+        Ok(())
+    })
     .await
 }

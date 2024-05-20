@@ -1,3 +1,5 @@
+@import "@/variables.less";
+
 .ui-dropdown-pill-container {
   position: relative;
 
@@ -18,9 +20,10 @@
     font-family: "Inter", sans-serif;
 
     border: none;
-    border-radius: 4px;
+    border-radius: 7px;
     background: none;
-    border: 1px solid var(--color-border-15);
+
+    background-color: rgba(@brand-black-rgb, 0.04);
 
     cursor: pointer;
 
@@ -43,38 +46,28 @@
     }
 
     &:hover {
-      background-color: var(--color-grey-1);
+      background-color: white;
 
-      border: 1px solid var(--color-border-2);
-      border-bottom-color: var(--color-border-2);
-
-      box-shadow: 0 5px 10px rgba(21, 23, 46, 0.1);
+      box-shadow: @border-primary, 0 5px 10px 0 rgba(@brand-black-rgb, 0.05);
     }
 
     &:active {
       transition: 0s;
 
-      box-shadow: 0 2px 5px rgba(21, 23, 46, 0.1);
       background-color: var(--color-border-1);
-
-      border-color: var(--color-border-25);
     }
   }
 
   &.expanded > .dropdown-pill {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-
-    border-bottom-color: white;
-
-    box-shadow: 0 5px 10px rgba(21, 23, 46, 0.1);
+    box-shadow: none;
+    background-color: rgba(@brand-black-rgb, 0.075);
   }
 
   > .dropdown-content {
     position: absolute;
     z-index: 100;
 
-    margin-top: -1px;
+    margin-top: 0.33em;
 
     width: fit-content;
     min-width: 125%;
@@ -82,12 +75,10 @@
     top: 100%;
     right: 0;
 
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
+    border-radius: 7px;
 
-    border: 1px solid var(--color-border-15);
-    box-shadow: 0 5px 10px rgba(21, 23, 46, 0.1);
+    box-shadow: @border-primary, 0 5px 10px 0 rgba(@brand-black-rgb, 0.1);
+
     background-color: white;
 
     overflow: hidden;
@@ -102,14 +93,16 @@
       display: flex;
       flex-direction: column;
 
+      padding: 0.33em 0;
+
       > .item {
         display: flex;
         align-items: center;
 
-        padding: 0.33em 0.66em;
+        padding: 0.33em 1.33em;
 
         color: var(--color-text-grey-025);
-        font-weight: 500;
+        font-weight: 420;
         font-size: var(--text-sm);
         font-family: "Inter", sans-serif;
 
@@ -125,7 +118,7 @@
           align-items: center;
           justify-content: center;
 
-          margin-right: 0.5em;
+          margin-right: 1em;
 
           > .ui-icon {
             transition: 0.15s;
@@ -137,9 +130,12 @@
         }
 
         &:hover {
-          background-color: var(--color-border-1);
+          color: var(--color-primary-d-1);
+
+          background-color: var(--color-primary-d-1-t-1);
 
           > .icon > .ui-icon {
+            color: var(--color-primary-d-1);
             font-variation-settings: "FILL" 1, "wght" 500, "GRAD" -25, "opsz" 14 !important;
           }
         }

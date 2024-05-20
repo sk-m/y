@@ -28,6 +28,7 @@ export const TStorageEndpoint = z.object({
   base_path: z.string(),
   artifacts_path: z.nullable(z.string()),
   description: z.nullable(z.string()),
+  access_rules_enabled: z.boolean(),
 })
 export type IStorageEndpoint = z.infer<typeof TStorageEndpoint>
 

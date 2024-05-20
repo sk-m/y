@@ -1,17 +1,46 @@
+@import "@/variables.less";
+
+._hover-shared {
+  background-color: rgba(@brand-black-rgb, 0.033);
+  box-shadow: 0 0 0 1px rgba(@brand-black-rgb, 0.25),
+    0 5px 10px rgba(@brand-black-rgb, 0.1);
+}
+
 .ui-input-field {
   position: relative;
 
   &:hover > .container {
-    box-shadow: 0 0 0 1px var(--color-border-3), 0 2px 4px var(--color-border-1);
+    ._hover-shared();
   }
 
   &.focused > .container {
-    box-shadow: 0 0 0 2px var(--color-primary),
+    background-color: white;
+
+    box-shadow: 0 0 0 1px var(--color-primary),
       0px 0px 0 5px var(--color-primary-o-1);
   }
 
+  &.dirty:not(.focused) > .container {
+    background-color: white;
+    box-shadow: 0 0 0 1px rgba(@brand-black-rgb, 0.2);
+
+    &:hover {
+      ._hover-shared();
+
+      > .input-label {
+        box-shadow: 0 0 0 1px rgba(@brand-black-rgb, 0.25);
+      }
+    }
+  }
+
+  &.error.dirty:not(.focused) > .container:hover {
+    > .input-label {
+      box-shadow: 0 0 0 1px var(--color-error-t-3) !important;
+    }
+  }
+
   &.error > .container {
-    box-shadow: 0 0 0 1px var(--color-error);
+    box-shadow: 0 0 0 1px var(--color-error) !important;
   }
 
   &.disabled > .container > .input-label,
@@ -24,25 +53,39 @@
       0px 0px 0 5px var(--color-error-o-1);
   }
 
-  &.error.focused > .container > .input-label,
   &.error:hover > .container > .input-label,
   &.error > .container > .input-label {
     color: var(--color-error);
   }
 
+  &.error.focused > .container > .input-label {
+    color: white;
+    background-color: var(--color-error);
+  }
+
   &:hover > .container > .input-label {
-    color: var(--color-text-grey-05);
+    background-color: transparent;
   }
 
   &.focused > .container > .input-label,
   &.dirty > .container > .input-label {
     font-size: var(--text-sm);
 
+    background-color: white;
+
     transform: translate(0.5em, -0.75em);
   }
 
   &.focused > .container > .input-label {
-    color: var(--color-primary);
+    color: white;
+
+    padding: 0em 0.5em;
+
+    background-color: var(--color-primary);
+    box-shadow: 0 0 0 3px white;
+
+    transform: translate(0.75em, -0.8em);
+
     font-weight: 500;
   }
 
@@ -70,10 +113,17 @@
   > .container {
     position: relative;
 
-    box-shadow: 0 0 0 1px var(--color-border-2);
+    box-shadow: 0 0 0 1px rgba(@brand-black-rgb, 0.2);
     background-color: white;
 
-    border-radius: 5px;
+    // box-shadow: 0 0 0 1px var(--color-border-2);
+    // background-color: rgba(21, 23, 46, 0.025);
+
+    // background-color: rgba(@brand-black-rgb, 0.01);
+    // box-shadow: 0 0 0 1px rgba(@brand-black-rgb, 0.1),
+    //   0 5px 10px rgba(@brand-black-rgb, 0.075);
+
+    border-radius: 7px;
 
     transition: 0.15s;
 
@@ -84,14 +134,16 @@
 
       color: var(--color-text-grey-1);
       font-size: var(--text-body1);
+      font-weight: 420;
 
       transform: translate(0.6em, 0.6em);
 
       pointer-events: none;
 
-      background-color: white;
+      background-color: transparent;
+      border-radius: 5px;
 
-      transition: all 0.15s, font-weight 0.05s;
+      transition: 0.15s;
     }
 
     > input {
@@ -116,6 +168,7 @@
     }
 
     > input::placeholder {
+      color: rgba(@brand-black-rgb, 0.66);
       font-family: "Inter", sans-serif;
       font-weight: 420;
 
@@ -124,10 +177,15 @@
 
       transition: 0.15s;
     }
+
+    > input::selection {
+      background-color: var(--color-primary);
+      color: white;
+    }
   }
 
   > .input-subtext {
-    margin-top: 0.4em;
+    margin-top: 0.5em;
 
     font-size: var(--text-sm);
     color: var(--color-text-grey-05);

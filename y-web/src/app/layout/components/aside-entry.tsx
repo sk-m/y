@@ -11,7 +11,7 @@ const ICON_SIZE_SMALL = 14
 export type AsideEnytryProps = {
   to: string
 
-  icon: string
+  icon?: string
   title: string
 
   relatedPaths?: string[]
@@ -21,7 +21,7 @@ export type AsideEnytryProps = {
 export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
   const location = useLocation()
 
-  const subEntries = children(() => props.children).toArray()
+  const subEntries = createMemo(() => children(() => props.children).toArray())
 
   const isActive = createMemo(() => {
     if (location.pathname.includes(props.to)) return true
@@ -45,18 +45,21 @@ export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
         classList={{
           "aside-entry": true,
           selected: isSelected() || isActive(),
-          group: subEntries.length > 0,
+          group: subEntries().length > 0,
         }}
       >
         <div class="content">
-          <div class="line" />
-          <div class="icon">
-            <Icon
-              size={props.subEntry ? ICON_SIZE_SMALL : ICON_SIZE_NORMAL}
-              type="rounded"
-              name={props.icon}
-            />
-          </div>
+          {/* <div class="line" /> */}
+          <Show when={props.icon}>
+            <div class="icon">
+              <Icon
+                size={props.subEntry ? ICON_SIZE_SMALL : ICON_SIZE_NORMAL}
+                wght={450}
+                type="rounded"
+                name={props.icon!}
+              />
+            </div>
+          </Show>
           <div class="text">{props.title}</div>
         </div>
         <div class="arrow">
@@ -69,9 +72,9 @@ export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
       </Link>
       <Show when={props.children && isActive()}>
         <div class="sub-entries-container">
-          <div class="spacer" />
+          {/* <div class="spacer" /> */}
           <div class="sub-entries">
-            <For each={subEntries}>
+            <For each={subEntries()}>
               {(entry) => entry && <div class="sub-entry">{entry}</div>}
             </For>
           </div>

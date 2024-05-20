@@ -111,6 +111,28 @@ export const FileExplorerDisplaySettings: Component<
               </div>
               <div class="label">file size</div>
             </button>
+
+            <button
+              class="item"
+              onClick={() => {
+                batch(() => {
+                  if (props.sortBy === "created_at") {
+                    // prettier-ignore
+                    props.setSortDirection((value) =>
+                      (value === "asc" ? "desc" : "asc")
+                    )
+                  } else {
+                    props.setSortBy("created_at")
+                    props.setSortDirection("desc")
+                  }
+                })
+              }}
+            >
+              <div class="icon">
+                <Icon name="schedule" size={14} wght={500} />
+              </div>
+              <div class="label">creation date</div>
+            </button>
           </div>
         }
       >
@@ -118,6 +140,8 @@ export const FileExplorerDisplaySettings: Component<
           ? "MIME type"
           : props.sortBy === "name"
           ? "name"
+          : props.sortBy === "created_at"
+          ? "creation date"
           : "file size"}
       </DropdownPill>
 

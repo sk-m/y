@@ -1,3 +1,5 @@
+@import "@/variables.less";
+
 @keyframes toggle-shake-m {
   0% {
     transform: translateX(0);
@@ -30,6 +32,12 @@
 
         > .circle {
           transform: translateX(18px);
+        }
+
+        &:active > .circle {
+          transition: 0.1s linear;
+
+          transform: translateX(14px) scale(0.9);
         }
       }
 
@@ -84,6 +92,12 @@
       }
     }
 
+    &:active > .circle {
+      transition: 0.1s linear;
+
+      transform: translateX(4px) scale(0.9);
+    }
+
     &.toggled {
       background-color: hsl(110, 100%, 37%);
       border-color: hsl(110, 80%, 30%);
@@ -99,6 +113,12 @@
       > .circle {
         transform: translateX(14px);
         border-color: hsl(110, 80%, 30%);
+      }
+
+      &:active > .circle {
+        transition: 0.1s linear;
+
+        transform: translateX(10px) scale(0.9);
       }
     }
   }

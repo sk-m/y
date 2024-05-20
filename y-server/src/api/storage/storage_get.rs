@@ -8,7 +8,9 @@ use sqlx::prelude::FromRow;
 
 use crate::request::error;
 
-use crate::user::get_client_rights;
+use crate::storage_access::check_storage_entry_access;
+use crate::storage_entry::StorageEntryType;
+use crate::user::{get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
 #[derive(Serialize, FromRow)]
@@ -26,18 +28,30 @@ async fn storage_get(
     path: web::Path<(i32, i64)>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
-    let client_rights = get_client_rights(&pool, &req).await;
+    let (endpoint_id, file_id) = path.into_inner();
 
-    let action_allowed = client_rights
-        .iter()
-        .find(|right| right.right_name.eq("storage_download"))
-        .is_some();
+    let client = get_user_from_request(&**pool, &req).await;
+
+    let action_allowed = if let Some((client_user, _)) = client {
+        let user_groups = get_user_groups(&**pool, client_user.id).await;
+        let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+        check_storage_entry_access(
+            endpoint_id,
+            &StorageEntryType::File,
+            file_id,
+            "download",
+            &group_ids,
+            &**pool,
+        )
+        .await
+    } else {
+        false
+    };
 
     if !action_allowed {
         return error("storage.get.unauthorized");
     }
-
-    let (endpoint_id, file_id) = path.into_inner();
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
         "SELECT storage_files.name, storage_files.extension, storage_files.filesystem_id, storage_files.mime_type, storage_endpoints.base_path FROM storage_files

@@ -7,9 +7,7 @@ import {
   useNavigate,
   useParams,
 } from "@solidjs/router"
-import { format } from "date-fns"
 
-import { Card } from "@/app/components/common/card/card"
 import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Tab, TabsContainer } from "@/app/components/common/tab/tab"
@@ -80,15 +78,10 @@ const UserPage: Component = () => {
 
       <Stack spacing="2em">
         <Show when={$user.data}>
-          <Stack spacing={"0.5em"}>
-            <Text variant="h2">{$user.data!.username}</Text>
-            <Text variant="secondary" fontSize={"var(--text-sm)"}>
-              Joined {format(new Date($user.data!.created_at), "dd.MM.yyyy")}
-            </Text>
-          </Stack>
+          <Text variant="h2">{$user.data!.username}</Text>
         </Show>
 
-        <Card>
+        <Stack spacing="1.5em">
           <TabsContainer>
             <Tab
               label="General"
@@ -103,22 +96,24 @@ const UserPage: Component = () => {
               />
             </Show>
           </TabsContainer>
-        </Card>
 
-        <Show when={$user.data}>
-          <Routes>
-            <Route
-              path="/"
-              element={<UserGeneralSubpage user={$user.data!} />}
-            />
-            <Show when={allowedTabs().groupsTabAllowed}>
+          <hr />
+
+          <Show when={$user.data}>
+            <Routes>
               <Route
-                path="/groups"
-                element={<UserGroupsSubpage user={$user.data!} />}
+                path="/"
+                element={<UserGeneralSubpage user={$user.data!} />}
               />
-            </Show>
-          </Routes>
-        </Show>
+              <Show when={allowedTabs().groupsTabAllowed}>
+                <Route
+                  path="/groups"
+                  element={<UserGroupsSubpage user={$user.data!} />}
+                />
+              </Show>
+            </Routes>
+          </Show>
+        </Stack>
       </Stack>
     </Container>
   )

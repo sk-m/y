@@ -31,6 +31,9 @@ export type UpdateStorageEndpointInput = {
   name?: string
   description?: string
   status?: IStorageEndpointStatus
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  access_rules_enabled?: boolean
 }
 
 export const updateStorageEndpoint = async (
@@ -41,6 +44,10 @@ export const updateStorageEndpoint = async (
       name: input.name?.trim(),
       description: input.description?.trim(),
       ...(input.status && { status: input.status }),
+      // eslint-disable-next-line no-undefined
+      ...(input.access_rules_enabled !== undefined && {
+        access_rules_enabled: input.access_rules_enabled,
+      }),
     },
   })
 }
@@ -48,7 +55,7 @@ export const updateStorageEndpoint = async (
 export type CreateStorageEndpointInput = {
   name: string
   type: string
-  preserveFileStructure: boolean
+  accessRulesEnabled: boolean
   basePath: string
   artifactsPath: string
   description?: string
@@ -61,7 +68,7 @@ export const createStorageEndpoint = async (
     body: {
       name: input.name.trim(),
       endpoint_type: input.type,
-      preserve_file_structure: input.preserveFileStructure,
+      access_rules_enabled: input.accessRulesEnabled,
       base_path: input.basePath.trim(),
       artifacts_path: input.artifactsPath.trim(),
       description: input.description?.trim(),

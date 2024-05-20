@@ -1,3 +1,5 @@
+@import "@/variables.less";
+
 @keyframes show-context-menu {
   0% {
     opacity: 0;
@@ -37,7 +39,7 @@
 
   background-color: white;
 
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 5px 15px rgba(@brand-black-rgb, 0.2);
   border-radius: 6px;
 
   padding: 0.33em 0;
@@ -66,6 +68,7 @@
         > .link {
           display: flex;
           align-items: center;
+          justify-content: space-between;
 
           padding: 0.5em 1.5em;
 
@@ -74,25 +77,44 @@
           background-color: white;
           border: none;
 
+          font-family: "Inter", sans-serif;
+
           transition: 0.15s;
 
           &:hover {
             background-color: var(--color-grey-15);
           }
 
-          > .icon {
+          > .left {
             display: flex;
             align-items: center;
-            justify-content: center;
 
-            margin-right: 1em;
+            > .icon {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+
+              margin-right: 1em;
+            }
+
+            > .text {
+              > .label {
+                font-size: var(--text-sm);
+                font-weight: 500;
+              }
+            }
           }
 
-          > .text {
-            > .label {
+          > .right {
+            display: flex;
+            align-items: center;
+
+            > .tip {
+              margin-left: 1em;
+
               font-size: var(--text-sm);
-              font-family: "Inter", sans-serif;
               font-weight: 500;
+              color: rgba(@brand-black-rgb, 0.25);
             }
           }
         }

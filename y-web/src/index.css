@@ -1,3 +1,6 @@
+@import "@/variables.less";
+
+/* Inter */
 @font-face {
   font-family: "Inter";
   src: url("/assets/fonts/Inter-VariableFont_slnt\,wght.ttf")
@@ -5,6 +8,7 @@
   font-weight: 1 999;
 }
 
+/* SourceCodePro */
 @font-face {
   font-family: "SourceCodePro";
   src: url("/assets/fonts/SourceCodePro-Italic-VariableFont_wght.ttf")
@@ -18,6 +22,32 @@
   src: url("/assets/fonts/SourceCodePro-VariableFont_wght.ttf")
     format("truetype-variations");
   font-weight: 1 999;
+}
+
+/* Fantasque Sans Mono */
+@font-face {
+  font-family: "FantasqueSansMono";
+  src: url("/assets/fonts/fantasquesansmono-regular.otf") format("opentype");
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: "FantasqueSansMono";
+  src: url("/assets/fonts/fantasquesansmono-italic.otf") format("opentype");
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "FantasqueSansMono";
+  src: url("/assets/fonts/fantasquesansmono-bold.otf") format("opentype");
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: "FantasqueSansMono";
+  src: url("/assets/fonts/fantasquesansmono-bolditalic.otf") format("opentype");
+  font-weight: bold;
+  font-style: italic;
 }
 
 body {
@@ -34,6 +64,7 @@ body {
 
 code {
   font-family: "SourceCodePro", monospace;
+  /* font-family: "FantasqueSansMono", monospace; */
 }
 
 hr {
@@ -55,7 +86,8 @@ i {
   --text-md: 15px;
   --text-lg: 16px;
 
-  --color-text: hsl(0, 0%, 5%);
+  --color-text: rgb(21, 23, 46);
+
   --color-text-grey-025: hsl(234, 22%, 12.5%);
   --color-text-grey-05: hsl(234, 20%, 25%);
   --color-text-grey-075: hsl(234, 18%, 33%);
@@ -104,11 +136,15 @@ i {
   --color-warning-t-1: rgba(250, 242, 0, 0.1);
   --color-warning-t-3: rgba(250, 242, 0, 0.3);
 
-  --color-error: #fc0015;
+  --color-error: hsl(355, 100%, 49%);
+  --color-error-d-1: hsl(355, 100%, 35%);
   --color-error-o-1: rgb(255, 230, 232);
   --color-error-o-2: rgb(254, 204, 208);
+  --color-error-t-1: rgba(252, 0, 21, 0.1);
+  --color-error-t-3: rgba(252, 0, 21, 0.33);
 
   --color-success: #22cc00;
   --color-success-t-1: rgba(34, 204, 0, 0.1);
-  --color-success-t-3: rgba(34, 204, 0, 0.1);
+  --color-success-t-2: rgba(34, 204, 0, 0.2);
+  --color-success-t-3: rgba(34, 204, 0, 0.3);
 }

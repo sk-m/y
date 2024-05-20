@@ -120,7 +120,8 @@ const NewUserGroupPage: Component = () => {
             <Stack direction="row" justifyContent="space-between">
               <Button
                 onClick={() => navigate("/admin/user-groups")}
-                variant="secondary"
+                leadingIcon="chevron_left"
+                variant="text"
               >
                 Back
               </Button>

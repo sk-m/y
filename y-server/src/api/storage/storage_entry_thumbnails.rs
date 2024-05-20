@@ -13,11 +13,13 @@ use sqlx::prelude::FromRow;
 
 use crate::request::error;
 
+use crate::storage_access::check_storage_entry_access;
 use crate::storage_endpoint::get_storage_endpoint;
-use crate::user::get_client_rights;
+use crate::storage_entry::StorageEntryType;
+use crate::user::{get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
-const MAX_ENTRIES_PER_REEQUEST: u32 = 200;
+const MAX_ENTRIES_PER_REEQUEST: usize = 200;
 
 #[derive(FromRow)]
 struct EntryRow {
@@ -28,6 +30,7 @@ struct EntryRow {
 #[derive(Deserialize)]
 struct QueryParams {
     endpoint_id: i32,
+    parent_folder_id: Option<i64>,
     file_ids: String,
 }
 
@@ -42,20 +45,48 @@ async fn storage_entry_thumbnails(
     query: Query<QueryParams>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
-    // TODO? should we cache the thumbnails somehow?
+    let endpoint_id = query.endpoint_id;
+    let parent_folder_id = query.parent_folder_id;
 
-    let client_rights = get_client_rights(&pool, &req).await;
+    // TODO? this logic allows users to get thumbnails for files in a specific folder
+    // ? if that folder allows the user to list entries inside of it.
+    // ? Maybe we should check for the download rule for each file instead? Or should
+    // ? we check for the "list_entries" rule for each file??
 
-    let action_allowed = client_rights
-        .iter()
-        .find(|right| right.right_name.eq("storage_list"))
-        .is_some();
+    // TODO: slow. This endpoint should be as fast as possible, this check is not ideal
+    let action_allowed: bool;
+
+    if let Some(parent_folder_id) = parent_folder_id {
+        let client = get_user_from_request(&**pool, &req).await;
+
+        if let Some((client_user, _)) = client {
+            let user_groups = get_user_groups(&**pool, client_user.id).await;
+            let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+            action_allowed = check_storage_entry_access(
+                endpoint_id,
+                &StorageEntryType::Folder,
+                parent_folder_id,
+                "list_entries",
+                &group_ids,
+                &**pool,
+            )
+            .await;
+        } else {
+            action_allowed = false;
+        }
+    } else {
+        // folder_id == NULL means the root level of the endpoint
+        // TODO do we want to allow everyone to get thumbnails for the root level?
+        // TODO maybe we should check for the "list_entries" rule for the endpoint instead?
+        // (we would have to bring back the list_entries rule)
+
+        action_allowed = true;
+    };
 
     if !action_allowed {
         return error("storage.entry_thumbnails.unauthorized");
     }
-
-    let endpoint_id = query.endpoint_id;
 
     // TODO? cache endpoints?
     let endpoint = get_storage_endpoint(endpoint_id, &**pool).await;
@@ -72,38 +103,39 @@ async fn storage_entry_thumbnails(
 
     let endpoint_artifacts_path = endpoint.artifacts_path.unwrap();
 
+    // TODO this is a bit stupid...
     let file_ids_regex = Regex::new(r"^[0-9\,]+$").unwrap();
     if !file_ids_regex.is_match(&query.file_ids) {
         return error("storage.entry_thumbnails.invalid_file_ids_param");
     }
 
     let file_ids_split = query.file_ids.split(",");
-    let mut entries_count = 0;
+    let mut file_ids_param: Vec<i64> = Vec::new();
 
     for file_id in file_ids_split {
-        if file_id.parse::<i64>().is_err() {
+        if let Ok(file_id_i64) = file_id.parse::<i64>() {
+            if file_ids_param.len() > MAX_ENTRIES_PER_REEQUEST {
+                return error("storage.entry_thumbnails.too_many_entries_requested");
+            }
+
+            file_ids_param.push(file_id_i64);
+        } else {
             return error("storage.entry_thumbnails.invalid_file_ids_param");
         }
-
-        if entries_count > MAX_ENTRIES_PER_REEQUEST {
-            return error("storage.entry_thumbnails.too_many_entries_requested");
-        }
-
-        entries_count += 1;
     }
 
     let mut thumbnails: HashMap<String, String> = HashMap::new();
 
-    let file_entries = sqlx::query_as::<_, EntryRow>(
-        format!(
-            "SELECT id, filesystem_id FROM storage_files WHERE endpoint_id = $1 AND id IN ({})",
-            query.file_ids
-        )
-        .as_str(),
-    )
-    .bind(endpoint_id)
-    .fetch_all(&**pool)
-    .await;
+    let file_entries = sqlx::query_as::<_, EntryRow>(if query.parent_folder_id.is_none() {
+        "SELECT id, filesystem_id FROM storage_files WHERE endpoint_id = $1 AND parent_folder IS NULL AND id = ANY($3)"
+    } else {
+        "SELECT id, filesystem_id FROM storage_files WHERE endpoint_id = $1 AND parent_folder = $2 AND id = ANY($3)"
+    })
+        .bind(endpoint_id)
+        .bind(parent_folder_id)
+        .bind(&file_ids_param)
+        .fetch_all(&**pool)
+        .await;
 
     match file_entries {
         Ok(file_entries) => {

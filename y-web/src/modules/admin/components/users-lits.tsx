@@ -17,6 +17,7 @@ import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { ListPageSwitcher } from "@/app/components/list-page-switcher/list-page-switcher"
 import { ListEntryLink } from "@/app/components/list/components/list-entry-link"
+import { ListEntryTitleLeader } from "@/app/components/list/components/list-entry-title-leader"
 import {
   List,
   ListEntries,
@@ -70,16 +71,13 @@ const UserEntry: Component<UserEntryProps> = (props) => {
             padding: "0.1em 0",
           }}
         >
-          <ListEntryLink href={`${routes["/admin/users"]}/${props.user.id}`}>
-            <Text fontWeight={500}>{props.user.username}</Text>
-          </ListEntryLink>
-          <Text
-            variant="secondary"
-            fontSize={"var(--text-sm)"}
-            style={{
-              "margin-left": "0.25em",
-            }}
-          >
+          <Stack direction="row" alignItems="center">
+            <ListEntryTitleLeader>{props.user.id}.</ListEntryTitleLeader>
+            <ListEntryLink href={`${routes["/admin/users"]}/${props.user.id}`}>
+              <Text fontWeight={500}>{props.user.username}</Text>
+            </ListEntryLink>
+          </Stack>
+          <Text variant="secondary" fontSize={"var(--text-sm)"}>
             Joined {format(new Date(props.user.created_at), "dd.MM.yyyy")}
           </Text>
         </div>
@@ -229,6 +227,18 @@ export const UsersList: Component = () => {
                 gap: "1em",
               }}
             >
+              <InputField
+                placeholder="Search users"
+                width="100%"
+                inputProps={{
+                  name: "users-search",
+                  autocomplete: "off",
+                  value: tableState.searchText(),
+                  onInput: (event) =>
+                    tableState.setSearch(event.currentTarget.value),
+                }}
+              />
+
               <ExpandButton
                 icon={noneSelected() ? "select" : "select_all"}
                 position="right"
@@ -278,18 +288,6 @@ export const UsersList: Component = () => {
                   </Show>
                 </ExpandButtonEntries>
               </ExpandButton>
-              <InputField
-                placeholder="Search users"
-                width="100%"
-                monospace
-                inputProps={{
-                  name: "users-search",
-                  autocomplete: "off",
-                  value: tableState.searchText(),
-                  onInput: (event) =>
-                    tableState.setSearch(event.currentTarget.value),
-                }}
-              />
             </div>
           </ListHead>
 

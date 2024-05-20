@@ -18,7 +18,7 @@ struct CreateStorageEndpointInput {
     name: String,
 
     endpoint_type: String,
-    preserve_file_structure: bool,
+    access_rules_enabled: bool,
 
     #[validate(length(min = 1, max = 511))]
     base_path: String,
@@ -70,11 +70,11 @@ async fn create_storage_endpoint(
         }
     }
 
-    let result = sqlx::query_scalar("INSERT INTO storage_endpoints (name, endpoint_type, status, preserve_file_structure, base_path, artifacts_path, description) VALUES ($1, $2::storage_endpoint_type, $3::storage_endpoint_status, $4, $5, $6, $7) RETURNING id")
+    let result = sqlx::query_scalar("INSERT INTO storage_endpoints (name, endpoint_type, status, access_rules_enabled, base_path, artifacts_path, description) VALUES ($1, $2::storage_endpoint_type, $3::storage_endpoint_status, $4, $5, $6, $7) RETURNING id")
         .bind(form.name)
         .bind(form.endpoint_type)
         .bind("active")
-        .bind(form.preserve_file_structure)
+        .bind(form.access_rules_enabled)
         .bind(form.base_path)
         .bind(&form.artifacts_path)
         .bind(form.description)

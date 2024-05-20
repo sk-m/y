@@ -9,7 +9,9 @@ use sqlx::prelude::FromRow;
 
 use crate::request::error;
 
-use crate::user::get_client_rights;
+use crate::storage_access::check_storage_entry_access;
+use crate::storage_entry::StorageEntryType;
+use crate::user::{get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
 #[derive(Serialize, FromRow)]
@@ -29,25 +31,37 @@ struct StorageDownloadInput {
 async fn storage_download(
     pool: web::Data<RequestPool>,
     query: Query<StorageDownloadInput>,
-    path: web::Path<i64>,
+    path: web::Path<i32>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
-    let client_rights = get_client_rights(&pool, &req).await;
+    if query.file_id.is_none() {
+        return error("storage.download.file_id_required");
+    }
 
-    let action_allowed = client_rights
-        .iter()
-        .find(|right| right.right_name.eq("storage_download"))
-        .is_some();
+    let endpoint_id = path.into_inner();
+    let file_id = query.file_id.unwrap();
+
+    let client = get_user_from_request(&**pool, &req).await;
+
+    let action_allowed = if let Some((client_user, _)) = client {
+        let user_groups = get_user_groups(&**pool, client_user.id).await;
+        let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+        check_storage_entry_access(
+            endpoint_id,
+            &StorageEntryType::File,
+            file_id,
+            "download",
+            &group_ids,
+            &**pool,
+        )
+        .await
+    } else {
+        false
+    };
 
     if !action_allowed {
         return error("storage.download.unauthorized");
-    }
-
-    let file_id = query.file_id;
-    let endpoint_id = path.into_inner();
-
-    if file_id.is_none() {
-        return error("storage.download.file_id_required");
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
@@ -55,7 +69,7 @@ async fn storage_download(
         RIGHT OUTER JOIN storage_endpoints ON storage_files.endpoint_id = storage_endpoints.id
         WHERE storage_files.id = $1 AND endpoint_id = $2",
     )
-    .bind(file_id.unwrap())
+    .bind(file_id)
     .bind(endpoint_id)
     .fetch_one(&**pool)
     .await;

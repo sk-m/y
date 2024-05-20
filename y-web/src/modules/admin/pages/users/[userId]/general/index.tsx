@@ -2,10 +2,15 @@ import { Component, Show, createMemo, createSignal } from "solid-js"
 
 import { useNavigate } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
+import { format } from "date-fns"
 
 import { Button } from "@/app/components/common/button/button"
 import { Card } from "@/app/components/common/card/card"
 import { Icon } from "@/app/components/common/icon/icon"
+import {
+  KeyValue,
+  KeyValueFields,
+} from "@/app/components/common/key-value/key-value"
 import { Modal } from "@/app/components/common/modal/modal"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
@@ -143,28 +148,109 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
         onClose={() => setUpdatePasswordModalOpen(false)}
       />
 
-      <Stack>
+      <Stack spacing={"1.5em"}>
+        <Card>
+          <Stack direction="row" justifyContent="space-between">
+            <div class="ui-card-label">
+              <div class="label-strip" />
+              <Text
+                variant="h3"
+                style={{
+                  margin: "0",
+                }}
+              >
+                General info
+              </Text>
+            </div>
+
+            <KeyValueFields
+              style={{
+                width: "50%",
+              }}
+            >
+              <KeyValue
+                readonly
+                keyWidth="100px"
+                label="Joined on"
+                value={format(new Date(props.user.created_at), "dd.MM.yyyy")}
+                onChange={() => void 0}
+              />
+            </KeyValueFields>
+          </Stack>
+        </Card>
+
         <Show when={passwordUpdateAllowed() || deleteAllowed()}>
-          <Card>
-            <Stack direction="row" spacing={"1em"}>
-              <Show when={passwordUpdateAllowed()}>
+          <Show when={passwordUpdateAllowed()}>
+            <Card>
+              <Stack
+                direction="row"
+                spacing={"1em"}
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <div class="ui-card-label">
+                  <div class="label-strip" />
+
+                  <Stack spacing={"0.33em"}>
+                    <Text
+                      variant="h3"
+                      style={{
+                        margin: "0",
+                      }}
+                    >
+                      Password
+                    </Text>
+                    <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                      Change user's log in password.
+                    </Text>
+                  </Stack>
+                </div>
+
                 <Button
-                  leadingIcon="key"
+                  leadingIcon="edit"
                   onClick={() => setUpdatePasswordModalOpen(true)}
                 >
-                  Update user's password
+                  Set password
                 </Button>
-              </Show>
-              <Show when={deleteAllowed()}>
+              </Stack>
+            </Card>
+          </Show>
+          <Show when={deleteAllowed()}>
+            <Card>
+              <Stack
+                direction="row"
+                spacing={"1em"}
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <div class="ui-card-label">
+                  <div class="label-strip" />
+                  <Stack spacing={"0.33em"}>
+                    <Text
+                      variant="h3"
+                      style={{
+                        margin: "0",
+                      }}
+                    >
+                      Delete user
+                    </Text>
+                    <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                      Irreversibly delete this user account.
+                    </Text>
+                  </Stack>
+                </div>
                 <Button
                   leadingIcon="delete"
                   onClick={() => setDeleteModalOpen(true)}
+                  style={{
+                    color: "var(--color-error)",
+                  }}
                 >
                   Delete user
                 </Button>
-              </Show>
-            </Stack>
-          </Card>
+              </Stack>
+            </Card>
+          </Show>
         </Show>
       </Stack>
     </>

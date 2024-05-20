@@ -1,6 +1,6 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import { Component, For, Match, Show, Switch, createMemo } from "solid-js"
 
-import { Icon } from "@/app/components/common/icon/icon"
 import { InputField } from "@/app/components/common/input-field/input-field"
 import { Note } from "@/app/components/common/note/note"
 import { Pill } from "@/app/components/common/pill/pill"
@@ -48,25 +48,18 @@ const UserGroupEntry: Component<UserGroupEntryProps> = (props) => {
             <Text fontWeight={500}>{props.group.name}</Text>
           </ListEntryLink>
           <Show when={props.group.group_type !== null}>
-            <Stack
-              style={{
-                "margin-left": "0.5em",
-              }}
-            >
+            <Stack>
               <Switch>
                 <Match when={props.group.group_type === userGroupType.everyone}>
-                  <Text fontSize={"var(--text-sm)"}>
-                    <Pill>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={"0.25em"}
-                      >
-                        <Icon name="settings" size={12} wght={500} />
-                        <span>System group</span>
-                      </Stack>
-                    </Pill>
-                  </Text>
+                  <Pill>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      spacing={"0.25em"}
+                    >
+                      <Text fontSize={"var(--text-sm)"}>system group</Text>
+                    </Stack>
+                  </Pill>
                 </Match>
                 <Match when={props.group.group_type === userGroupType.user}>
                   <Text fontSize={"var(--text-sm)"}>
@@ -76,8 +69,7 @@ const UserGroupEntry: Component<UserGroupEntryProps> = (props) => {
                         alignItems="center"
                         spacing={"0.25em"}
                       >
-                        <Icon name="settings" size={12} wght={500} />
-                        <span>System group</span>
+                        <Text fontSize={"var(--text-sm)"}>system group</Text>
                       </Stack>
                     </Pill>
                   </Text>
@@ -129,7 +121,6 @@ export const UserGroupsList: Component = () => {
           <InputField
             placeholder="Search user groups"
             width="100%"
-            monospace
             inputProps={{
               name: "user-groups-search",
               autocomplete: "off",

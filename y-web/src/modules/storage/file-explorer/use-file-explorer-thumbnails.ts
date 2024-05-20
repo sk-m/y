@@ -59,6 +59,7 @@ export const useFileExplorerThumbnails = (
     const newThumbnailsResponse = await storageEntryThumbnails(
       {
         endpointId: props.endpointId(),
+        parentFolderId: props.entries()[0]?.parent_folder ?? null,
         fileIds: newFileIds,
       },
       {

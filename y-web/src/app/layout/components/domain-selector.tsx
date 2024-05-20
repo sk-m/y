@@ -50,7 +50,7 @@ export const DomainSelector: Component = () => {
     <div class="ui-domain-selector">
       <PopupContainer>
         <Button
-          variant="text"
+          width="100%"
           onClick={togglePopup}
           leadingIcon={popupShown() ? "expand_less" : domainIcon[domain()]}
         >
@@ -63,7 +63,7 @@ export const DomainSelector: Component = () => {
           </div>
         </Button>
 
-        <Popup show={popupShown()} position="left">
+        <Popup yPosition="bottom" show={popupShown()} xPosition="left">
           <div class="popup-list">
             <DomainLink onHide={() => setPopupShown(false)} domain="" to="/" />
             <Show when={storageFeatureEnabled()}>

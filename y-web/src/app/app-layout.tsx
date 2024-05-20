@@ -2,11 +2,12 @@ import { Component, Show, createEffect, lazy } from "solid-js"
 
 import { Route, Routes, useNavigate } from "@solidjs/router"
 
-import { AppMenubar } from "@/app/layout/app-menubar"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
 import "./app-layout.less"
 import { routes } from "./routes"
+
+const HomeLayout = lazy(async () => import("@/modules/home/layout/home-layout"))
 
 const AdminLayout = lazy(
   async () => import("@/modules/admin/layout/admin-layout")
@@ -30,10 +31,9 @@ export const AppLayout: Component = () => {
   return (
     <Show when={$auth.isSuccess}>
       <div id="app-root">
-        <AppMenubar />
         <div id="app-main">
           <Routes>
-            <Route path="/" />
+            <Route path="/" component={HomeLayout} />
             <Route path="/admin/*" component={AdminLayout} />
             <Route path="/files/*" component={StorageLayout} />
           </Routes>

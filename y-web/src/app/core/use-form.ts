@@ -1,6 +1,8 @@
 /* eslint-disable sonarjs/cognitive-complexity */
 
 /* eslint-disable solid/reactivity */
+
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import {
   Accessor,
   Setter,

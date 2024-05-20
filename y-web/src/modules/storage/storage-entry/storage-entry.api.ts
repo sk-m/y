@@ -62,6 +62,7 @@ export const storageFolderPath = async (input: GetStorageFolderPathInput) => {
 export type GetStorageEntryThumbnails = {
   endpointId: number | string
   fileIds: number[]
+  parentFolderId: number | string | null
 }
 
 export type GetStorageEntryThumbnailsOptions = {
@@ -76,6 +77,10 @@ export const storageEntryThumbnails = async (
 
   query.set("endpoint_id", input.endpointId.toString())
   query.set("file_ids", input.fileIds.join(","))
+
+  if (input.parentFolderId) {
+    query.set("parent_folder_id", input.parentFolderId.toString())
+  }
 
   return get(
     apiStorageEntryThumbnails,

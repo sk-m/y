@@ -191,10 +191,12 @@ pub async fn get_client_rights(pool: &RequestPool, req: &HttpRequest) -> Vec<Use
 }
 
 pub async fn get_user_groups(pool: &RequestPool, user_id: i32) -> Vec<UserGroup> {
+    // TODO we do this `WHERE group_type IN ('everyone', 'user')` thing in multiple places. This is confusing and will 100% create bugs in the future.
+
     let groups = sqlx::query_as::<_, UserGroup>(
         "SELECT user_groups.id, user_groups.name, user_groups.group_type FROM user_groups
         RIGHT JOIN user_group_membership ON user_group_membership.group_id = user_groups.id
-        WHERE user_group_membership.user_id = $1",
+        WHERE user_group_membership.user_id = $1 UNION ALL SELECT user_groups.id, user_groups.name, user_groups.group_type FROM user_groups WHERE group_type IN ('everyone', 'user')",
     )
     .bind(user_id)
     .fetch_all(pool)

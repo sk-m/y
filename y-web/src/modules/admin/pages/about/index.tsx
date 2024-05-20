@@ -18,11 +18,23 @@ const AboutPage: Component = () => {
         "justify-content": "center",
       }}
     >
-      <Stack alignItems="center" spacing={"1em"}>
-        <Text variant="h1">y</Text>
-        <Text variant="secondary" fontSize={"var(--text-sm)"}>
-          {VERSION.version}
-        </Text>
+      <Stack alignItems="center" spacing={"2em"}>
+        <Stack alignItems="center" spacing={"1em"}>
+          <Text
+            variant="h1"
+            fontSize={"3.5em"}
+            style={{
+              // eslint-disable-next-line @typescript-eslint/quotes
+              "font-family": '"FantasqueSansMono", monospace',
+              "font-weight": "bold",
+            }}
+          >
+            project y
+          </Text>
+          <Text variant="secondary" fontSize={"var(--text-sm)"}>
+            {VERSION.version}
+          </Text>
+        </Stack>
         <Stack direction="row" alignItems="center" spacing={"1em"}>
           <Link
             variant="text"

@@ -1,7 +1,7 @@
 /* eslint-disable no-warning-comments */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Component, Show } from "solid-js"
+import { Component } from "solid-js"
 
 import { useNavigate } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
@@ -30,7 +30,7 @@ const ENDPOINTS_ROUTE = routes["/admin/storage/endpoints"]
 type StorageEndpointFieldValues = {
   name: string
   type: IStorageEndpointType
-  preserveFileStructure: boolean
+  accessRulesEnabled: boolean
   basePath: string
   artifactsPath: string
   description: string
@@ -45,17 +45,17 @@ const NewStorageEndpointPage: Component = () => {
 
   const form = useForm<
     StorageEndpointFieldValues,
-    ["type", "preserveFileStructure"]
+    ["type", "accessRulesEnabled"]
   >({
     defaultValues: {
       name: "",
       type: "local_fs",
-      preserveFileStructure: false,
+      accessRulesEnabled: false,
       basePath: "/var/y_storage",
       artifactsPath: "/var/y_artifacts",
       description: "",
     },
-    watch: ["type", "preserveFileStructure"],
+    watch: ["type", "accessRulesEnabled"],
     onSubmit: (values) => {
       $createEndpoint.mutate(values, {
         onSuccess: () => {
@@ -79,7 +79,6 @@ const NewStorageEndpointPage: Component = () => {
   const { register, registerControlled, submit, errors, setValue, watch } = form
 
   const type = watch("type")
-  const preserveFileStructure = watch("preserveFileStructure")
 
   const updateType = (newType: IStorageEndpointType) =>
     setValue("type", newType)
@@ -149,12 +148,10 @@ const NewStorageEndpointPage: Component = () => {
                   })}
                 />
               </Stack>
-
               {/* TODO: we have to do this because use-form does not work correctly with unregistered fields.
                         We should either create a separate, custom RadioSet component or add support for
                         unregistered fields to use-form. */}
               <input {...(registerControlled("type") as any)} type="hidden" />
-
               <Stack spacing={"1em"}>
                 <Text fontWeight={500} variant="secondary">
                   Endpoint type
@@ -192,7 +189,6 @@ const NewStorageEndpointPage: Component = () => {
                   </Stack>
                 </fieldset>
               </Stack>
-
               <Stack
                 direction="row"
                 spacing={"1.5em"}
@@ -211,6 +207,7 @@ const NewStorageEndpointPage: Component = () => {
                 />
                 <InputField
                   label="Base path"
+                  placeholder="/var/y_storage"
                   error={errors().basePath}
                   width="100%"
                   maxLength={511}
@@ -224,7 +221,6 @@ const NewStorageEndpointPage: Component = () => {
                   subtext="Absolute path to the location where the files will be written to."
                 />
               </Stack>
-
               <Stack
                 direction="row"
                 spacing={"1.5em"}
@@ -244,6 +240,7 @@ const NewStorageEndpointPage: Component = () => {
 
                 <InputField
                   label="Artifacts path"
+                  placeholder="/var/y_artifacts"
                   error={errors().artifactsPath}
                   width="100%"
                   maxLength={511}
@@ -257,14 +254,12 @@ const NewStorageEndpointPage: Component = () => {
                   subtext="Absolute path to the location where this endpoint's artifacts (ex. thumbnails) will be stored."
                 />
               </Stack>
-
               <hr
                 style={{
                   height: "2px",
                   "background-color": "var(--color-grey-15)",
                 }}
               />
-
               <Stack spacing={"1em"}>
                 <Stack
                   direction="row"
@@ -278,40 +273,22 @@ const NewStorageEndpointPage: Component = () => {
                       alignItems="center"
                       spacing={"0.5em"}
                     >
-                      <Text fontWeight={450}>Preserve file structure</Text>
-                      <Pill variant="warning">not recommended</Pill>
+                      <Text fontWeight={450}>Enable access rules</Text>
+                      <Pill variant="warning">experimental</Pill>
                     </Stack>
                     <Text fontSize={"var(--text-sm)"} variant="secondary">
-                      Make the files on the disk reflect the file structure of
-                      this endpoint. This can not be changed after the endpoint
-                      is created and is less secure than storing everything on a
-                      single level, with stripped filenames (which is the
-                      default option).
+                      Access rules allow you to manage access on a per-entry
+                      basis, by defining which executors can perform a specific
+                      set of actions on a given entry. This gives you
+                      fine-grained control over each entry in the endpoint.
+                      Turning this feature on will have a slight performance
+                      impact, especially on slower hardware. You can toggle this
+                      feature any time.
                     </Text>
                   </Stack>
 
-                  <Toggle {...registerControlled("preserveFileStructure")} />
+                  <Toggle {...registerControlled("accessRulesEnabled")} />
                 </Stack>
-
-                <Show when={preserveFileStructure()}>
-                  <Note type="warning" fontSize="var(--text-sm)">
-                    <p>
-                      Preserving the file structure of uploaded files is not
-                      recommended, as there is a higher chance for potential
-                      security vulnerabilities. Please only use this option if
-                      you <i>need</i> your filesystem to reflect the file
-                      structure of this endpoint. We do everything to make sure
-                      the paths are always validated and sanitized, but it's
-                      best to be extra safe and not preserve the file structure
-                      in the first place.
-                    </p>
-                    <p>
-                      Please make sure that the user that the server is running
-                      under does not have access to anything other than the
-                      target directory!
-                    </p>
-                  </Note>
-                </Show>
               </Stack>
             </Stack>
 
@@ -327,7 +304,8 @@ const NewStorageEndpointPage: Component = () => {
               that the user that the server is running under:
               <ul
                 style={{
-                  margin: "1em 0",
+                  margin: "0.5em 0 0 0",
+                  padding: "0 3em",
                 }}
               >
                 <li>Has access to the target directory.</li>
@@ -339,8 +317,9 @@ const NewStorageEndpointPage: Component = () => {
 
             <Stack direction="row" justifyContent="space-between">
               <Button
+                leadingIcon="chevron_left"
                 onClick={() => navigate(ENDPOINTS_ROUTE)}
-                variant="secondary"
+                variant="text"
               >
                 Back
               </Button>

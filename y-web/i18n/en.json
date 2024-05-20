@@ -51,29 +51,21 @@
         "name": "Manage storage endpoints",
         "description": "Allows control over storage endpoints."
       },
+      "storage_manage_access": {
+        "name": "Manage storage access",
+        "description": "Allows setting access rules for storage entries. This is not an override - entries that prohibit managing access will still be unmodifiable. Users without this right will never be able to manage access on any entry."
+      },
       "storage_upload": {
         "name": "Upload files",
         "description": "A general right to upload data onto a storage endpoint. This is a \"first check\" right, meaning that it is required for any upload action. Users that do not have this right are guranteed to not be able to upload anything anywhere, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
-      },
-      "storage_list": {
-        "name": "List files",
-        "description": "A general right to see files on a storage endpoint. This is a \"first check\" right, meaning that it is required to list files on any endpoint. Users that do not have this right are guranteed to not be able to see files on any endpoint, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
-      },
-      "storage_rename": {
-        "name": "Rename files",
-        "description": "Allows renaming files and folders."
-      },
-      "storage_move": {
-        "name": "Move files",
-        "description": "Allows moving (cut and paste) files within an endpoint."
       },
       "storage_delete": {
         "name": "Delete files",
         "description": "A general right to delete files and folders from a storage endpoint. This is a \"first check\" right, meaning that it is required in order to delete any entry from any endpoint. Users that do not have this right are guranteed to not be able to delete entries, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
       },
-      "storage_download": {
-        "name": "Download files",
-        "description": "A general right to download files from a storage endpoint. This is a \"first check\" right, meaning that it is required to download any file from any endpoint. Users that do not have this right are guranteed to not be able to download files, while users that do may still be restricted by other permissions checks, such as per endpoint, per folder, or per file."
+      "storage_download_zip": {
+        "name": "Download files (zip)",
+        "description": "Allows downloading multiple files as a single zip archive. This right ignores the per-entry 'download' access rule, allowing users to download any file whatsoever."
       }
     },
     "userRightTagDescription": {

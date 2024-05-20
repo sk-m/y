@@ -10,19 +10,28 @@
     > .content {
       cursor: pointer;
 
-      padding: 0.25em 0.5em;
-
-      border-radius: 4px;
-
       // Hidden state
       background-color: transparent;
 
-      transition: 0.15s ease-in-out;
+      transition: 0.15s;
     }
   }
 
   &:hover > a > .content {
-    background-color: var(--color-grey-15);
+    color: var(--color-primary-d-1);
+    background-color: var(--color-primary-t-1);
+
+    box-shadow: -4px 0 0 var(--color-primary-t-1),
+      4px 0 0 var(--color-primary-t-1);
+
+    border-radius: 4px;
+
+    // color: white;
+    // background-color: var(--color-primary);
+
+    > .ui-text {
+      text-decoration: underline;
+    }
   }
 
   > .arrow {
@@ -34,21 +43,25 @@
 
     height: 100%;
 
-    padding: 0.33em;
+    padding: 0.33em 0.15em;
 
     position: absolute;
     top: 50%;
     left: 100%;
-    margin-left: 0.5em;
+    margin-left: 0.6em;
+
+    color: var(--color-primary-d-1);
+    background-color: var(--color-primary-t-1);
 
     border-radius: 4px;
-    background-color: var(--color-grey-15);
+
+    cursor: pointer;
 
     // Hidden state
     opacity: 0;
-    transform: translateY(-50%) translateX(-10%);
+    transform: translateY(-50%) translateX(-25%);
 
-    transition: 0.15s ease-out;
+    transition: 0.15s;
   }
 
   &:hover > .arrow {

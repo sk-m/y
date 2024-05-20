@@ -1,0 +1,1 @@
+ALTER TABLE IF EXISTS public.storage_endpoints DROP COLUMN IF EXISTS access_rules_enabled;

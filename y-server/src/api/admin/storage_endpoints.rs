@@ -26,7 +26,8 @@ async fn storage_enpoints(
         return error("storage_endpoints.unauthorized");
     }
 
-    let endpoints = sqlx::query_as::<_, StorageEndpointRow>("SELECT id, name, endpoint_type::TEXT, status::TEXT, preserve_file_structure, base_path, artifacts_path, description FROM storage_endpoints")
+    // TODO dont use just queries. Use a general function, like get_all_storage_endpoints
+    let endpoints = sqlx::query_as::<_, StorageEndpointRow>("SELECT id, name, endpoint_type::TEXT, status::TEXT, preserve_file_structure, base_path, artifacts_path, description, access_rules_enabled FROM storage_endpoints")
         .fetch_all(&**pool)
         .await;
 

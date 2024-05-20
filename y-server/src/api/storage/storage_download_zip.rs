@@ -27,15 +27,19 @@ struct StorageDownloadZipInput {
 async fn storage_download_zip(
     pool: web::Data<RequestPool>,
     form: web::Json<StorageDownloadZipInput>,
-    path: web::Path<i64>,
+    path: web::Path<i32>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    // TODO: Cache all endpoints so we don't have to query for them every time
+    let endpoint_id = path.into_inner();
+
     let client_rights = get_client_rights(&pool, &req).await;
 
-    // TODO: We should probably add a separate right for downloading zipped entries
+    // TODO this is a temporary solution!
+    // We should get rid of the storage_download_zip right and instead check each file using check_bulk_storage_entries_access_cascade_up
     let action_allowed = client_rights
         .iter()
-        .find(|right| right.right_name.eq("storage_download"))
+        .find(|right| right.right_name.eq("storage_download_zip"))
         .is_some();
 
     if !action_allowed {
@@ -43,10 +47,6 @@ async fn storage_download_zip(
     }
 
     let form = form.into_inner();
-
-    // Get the target endpoint's base path, so we know where to save the files
-    // TODO: Cache all endpoints so we don't have to query for them every time
-    let endpoint_id = path.into_inner();
 
     let target_endpoint =
         sqlx::query_scalar::<_, String>("SELECT base_path FROM storage_endpoints WHERE id = $1")
