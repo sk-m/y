@@ -127,9 +127,9 @@ async fn storage_entry_thumbnails(
     let mut thumbnails: HashMap<String, String> = HashMap::new();
 
     let file_entries = sqlx::query_as::<_, EntryRow>(if query.parent_folder_id.is_none() {
-        "SELECT id, filesystem_id FROM storage_files WHERE endpoint_id = $1 AND parent_folder IS NULL AND id = ANY($3)"
+        "SELECT id, filesystem_id FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL AND id = ANY($3) AND entry_type = 'file'::storage_entry_type"
     } else {
-        "SELECT id, filesystem_id FROM storage_files WHERE endpoint_id = $1 AND parent_folder = $2 AND id = ANY($3)"
+        "SELECT id, filesystem_id FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND id = ANY($3) AND entry_type = 'file'::storage_entry_type"
     })
         .bind(endpoint_id)
         .bind(parent_folder_id)

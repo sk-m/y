@@ -54,9 +54,9 @@ async fn storage_get(
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
-        "SELECT storage_files.name, storage_files.extension, storage_files.filesystem_id, storage_files.mime_type, storage_endpoints.base_path FROM storage_files
-        RIGHT OUTER JOIN storage_endpoints ON storage_files.endpoint_id = storage_endpoints.id
-        WHERE storage_files.id = $1 AND endpoint_id = $2",
+        "SELECT storage_entries.name, storage_entries.extension, storage_entries.filesystem_id, storage_entries.mime_type, storage_endpoints.base_path FROM storage_entries
+        RIGHT OUTER JOIN storage_endpoints ON storage_entries.endpoint_id = storage_endpoints.id
+        WHERE storage_entries.id = $1 AND storage_entries.entry_type = 'file'::storage_entry_type AND endpoint_id = $2",
     )
     .bind(file_id)
     .bind(endpoint_id)

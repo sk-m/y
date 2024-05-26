@@ -232,7 +232,7 @@ async fn storage_upload(
                             if try_to_find_each_folder {
                                 find_folder_result = if folder_id.is_some() {
                                     sqlx::query_scalar::<_, i64>(
-                                    "SELECT id FROM storage_folders WHERE endpoint_id = $1 AND name = $2 AND parent_folder = $3",
+                                    "SELECT id FROM storage_entries WHERE endpoint_id = $1 AND name = $2 AND parent_folder = $3 AND entry_type = 'folder'::storage_entry_type",
                                     )
                                     .bind(endpoint_id)
                                     .bind(path_segment)
@@ -241,7 +241,7 @@ async fn storage_upload(
                                     .await
                                 } else {
                                     sqlx::query_scalar::<_, i64>(
-                                    "SELECT id FROM storage_folders WHERE endpoint_id = $1 AND name = $2 AND parent_folder IS NULL",
+                                    "SELECT id FROM storage_entries WHERE endpoint_id = $1 AND name = $2 AND parent_folder IS NULL AND entry_type = 'folder'::storage_entry_type",
                                     )
                                     .bind(endpoint_id)
                                     .bind(path_segment)
@@ -265,7 +265,7 @@ async fn storage_upload(
                                     // all the following segmens and will jump straight into their creation.
                                     try_to_find_each_folder = false;
 
-                                    let create_folder_result = sqlx::query_scalar::<_, i64>("INSERT INTO storage_folders (endpoint_id, parent_folder, name) VALUES ($1, $2, $3) RETURNING id")
+                                    let create_folder_result = sqlx::query_scalar::<_, i64>("INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type) VALUES ($1, $2, $3, 'folder'::storage_entry_type) RETURNING id")
                                     .bind(endpoint_id)
                                     .bind(folder_id)
                                     .bind(path_segment)
@@ -344,7 +344,7 @@ async fn storage_upload(
                         None
                     };
 
-                    let create_file_result = sqlx::query("INSERT INTO storage_files (endpoint_id, filesystem_id, parent_folder, name, extension, mime_type, size_bytes, created_by, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())")
+                    let create_file_result = sqlx::query("INSERT INTO storage_entries (endpoint_id, filesystem_id, parent_folder, name, extension, mime_type, size_bytes, created_by, created_at, entry_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), 'file'::storage_entry_type)")
                     .bind(endpoint_id)
                     .bind(&file_id)
                     .bind(parent_folder_id)

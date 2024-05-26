@@ -82,7 +82,7 @@ async fn storage_entries(
         // Entries inside of a folder
 
         sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, NULL as extension, NULL as mime_type, NULL as size_bytes, NULL as created_by, NULL as created_at, 'folder' as entry_type FROM storage_folders WHERE endpoint_id = $1 AND parent_folder = $2 UNION ALL SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, 'file' as entry_type FROM storage_files WHERE endpoint_id = $1 AND parent_folder = $2",
+            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2",
         )
         .bind(endpoint_id)
         .bind(folder_id)
@@ -92,7 +92,7 @@ async fn storage_entries(
         // Entries on the root level
 
         sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, NULL as extension, NULL as mime_type, NULL as size_bytes, NULL as created_by, NULL as created_at, 'folder' as entry_type FROM storage_folders WHERE endpoint_id = $1 AND parent_folder IS NULL UNION ALL SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, 'file' as entry_type FROM storage_files WHERE endpoint_id = $1 AND parent_folder IS NULL",
+            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL",
         )
         .bind(endpoint_id)
         .fetch_all(&**pool)

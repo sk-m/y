@@ -61,7 +61,7 @@ async fn get_storage_entry_access_rule_cascade_up(
         UNION ALL
         -- entry's parent, grandparent, ... up the tree until root
         SELECT tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM
-        (SELECT storage_access.*, parents_tree.id AS tree_entry_id, parents_tree.tree_step FROM (SELECT * FROM storage_access) AS storage_access, (SELECT row_number() OVER () as tree_step, id FROM storage_get_folder_path($1, (SELECT parent_folder FROM storage_files WHERE id = $2 AND endpoint_id = $1))) AS parents_tree) as sub
+        (SELECT storage_access.*, parents_tree.id AS tree_entry_id, parents_tree.tree_step FROM (SELECT * FROM storage_access) AS storage_access, (SELECT row_number() OVER () as tree_step, id FROM storage_get_folder_path($1, (SELECT parent_folder FROM storage_entries WHERE entry_type = 'file'::storage_entry_type AND id = $2 AND endpoint_id = $1))) AS parents_tree) as sub
         WHERE entry_id IN (SELECT tree_entry_id) AND endpoint_id = sub.endpoint_id AND entry_type = 'folder'::storage_entry_type AND action = $3::storage_access_action_type AND executor_id = ANY($4)
         -- sort by tree_step to get the rules in the correct order
         ORDER BY tree_step ASC"
@@ -292,29 +292,30 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         target_entry_id: i64,
     }
 
-    // Get access rules for the provided entries themeelves
+    // Get access rules for the provided entries themeselves
+    // TODO optimize. Is one Select possible here?
     let root_result = sqlx::query_as::<_, RootResultRow>(
-        "SELECT storage_files.id AS entry_id, storage_files.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, 'file' AS entry_type FROM storage_files
+        "SELECT storage_entries.id AS entry_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, 'file' AS entry_type FROM storage_entries
         LEFT JOIN storage_access ON
-        storage_access.entry_id = storage_files.id
-        AND storage_access.endpoint_id = storage_files.endpoint_id
+        storage_access.entry_id = storage_entries.id
+        AND storage_access.endpoint_id = storage_entries.endpoint_id
         AND storage_access.entry_type = 'file'::storage_entry_type
         AND storage_access.action = $3::storage_access_action_type
         AND storage_access.access_type != 'inherit'::storage_access_type
         AND storage_access.executor_type = 'user_group'::storage_access_executor_type
         AND storage_access.executor_id = ANY($4)
-        WHERE storage_files.endpoint_id = $2 AND storage_files.id = ANY($1)
+        WHERE storage_entries.endpoint_id = $2 AND storage_entries.id = ANY($1) AND storage_entries.entry_type = 'file'::storage_entry_type
         UNION ALL
-        SELECT storage_folders.id AS entry_id, storage_folders.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, 'folder' AS entry_type FROM storage_folders
+        SELECT storage_entries.id AS entry_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, 'folder' AS entry_type FROM storage_entries
         LEFT JOIN storage_access ON
-        storage_access.entry_id = storage_folders.id
-        AND storage_access.endpoint_id = storage_folders.endpoint_id
+        storage_access.entry_id = storage_entries.id
+        AND storage_access.endpoint_id = storage_entries.endpoint_id
         AND storage_access.entry_type = 'folder'::storage_entry_type
         AND storage_access.action = $3::storage_access_action_type
         AND storage_access.access_type != 'inherit'::storage_access_type
         AND storage_access.executor_type = 'user_group'::storage_access_executor_type
         AND storage_access.executor_id = ANY($4)
-        WHERE storage_folders.endpoint_id = $2 AND storage_folders.id = ANY($5)",
+        WHERE storage_entries.endpoint_id = $2 AND storage_entries.id = ANY($5) AND storage_entries.entry_type = 'folder'::storage_entry_type",
     )
     .bind(&file_ids)
     .bind(endpoint_id)

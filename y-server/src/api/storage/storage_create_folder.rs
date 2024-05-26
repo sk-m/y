@@ -87,7 +87,7 @@ async fn storage_create_folder(
 
     let new_folder_id = if is_root {
         sqlx::query_scalar::<_, i64>(
-            "INSERT INTO storage_folders (endpoint_id, parent_folder, name) VALUES ($1, NULL, $2) RETURNING id",
+            "INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type) VALUES ($1, NULL, $2, 'folder'::storage_entry_type) RETURNING id",
         )
         .bind(form.endpoint_id)
         .bind(form.new_folder_name)
@@ -95,7 +95,7 @@ async fn storage_create_folder(
         .await
     } else {
         sqlx::query_scalar::<_, i64>(
-            "INSERT INTO storage_folders (endpoint_id, parent_folder, name) VALUES ($1, $2, $3) RETURNING id",
+            "INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type) VALUES ($1, $2, $3, 'folder'::storage_entry_type) RETURNING id",
         )
         .bind(form.endpoint_id)
         .bind(form.target_folder)

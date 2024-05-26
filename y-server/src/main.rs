@@ -105,7 +105,7 @@ async fn main() -> std::io::Result<()> {
     .unwrap();
 
     // Connect to the database
-    let pool = db::connect_to_database().await;
+    let pool = db::connect().await;
 
     // Process command line arguments. We might want to do something and terminate
     process_cli_arguments(&pool).await;
