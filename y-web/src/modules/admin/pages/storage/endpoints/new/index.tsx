@@ -57,6 +57,16 @@ const NewStorageEndpointPage: Component = () => {
     },
     watch: ["type", "accessRulesEnabled"],
     onSubmit: (values) => {
+      if (values.basePath === values.artifactsPath) {
+        notify({
+          title: "Error",
+          content: "Base path and artifacts path cannot be the same",
+          severity: "error",
+          icon: "error",
+        })
+        return
+      }
+
       $createEndpoint.mutate(values, {
         onSuccess: () => {
           void queryClient.invalidateQueries([adminStorageEndpointsKey])

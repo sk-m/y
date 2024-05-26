@@ -171,6 +171,7 @@
         "path_not_a_directory": "Path does not point to a directory",
         "path_not_absolute": "Path must be an absolute path",
         "unauthorized": "Permission denied",
+        "os_error": "OS error. Make sure the paths are correct and the server has access to the target directories",
         "other": "Other"
       },
       "storage_endpoints": {
