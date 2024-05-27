@@ -254,7 +254,7 @@ async fn get_subfolders_level_with_access_rules(
             return Ok(());
         }
         Err(err) => {
-            dbg!(err);
+            error!("Could not query the database for the next level of folders {:?}", err);
             return Err("Could not query the database for the next level of folders".to_string());
         }
     }
@@ -593,12 +593,6 @@ pub async fn delete_entries(
                     continue;
                 }
                 StorageAccessType::Deny => {
-                    dbg!(
-                        "Entries deletion denied because of the underlying file's rule",
-                        file.0,
-                        &file_parents[&file.0]
-                    );
-
                     cascade_down_check_result = false;
                     break 'files_loop;
                 }
@@ -613,7 +607,6 @@ pub async fn delete_entries(
                                         break 'parents_loop;
                                     }
                                     StorageAccessType::Deny => {
-                                        dbg!("Entries deletion denied because a file inherits a denying rule from some parent", file.0, some_parent);
                                         cascade_down_check_result = false;
                                         break 'files_loop;
                                     }
@@ -687,58 +680,31 @@ pub async fn delete_entries(
  * Move enties to a new folder
  *
  * @param endpoint_id - Storage endpoint id
- * @param folder_ids - Folders to move
- * @param file_ids - Files to move
+ * @param entry_ids - Entries to move
  * @param target_folder_id - Id of the folder where the entries will be moved to
  * @param pool - Database connection pool
 */
 pub async fn move_entries(
     endpoint_id: i32,
-    folder_ids: Vec<i64>,
-    file_ids: Vec<i64>,
+    entry_ids: Vec<i64>,
     target_folder_id: Option<i64>,
     pool: &RequestPool,
 ) -> Result<(), String> {
-    if file_ids.len() == 0 && folder_ids.len() == 0 {
+    if entry_ids.len() == 0 {
         return Ok(());
     }
 
-    let mut transaction = pool.begin().await.unwrap();
+    let move_result = sqlx::query(
+        "UPDATE storage_entries SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
+    )
+    .bind(target_folder_id)
+    .bind(entry_ids)
+    .bind(endpoint_id)
+    .execute(pool)
+    .await;
 
-    if file_ids.len() > 0 {
-        let files_result = sqlx::query(
-            "UPDATE storage_entries SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3 AND entry_type = 'file'::storage_entry_type",
-        )
-        .bind(target_folder_id)
-        .bind(file_ids)
-        .bind(endpoint_id)
-        .execute(&mut *transaction)
-        .await;
-
-        if files_result.is_err() {
-            return Err("Could not move storage files".to_string());
-        }
-    }
-
-    if folder_ids.len() > 0 {
-        let folders_result = sqlx::query(
-            "UPDATE storage_entries SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3 AND entry_type = 'folder'::storage_entry_type",
-        )
-        .bind(target_folder_id)
-        .bind(folder_ids)
-        .bind(endpoint_id)
-        .execute(&mut *transaction)
-        .await;
-
-        if folders_result.is_err() {
-            return Err("Could not move storage folders".to_string());
-        }
-    }
-
-    let transaction_result = transaction.commit().await;
-
-    if transaction_result.is_err() {
-        return Err("Could not commit the move transaction".to_string());
+    if move_result.is_err() {
+        return Err("Could not move storage entries".to_string());
     }
 
     Ok(())

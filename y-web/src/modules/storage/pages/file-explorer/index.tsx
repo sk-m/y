@@ -395,13 +395,19 @@ const FileExplorerPage: Component = () => {
     entries: SelectedEntry[],
     targetFolderId?: number | null
   ) => {
-    const { fileIds, folderIds } = partitionEntries(entries)
+    // TODO we might not need partitionEntries anymore
+    // TODO we might also not need the SelectedEntry type anymore.
+    // We can just use an array of ids!
+    // const { fileIds, folderIds } = partitionEntries(entries)
+
+    const entryIds = entries.map((entry) =>
+      Number.parseInt(entry.split(":")[1]!, 10)
+    )
 
     $moveEntries.mutate(
       {
         endpointId: Number.parseInt(params.endpointId as string, 10),
-        fileIds,
-        folderIds,
+        entryIds,
         targetFolderId:
           // eslint-disable-next-line no-undefined
           targetFolderId === null ? undefined : targetFolderId ?? folderId(),

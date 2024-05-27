@@ -116,8 +116,7 @@ export const createStorageFolder = async (input: CreateStorageFolderInput) => {
 
 export type MoveStorageEntriesInput = {
   endpointId: number
-  fileIds: number[]
-  folderIds: number[]
+  entryIds: number[]
   targetFolderId: number | undefined
 }
 
@@ -125,8 +124,7 @@ export const moveStorageEntries = async (input: MoveStorageEntriesInput) => {
   return post(apiStorageMoveEntries, {
     body: {
       endpoint_id: input.endpointId,
-      file_ids: input.fileIds,
-      folder_ids: input.folderIds,
+      entry_ids: input.entryIds,
       target_folder_id: input.targetFolderId,
     },
   })

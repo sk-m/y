@@ -12,8 +12,7 @@ use crate::util::RequestPool;
 #[derive(Deserialize)]
 struct StorageMoveEntriesInput {
     endpoint_id: i32,
-    file_ids: Vec<i64>,
-    folder_ids: Vec<i64>,
+    entry_ids: Vec<i64>,
     target_folder_id: Option<i64>,
 }
 
@@ -26,8 +25,7 @@ async fn storage_move_entries(
     let form = form.into_inner();
     let endpoint_id = form.endpoint_id;
     let target_folder_id = form.target_folder_id;
-    let file_ids = form.file_ids;
-    let folder_ids = form.folder_ids;
+    let entry_ids = form.entry_ids;
 
     let client = get_user_from_request(&**pool, &req).await;
 
@@ -55,7 +53,7 @@ async fn storage_move_entries(
         move_allowed = if target_upload_allowed {
             check_bulk_storage_entries_access_cascade_up(
                 endpoint_id,
-                (&file_ids, &folder_ids),
+                &entry_ids,
                 "move",
                 &group_ids,
                 &**pool,
@@ -72,7 +70,7 @@ async fn storage_move_entries(
         return error("storage.move.unauthorized");
     }
 
-    let result = move_entries(endpoint_id, folder_ids, file_ids, target_folder_id, &**pool).await;
+    let result = move_entries(endpoint_id, entry_ids, target_folder_id, &**pool).await;
 
     match result {
         Ok(_) => HttpResponse::Ok().body("{}"),

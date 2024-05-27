@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use log::error;
 use serde::Serialize;
 use sqlx::FromRow;
 
@@ -74,8 +75,6 @@ async fn get_storage_entry_access_rule_cascade_up(
         .bind(user_groups)
         .fetch_all(pool)
         .await;
-
-    dbg!(&action, &tree_rules);
 
     let mut group_rules: HashMap<i32, StorageAccessType> = HashMap::new();
 
@@ -230,8 +229,7 @@ pub async fn check_storage_entry_access(
  * This function tests provided entries in bulk.
  *
  * @param endpoint_id id of the storage endpoint where all the provided entries are located.
- * @param entries entries to be checked. A tuple of two vectors: the first vector contains
- * file ids, the second one contains folder ids.
+ * @param entries entries to be checked.
  * @param action requested action. For example, "delete". See `storage_access_action_type`
  * data type in the database schema for a list of available action types.
  * @param user_groups ids of the user groups that are being checked.
@@ -243,7 +241,7 @@ pub async fn check_storage_entry_access(
  */
 pub async fn check_bulk_storage_entries_access_cascade_up(
     endpoint_id: i32,
-    entries: (&Vec<i64>, &Vec<i64>),
+    entries: &Vec<i64>,
 
     action: &str,
     user_groups: &Vec<i32>,
@@ -262,8 +260,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
             }
         }
     };
-
-    let (file_ids, folder_ids) = entries;
 
     // TODO: Return a list of entries that have denied access
     // ^ This will be slower, but more convenient for the user.
@@ -295,38 +291,25 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     // Get access rules for the provided entries themeselves
     // TODO optimize. Is one Select possible here?
     let root_result = sqlx::query_as::<_, RootResultRow>(
-        "SELECT storage_entries.id AS entry_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, 'file' AS entry_type FROM storage_entries
+        "SELECT storage_entries.id AS entry_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, storage_entries.entry_type::TEXT FROM storage_entries
         LEFT JOIN storage_access ON
         storage_access.entry_id = storage_entries.id
         AND storage_access.endpoint_id = storage_entries.endpoint_id
-        AND storage_access.entry_type = 'file'::storage_entry_type
         AND storage_access.action = $3::storage_access_action_type
         AND storage_access.access_type != 'inherit'::storage_access_type
         AND storage_access.executor_type = 'user_group'::storage_access_executor_type
         AND storage_access.executor_id = ANY($4)
-        WHERE storage_entries.endpoint_id = $2 AND storage_entries.id = ANY($1) AND storage_entries.entry_type = 'file'::storage_entry_type
-        UNION ALL
-        SELECT storage_entries.id AS entry_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, 'folder' AS entry_type FROM storage_entries
-        LEFT JOIN storage_access ON
-        storage_access.entry_id = storage_entries.id
-        AND storage_access.endpoint_id = storage_entries.endpoint_id
-        AND storage_access.entry_type = 'folder'::storage_entry_type
-        AND storage_access.action = $3::storage_access_action_type
-        AND storage_access.access_type != 'inherit'::storage_access_type
-        AND storage_access.executor_type = 'user_group'::storage_access_executor_type
-        AND storage_access.executor_id = ANY($4)
-        WHERE storage_entries.endpoint_id = $2 AND storage_entries.id = ANY($5) AND storage_entries.entry_type = 'folder'::storage_entry_type",
+        WHERE storage_entries.endpoint_id = $2 AND storage_entries.id = ANY($1)",
     )
-    .bind(&file_ids)
+    .bind(&entries)
     .bind(endpoint_id)
     .bind(action)
     .bind(&user_groups)
-    .bind(&folder_ids)
     .fetch_all(pool)
     .await;
 
     if root_result.is_err() {
-        dbg!(&root_result.unwrap_err());
+        error!("{:?}", root_result.unwrap_err());
 
         return false;
     }
@@ -389,7 +372,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     .await;
 
     if tree_result_for_inheriting_entries.is_err() {
-        dbg!(&tree_result_for_inheriting_entries.unwrap_err());
+        error!("{:?}", tree_result_for_inheriting_entries.unwrap_err());
 
         return false;
     }
