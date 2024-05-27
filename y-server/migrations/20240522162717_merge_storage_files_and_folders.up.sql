@@ -1,3 +1,6 @@
+-- Truncate storage access table
+TRUNCATE storage_access RESTART IDENTITY;
+
 -- Delete old separate tables
 DROP TABLE IF EXISTS storage_files;
 DROP TABLE IF EXISTS storage_folders;
