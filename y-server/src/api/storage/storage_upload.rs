@@ -13,12 +13,12 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::time::Instant;
 
-use crate::storage_access::check_storage_entry_access;
+use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
 use crate::storage_entry::{
     generate_image_entry_thumbnail, generate_video_entry_thumbnail, StorageEntryType,
 };
-use crate::user::{get_user_from_request, get_user_groups};
-use crate::{storage_endpoint::get_storage_endpoint, user::get_client_rights, util::RequestPool};
+use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
+use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
 
 const MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION: u64 = 50_000_000;
 
@@ -67,7 +67,6 @@ async fn storage_upload(
 
     // Check the rights
     let client = get_user_from_request(&pool, &req).await;
-    let client_rights = get_client_rights(&pool, &req).await;
 
     let client_user_id = if client.is_some() {
         let client_user = &client.as_ref().unwrap().0;
@@ -77,17 +76,11 @@ async fn storage_upload(
         None
     };
 
-    let action_allowed = client_rights
-        .iter()
-        .find(|right| right.right_name.eq("storage_upload"))
-        .is_some();
+    let action_allowed;
 
-    if !action_allowed {
-        return sink_and_error("storage.upload.unauthorized", &mut payload).await;
-    }
-
+    // TODO @cleanup
     if let Some(target_folder_id) = target_folder_id {
-        let action_allowed = if let Some((client_user, _)) = client {
+        action_allowed = if let Some((client_user, _)) = client {
             let user_groups = get_user_groups(&**pool, client_user.id).await;
             let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
 
@@ -103,10 +96,23 @@ async fn storage_upload(
         } else {
             false
         };
+    } else {
+        // folder_id == NULL means the root level of the endpoint
 
-        if !action_allowed {
-            return sink_and_error("storage.upload.unauthorized", &mut payload).await;
+        action_allowed = if let Some(client_user_id) = client_user_id {
+            let user_groups = get_user_groups(&**pool, client_user_id).await;
+            let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+            let group_rights = get_group_rights(&pool, &group_ids).await;
+
+            check_endpoint_root_access(endpoint_id, group_rights)
+        } else {
+            false
         }
+    }
+
+    if !action_allowed {
+        return sink_and_error("storage.upload.unauthorized", &mut payload).await;
     }
 
     // Get the target endpoint's base path, so we know where to save the files

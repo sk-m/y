@@ -5,7 +5,10 @@ use serde::Serialize;
 use sqlx::FromRow;
 
 use crate::{
-    storage_endpoint::get_storage_endpoint, storage_entry::StorageEntryType, util::RequestPool,
+    storage_endpoint::get_storage_endpoint,
+    storage_entry::StorageEntryType,
+    user::{get_group_rights, UserRight},
+    util::RequestPool,
 };
 
 #[derive(PartialEq, Debug, Serialize)]
@@ -28,6 +31,35 @@ impl StorageAccessType {
 pub enum StorageAccessCheckResult {
     Explicit(StorageAccessType),
     Inherited(HashMap<i32, StorageAccessType>),
+}
+
+// TODO ew @cleanup
+pub fn check_endpoint_root_access(endpoint_id: i32, group_rights: Vec<UserRight>) -> bool {
+    for right in group_rights {
+        if right.right_name.eq("storage_root_access") {
+            if let Some(allow_all_endpoints) = right.right_options.get("allow_any_endpoint") {
+                if allow_all_endpoints.is_boolean()
+                    && allow_all_endpoints.as_bool().unwrap() == true
+                {
+                    return true;
+                }
+            }
+
+            if let Some(allowed_endpoints) = right.right_options.get("accessible_endpoints") {
+                if allowed_endpoints.is_array() {
+                    for allowed_endpoint in allowed_endpoints.as_array().unwrap() {
+                        if allowed_endpoint.is_i64() {
+                            if allowed_endpoint.as_i64().unwrap() == endpoint_id as i64 {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    false
 }
 
 async fn get_storage_entry_access_rule_cascade_up(
@@ -199,9 +231,12 @@ pub async fn check_storage_entry_access(
         }
     }
 
-    // Not denied and not allowed by any rules. Assume allowed
+    // Not denied and not allowed by any rules. This means that the entry access is
+    // inherited all the way from the endpoint root. Check if user has access to the endpoint root.
     if !explicitly_denied && !explicitly_allowed {
-        action_allowed = true;
+        let group_rights = get_group_rights(&pool, user_groups).await;
+
+        action_allowed = check_endpoint_root_access(endpoint_id, group_rights);
     }
 
     // Explicitly denied by a rule and not allowed by any rules. 100% denied
@@ -379,19 +414,29 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
     let tree_result_for_inheriting_entries = tree_result_for_inheriting_entries.unwrap();
 
+    // TODO ew @cleanup
+    let group_rights = get_group_rights(&pool, user_groups).await;
+
+    let entry_root_access = check_endpoint_root_access(endpoint_id, group_rights);
+
     // Parents of the target entries have no access rules set for the requested action.
-    // Therefore, the action is allowed.
+    // That means that the action access is inherited all the way from the endpoint root.
     if tree_result_for_inheriting_entries.is_empty() {
-        return true;
+        return entry_root_access;
     }
 
     let mut last_target_entry_id = tree_result_for_inheriting_entries[0].target_entry_id;
 
     let mut allow_found = false;
     let mut deny_found = false;
+    let mut at_least_one_inheriting_from_root = false;
 
     for tree_step in tree_result_for_inheriting_entries {
         if last_target_entry_id != tree_step.target_entry_id {
+            if !allow_found && !deny_found {
+                at_least_one_inheriting_from_root = true;
+            }
+
             deny_found = false;
             allow_found = false;
             last_target_entry_id = tree_step.target_entry_id;
@@ -414,7 +459,9 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         }
     }
 
-    // Parents of the target entries have no denying access rules set for the requested action.
-    // The action is allowed.
-    true
+    if at_least_one_inheriting_from_root {
+        entry_root_access
+    } else {
+        true
+    }
 }

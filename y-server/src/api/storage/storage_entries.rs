@@ -6,9 +6,9 @@ use sqlx::prelude::FromRow;
 
 use crate::request::error;
 
-use crate::storage_access::check_storage_entry_access;
+use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
 use crate::storage_entry::StorageEntryType;
-use crate::user::{get_user_from_request, get_user_groups};
+use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
 #[derive(Serialize, FromRow, Debug)]
@@ -49,10 +49,10 @@ async fn storage_entries(
     let action_allowed: bool;
 
     if let Some((client_user, _)) = client {
-        if let Some(folder_id) = folder_id {
-            let user_groups = get_user_groups(&**pool, client_user.id).await;
-            let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+        let user_groups = get_user_groups(&**pool, client_user.id).await;
+        let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
 
+        if let Some(folder_id) = folder_id {
             action_allowed = check_storage_entry_access(
                 endpoint_id,
                 &StorageEntryType::Folder,
@@ -64,11 +64,10 @@ async fn storage_entries(
             .await
         } else {
             // folder_id == NULL means the root level of the endpoint
-            // TODO this means that anyone can list entries of the root level.
-            // This is probably not what we want
-            // Maybe we should return the storage_list group right?
 
-            action_allowed = true
+            let group_rights = get_group_rights(&pool, &group_ids).await;
+
+            action_allowed = check_endpoint_root_access(endpoint_id, group_rights);
         };
     } else {
         action_allowed = false

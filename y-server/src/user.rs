@@ -151,6 +151,33 @@ pub struct UserRight {
     pub right_options: Value,
 }
 
+pub async fn get_group_rights(pool: &RequestPool, group_ids: &Vec<i32>) -> Vec<UserRight> {
+    // TODO refactor the query
+    let right_rows = sqlx::query_as::<_, UserRight>("SELECT DISTINCT ON (user_group_rights.right_name, user_group_rights.right_options) user_group_rights.right_name, user_group_rights.right_options FROM user_groups
+    RIGHT JOIN user_group_rights ON user_group_rights.group_id = user_groups.id
+    WHERE user_groups.group_type IN ('user', 'everyone')
+    UNION ALL
+    SELECT DISTINCT ON (user_group_rights.right_name, user_group_rights.right_options) user_group_rights.right_name, user_group_rights.right_options FROM user_groups
+    RIGHT JOIN user_group_rights ON user_group_rights.group_id = user_groups.id
+    WHERE user_groups.id = ANY($1)")
+        .bind(&group_ids)
+        .fetch_all(pool)
+        .await;
+
+    match right_rows {
+        Ok(right_rows) => {
+            return right_rows;
+        }
+        Err(err) => {
+            error!(
+                "(user -> get_group_rights) Error returned from the database. {}",
+                err
+            );
+            return vec![];
+        }
+    }
+}
+
 pub async fn get_client_rights(pool: &RequestPool, req: &HttpRequest) -> Vec<UserRight> {
     let client_session = get_user_from_request(&pool, &req).await;
 

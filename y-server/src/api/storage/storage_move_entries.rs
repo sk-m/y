@@ -3,10 +3,11 @@ use serde::Deserialize;
 
 use crate::request::error;
 use crate::storage_access::{
-    check_bulk_storage_entries_access_cascade_up, check_storage_entry_access,
+    check_bulk_storage_entries_access_cascade_up, check_endpoint_root_access,
+    check_storage_entry_access,
 };
 use crate::storage_entry::{move_entries, StorageEntryType};
-use crate::user::{get_user_from_request, get_user_groups};
+use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
 #[derive(Deserialize)]
@@ -47,7 +48,9 @@ async fn storage_move_entries(
             )
             .await
         } else {
-            true
+            let group_rights = get_group_rights(&pool, &group_ids).await;
+
+            check_endpoint_root_access(endpoint_id, group_rights)
         };
 
         move_allowed = if target_upload_allowed {
