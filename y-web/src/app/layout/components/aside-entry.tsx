@@ -1,4 +1,4 @@
-import { For, Show, children, createMemo } from "solid-js"
+import { For, JSX, Show, children, createMemo } from "solid-js"
 
 import { Link, useLocation } from "@solidjs/router"
 
@@ -15,7 +15,11 @@ export type AsideEnytryProps = {
   title: string
 
   relatedPaths?: string[]
+  exact?: boolean
   subEntry?: boolean
+  small?: boolean
+
+  linkProps?: JSX.HTMLAttributes<HTMLAnchorElement>
 }
 
 export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
@@ -24,17 +28,25 @@ export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
   const subEntries = createMemo(() => children(() => props.children).toArray())
 
   const isActive = createMemo(() => {
-    if (location.pathname.includes(props.to)) return true
+    const target = props.exact
+      ? `${location.pathname}${location.search}`
+      : location.pathname
+
+    if (target.includes(props.to)) return true
 
     for (const path of props.relatedPaths ?? []) {
-      if (location.pathname.includes(path)) return true
+      if (target.includes(path)) return true
     }
   })
 
   const isSelected = createMemo(() => {
-    if (location.pathname.endsWith(props.to)) return true
+    const target = props.exact
+      ? `${location.pathname}${location.search}`
+      : location.pathname
+
+    if (target.endsWith(props.to)) return true
     for (const path of props.relatedPaths ?? []) {
-      if (location.pathname.endsWith(path)) return true
+      if (target.endsWith(path)) return true
     }
   })
 
@@ -44,9 +56,11 @@ export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
         href={props.to}
         classList={{
           "aside-entry": true,
+          small: props.small,
           selected: isSelected() || isActive(),
           group: subEntries().length > 0,
         }}
+        {...props.linkProps}
       >
         <div class="content">
           {/* <div class="line" /> */}

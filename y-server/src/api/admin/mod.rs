@@ -1,6 +1,8 @@
 pub mod create_storage_endpoint;
+pub mod create_storage_location;
 pub mod create_user;
 pub mod create_user_group;
+pub mod delete_storage_location;
 pub mod delete_user;
 pub mod delete_user_group;
 pub mod features;

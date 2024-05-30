@@ -9,6 +9,7 @@ pub mod storage_entry_thumbnails;
 pub mod storage_get;
 pub mod storage_get_access_rules;
 pub mod storage_get_folder_path;
+pub mod storage_locations;
 pub mod storage_move_entries;
 pub mod storage_rename_entry;
 pub mod storage_upload;

@@ -19,7 +19,7 @@ import {
 } from "solid-js"
 
 import { useParams, useSearchParams } from "@solidjs/router"
-import { createMutation } from "@tanstack/solid-query"
+import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
@@ -54,6 +54,9 @@ import {
 import { FileWithPath } from "@/modules/storage/upload"
 
 import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
+import { createStorageLocation } from "../../storage-location/storage-location.api"
+import { storageLocationsKey } from "../../storage-location/storage-location.service"
+import { FileExplorerAddLocationModal } from "./components/file-explorer-add-location-modal"
 import { FileExplorerDeleteModal } from "./components/file-explorer-delete-modal"
 import { FileExplorerDisplaySettings } from "./components/file-explorer-display-settings"
 import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
@@ -73,6 +76,7 @@ const closeTabConfirmation = (event: BeforeUnloadEvent) => {
 
 const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
+  const queryClient = useQueryClient()
   const params = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -83,6 +87,7 @@ const FileExplorerPage: Component = () => {
   const $moveEntries = createMutation(moveStorageEntries)
   const $deleteEntries = createMutation(deleteStorageEntries)
   const $createFolder = createMutation(createStorageFolder)
+  const $createLocation = createMutation(createStorageLocation)
 
   let searchInputFieldRef: HTMLInputElement
   let browserContentsRef: HTMLDivElement
@@ -176,6 +181,9 @@ const FileExplorerPage: Component = () => {
   const [infoPanelSelectedEntryId, setInfoPanelSelectedEntryId] = createSignal<
     number | null
   >(null)
+
+  const [createLocationTargetEntry, setCreateLocationTargetEntry] =
+    createSignal<number | null>(null)
 
   const isFolderEmpty = createMemo(() => folderEntries().length === 0)
 
@@ -529,6 +537,23 @@ const FileExplorerPage: Component = () => {
     })
   }
 
+  const createLocation = (name: string) => {
+    $createLocation.mutate(
+      {
+        endpointId: Number.parseInt(params.endpointId as string, 10),
+        entryId: createLocationTargetEntry()!,
+        name,
+      },
+      {
+        onSuccess: () => {
+          void queryClient.invalidateQueries([storageLocationsKey])
+          setCreateLocationTargetEntry(null)
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
+  }
+
   // eslint-disable-next-line sonarjs/cognitive-complexity
   onMount(() => {
     const keydownHandler = (event: KeyboardEvent) => {
@@ -658,6 +683,11 @@ const FileExplorerPage: Component = () => {
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
     >
+      <FileExplorerAddLocationModal
+        open={createLocationTargetEntry() !== null}
+        onClose={() => setCreateLocationTargetEntry(null)}
+        onConfirm={createLocation}
+      />
       <FileExplorerDeleteModal
         subtitle={`${
           (entriesToDelete()?.fileIds.length ?? 0) +
@@ -965,6 +995,20 @@ const FileExplorerPage: Component = () => {
                       }}
                     >
                       Delete
+                    </ContextMenuLink>
+
+                    <div class="separator" />
+
+                    <ContextMenuLink
+                      icon="playlist_add"
+                      onClick={() => {
+                        setCreateLocationTargetEntry(
+                          contextMenuTargetEntry()!.id
+                        )
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Add to sidebar
                     </ContextMenuLink>
                   </Show>
                   <Show when={contextMenuTargetEntry()?.entry_type === "file"}>
