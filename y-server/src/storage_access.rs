@@ -433,29 +433,38 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
     for tree_step in tree_result_for_inheriting_entries {
         if last_target_entry_id != tree_step.target_entry_id {
-            if !allow_found && !deny_found {
-                at_least_one_inheriting_from_root = true;
+            if deny_found {
+                if !allow_found {
+                    return false;
+                }
+            } else {
+                if !allow_found {
+                    at_least_one_inheriting_from_root = true;
+                }
             }
 
+            // We have processed one entry, reset the state and move on to the next one.
             deny_found = false;
             allow_found = false;
             last_target_entry_id = tree_step.target_entry_id;
         }
 
         if tree_step.access_type == "deny" {
-            if !allow_found {
-                return false;
-            } else {
-                deny_found = true;
-            }
+            deny_found = true;
+        } else if tree_step.access_type == "allow" {
+            allow_found = true;
         }
+    }
 
-        if tree_step.access_type == "allow" {
-            if deny_found {
-                return false;
-            } else {
-                allow_found = true;
-            }
+    // Check the result of the last tree step
+    // TODO ew @cleanup
+    if deny_found {
+        if !allow_found {
+            return false;
+        }
+    } else {
+        if !allow_found {
+            at_least_one_inheriting_from_root = true;
         }
     }
 
