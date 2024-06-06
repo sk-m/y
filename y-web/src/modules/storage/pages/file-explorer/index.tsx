@@ -21,6 +21,7 @@ import {
 import { useParams, useSearchParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
+import { Button } from "@/app/components/common/button/button"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import {
@@ -92,6 +93,7 @@ const FileExplorerPage: Component = () => {
   let searchInputFieldRef: HTMLInputElement
   let browserContentsRef: HTMLDivElement
   const entryRefs: HTMLDivElement[] = []
+  let uploadInputRef: HTMLInputElement
 
   // prettier-ignore
   const folderId = createMemo(() =>
@@ -430,6 +432,10 @@ const FileExplorerPage: Component = () => {
     )
   }
 
+  // TODO rename this to something more generic. We use this function for both dnd upload
+  // and file input upload
+  // TODO also, we should move half this logic to a separate function. This does way to much,
+  // it should be more generic
   const handleDrop = (filesToUpload: FileWithPath[]) => {
     let totalSizeBytes = 0
 
@@ -506,6 +512,23 @@ const FileExplorerPage: Component = () => {
 
     request.open("POST", uploadUrl, true)
     request.send(data)
+  }
+
+  const onFilesSelect = (event: Event) => {
+    const rawFiles = (event.target as HTMLInputElement).files
+
+    if (!rawFiles) return
+
+    const files: FileWithPath[] = []
+
+    for (const file of rawFiles) {
+      // prettier-ignore
+      (file as FileWithPath).path = ""
+
+      files.push(file as FileWithPath)
+    }
+
+    handleDrop(files)
   }
 
   const navigateToFolder = (targetFolderId: number) => {
@@ -683,6 +706,14 @@ const FileExplorerPage: Component = () => {
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
     >
+      <input
+        hidden
+        ref={uploadInputRef!}
+        type="file"
+        multiple
+        onChange={onFilesSelect}
+      />
+
       <FileExplorerAddLocationModal
         open={createLocationTargetEntry() !== null}
         onClose={() => setCreateLocationTargetEntry(null)}
@@ -772,6 +803,19 @@ const FileExplorerPage: Component = () => {
                   onClick={openSelectionContextMenu}
                 />
               </Show>
+
+              <div class="top-container-separator" />
+
+              <Button
+                variant="secondary"
+                size="xs"
+                leadingIcon="cloud_upload"
+                onClick={() => {
+                  uploadInputRef.click()
+                }}
+              >
+                upload
+              </Button>
             </Stack>
           </div>
           <div
