@@ -67,6 +67,7 @@ async fn storage_entry_thumbnails(
                 &StorageEntryType::Folder,
                 parent_folder_id,
                 "list_entries",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )

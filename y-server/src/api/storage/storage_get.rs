@@ -41,6 +41,7 @@ async fn storage_get(
             &StorageEntryType::File,
             file_id,
             "download",
+            client_user.id,
             &group_ids,
             &**pool,
         )

@@ -29,7 +29,7 @@ impl StorageAccessType {
 }
 
 pub enum StorageAccessCheckResult {
-    Explicit(StorageAccessType),
+    Explicit(bool),
     Inherited(HashMap<i32, StorageAccessType>),
 }
 
@@ -68,6 +68,8 @@ async fn get_storage_entry_access_rule_cascade_up(
     entry_id: i64,
 
     action: &str,
+
+    user_id: i32,
     user_groups: &Vec<i32>,
 
     pool: &RequestPool,
@@ -79,23 +81,25 @@ async fn get_storage_entry_access_rule_cascade_up(
         executor_type: String,
         executor_id: i32,
         entry_id: i64,
+        action: String,
     }
 
     // TODO this can be optimized.
     // TODO this is just fucking sad ):
+    // TODO How druk was I when I typed `(SELECT * FROM storage_access)`? Please don't do that
     let sql = if *entry_type == StorageEntryType::Folder {
         "SELECT tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM
         (SELECT storage_access.*, parents_tree.id AS tree_entry_id, parents_tree.tree_step FROM (SELECT * FROM storage_access) AS storage_access, (SELECT row_number() OVER () as tree_step, id FROM storage_get_folder_path($1, $2)) AS parents_tree) as sub
-        WHERE entry_id IN (SELECT tree_entry_id) AND endpoint_id = sub.endpoint_id AND entry_type = 'folder'::storage_entry_type AND action = $3::storage_access_action_type AND executor_id = ANY($4)
+        WHERE (entry_id IN (SELECT tree_entry_id) AND endpoint_id = sub.endpoint_id AND entry_type = 'folder'::storage_entry_type AND action = $3::storage_access_action_type) AND ((executor_type = 'user_group'::storage_access_executor_type AND executor_id = ANY($4)) OR (executor_type = 'user'::storage_access_executor_type AND executor_id = $5))
         ORDER BY tree_step ASC"
     } else {
         "-- entry itself
-        SELECT 0 AS tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM storage_access WHERE entry_id = $2 AND endpoint_id = $1 AND entry_type = 'file'::storage_entry_type AND action = $3::storage_access_action_type AND executor_id = ANY($4)
+        SELECT 0 AS tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM storage_access WHERE entry_id = $2 AND endpoint_id = $1 AND entry_type = 'file'::storage_entry_type AND action = $3::storage_access_action_type AND ((executor_type = 'user_group'::storage_access_executor_type AND executor_id = ANY($4)) OR (executor_type = 'user'::storage_access_executor_type AND executor_id = $5))
         UNION ALL
         -- entry's parent, grandparent, ... up the tree until root
         SELECT tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM
         (SELECT storage_access.*, parents_tree.id AS tree_entry_id, parents_tree.tree_step FROM (SELECT * FROM storage_access) AS storage_access, (SELECT row_number() OVER () as tree_step, id FROM storage_get_folder_path($1, (SELECT parent_folder FROM storage_entries WHERE entry_type = 'file'::storage_entry_type AND id = $2 AND endpoint_id = $1))) AS parents_tree) as sub
-        WHERE entry_id IN (SELECT tree_entry_id) AND endpoint_id = sub.endpoint_id AND entry_type = 'folder'::storage_entry_type AND action = $3::storage_access_action_type AND executor_id = ANY($4)
+        WHERE (entry_id IN (SELECT tree_entry_id) AND endpoint_id = sub.endpoint_id AND entry_type = 'folder'::storage_entry_type AND action = $3::storage_access_action_type) AND ((executor_type = 'user_group'::storage_access_executor_type AND executor_id = ANY($4)) OR (executor_type = 'user'::storage_access_executor_type AND executor_id = $5))
         -- sort by tree_step to get the rules in the correct order
         ORDER BY tree_step ASC"
     };
@@ -105,18 +109,15 @@ async fn get_storage_entry_access_rule_cascade_up(
         .bind(&entry_id)
         .bind(action)
         .bind(user_groups)
+        .bind(user_id)
         .fetch_all(pool)
         .await;
 
     let mut group_rules: HashMap<i32, StorageAccessType> = HashMap::new();
+    let mut user_rule: StorageAccessType = StorageAccessType::Unset;
 
     if let Ok(tree_rules) = tree_rules {
         for rule in &tree_rules {
-            // TODO groups only for now
-            if rule.executor_type != "user_group" {
-                continue;
-            }
-
             let access_type = StorageAccessType::from_str(&rule.access_type);
 
             if rule.tree_step == 0 && rule.entry_id == entry_id {
@@ -125,17 +126,35 @@ async fn get_storage_entry_access_rule_cascade_up(
                 if access_type == StorageAccessType::Allow {
                     // The entry itself allows the requested action for at least one of
                     // the provided user groups. Short-circuit and return immediately.
-                    return Ok(StorageAccessCheckResult::Explicit(StorageAccessType::Allow));
+                    return Ok(StorageAccessCheckResult::Explicit(true));
                 }
             }
 
-            if let Some(entry) = group_rules.get_mut(&rule.executor_id) {
-                if entry == &mut StorageAccessType::Unset {
-                    *entry = access_type;
+            if rule.executor_type == "user" {
+                if rule.executor_id == user_id {
+                    user_rule = access_type;
                 }
-            } else {
-                group_rules.insert(rule.executor_id, access_type);
+            } else if rule.executor_type == "user_group" {
+                if let Some(entry) = group_rules.get_mut(&rule.executor_id) {
+                    if entry == &mut StorageAccessType::Unset {
+                        *entry = access_type;
+                    }
+                } else {
+                    group_rules.insert(rule.executor_id, access_type);
+                }
             }
+        }
+
+        // Allow if there is a target user rule that allows the action
+        // TODO Keep in mind that we are not checking if the user is DENIED! We treat denial
+        // ^ the same as we treat user group denial - we do not care as long as there is at
+        // ^ least one ALLOW (100x deny & 1x allow = allow)
+        // ^ Maybe for the `user` executor type it should work differently? If target user
+        // ^ is explicitly denied - deny the action, even if there is an allow rule for some
+        // ^ user group?
+        // If we change this logic, don't forget to also update the bulk check function
+        if user_rule == StorageAccessType::Allow {
+            return Ok(StorageAccessCheckResult::Explicit(true));
         }
 
         Ok(StorageAccessCheckResult::Inherited(group_rules))
@@ -165,6 +184,7 @@ pub async fn check_storage_entry_access(
     entry_id: i64,
 
     action: &str,
+    user_id: i32,
     user_groups: &Vec<i32>,
 
     pool: &RequestPool,
@@ -192,6 +212,7 @@ pub async fn check_storage_entry_access(
         entry_type,
         entry_id,
         action,
+        user_id,
         user_groups,
         pool,
     )
@@ -200,13 +221,7 @@ pub async fn check_storage_entry_access(
     match check_result {
         Ok(check_result) => match check_result {
             StorageAccessCheckResult::Explicit(explicit_access_type) => {
-                if explicit_access_type == StorageAccessType::Allow
-                    || explicit_access_type == StorageAccessType::Unset
-                {
-                    return true;
-                } else if explicit_access_type == StorageAccessType::Deny {
-                    return false;
-                }
+                explicitly_allowed = explicit_access_type;
             }
 
             StorageAccessCheckResult::Inherited(group_rules) => {
@@ -226,7 +241,8 @@ pub async fn check_storage_entry_access(
             }
         },
 
-        Err(_) => {
+        Err(err) => {
+            error!("{:?}", err);
             return false;
         }
     }
@@ -279,6 +295,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     entries: &Vec<i64>,
 
     action: &str,
+    user_id: i32,
     user_groups: &Vec<i32>,
 
     pool: &RequestPool,
@@ -310,7 +327,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         parent_folder: Option<i64>,
 
         access_type: Option<String>,
-        executor_id: Option<i32>,
     }
 
     #[derive(FromRow, Serialize, Debug)]
@@ -318,6 +334,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         tree_step: i32,
         entry_id: i64,
         access_type: String,
+        executor_type: String,
         executor_id: i32,
         entry_type: String,
         target_entry_id: i64,
@@ -332,14 +349,21 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         AND storage_access.endpoint_id = storage_entries.endpoint_id
         AND storage_access.action = $3::storage_access_action_type
         AND storage_access.access_type != 'inherit'::storage_access_type
-        AND storage_access.executor_type = 'user_group'::storage_access_executor_type
-        AND storage_access.executor_id = ANY($4)
+        AND
+        (
+            (storage_access.executor_type = 'user_group'::storage_access_executor_type
+            AND storage_access.executor_id = ANY($4))
+            OR
+            (storage_access.executor_type = 'user'::storage_access_executor_type
+            AND storage_access.executor_id = $5)
+        )
         WHERE storage_entries.endpoint_id = $2 AND storage_entries.id = ANY($1)",
     )
     .bind(&entries)
     .bind(endpoint_id)
     .bind(action)
     .bind(&user_groups)
+    .bind(user_id)
     .fetch_all(pool)
     .await;
 
@@ -397,11 +421,12 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
     // TODO maybe can we get rid of the storage_generate_entries_access_tree function???? That would be nice, I don't like it
     let tree_result_for_inheriting_entries = sqlx::query_as::<_, StorageGenerateEntriesAccessTreeRow>(
-        "SELECT tree_step, entry_id, access_type::TEXT, executor_id, entry_type::TEXT, target_entry_id FROM storage_generate_entries_access_tree($1, 'folder'::storage_entry_type, $2::storage_access_action_type, $3, $4)",
+        "SELECT tree_step, entry_id, access_type::TEXT, executor_type::TEXT, executor_id, entry_type::TEXT, target_entry_id FROM storage_generate_entries_access_tree($1, 'folder'::storage_entry_type, $2::storage_access_action_type, $3, $4, $5)",
     )
     .bind(endpoint_id)
     .bind(action)
     .bind(&user_groups)
+    .bind(user_id)
     .bind(parent_folders_for_inheriting_entries_ids)
     .fetch_all(pool)
     .await;

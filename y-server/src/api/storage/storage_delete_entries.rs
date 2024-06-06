@@ -53,6 +53,7 @@ async fn storage_delete_entries(
             endpoint_id,
             &all_entries_ids,
             "delete",
+            client_user.id,
             &group_ids,
             &**pool,
         )

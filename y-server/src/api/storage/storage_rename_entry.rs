@@ -41,6 +41,7 @@ async fn storage_rename_entry(
             &form.entry_type,
             form.entry_id,
             "rename",
+            client_user.id,
             &group_ids,
             &**pool,
         )

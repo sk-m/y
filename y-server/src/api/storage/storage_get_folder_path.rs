@@ -51,6 +51,7 @@ async fn storage_get_folder_path(
             &StorageEntryType::Folder,
             folder_id,
             "list_entries",
+            client_user.id,
             &group_ids,
             &**pool,
         )

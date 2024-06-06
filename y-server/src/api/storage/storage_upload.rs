@@ -89,6 +89,7 @@ async fn storage_upload(
                 &StorageEntryType::Folder,
                 target_folder_id,
                 "upload",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )

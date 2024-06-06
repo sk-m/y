@@ -52,6 +52,7 @@ async fn storage_create_folder(
                 &StorageEntryType::Folder,
                 form.target_folder.unwrap(),
                 "upload",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )

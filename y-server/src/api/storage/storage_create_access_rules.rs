@@ -62,6 +62,7 @@ async fn storage_create_access_rules(
             &entry_type,
             entry_id,
             "manage_access",
+            client_user.id,
             &group_ids,
             &**pool,
         )

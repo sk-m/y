@@ -43,6 +43,7 @@ async fn storage_move_entries(
                 &StorageEntryType::Folder,
                 target_folder_id,
                 "upload",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )
@@ -58,6 +59,7 @@ async fn storage_move_entries(
                 endpoint_id,
                 &entry_ids,
                 "move",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )
