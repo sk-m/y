@@ -19,6 +19,23 @@
   overflow: hidden;
 
   background-color: rgba(@brand-black-rgb, 0.025);
+
+  > .app-bkg-dots {
+    position: fixed;
+    z-index: -1;
+
+    top: 0;
+    left: 0;
+
+    width: 100vw;
+    height: 100vw;
+
+    background-position: 50% 50%;
+    background-repeat: repeat;
+    background-size: 300px;
+
+    opacity: 0.03;
+  }
 }
 
 #app-modals-container {

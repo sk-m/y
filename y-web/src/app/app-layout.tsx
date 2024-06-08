@@ -5,6 +5,7 @@ import { Route, Routes, useNavigate } from "@solidjs/router"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
 import "./app-layout.less"
+import bkgDotsSVG from "./layout/assets/bkg-dots.svg"
 import { routes } from "./routes"
 
 const HomeLayout = lazy(async () => import("@/modules/home/layout/home-layout"))
@@ -32,6 +33,12 @@ export const AppLayout: Component = () => {
     <Show when={$auth.isSuccess}>
       <div id="app-root">
         <div id="app-main">
+          <div
+            class="app-bkg-dots"
+            style={{
+              "background-image": `url(${bkgDotsSVG})`,
+            }}
+          />
           <Routes>
             <Route path="/" component={HomeLayout} />
             <Route path="/admin/*" component={AdminLayout} />
