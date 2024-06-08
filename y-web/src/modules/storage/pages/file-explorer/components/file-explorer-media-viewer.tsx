@@ -53,6 +53,8 @@ export const FileExplorerMediaViewer: Component<
     )
   )
 
+  const isVideo = createMemo(() => props.entry.mime_type?.startsWith("video/"))
+
   const keyupHandler = (event: KeyboardEvent) => {
     event.stopPropagation()
     event.stopImmediatePropagation()
@@ -124,6 +126,8 @@ export const FileExplorerMediaViewer: Component<
         setZoom((previous) => previous + (ZOOM_STEP * previous))
       }
     } else {
+      if (isVideo()) return
+
       if (event.deltaY > 0) {
         props.onNext()
       } else {
@@ -144,7 +148,9 @@ export const FileExplorerMediaViewer: Component<
   onMount(() => {
     document.addEventListener("keydown", keydownHandler)
     document.addEventListener("keyup", keyupHandler)
-    document.addEventListener("wheel", scrollHandler)
+    document.addEventListener("wheel", scrollHandler, {
+      passive: true,
+    })
     document.addEventListener("pointerdown", mouseHandler)
 
     onCleanup(() => {
@@ -215,6 +221,7 @@ export const FileExplorerMediaViewer: Component<
                   src={previewUrl()}
                   controls
                   autoplay
+                  playsinline
                   onClick={(event) => event.stopPropagation()}
                   draggable={false}
                   style={{ transform: `scale(${zoom()})` }}
