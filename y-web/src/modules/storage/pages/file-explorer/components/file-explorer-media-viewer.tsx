@@ -53,7 +53,7 @@ export const FileExplorerMediaViewer: Component<
     )
   )
 
-  const isVideo = createMemo(() => props.entry.mime_type?.startsWith("video/"))
+  const isImage = createMemo(() => props.entry.mime_type?.startsWith("image/"))
 
   const keyupHandler = (event: KeyboardEvent) => {
     event.stopPropagation()
@@ -126,7 +126,7 @@ export const FileExplorerMediaViewer: Component<
         setZoom((previous) => previous + (ZOOM_STEP * previous))
       }
     } else {
-      if (isVideo()) return
+      if (!isImage()) return
 
       if (event.deltaY > 0) {
         props.onNext()
