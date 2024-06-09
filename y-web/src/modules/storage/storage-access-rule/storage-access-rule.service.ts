@@ -11,12 +11,7 @@ export const useStorageEntryAccessRules = (
   input: () => GetStorageEntryAccessRulesInput
 ) => {
   return createQuery(
-    () => [
-      storageEntryAccessRulesKey,
-      input().endpointId,
-      input().entryType,
-      input().entryId,
-    ],
+    () => [storageEntryAccessRulesKey, input().endpointId, input().entryId],
     async () => storageEntryAccessRules(input())
   )
 }

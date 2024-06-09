@@ -6,7 +6,6 @@ use sqlx::FromRow;
 
 use crate::{
     storage_endpoint::get_storage_endpoint,
-    storage_entry::StorageEntryType,
     user::{get_group_rights, UserRight},
     util::RequestPool,
 };
@@ -64,7 +63,6 @@ pub fn check_endpoint_root_access(endpoint_id: i32, group_rights: Vec<UserRight>
 
 async fn get_storage_entry_access_rule_cascade_up(
     endpoint_id: i32,
-    entry_type: &StorageEntryType,
     entry_id: i64,
 
     action: &str,
@@ -84,27 +82,18 @@ async fn get_storage_entry_access_rule_cascade_up(
         action: String,
     }
 
-    // TODO this can be optimized.
-    // TODO this is just fucking sad ):
-    // TODO How druk was I when I typed `(SELECT * FROM storage_access)`? Please don't do that
-    let sql = if *entry_type == StorageEntryType::Folder {
-        "SELECT tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM
-        (SELECT storage_access.*, parents_tree.id AS tree_entry_id, parents_tree.tree_step FROM (SELECT * FROM storage_access) AS storage_access, (SELECT row_number() OVER () as tree_step, id FROM storage_get_folder_path($1, $2)) AS parents_tree) as sub
-        WHERE (entry_id IN (SELECT tree_entry_id) AND endpoint_id = sub.endpoint_id AND entry_type = 'folder'::storage_entry_type AND action = $3::storage_access_action_type) AND ((executor_type = 'user_group'::storage_access_executor_type AND executor_id = ANY($4)) OR (executor_type = 'user'::storage_access_executor_type AND executor_id = $5))
-        ORDER BY tree_step ASC"
-    } else {
-        "-- entry itself
-        SELECT 0 AS tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM storage_access WHERE entry_id = $2 AND endpoint_id = $1 AND entry_type = 'file'::storage_entry_type AND action = $3::storage_access_action_type AND ((executor_type = 'user_group'::storage_access_executor_type AND executor_id = ANY($4)) OR (executor_type = 'user'::storage_access_executor_type AND executor_id = $5))
-        UNION ALL
-        -- entry's parent, grandparent, ... up the tree until root
-        SELECT tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM
-        (SELECT storage_access.*, parents_tree.id AS tree_entry_id, parents_tree.tree_step FROM (SELECT * FROM storage_access) AS storage_access, (SELECT row_number() OVER () as tree_step, id FROM storage_get_folder_path($1, (SELECT parent_folder FROM storage_entries WHERE entry_type = 'file'::storage_entry_type AND id = $2 AND endpoint_id = $1))) AS parents_tree) as sub
-        WHERE (entry_id IN (SELECT tree_entry_id) AND endpoint_id = sub.endpoint_id AND entry_type = 'folder'::storage_entry_type AND action = $3::storage_access_action_type) AND ((executor_type = 'user_group'::storage_access_executor_type AND executor_id = ANY($4)) OR (executor_type = 'user'::storage_access_executor_type AND executor_id = $5))
-        -- sort by tree_step to get the rules in the correct order
-        ORDER BY tree_step ASC"
-    };
-
-    let tree_rules = sqlx::query_as::<_, StorageAccessRuleRow>(sql)
+    let tree_rules = sqlx::query_as::<_, StorageAccessRuleRow>("
+        SELECT tree.tree_step, storage_access.entry_id, storage_access.access_type::TEXT, storage_access.action::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
+        JOIN storage_access ON storage_access.entry_id = tree.entry_id
+        WHERE storage_access.endpoint_id = $1 AND
+        storage_access.action = $3::storage_access_action_type AND
+        (
+            (storage_access.executor_type = 'user_group'::storage_access_executor_type AND storage_access.executor_id = ANY($4))
+        OR
+            (storage_access.executor_type = 'user'::storage_access_executor_type AND storage_access.executor_id = $5)
+        )
+        ORDER BY tree_step ASC
+    ")
         .bind(&endpoint_id)
         .bind(&entry_id)
         .bind(action)
@@ -120,9 +109,8 @@ async fn get_storage_entry_access_rule_cascade_up(
         for rule in &tree_rules {
             let access_type = StorageAccessType::from_str(&rule.access_type);
 
-            if rule.tree_step == 0 && rule.entry_id == entry_id {
-                // The rule is set for the entry itself.
-
+            // Tree step = 1 means that the rule is set for the entry itself.
+            if rule.tree_step == 1 && rule.entry_id == entry_id {
                 if access_type == StorageAccessType::Allow {
                     // The entry itself allows the requested action for at least one of
                     // the provided user groups. Short-circuit and return immediately.
@@ -167,7 +155,6 @@ async fn get_storage_entry_access_rule_cascade_up(
  * Check if provided user groups can perorm the requested action on the provided storage entry.
  *
  * @param endpoint_id id of the storage endpoint where the provided entry is located.
- * @param entry_type type of the entry (file / folder).
  * @param entry_id entry's id.
  * @param action requested action. For example, "delete". See `storage_access_action_type`
  * data type in the database schema for a list of available action types.
@@ -180,7 +167,6 @@ async fn get_storage_entry_access_rule_cascade_up(
 pub async fn check_storage_entry_access(
     endpoint_id: i32,
 
-    entry_type: &StorageEntryType,
     entry_id: i64,
 
     action: &str,
@@ -209,7 +195,6 @@ pub async fn check_storage_entry_access(
 
     let check_result = get_storage_entry_access_rule_cascade_up(
         endpoint_id,
-        entry_type,
         entry_id,
         action,
         user_id,
@@ -322,7 +307,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     #[derive(FromRow, Serialize, Debug)]
     pub struct RootResultRow {
         entry_id: i64,
-        entry_type: String,
 
         parent_folder: Option<i64>,
 
@@ -336,14 +320,13 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         access_type: String,
         executor_type: String,
         executor_id: i32,
-        entry_type: String,
         target_entry_id: i64,
     }
 
     // Get access rules for the provided entries themeselves
     // TODO optimize. Is one Select possible here?
     let root_result = sqlx::query_as::<_, RootResultRow>(
-        "SELECT storage_entries.id AS entry_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, storage_entries.entry_type::TEXT FROM storage_entries
+        "SELECT storage_entries.id AS entry_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id  FROM storage_entries
         LEFT JOIN storage_access ON
         storage_access.entry_id = storage_entries.id
         AND storage_access.endpoint_id = storage_entries.endpoint_id
@@ -419,9 +402,8 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         .map(|folder| folder.clone())
         .collect::<Vec<i64>>();
 
-    // TODO maybe can we get rid of the storage_generate_entries_access_tree function???? That would be nice, I don't like it
     let tree_result_for_inheriting_entries = sqlx::query_as::<_, StorageGenerateEntriesAccessTreeRow>(
-        "SELECT tree_step, entry_id, access_type::TEXT, executor_type::TEXT, executor_id, entry_type::TEXT, target_entry_id FROM storage_generate_entries_access_tree($1, 'folder'::storage_entry_type, $2::storage_access_action_type, $3, $4, $5)",
+        "SELECT tree_step, entry_id, access_type::TEXT, executor_type::TEXT, executor_id, target_entry_id FROM storage_generate_entries_access_tree($1, $2::storage_access_action_type, $3, $4, $5)",
     )
     .bind(endpoint_id)
     .bind(action)

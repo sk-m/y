@@ -387,7 +387,6 @@ const FileExplorerPage: Component = () => {
     $renameEntry.mutate(
       {
         endpointId: Number.parseInt(params.endpointId as string, 10),
-        entryType,
         entryId,
         name,
       },

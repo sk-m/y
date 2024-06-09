@@ -59,7 +59,6 @@ async fn storage_create_access_rules(
 
         check_storage_entry_access(
             endpoint_id,
-            &entry_type,
             entry_id,
             "manage_access",
             client_user.id,

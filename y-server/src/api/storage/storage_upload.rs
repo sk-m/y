@@ -14,9 +14,7 @@ use std::io::Write;
 use std::time::Instant;
 
 use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
-use crate::storage_entry::{
-    generate_image_entry_thumbnail, generate_video_entry_thumbnail, StorageEntryType,
-};
+use crate::storage_entry::{generate_image_entry_thumbnail, generate_video_entry_thumbnail};
 use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
 
@@ -86,7 +84,6 @@ async fn storage_upload(
 
             check_storage_entry_access(
                 endpoint_id,
-                &StorageEntryType::Folder,
                 target_folder_id,
                 "upload",
                 client_user.id,

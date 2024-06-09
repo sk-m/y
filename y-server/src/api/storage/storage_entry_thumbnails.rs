@@ -15,7 +15,6 @@ use crate::request::error;
 
 use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
 use crate::storage_endpoint::get_storage_endpoint;
-use crate::storage_entry::StorageEntryType;
 use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
@@ -64,7 +63,6 @@ async fn storage_entry_thumbnails(
         if let Some(parent_folder_id) = parent_folder_id {
             action_allowed = check_storage_entry_access(
                 endpoint_id,
-                &StorageEntryType::Folder,
                 parent_folder_id,
                 "list_entries",
                 client_user.id,

@@ -4,14 +4,13 @@ use validator::Validate;
 
 use crate::request::error;
 use crate::storage_access::check_storage_entry_access;
-use crate::storage_entry::{rename_entry, StorageEntryType};
+use crate::storage_entry::rename_entry;
 use crate::user::{get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
 #[derive(Deserialize, Validate)]
 struct StorageRenameEntryInput {
     endpoint_id: i32,
-    entry_type: StorageEntryType,
     entry_id: i64,
 
     #[validate(length(min = 1, max = 255))]
@@ -38,7 +37,6 @@ async fn storage_rename_entry(
 
         check_storage_entry_access(
             form.endpoint_id,
-            &form.entry_type,
             form.entry_id,
             "rename",
             client_user.id,
@@ -55,11 +53,10 @@ async fn storage_rename_entry(
     }
 
     let endpoint_id = form.endpoint_id;
-    let entry_type = form.entry_type;
     let entry_id = form.entry_id;
     let name = form.name;
 
-    let result = rename_entry(endpoint_id, entry_type, entry_id, name.as_str(), &pool).await;
+    let result = rename_entry(endpoint_id, entry_id, name.as_str(), &pool).await;
 
     match result {
         Ok(_) => HttpResponse::Ok().body("{}"),

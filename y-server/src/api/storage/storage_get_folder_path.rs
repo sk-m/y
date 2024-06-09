@@ -6,7 +6,6 @@ use sqlx::prelude::FromRow;
 use crate::{
     request::error,
     storage_access::check_storage_entry_access,
-    storage_entry::StorageEntryType,
     user::{get_user_from_request, get_user_groups},
     util::RequestPool,
 };
@@ -48,7 +47,6 @@ async fn storage_get_folder_path(
 
         check_storage_entry_access(
             endpoint_id,
-            &StorageEntryType::Folder,
             folder_id,
             "list_entries",
             client_user.id,

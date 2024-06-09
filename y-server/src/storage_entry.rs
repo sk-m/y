@@ -173,7 +173,7 @@ async fn get_subfolders_level_with_access_rules(
     access_user_group_ids: &Vec<i32>,
     access_action: &str,
     pool: &RequestPool,
-) -> Result<(), String> {
+) -> Result<(), String> {   
     #[derive(FromRow)]
     struct GetSubfoltersLevelRow {
         id: i64,
@@ -301,7 +301,7 @@ pub async fn resolve_entries(
     // Proccess files
     if target_files.len() > 0 {
         let files = sqlx::query_as::<_, PartialStorageFileRow>(
-                "SELECT filesystem_id, name, extension FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2) AND storage_entries.entry_type = 'file'::storage_entry_type",
+            "SELECT filesystem_id, name, extension FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2) AND storage_entries.entry_type = 'file'::storage_entry_type",
         )
         .bind(endpoint_id)
         .bind(target_files)
@@ -553,7 +553,7 @@ pub async fn delete_entries(
     // Delete provided target files
     if target_files.len() > 0 {
         let delete_target_files_result = sqlx::query_scalar::<_, String>(
-                "DELETE FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2) AND entry_type = 'file'::storage_entry_type RETURNING filesystem_id",
+                "DELETE FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2) RETURNING filesystem_id",
         )
         .bind(endpoint_id)
         .bind(target_files)
@@ -570,7 +570,7 @@ pub async fn delete_entries(
     // Delete provided target folders & their subfolders
     if all_folders.len() > 0 {
         let delete_folders_result = sqlx::query(
-            "DELETE FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2) AND entry_type = 'folder'::storage_entry_type",
+            "DELETE FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2)",
         )
         .bind(endpoint_id)
         .bind(&all_folders)
@@ -712,48 +712,21 @@ pub async fn move_entries(
 
 pub async fn rename_entry(
     endpoint_id: i32,
-    entry_type: StorageEntryType,
     entry_id: i64,
     new_name: &str,
     pool: &RequestPool,
 ) -> Result<(), String> {
-    let mut transaction = pool.begin().await.unwrap();
+    let rename_result = sqlx::query(
+        "UPDATE storage_entries SET name = $1 WHERE id = $2 AND endpoint_id = $3",
+    )
+    .bind(new_name)
+    .bind(entry_id)
+    .bind(endpoint_id)
+    .execute(& *pool)
+    .await;
 
-    match entry_type {
-        StorageEntryType::File => {
-            let file_result = sqlx::query(
-                "UPDATE storage_entries SET name = $1 WHERE id = $2 AND endpoint_id = $3 AND entry_type = 'file'::storage_entry_type",
-            )
-            .bind(new_name)
-            .bind(entry_id)
-            .bind(endpoint_id)
-            .execute(&mut *transaction)
-            .await;
-
-            if file_result.is_err() {
-                return Err("Could not rename a storage file".to_string());
-            }
-        }
-        StorageEntryType::Folder => {
-            let folder_result = sqlx::query(
-                "UPDATE storage_entries SET name = $1 WHERE id = $2 AND endpoint_id = $3 AND entry_type = 'folder'::storage_entry_type",
-            )
-            .bind(new_name)
-            .bind(entry_id)
-            .bind(endpoint_id)
-            .execute(&mut *transaction)
-            .await;
-
-            if folder_result.is_err() {
-                return Err("Could not rename a storage folder".to_string());
-            }
-        }
-    }
-
-    let transaction_result = transaction.commit().await;
-
-    if transaction_result.is_err() {
-        return Err("Could not commit the rename transaction".to_string());
+    if rename_result.is_err() {
+        return Err("Could not rename a storage entry".to_string());
     }
 
     Ok(())

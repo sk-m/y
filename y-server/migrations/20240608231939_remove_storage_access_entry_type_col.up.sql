@@ -1,0 +1,1 @@
+ALTER TABLE IF EXISTS public.storage_access DROP COLUMN IF EXISTS entry_type;

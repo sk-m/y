@@ -47,7 +47,6 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
 
   const $entryAccessRules = useStorageEntryAccessRules(() => ({
     endpointId: props.endpointId,
-    entryType: props.entry.entry_type,
     entryId: props.entry.id,
   }))
 

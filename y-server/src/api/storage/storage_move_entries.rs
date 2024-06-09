@@ -6,7 +6,7 @@ use crate::storage_access::{
     check_bulk_storage_entries_access_cascade_up, check_endpoint_root_access,
     check_storage_entry_access,
 };
-use crate::storage_entry::{move_entries, StorageEntryType};
+use crate::storage_entry::move_entries;
 use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
@@ -40,7 +40,6 @@ async fn storage_move_entries(
         target_upload_allowed = if let Some(target_folder_id) = target_folder_id {
             check_storage_entry_access(
                 endpoint_id,
-                &StorageEntryType::Folder,
                 target_folder_id,
                 "upload",
                 client_user.id,

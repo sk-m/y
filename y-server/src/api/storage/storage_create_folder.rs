@@ -7,7 +7,6 @@ use crate::{
     request::error,
     storage_access::check_storage_entry_access,
     storage_endpoint::get_storage_endpoint,
-    storage_entry::StorageEntryType,
     user::{get_user_from_request, get_user_groups},
     util::RequestPool,
 };
@@ -49,7 +48,6 @@ async fn storage_create_folder(
 
             check_storage_entry_access(
                 form.endpoint_id,
-                &StorageEntryType::Folder,
                 form.target_folder.unwrap(),
                 "upload",
                 client_user.id,

@@ -1,7 +1,6 @@
 import { del, get, patch, post } from "@/app/core/request"
 
 import {
-  IStorageEntry,
   TCreateStorageFolder,
   TGetStorageEntries,
   TGetStorageEntryThumbnails,
@@ -132,7 +131,6 @@ export const moveStorageEntries = async (input: MoveStorageEntriesInput) => {
 
 export type RenameStorageEntryInput = {
   endpointId: number
-  entryType: IStorageEntry["entry_type"]
   entryId: number
   name: string
 }
@@ -141,7 +139,6 @@ export const renameStorageEntry = async (input: RenameStorageEntryInput) => {
   return patch(apiStorageRenameEntry, {
     body: {
       endpoint_id: input.endpointId,
-      entry_type: input.entryType,
       entry_id: input.entryId,
       name: input.name,
     },

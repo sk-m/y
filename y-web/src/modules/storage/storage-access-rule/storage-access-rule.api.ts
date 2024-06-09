@@ -10,7 +10,6 @@ export const apiStorageAccessRules = "/storage/access-rules" as const
 
 export type GetStorageEntryAccessRulesInput = {
   endpointId: number
-  entryType: IStorageAccessRuleEntryType
   entryId: number
 }
 
@@ -18,7 +17,7 @@ export const storageEntryAccessRules = async (
   input: GetStorageEntryAccessRulesInput
 ) => {
   return get(
-    `${apiStorageAccessRules}/${input.endpointId}/${input.entryType}/${input.entryId}`
+    `${apiStorageAccessRules}/${input.endpointId}/${input.entryId}`
   ).then((data) => TGetStorageEntryAccessRules.parse(data))
 }
 
