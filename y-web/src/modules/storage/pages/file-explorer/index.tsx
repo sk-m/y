@@ -93,7 +93,8 @@ const FileExplorerPage: Component = () => {
   let searchInputFieldRef: HTMLInputElement
   let browserContentsRef: HTMLDivElement
   const entryRefs: HTMLDivElement[] = []
-  let uploadInputRef: HTMLInputElement
+  let uploadFilesInputRef: HTMLInputElement
+  let uploadFoldersInputRef: HTMLInputElement
 
   // prettier-ignore
   const folderId = createMemo(() =>
@@ -155,6 +156,12 @@ const FileExplorerPage: Component = () => {
       setContextMenuTargetEntry(null)
     },
   })
+
+  const {
+    open: openUploadContextMenu,
+    close: closeUploadContextMenu,
+    contextMenuProps: uploadContextMenuProps,
+  } = useContextMenu()
 
   const {
     open: openGeneralContextMenu,
@@ -530,6 +537,23 @@ const FileExplorerPage: Component = () => {
     handleDrop(files)
   }
 
+  const onFolderSelect = (event: Event) => {
+    const rawFiles = (event.target as HTMLInputElement).files
+
+    if (!rawFiles) return
+
+    const files: FileWithPath[] = []
+
+    for (const file of rawFiles) {
+      // prettier-ignore
+      (file as FileWithPath).path = file.webkitRelativePath
+
+      files.push(file as FileWithPath)
+    }
+
+    handleDrop(files)
+  }
+
   const navigateToFolder = (targetFolderId: number) => {
     setSearchParams({ folderId: targetFolderId.toString() })
   }
@@ -707,10 +731,20 @@ const FileExplorerPage: Component = () => {
     >
       <input
         hidden
-        ref={uploadInputRef!}
+        ref={uploadFilesInputRef!}
         type="file"
         multiple
         onChange={onFilesSelect}
+      />
+
+      <input
+        hidden
+        ref={uploadFoldersInputRef!}
+        type="file"
+        directory
+        webkitdirectory
+        multiple
+        onChange={onFolderSelect}
       />
 
       <FileExplorerAddLocationModal
@@ -809,8 +843,8 @@ const FileExplorerPage: Component = () => {
                 variant="secondary"
                 size="xs"
                 leadingIcon="cloud_upload"
-                onClick={() => {
-                  uploadInputRef.click()
+                onClick={(event) => {
+                  openUploadContextMenu(event)
                 }}
               >
                 upload
@@ -844,6 +878,30 @@ const FileExplorerPage: Component = () => {
                 </Switch>
               </div>
             </Show>
+
+            <ContextMenu {...uploadContextMenuProps()}>
+              <ContextMenuSection>
+                <ContextMenuLink
+                  icon="description"
+                  onClick={() => {
+                    closeUploadContextMenu()
+                    uploadFilesInputRef.click()
+                  }}
+                >
+                  Upload files
+                </ContextMenuLink>
+
+                <ContextMenuLink
+                  icon="folder_open"
+                  onClick={() => {
+                    closeUploadContextMenu()
+                    uploadFoldersInputRef.click()
+                  }}
+                >
+                  Upload folder
+                </ContextMenuLink>
+              </ContextMenuSection>
+            </ContextMenu>
 
             <ContextMenu {...generalContextMenuProps()}>
               <ContextMenuSection>
