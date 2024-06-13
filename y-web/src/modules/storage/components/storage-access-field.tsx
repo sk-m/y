@@ -287,7 +287,6 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
     void $createStorageAccessRules.mutate(
       {
         endpointId: props.endpointId,
-        entryType: props.entryType,
         entryId: props.entryId,
 
         rules,
