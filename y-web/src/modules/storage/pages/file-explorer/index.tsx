@@ -545,8 +545,16 @@ const FileExplorerPage: Component = () => {
     const files: FileWithPath[] = []
 
     for (const file of rawFiles) {
+      // TODO optimize this, hacky
+
+      // webkitRelativePath is a string that contains the relative path of the file, INCLUDING the file name
+      // the server processes paths a bit differently, though - it expects the path to NOT include the file name
+      // so we need to remove the last segment of the path (which will be the file name)
+      const path = file.webkitRelativePath.split("/")
+      path.length--
+
       // prettier-ignore
-      (file as FileWithPath).path = file.webkitRelativePath
+      ;(file as FileWithPath).path = path.join("/")
 
       files.push(file as FileWithPath)
     }
