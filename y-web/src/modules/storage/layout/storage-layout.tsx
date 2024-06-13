@@ -67,9 +67,8 @@ const StorageLayout: Component = () => {
             <div class="aside-section-title">Endpoints</div>
             <For each={storageEndpoints()}>
               {(endpoint) => {
-                return storageEndpointsWithRootAccess()[1].includes(
-                  endpoint.id
-                ) ? (
+                return storageEndpointsWithRootAccess()[0] ||
+                  storageEndpointsWithRootAccess()[1].includes(endpoint.id) ? (
                   <AsideEntry
                     small
                     icon="hard_drive"
