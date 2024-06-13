@@ -13,5 +13,13 @@ declare module "solid-js" {
       directory?: boolean
       webkitdirectory?: boolean
     }
+
+    interface VideoHTMLAttributes<T> extends SolidJSX.VideoHTMLAttributes<T> {
+      controlsList?: string
+    }
+
+    interface AudioHTMLAttributes<T> extends SolidJSX.AudioHTMLAttributes<T> {
+      controlsList?: string
+    }
   }
 }

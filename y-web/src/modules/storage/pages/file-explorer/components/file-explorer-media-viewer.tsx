@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-magic-numbers */
+
 /* eslint-disable solid/reactivity */
 import {
   Component,
@@ -10,10 +12,12 @@ import {
   on,
   onCleanup,
   onMount,
+  untrack,
 } from "solid-js"
 import { Portal } from "solid-js/web"
 
 import { Icon } from "@/app/components/common/icon/icon"
+import { Stack } from "@/app/components/common/stack/stack"
 import { apiStorageEntries } from "@/modules/storage/storage-entry/storage-entry.api"
 import { IStorageEntry } from "@/modules/storage/storage-entry/storage-entry.codecs"
 
@@ -39,8 +43,13 @@ export type FileExplorerMediaViewerProps = {
 export const FileExplorerMediaViewer: Component<
   FileExplorerMediaViewerProps
 > = (props) => {
+  let audioRef: HTMLAudioElement | undefined
+  let videoRef: HTMLVideoElement | undefined
+
   const [zoom, setZoom] = createSignal(1)
   const [showZoomHint, setShowZoomHint] = createSignal(false)
+
+  const [volume, setVolume] = createSignal(1)
 
   const previewUrl = createMemo(() => {
     return `/api${apiStorageEntries}/${props.endpointId}/get/${props.entry.id}`
@@ -52,6 +61,16 @@ export const FileExplorerMediaViewer: Component<
       () => setZoom(1)
     )
   )
+
+  createEffect(() => {
+    if (videoRef) {
+      videoRef.volume = volume()
+    }
+
+    if (audioRef) {
+      audioRef.volume = volume()
+    }
+  })
 
   const isImage = createMemo(() => props.entry.mime_type?.startsWith("image/"))
 
@@ -116,6 +135,7 @@ export const FileExplorerMediaViewer: Component<
     }
   }
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   const scrollHandler = (event: MouseEvent & { deltaY: number }) => {
     if (event.shiftKey) {
       if (event.deltaY > 0) {
@@ -126,12 +146,18 @@ export const FileExplorerMediaViewer: Component<
         setZoom((previous) => previous + (ZOOM_STEP * previous))
       }
     } else {
-      if (!isImage()) return
-
-      if (event.deltaY > 0) {
-        props.onNext()
+      if (isImage()) {
+        if (event.deltaY > 0) {
+          props.onNext()
+        } else {
+          props.onPrev()
+        }
       } else {
-        props.onPrev()
+        if (event.deltaY > 0) {
+          setVolume((previous) => Math.min(Math.max(0, previous - 0.05), 1))
+        } else {
+          setVolume((previous) => Math.min(Math.max(0, previous + 0.05), 1))
+        }
       }
     }
   }
@@ -217,9 +243,16 @@ export const FileExplorerMediaViewer: Component<
               </Match>
               <Match when={props.entry.mime_type?.startsWith("video/")}>
                 <video
+                  ref={videoRef}
                   class="preview-video"
                   src={previewUrl()}
                   controls
+                  controlsList="nodownload"
+                  onVolumeChange={() => {
+                    untrack(() => {
+                      setVolume(videoRef!.volume)
+                    })
+                  }}
                   autoplay
                   playsinline
                   onClick={(event) => event.stopPropagation()}
@@ -229,9 +262,16 @@ export const FileExplorerMediaViewer: Component<
               </Match>
               <Match when={props.entry.mime_type?.startsWith("audio/")}>
                 <audio
+                  ref={audioRef}
                   class="preview-audio"
                   src={previewUrl()}
                   controls
+                  controlsList="nodownload"
+                  onVolumeChange={() => {
+                    untrack(() => {
+                      setVolume(audioRef!.volume)
+                    })
+                  }}
                   autoplay
                   onClick={(event) => event.stopPropagation()}
                 />
@@ -244,7 +284,36 @@ export const FileExplorerMediaViewer: Component<
             </button>
           </div>
         </div>
-        <div class="bottom-container" />
+        <div class="bottom-container">
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="flex-end"
+            style={{
+              width: "100%",
+            }}
+          >
+            <Show when={!isImage()}>
+              <div class="container-block">
+                <Stack direction="row" alignItems="center" spacing={"0.5em"}>
+                  <Icon name="brand_awareness" wght={500} size={20} fill={1} />
+
+                  <input
+                    class="volume-slider"
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={volume() * 100}
+                    onInput={(event) => {
+                      setVolume(Number(event.currentTarget.value) / 100)
+                    }}
+                  />
+                </Stack>
+              </div>
+            </Show>
+          </Stack>
+        </div>
         <div class="hints-container">
           <Show when={!props.entry.mime_type?.startsWith("audio/")}>
             <div
