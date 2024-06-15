@@ -7,7 +7,6 @@ use validator::Validate;
 use crate::{
     request::error,
     storage_access::check_storage_entry_access,
-    storage_entry::StorageEntryType,
     user::{get_client_rights, get_user_from_request, get_user_groups},
     util::RequestPool,
 };
@@ -25,10 +24,10 @@ struct StorageCreateStorageAccessRulesInput {
     rules: Vec<StorageAccessRule>,
 }
 
-#[post("/access-rules/{endpoint_id}/{entry_type}/{entry_id}")]
+#[post("/access-rules/{endpoint_id}/{entry_id}")]
 async fn storage_create_access_rules(
     pool: web::Data<RequestPool>,
-    path: web::Path<(i32, StorageEntryType, i64)>,
+    path: web::Path<(i32, i64)>,
     form: web::Json<StorageCreateStorageAccessRulesInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
@@ -39,7 +38,7 @@ async fn storage_create_access_rules(
     }
 
     let rules = form.rules;
-    let (endpoint_id, entry_type, entry_id) = path.into_inner();
+    let (endpoint_id, entry_id) = path.into_inner();
 
     let client_rights = get_client_rights(&pool, &req).await;
 
@@ -59,9 +58,9 @@ async fn storage_create_access_rules(
 
         check_storage_entry_access(
             endpoint_id,
-            &entry_type,
             entry_id,
             "manage_access",
+            client_user.id,
             &group_ids,
             &**pool,
         )
@@ -76,14 +75,12 @@ async fn storage_create_access_rules(
 
     let mut transaction = pool.begin().await.unwrap();
 
-    let delete_result = sqlx::query(
-        "DELETE FROM public.storage_access WHERE endpoint_id = $1 AND entry_type = $2::storage_entry_type AND entry_id = $3",
-    )
-    .bind(&endpoint_id)
-    .bind(entry_type.as_str())
-    .bind(&entry_id)
-    .execute(&mut *transaction)
-    .await;
+    let delete_result =
+        sqlx::query("DELETE FROM public.storage_access WHERE endpoint_id = $1 AND entry_id = $2")
+            .bind(&endpoint_id)
+            .bind(&entry_id)
+            .execute(&mut *transaction)
+            .await;
 
     if delete_result.is_err() {
         return error("storage.create_storage_access_rules.other");
@@ -91,13 +88,11 @@ async fn storage_create_access_rules(
 
     if !rules.is_empty() {
         let mut query_builder = QueryBuilder::new(
-            "INSERT INTO public.storage_access(endpoint_id, entry_type, entry_id, access_type, action, executor_type, executor_id) ",
+            "INSERT INTO public.storage_access(endpoint_id, entry_id, access_type, action, executor_type, executor_id) ",
         );
 
         query_builder.push_values(rules, |mut b, rule| {
             b.push_bind(&endpoint_id);
-            b.push_bind(entry_type.as_str());
-            b.push_unseparated("::storage_entry_type");
             b.push_bind(&entry_id);
             b.push_bind(rule.access_type);
             b.push_unseparated("::storage_access_type");
@@ -109,7 +104,7 @@ async fn storage_create_access_rules(
         });
 
         query_builder.push(
-            " ON CONFLICT (endpoint_id, entry_type, entry_id, executor_type, action, executor_id) DO UPDATE SET access_type = EXCLUDED.access_type",
+            " ON CONFLICT (endpoint_id, entry_id, executor_type, action, executor_id) DO UPDATE SET access_type = EXCLUDED.access_type",
         );
 
         let query = query_builder.build();

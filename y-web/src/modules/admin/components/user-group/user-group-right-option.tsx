@@ -15,6 +15,7 @@ import {
   IUserRightOption,
 } from "../../user-rights/user-rights.codecs"
 import { UserGroupSelectField } from "./components/groups-option-field"
+import { StorageEndpointSelectField } from "./components/storage-endpoints-option-field"
 
 export type UserGroupRightOptionProps = {
   right: IUserRight
@@ -49,6 +50,9 @@ export const UserGroupRightOption: Component<UserGroupRightOptionProps> = (
         <Switch>
           <Match when={props.option.value_source === "user_groups"}>
             <UserGroupSelectField {...props} />
+          </Match>
+          <Match when={props.option.value_source === "storage_endpoints"}>
+            <StorageEndpointSelectField {...props} />
           </Match>
         </Switch>
       </Match>

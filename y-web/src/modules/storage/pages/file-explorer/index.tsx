@@ -19,8 +19,9 @@ import {
 } from "solid-js"
 
 import { useParams, useSearchParams } from "@solidjs/router"
-import { createMutation } from "@tanstack/solid-query"
+import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
+import { Button } from "@/app/components/common/button/button"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import {
@@ -54,6 +55,9 @@ import {
 import { FileWithPath } from "@/modules/storage/upload"
 
 import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
+import { createStorageLocation } from "../../storage-location/storage-location.api"
+import { storageLocationsKey } from "../../storage-location/storage-location.service"
+import { FileExplorerAddLocationModal } from "./components/file-explorer-add-location-modal"
 import { FileExplorerDeleteModal } from "./components/file-explorer-delete-modal"
 import { FileExplorerDisplaySettings } from "./components/file-explorer-display-settings"
 import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
@@ -73,6 +77,7 @@ const closeTabConfirmation = (event: BeforeUnloadEvent) => {
 
 const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
+  const queryClient = useQueryClient()
   const params = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -83,10 +88,13 @@ const FileExplorerPage: Component = () => {
   const $moveEntries = createMutation(moveStorageEntries)
   const $deleteEntries = createMutation(deleteStorageEntries)
   const $createFolder = createMutation(createStorageFolder)
+  const $createLocation = createMutation(createStorageLocation)
 
   let searchInputFieldRef: HTMLInputElement
   let browserContentsRef: HTMLDivElement
   const entryRefs: HTMLDivElement[] = []
+  let uploadFilesInputRef: HTMLInputElement
+  let uploadFoldersInputRef: HTMLInputElement
 
   // prettier-ignore
   const folderId = createMemo(() =>
@@ -150,6 +158,12 @@ const FileExplorerPage: Component = () => {
   })
 
   const {
+    open: openUploadContextMenu,
+    close: closeUploadContextMenu,
+    contextMenuProps: uploadContextMenuProps,
+  } = useContextMenu()
+
+  const {
     open: openGeneralContextMenu,
     close: closeGeneralContextMenu,
     contextMenuProps: generalContextMenuProps,
@@ -176,6 +190,9 @@ const FileExplorerPage: Component = () => {
   const [infoPanelSelectedEntryId, setInfoPanelSelectedEntryId] = createSignal<
     number | null
   >(null)
+
+  const [createLocationTargetEntry, setCreateLocationTargetEntry] =
+    createSignal<number | null>(null)
 
   const isFolderEmpty = createMemo(() => folderEntries().length === 0)
 
@@ -377,7 +394,6 @@ const FileExplorerPage: Component = () => {
     $renameEntry.mutate(
       {
         endpointId: Number.parseInt(params.endpointId as string, 10),
-        entryType,
         entryId,
         name,
       },
@@ -395,13 +411,19 @@ const FileExplorerPage: Component = () => {
     entries: SelectedEntry[],
     targetFolderId?: number | null
   ) => {
-    const { fileIds, folderIds } = partitionEntries(entries)
+    // TODO we might not need partitionEntries anymore
+    // TODO we might also not need the SelectedEntry type anymore.
+    // We can just use an array of ids!
+    // const { fileIds, folderIds } = partitionEntries(entries)
+
+    const entryIds = entries.map((entry) =>
+      Number.parseInt(entry.split(":")[1]!, 10)
+    )
 
     $moveEntries.mutate(
       {
         endpointId: Number.parseInt(params.endpointId as string, 10),
-        fileIds,
-        folderIds,
+        entryIds,
         targetFolderId:
           // eslint-disable-next-line no-undefined
           targetFolderId === null ? undefined : targetFolderId ?? folderId(),
@@ -416,6 +438,10 @@ const FileExplorerPage: Component = () => {
     )
   }
 
+  // TODO rename this to something more generic. We use this function for both dnd upload
+  // and file input upload
+  // TODO also, we should move half this logic to a separate function. This does way to much,
+  // it should be more generic
   const handleDrop = (filesToUpload: FileWithPath[]) => {
     let totalSizeBytes = 0
 
@@ -494,6 +520,48 @@ const FileExplorerPage: Component = () => {
     request.send(data)
   }
 
+  const onFilesSelect = (event: Event) => {
+    const rawFiles = (event.target as HTMLInputElement).files
+
+    if (!rawFiles) return
+
+    const files: FileWithPath[] = []
+
+    for (const file of rawFiles) {
+      // prettier-ignore
+      (file as FileWithPath).path = ""
+
+      files.push(file as FileWithPath)
+    }
+
+    handleDrop(files)
+  }
+
+  const onFolderSelect = (event: Event) => {
+    const rawFiles = (event.target as HTMLInputElement).files
+
+    if (!rawFiles) return
+
+    const files: FileWithPath[] = []
+
+    for (const file of rawFiles) {
+      // TODO optimize this, hacky
+
+      // webkitRelativePath is a string that contains the relative path of the file, INCLUDING the file name
+      // the server processes paths a bit differently, though - it expects the path to NOT include the file name
+      // so we need to remove the last segment of the path (which will be the file name)
+      const path = file.webkitRelativePath.split("/")
+      path.length--
+
+      // prettier-ignore
+      ;(file as FileWithPath).path = path.join("/")
+
+      files.push(file as FileWithPath)
+    }
+
+    handleDrop(files)
+  }
+
   const navigateToFolder = (targetFolderId: number) => {
     setSearchParams({ folderId: targetFolderId.toString() })
   }
@@ -521,6 +589,23 @@ const FileExplorerPage: Component = () => {
       folderIds: [entryId],
       fileIds: [],
     })
+  }
+
+  const createLocation = (name: string) => {
+    $createLocation.mutate(
+      {
+        endpointId: Number.parseInt(params.endpointId as string, 10),
+        entryId: createLocationTargetEntry()!,
+        name,
+      },
+      {
+        onSuccess: () => {
+          void queryClient.invalidateQueries([storageLocationsKey])
+          setCreateLocationTargetEntry(null)
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
   }
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -652,6 +737,29 @@ const FileExplorerPage: Component = () => {
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
     >
+      <input
+        hidden
+        ref={uploadFilesInputRef!}
+        type="file"
+        multiple
+        onChange={onFilesSelect}
+      />
+
+      <input
+        hidden
+        ref={uploadFoldersInputRef!}
+        type="file"
+        directory
+        webkitdirectory
+        multiple
+        onChange={onFolderSelect}
+      />
+
+      <FileExplorerAddLocationModal
+        open={createLocationTargetEntry() !== null}
+        onClose={() => setCreateLocationTargetEntry(null)}
+        onConfirm={createLocation}
+      />
       <FileExplorerDeleteModal
         subtitle={`${
           (entriesToDelete()?.fileIds.length ?? 0) +
@@ -736,6 +844,19 @@ const FileExplorerPage: Component = () => {
                   onClick={openSelectionContextMenu}
                 />
               </Show>
+
+              <div class="top-container-separator" />
+
+              <Button
+                variant="secondary"
+                size="xs"
+                leadingIcon="cloud_upload"
+                onClick={(event) => {
+                  openUploadContextMenu(event)
+                }}
+              >
+                upload
+              </Button>
             </Stack>
           </div>
           <div
@@ -765,6 +886,30 @@ const FileExplorerPage: Component = () => {
                 </Switch>
               </div>
             </Show>
+
+            <ContextMenu {...uploadContextMenuProps()}>
+              <ContextMenuSection>
+                <ContextMenuLink
+                  icon="description"
+                  onClick={() => {
+                    closeUploadContextMenu()
+                    uploadFilesInputRef.click()
+                  }}
+                >
+                  Upload files
+                </ContextMenuLink>
+
+                <ContextMenuLink
+                  icon="folder_open"
+                  onClick={() => {
+                    closeUploadContextMenu()
+                    uploadFoldersInputRef.click()
+                  }}
+                >
+                  Upload folder
+                </ContextMenuLink>
+              </ContextMenuSection>
+            </ContextMenu>
 
             <ContextMenu {...generalContextMenuProps()}>
               <ContextMenuSection>
@@ -959,6 +1104,20 @@ const FileExplorerPage: Component = () => {
                       }}
                     >
                       Delete
+                    </ContextMenuLink>
+
+                    <div class="separator" />
+
+                    <ContextMenuLink
+                      icon="playlist_add"
+                      onClick={() => {
+                        setCreateLocationTargetEntry(
+                          contextMenuTargetEntry()!.id
+                        )
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Add to sidebar
                     </ContextMenuLink>
                   </Show>
                   <Show when={contextMenuTargetEntry()?.entry_type === "file"}>

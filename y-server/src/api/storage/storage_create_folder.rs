@@ -7,8 +7,7 @@ use crate::{
     request::error,
     storage_access::check_storage_entry_access,
     storage_endpoint::get_storage_endpoint,
-    storage_entry::StorageEntryType,
-    user::{get_client_rights, get_user_from_request, get_user_groups},
+    user::{get_user_from_request, get_user_groups},
     util::RequestPool,
 };
 
@@ -40,16 +39,6 @@ async fn storage_create_folder(
 
     let is_root = form.target_folder.is_none();
 
-    let client_rights = get_client_rights(&pool, &req).await;
-
-    let action_allowed = client_rights
-        .iter()
-        .any(|right| right.right_name == "storage_upload");
-
-    if !action_allowed {
-        return error("storage.create_folder.unauthorized");
-    }
-
     if !is_root {
         let client = get_user_from_request(&pool, &req).await;
 
@@ -59,9 +48,9 @@ async fn storage_create_folder(
 
             check_storage_entry_access(
                 form.endpoint_id,
-                &StorageEntryType::Folder,
                 form.target_folder.unwrap(),
                 "upload",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )
@@ -87,7 +76,7 @@ async fn storage_create_folder(
 
     let new_folder_id = if is_root {
         sqlx::query_scalar::<_, i64>(
-            "INSERT INTO storage_folders (endpoint_id, parent_folder, name) VALUES ($1, NULL, $2) RETURNING id",
+            "INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type) VALUES ($1, NULL, $2, 'folder'::storage_entry_type) RETURNING id",
         )
         .bind(form.endpoint_id)
         .bind(form.new_folder_name)
@@ -95,7 +84,7 @@ async fn storage_create_folder(
         .await
     } else {
         sqlx::query_scalar::<_, i64>(
-            "INSERT INTO storage_folders (endpoint_id, parent_folder, name) VALUES ($1, $2, $3) RETURNING id",
+            "INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type) VALUES ($1, $2, $3, 'folder'::storage_entry_type) RETURNING id",
         )
         .bind(form.endpoint_id)
         .bind(form.target_folder)

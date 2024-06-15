@@ -105,7 +105,7 @@ async fn main() -> std::io::Result<()> {
     .unwrap();
 
     // Connect to the database
-    let pool = db::connect_to_database().await;
+    let pool = db::connect().await;
 
     // Process command line arguments. We might want to do something and terminate
     process_cli_arguments(&pool).await;
@@ -161,6 +161,7 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api/storage")
                     .service(crate::api::storage::storage_upload::storage_upload)
                     .service(crate::api::storage::storage_endpoints::storage_endpoints)
+                    .service(crate::api::storage::storage_locations::storage_locations)
                     .service(crate::api::storage::storage_entries::storage_entries)
                     .service(crate::api::storage::storage_download::storage_download)
                     .service(crate::api::storage::storage_download_zip::storage_download_zip)
@@ -190,6 +191,8 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::admin::features::features)
                     .service(crate::api::admin::update_feature::update_feature)
                     .service(crate::api::admin::create_storage_endpoint::create_storage_endpoint)
+                    .service(crate::api::admin::create_storage_location::create_storage_location)
+                    .service(crate::api::admin::delete_storage_location::delete_storage_location)
                     .service(crate::api::admin::storage_endpoints::storage_enpoints)
                     .service(crate::api::admin::storage_endpoint::storage_enpoint)
                     .service(crate::api::admin::update_storage_endpoint::update_storage_endpoint)

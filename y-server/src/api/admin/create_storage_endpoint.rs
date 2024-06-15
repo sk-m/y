@@ -70,25 +70,33 @@ async fn create_storage_endpoint(
         }
     }
 
-    let result = sqlx::query_scalar("INSERT INTO storage_endpoints (name, endpoint_type, status, access_rules_enabled, base_path, artifacts_path, description) VALUES ($1, $2::storage_endpoint_type, $3::storage_endpoint_status, $4, $5, $6, $7) RETURNING id")
-        .bind(form.name)
-        .bind(form.endpoint_type)
-        .bind("active")
-        .bind(form.access_rules_enabled)
-        .bind(form.base_path)
-        .bind(&form.artifacts_path)
-        .bind(form.description)
-        .fetch_one(&**pool)
-        .await;
+    let create_test_file_result = fs::write(base_path.join("test_file"), "you can delete me");
+    let create_thumbnails_dir_result = fs::create_dir(artifacts_path.join("thumbnails"));
 
-    return match result {
-        Ok(new_endpoint_id) => {
-            fs::create_dir(artifacts_path.join("thumbnails")).unwrap();
+    match create_thumbnails_dir_result.and(create_test_file_result) {
+        Ok(_) => {
+            fs::remove_file(base_path.join("test_file")).unwrap();
 
-            HttpResponse::Ok().json(web::Json(CreateStorageEndpointOutput {
-                id: new_endpoint_id,
-            }))
+            let create_endpoint_result = sqlx::query_scalar("INSERT INTO storage_endpoints (name, endpoint_type, status, access_rules_enabled, base_path, artifacts_path, description) VALUES ($1, $2::storage_endpoint_type, $3::storage_endpoint_status, $4, $5, $6, $7) RETURNING id")
+            .bind(form.name)
+            .bind(form.endpoint_type)
+            .bind("active")
+            .bind(form.access_rules_enabled)
+            .bind(form.base_path)
+            .bind(&form.artifacts_path)
+            .bind(form.description)
+            .fetch_one(&**pool)
+            .await;
+
+            return match create_endpoint_result {
+                Ok(new_endpoint_id) => {
+                    HttpResponse::Ok().json(web::Json(CreateStorageEndpointOutput {
+                        id: new_endpoint_id,
+                    }))
+                }
+                Err(_) => error("create_storage_endpoint.other"),
+            };
         }
-        Err(_) => error("create_storage_endpoint.other"),
-    };
+        Err(_) => return error("create_storage_endpoint.os_error"),
+    }
 }

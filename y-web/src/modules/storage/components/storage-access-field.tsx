@@ -7,6 +7,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  on,
 } from "solid-js"
 import { SetStoreFunction, createStore, produce } from "solid-js/store"
 
@@ -14,12 +15,16 @@ import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Button } from "@/app/components/common/button/button"
 import { Icon } from "@/app/components/common/icon/icon"
+import { InputField } from "@/app/components/common/input-field/input-field"
 import { Note } from "@/app/components/common/note/note"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { toastCtl } from "@/app/core/toast"
+import { useForm } from "@/app/core/use-form"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
+import { DEFAULT_DEBOUNCE_MS } from "@/app/core/utils"
 import { useUserGroups } from "@/modules/admin/user-groups/user-groups.service"
+import { useUsers } from "@/modules/admin/users/users.service"
 
 import { createStorageAccessRules } from "../storage-access-rule/storage-access-rule.api"
 import {
@@ -71,7 +76,7 @@ const StorageAccessAvailableExecutor: Component<
       <div class="executor">
         <div class="icon">
           <Icon
-            name={props.executorType === "user" ? "user" : "group"}
+            name={props.executorType === "user" ? "person" : "group"}
             wght={500}
             size={12}
             fill={1}
@@ -183,6 +188,37 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
   const { notify } = toastCtl
   const queryClient = useQueryClient()
 
+  const form = useForm<
+    {
+      executorsSearch: string
+    },
+    ["executorsSearch"]
+  >({
+    defaultValues: {
+      executorsSearch: "",
+    },
+    watch: ["executorsSearch"],
+  })
+
+  // TODO this is messy
+  const executorsSearchFieldValue = form.watch("executorsSearch")
+  const [executorsSearch, setExecutorsSearch] = createSignal(
+    executorsSearchFieldValue()
+  )
+
+  let executorsSearchTimeout: number | undefined
+
+  // TODO create a debounce util hook
+  createEffect(
+    on(executorsSearchFieldValue, () => {
+      clearTimeout(executorsSearchTimeout)
+
+      executorsSearchTimeout = setTimeout(() => {
+        setExecutorsSearch(executorsSearchFieldValue())
+      }, DEFAULT_DEBOUNCE_MS)
+    })
+  )
+
   const $storageEndpoints = useStorageEndpoints()
 
   const areAccessRulesEnforced = createMemo(
@@ -204,9 +240,24 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
   const toggleFieldExpanded = () => setIsFieldExpanded((value) => !value)
 
   const $createStorageAccessRules = createMutation(createStorageAccessRules)
-  const $userGroups = useUserGroups(() => ({}))
 
+  const $userGroups = useUserGroups(() => ({
+    search: executorsSearch(),
+  }))
   const userGroups = createMemo(() => $userGroups.data?.user_groups ?? [])
+
+  const $users = useUsers(() => ({
+    limit: 20,
+    search: executorsSearch(),
+  }))
+  const users = createMemo(() => $users.data?.users ?? [])
+
+  // TODO optimize
+  const selectedUserIds = createMemo(() =>
+    state.executors
+      .filter((executor) => executor.executorType === "user")
+      .map((executor) => executor.executorId)
+  )
 
   const selectedGroupIds = createMemo(() =>
     state.executors
@@ -236,7 +287,6 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
     void $createStorageAccessRules.mutate(
       {
         endpointId: props.endpointId,
-        entryType: props.entryType,
         entryId: props.entryId,
 
         rules,
@@ -374,7 +424,7 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
                             <Switch>
                               <Match when={executor.executorType === "user"}>
                                 <Icon
-                                  name="user"
+                                  name="person"
                                   wght={500}
                                   size={12}
                                   fill={1}
@@ -492,6 +542,14 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
       </Show>
       <div class="floating-container">
         <div class="available-access-entries-container">
+          <div class="search">
+            <InputField
+              width="100%"
+              placeholder="Search..."
+              {...form.register("executorsSearch")}
+            />
+          </div>
+
           <div class="section">
             <div class="section-label">User groups</div>
             <div class="section-access-entries">
@@ -509,6 +567,25 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
                         group.name,
                         selected
                       )
+                    }
+                  />
+                )}
+              </For>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-label">Users</div>
+            <div class="section-access-entries">
+              <For each={users()}>
+                {(user) => (
+                  <StorageAccessAvailableExecutor
+                    executorType="user"
+                    executorId={user.id}
+                    executorName={user.username}
+                    selected={selectedUserIds().includes(user.id)}
+                    onSelect={(selected) =>
+                      onSelectExecutor("user", user.id, user.username, selected)
                     }
                   />
                 )}

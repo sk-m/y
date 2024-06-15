@@ -3,17 +3,17 @@ use serde::Deserialize;
 
 use crate::request::error;
 use crate::storage_access::{
-    check_bulk_storage_entries_access_cascade_up, check_storage_entry_access,
+    check_bulk_storage_entries_access_cascade_up, check_endpoint_root_access,
+    check_storage_entry_access,
 };
-use crate::storage_entry::{move_entries, StorageEntryType};
-use crate::user::{get_user_from_request, get_user_groups};
+use crate::storage_entry::move_entries;
+use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
 #[derive(Deserialize)]
 struct StorageMoveEntriesInput {
     endpoint_id: i32,
-    file_ids: Vec<i64>,
-    folder_ids: Vec<i64>,
+    entry_ids: Vec<i64>,
     target_folder_id: Option<i64>,
 }
 
@@ -26,8 +26,7 @@ async fn storage_move_entries(
     let form = form.into_inner();
     let endpoint_id = form.endpoint_id;
     let target_folder_id = form.target_folder_id;
-    let file_ids = form.file_ids;
-    let folder_ids = form.folder_ids;
+    let entry_ids = form.entry_ids;
 
     let client = get_user_from_request(&**pool, &req).await;
 
@@ -41,22 +40,25 @@ async fn storage_move_entries(
         target_upload_allowed = if let Some(target_folder_id) = target_folder_id {
             check_storage_entry_access(
                 endpoint_id,
-                &StorageEntryType::Folder,
                 target_folder_id,
                 "upload",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )
             .await
         } else {
-            true
+            let group_rights = get_group_rights(&pool, &group_ids).await;
+
+            check_endpoint_root_access(endpoint_id, group_rights)
         };
 
         move_allowed = if target_upload_allowed {
             check_bulk_storage_entries_access_cascade_up(
                 endpoint_id,
-                (&file_ids, &folder_ids),
+                &entry_ids,
                 "move",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )
@@ -72,7 +74,7 @@ async fn storage_move_entries(
         return error("storage.move.unauthorized");
     }
 
-    let result = move_entries(endpoint_id, folder_ids, file_ids, target_folder_id, &**pool).await;
+    let result = move_entries(endpoint_id, entry_ids, target_folder_id, &**pool).await;
 
     match result {
         Ok(_) => HttpResponse::Ok().body("{}"),

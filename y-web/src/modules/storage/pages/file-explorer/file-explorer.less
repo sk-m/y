@@ -222,6 +222,10 @@
               > .item-info {
                 background-color: var(--color-primary-o-1);
                 box-shadow: none;
+
+                > .item-name > .icon {
+                  color: var(--color-primary-d-1);
+                }
               }
 
               > .item-thumb {
@@ -380,7 +384,7 @@
 
               > .item-name {
                 display: flex;
-                align-items: flex-start;
+                align-items: center;
                 justify-content: space-between;
 
                 font-size: var(--text-body);
@@ -412,6 +416,14 @@
                   flex-shrink: 0;
 
                   color: var(--color-text-grey-1);
+                }
+
+                > .icon {
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+
+                  color: rgba(@brand-black-rgb, 0.85);
                 }
               }
             }

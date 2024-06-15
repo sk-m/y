@@ -43,10 +43,17 @@ async fn storage_delete_entries(
         let user_groups = get_user_groups(&**pool, client_user.id).await;
         let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
 
+        let all_entries_ids = target_files
+            .iter()
+            .chain(target_folders.iter())
+            .copied()
+            .collect();
+
         let action_allowed_cascade_up = check_bulk_storage_entries_access_cascade_up(
             endpoint_id,
-            (&target_files, &target_folders),
+            &all_entries_ids,
             "delete",
+            client_user.id,
             &group_ids,
             &**pool,
         )

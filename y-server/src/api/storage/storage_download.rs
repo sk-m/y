@@ -10,7 +10,6 @@ use sqlx::prelude::FromRow;
 use crate::request::error;
 
 use crate::storage_access::check_storage_entry_access;
-use crate::storage_entry::StorageEntryType;
 use crate::user::{get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
@@ -49,9 +48,9 @@ async fn storage_download(
 
         check_storage_entry_access(
             endpoint_id,
-            &StorageEntryType::File,
             file_id,
             "download",
+            client_user.id,
             &group_ids,
             &**pool,
         )
@@ -65,9 +64,9 @@ async fn storage_download(
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
-        "SELECT storage_files.name, storage_files.extension, storage_files.filesystem_id, storage_endpoints.base_path FROM storage_files
-        RIGHT OUTER JOIN storage_endpoints ON storage_files.endpoint_id = storage_endpoints.id
-        WHERE storage_files.id = $1 AND endpoint_id = $2",
+        "SELECT storage_entries.name, storage_entries.extension, storage_entries.filesystem_id, storage_endpoints.base_path FROM storage_entries
+        RIGHT OUTER JOIN storage_endpoints ON storage_entries.endpoint_id = storage_endpoints.id
+        WHERE storage_entries.id = $1 AND endpoint_id = $2",
     )
     .bind(file_id)
     .bind(endpoint_id)

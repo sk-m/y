@@ -59,7 +59,7 @@ async fn traverse_folder(
 
     // Find folders inside of the target folder
     let folder_subfolders = sqlx::query_as::<_, PartialStorageFolderRow>(
-        "SELECT id, name FROM storage_folders WHERE endpoint_id = $1 AND parent_folder = $2",
+        "SELECT id, name FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND storage_entries.entry_type = 'folder'::storage_entry_type",
     )
     .bind(endpoint_id)
     .bind(target_folder_id)
@@ -68,7 +68,7 @@ async fn traverse_folder(
 
     // Find files inside of the target folder
     let folder_files = sqlx::query_as::<_, PartialStorageFileRow>(
-        "SELECT filesystem_id, name, extension FROM storage_files WHERE endpoint_id = $1 AND parent_folder = $2",
+        "SELECT filesystem_id, name, extension FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND storage_entries.entry_type = 'file'::storage_entry_type",
     )
     .bind(endpoint_id)
     .bind(target_folder_id)
@@ -136,7 +136,7 @@ async fn get_subfolders_level(
     }
 
     let next_level_folders = sqlx::query_as::<_, StorageFolderIdRow>(
-        "SELECT id FROM storage_folders WHERE endpoint_id = $1 AND parent_folder = ANY($2)",
+        "SELECT id FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2) AND storage_entries.entry_type = 'folder'::storage_entry_type",
     )
     .bind(endpoint_id)
     .bind(folder_ids)
@@ -173,7 +173,7 @@ async fn get_subfolders_level_with_access_rules(
     access_user_group_ids: &Vec<i32>,
     access_action: &str,
     pool: &RequestPool,
-) -> Result<(), String> {
+) -> Result<(), String> {   
     #[derive(FromRow)]
     struct GetSubfoltersLevelRow {
         id: i64,
@@ -183,16 +183,16 @@ async fn get_subfolders_level_with_access_rules(
 
     let next_level_folders = 
         sqlx::query_as::<_, GetSubfoltersLevelRow>(
-            "SELECT storage_folders.id, storage_folders.parent_folder, storage_access.access_type::TEXT FROM storage_folders
+            "SELECT storage_entries.id, storage_entries.parent_folder, storage_access.access_type::TEXT FROM storage_entries
             LEFT JOIN storage_access ON
-            storage_access.entry_id = storage_folders.id
-            AND storage_access.endpoint_id = storage_folders.endpoint_id
+            storage_access.entry_id = storage_entries.id
+            AND storage_access.endpoint_id = storage_entries.endpoint_id
             AND storage_access.entry_type = 'folder'::storage_entry_type
             AND storage_access.action = $4::storage_access_action_type
             AND storage_access.access_type != 'inherit'::storage_access_type
             AND storage_access.executor_type = 'user_group'::storage_access_executor_type
             AND storage_access.executor_id = ANY($3)
-            WHERE storage_folders.endpoint_id = $1 AND storage_folders.parent_folder = ANY($2)"
+            WHERE storage_entries.endpoint_id = $1 AND storage_entries.parent_folder = ANY($2) AND storage_entries.entry_type = 'folder'::storage_entry_type"
         )
         .bind(endpoint_id)
         .bind(folder_ids)
@@ -254,7 +254,7 @@ async fn get_subfolders_level_with_access_rules(
             return Ok(());
         }
         Err(err) => {
-            dbg!(err);
+            error!("Could not query the database for the next level of folders {:?}", err);
             return Err("Could not query the database for the next level of folders".to_string());
         }
     }
@@ -301,7 +301,7 @@ pub async fn resolve_entries(
     // Proccess files
     if target_files.len() > 0 {
         let files = sqlx::query_as::<_, PartialStorageFileRow>(
-                "SELECT filesystem_id, name, extension FROM storage_files WHERE endpoint_id = $1 AND id = ANY($2)",
+            "SELECT filesystem_id, name, extension FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2) AND storage_entries.entry_type = 'file'::storage_entry_type",
         )
         .bind(endpoint_id)
         .bind(target_files)
@@ -451,17 +451,18 @@ pub async fn delete_entries(
             }
 
             let files_info_result = sqlx::query_as::<_, GetFileIdAndAccessRow>(
-                "SELECT storage_files.id, storage_files.filesystem_id, storage_files.parent_folder, storage_access.access_type::TEXT FROM storage_files
+                "SELECT storage_entries.id, storage_entries.filesystem_id, storage_entries.parent_folder, storage_access.access_type::TEXT FROM storage_entries
                 LEFT JOIN storage_access ON
-                storage_access.entry_id = storage_files.id
-                AND storage_access.endpoint_id = storage_files.endpoint_id
+                storage_access.entry_id = storage_entries.id
+                AND storage_access.endpoint_id = storage_entries.endpoint_id
                 AND storage_access.entry_type = 'file'::storage_entry_type
                 AND storage_access.action = 'delete'::storage_access_action_type
                 AND storage_access.access_type != 'inherit'::storage_access_type
                 AND storage_access.executor_type = 'user_group'::storage_access_executor_type
                 AND storage_access.executor_id = ANY($3)
-                WHERE storage_files.endpoint_id = $1
-                AND storage_files.parent_folder = ANY($2)"
+                WHERE storage_entries.endpoint_id = $1
+                AND storage_entries.parent_folder = ANY($2)
+                AND storage_entries.entry_type = 'file'::storage_entry_type"
             )
             .bind(endpoint_id)
             .bind(&all_folders)
@@ -512,7 +513,7 @@ pub async fn delete_entries(
             }
 
             let delete_folder_files_result = sqlx::query_as::<_, EntryIdAndFilesystemId>(
-                "DELETE FROM storage_files WHERE endpoint_id = $1 AND parent_folder = ANY($2)",
+                "DELETE FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2) AND entry_type = 'file'::storage_entry_type",
             )
             .bind(endpoint_id)
             .bind(&all_folders)
@@ -524,7 +525,7 @@ pub async fn delete_entries(
             }
         } else {
             let delete_folder_files_result = sqlx::query_as::<_, EntryIdAndFilesystemId>(
-                "DELETE FROM storage_files WHERE endpoint_id = $1 AND parent_folder = ANY($2) RETURNING id, filesystem_id",
+                "DELETE FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2) AND entry_type = 'file'::storage_entry_type RETURNING id, filesystem_id",
             )
             .bind(endpoint_id)
             .bind(&all_folders)
@@ -552,7 +553,7 @@ pub async fn delete_entries(
     // Delete provided target files
     if target_files.len() > 0 {
         let delete_target_files_result = sqlx::query_scalar::<_, String>(
-                "DELETE FROM storage_files WHERE endpoint_id = $1 AND id = ANY($2) RETURNING filesystem_id",
+                "DELETE FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2) RETURNING filesystem_id",
         )
         .bind(endpoint_id)
         .bind(target_files)
@@ -569,7 +570,7 @@ pub async fn delete_entries(
     // Delete provided target folders & their subfolders
     if all_folders.len() > 0 {
         let delete_folders_result = sqlx::query(
-            "DELETE FROM storage_folders WHERE endpoint_id = $1 AND id = ANY($2)",
+            "DELETE FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2)",
         )
         .bind(endpoint_id)
         .bind(&all_folders)
@@ -592,12 +593,6 @@ pub async fn delete_entries(
                     continue;
                 }
                 StorageAccessType::Deny => {
-                    dbg!(
-                        "Entries deletion denied because of the underlying file's rule",
-                        file.0,
-                        &file_parents[&file.0]
-                    );
-
                     cascade_down_check_result = false;
                     break 'files_loop;
                 }
@@ -612,7 +607,6 @@ pub async fn delete_entries(
                                         break 'parents_loop;
                                     }
                                     StorageAccessType::Deny => {
-                                        dbg!("Entries deletion denied because a file inherits a denying rule from some parent", file.0, some_parent);
                                         cascade_down_check_result = false;
                                         break 'files_loop;
                                     }
@@ -686,58 +680,31 @@ pub async fn delete_entries(
  * Move enties to a new folder
  *
  * @param endpoint_id - Storage endpoint id
- * @param folder_ids - Folders to move
- * @param file_ids - Files to move
+ * @param entry_ids - Entries to move
  * @param target_folder_id - Id of the folder where the entries will be moved to
  * @param pool - Database connection pool
 */
 pub async fn move_entries(
     endpoint_id: i32,
-    folder_ids: Vec<i64>,
-    file_ids: Vec<i64>,
+    entry_ids: Vec<i64>,
     target_folder_id: Option<i64>,
     pool: &RequestPool,
 ) -> Result<(), String> {
-    if file_ids.len() == 0 && folder_ids.len() == 0 {
+    if entry_ids.len() == 0 {
         return Ok(());
     }
 
-    let mut transaction = pool.begin().await.unwrap();
+    let move_result = sqlx::query(
+        "UPDATE storage_entries SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
+    )
+    .bind(target_folder_id)
+    .bind(entry_ids)
+    .bind(endpoint_id)
+    .execute(pool)
+    .await;
 
-    if file_ids.len() > 0 {
-        let files_result = sqlx::query(
-            "UPDATE storage_files SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
-        )
-        .bind(target_folder_id)
-        .bind(file_ids)
-        .bind(endpoint_id)
-        .execute(&mut *transaction)
-        .await;
-
-        if files_result.is_err() {
-            return Err("Could not move storage files".to_string());
-        }
-    }
-
-    if folder_ids.len() > 0 {
-        let folders_result = sqlx::query(
-            "UPDATE storage_folders SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
-        )
-        .bind(target_folder_id)
-        .bind(folder_ids)
-        .bind(endpoint_id)
-        .execute(&mut *transaction)
-        .await;
-
-        if folders_result.is_err() {
-            return Err("Could not move storage folders".to_string());
-        }
-    }
-
-    let transaction_result = transaction.commit().await;
-
-    if transaction_result.is_err() {
-        return Err("Could not commit the move transaction".to_string());
+    if move_result.is_err() {
+        return Err("Could not move storage entries".to_string());
     }
 
     Ok(())
@@ -745,48 +712,21 @@ pub async fn move_entries(
 
 pub async fn rename_entry(
     endpoint_id: i32,
-    entry_type: StorageEntryType,
     entry_id: i64,
     new_name: &str,
     pool: &RequestPool,
 ) -> Result<(), String> {
-    let mut transaction = pool.begin().await.unwrap();
+    let rename_result = sqlx::query(
+        "UPDATE storage_entries SET name = $1 WHERE id = $2 AND endpoint_id = $3",
+    )
+    .bind(new_name)
+    .bind(entry_id)
+    .bind(endpoint_id)
+    .execute(& *pool)
+    .await;
 
-    match entry_type {
-        StorageEntryType::File => {
-            let file_result = sqlx::query(
-                "UPDATE storage_files SET name = $1 WHERE id = $2 AND endpoint_id = $3",
-            )
-            .bind(new_name)
-            .bind(entry_id)
-            .bind(endpoint_id)
-            .execute(&mut *transaction)
-            .await;
-
-            if file_result.is_err() {
-                return Err("Could not rename a storage file".to_string());
-            }
-        }
-        StorageEntryType::Folder => {
-            let folder_result = sqlx::query(
-                "UPDATE storage_folders SET name = $1 WHERE id = $2 AND endpoint_id = $3",
-            )
-            .bind(new_name)
-            .bind(entry_id)
-            .bind(endpoint_id)
-            .execute(&mut *transaction)
-            .await;
-
-            if folder_result.is_err() {
-                return Err("Could not rename a storage folder".to_string());
-            }
-        }
-    }
-
-    let transaction_result = transaction.commit().await;
-
-    if transaction_result.is_err() {
-        return Err("Could not commit the rename transaction".to_string());
+    if rename_result.is_err() {
+        return Err("Could not rename a storage entry".to_string());
     }
 
     Ok(())

@@ -1,10 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
+use log::error;
 use serde::Serialize;
 use sqlx::FromRow;
 
 use crate::{
-    storage_endpoint::get_storage_endpoint, storage_entry::StorageEntryType, util::RequestPool,
+    storage_endpoint::get_storage_endpoint,
+    user::{get_group_rights, UserRight},
+    util::RequestPool,
 };
 
 #[derive(PartialEq, Debug, Serialize)]
@@ -25,16 +28,46 @@ impl StorageAccessType {
 }
 
 pub enum StorageAccessCheckResult {
-    Explicit(StorageAccessType),
+    Explicit(bool),
     Inherited(HashMap<i32, StorageAccessType>),
+}
+
+// TODO ew @cleanup
+pub fn check_endpoint_root_access(endpoint_id: i32, group_rights: Vec<UserRight>) -> bool {
+    for right in group_rights {
+        if right.right_name.eq("storage_root_access") {
+            if let Some(allow_all_endpoints) = right.right_options.get("allow_any_endpoint") {
+                if allow_all_endpoints.is_boolean()
+                    && allow_all_endpoints.as_bool().unwrap() == true
+                {
+                    return true;
+                }
+            }
+
+            if let Some(allowed_endpoints) = right.right_options.get("accessible_endpoints") {
+                if allowed_endpoints.is_array() {
+                    for allowed_endpoint in allowed_endpoints.as_array().unwrap() {
+                        if allowed_endpoint.is_i64() {
+                            if allowed_endpoint.as_i64().unwrap() == endpoint_id as i64 {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    false
 }
 
 async fn get_storage_entry_access_rule_cascade_up(
     endpoint_id: i32,
-    entry_type: &StorageEntryType,
     entry_id: i64,
 
     action: &str,
+
+    user_id: i32,
     user_groups: &Vec<i32>,
 
     pool: &RequestPool,
@@ -46,65 +79,70 @@ async fn get_storage_entry_access_rule_cascade_up(
         executor_type: String,
         executor_id: i32,
         entry_id: i64,
+        action: String,
     }
 
-    // TODO this can be optimized.
-    // TODO this is just fucking sad ):
-    let sql = if *entry_type == StorageEntryType::Folder {
-        "SELECT tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM
-        (SELECT storage_access.*, parents_tree.id AS tree_entry_id, parents_tree.tree_step FROM (SELECT * FROM storage_access) AS storage_access, (SELECT row_number() OVER () as tree_step, id FROM storage_get_folder_path($1, $2)) AS parents_tree) as sub
-        WHERE entry_id IN (SELECT tree_entry_id) AND endpoint_id = sub.endpoint_id AND entry_type = 'folder'::storage_entry_type AND action = $3::storage_access_action_type AND executor_id = ANY($4)
-        ORDER BY tree_step ASC"
-    } else {
-        "-- entry itself
-        SELECT 0 AS tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM storage_access WHERE entry_id = $2 AND endpoint_id = $1 AND entry_type = 'file'::storage_entry_type AND action = $3::storage_access_action_type AND executor_id = ANY($4)
-        UNION ALL
-        -- entry's parent, grandparent, ... up the tree until root
-        SELECT tree_step, entry_id, access_type::TEXT, action::TEXT, executor_type::TEXT, executor_id FROM
-        (SELECT storage_access.*, parents_tree.id AS tree_entry_id, parents_tree.tree_step FROM (SELECT * FROM storage_access) AS storage_access, (SELECT row_number() OVER () as tree_step, id FROM storage_get_folder_path($1, (SELECT parent_folder FROM storage_files WHERE id = $2 AND endpoint_id = $1))) AS parents_tree) as sub
-        WHERE entry_id IN (SELECT tree_entry_id) AND endpoint_id = sub.endpoint_id AND entry_type = 'folder'::storage_entry_type AND action = $3::storage_access_action_type AND executor_id = ANY($4)
-        -- sort by tree_step to get the rules in the correct order
-        ORDER BY tree_step ASC"
-    };
-
-    let tree_rules = sqlx::query_as::<_, StorageAccessRuleRow>(sql)
+    let tree_rules = sqlx::query_as::<_, StorageAccessRuleRow>("
+        SELECT tree.tree_step, storage_access.entry_id, storage_access.access_type::TEXT, storage_access.action::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
+        JOIN storage_access ON storage_access.entry_id = tree.entry_id
+        WHERE storage_access.endpoint_id = $1 AND
+        storage_access.action = $3::storage_access_action_type AND
+        (
+            (storage_access.executor_type = 'user_group'::storage_access_executor_type AND storage_access.executor_id = ANY($4))
+        OR
+            (storage_access.executor_type = 'user'::storage_access_executor_type AND storage_access.executor_id = $5)
+        )
+        ORDER BY tree_step ASC
+    ")
         .bind(&endpoint_id)
         .bind(&entry_id)
         .bind(action)
         .bind(user_groups)
+        .bind(user_id)
         .fetch_all(pool)
         .await;
 
-    dbg!(&action, &tree_rules);
-
     let mut group_rules: HashMap<i32, StorageAccessType> = HashMap::new();
+    let mut user_rule: StorageAccessType = StorageAccessType::Unset;
 
     if let Ok(tree_rules) = tree_rules {
         for rule in &tree_rules {
-            // TODO groups only for now
-            if rule.executor_type != "user_group" {
-                continue;
-            }
-
             let access_type = StorageAccessType::from_str(&rule.access_type);
 
-            if rule.tree_step == 0 && rule.entry_id == entry_id {
-                // The rule is set for the entry itself.
-
+            // Tree step = 1 means that the rule is set for the entry itself.
+            if rule.tree_step == 1 && rule.entry_id == entry_id {
                 if access_type == StorageAccessType::Allow {
                     // The entry itself allows the requested action for at least one of
                     // the provided user groups. Short-circuit and return immediately.
-                    return Ok(StorageAccessCheckResult::Explicit(StorageAccessType::Allow));
+                    return Ok(StorageAccessCheckResult::Explicit(true));
                 }
             }
 
-            if let Some(entry) = group_rules.get_mut(&rule.executor_id) {
-                if entry == &mut StorageAccessType::Unset {
-                    *entry = access_type;
+            if rule.executor_type == "user" {
+                if rule.executor_id == user_id {
+                    user_rule = access_type;
                 }
-            } else {
-                group_rules.insert(rule.executor_id, access_type);
+            } else if rule.executor_type == "user_group" {
+                if let Some(entry) = group_rules.get_mut(&rule.executor_id) {
+                    if entry == &mut StorageAccessType::Unset {
+                        *entry = access_type;
+                    }
+                } else {
+                    group_rules.insert(rule.executor_id, access_type);
+                }
             }
+        }
+
+        // Allow if there is a target user rule that allows the action
+        // TODO Keep in mind that we are not checking if the user is DENIED! We treat denial
+        // ^ the same as we treat user group denial - we do not care as long as there is at
+        // ^ least one ALLOW (100x deny & 1x allow = allow)
+        // ^ Maybe for the `user` executor type it should work differently? If target user
+        // ^ is explicitly denied - deny the action, even if there is an allow rule for some
+        // ^ user group?
+        // If we change this logic, don't forget to also update the bulk check function
+        if user_rule == StorageAccessType::Allow {
+            return Ok(StorageAccessCheckResult::Explicit(true));
         }
 
         Ok(StorageAccessCheckResult::Inherited(group_rules))
@@ -117,7 +155,6 @@ async fn get_storage_entry_access_rule_cascade_up(
  * Check if provided user groups can perorm the requested action on the provided storage entry.
  *
  * @param endpoint_id id of the storage endpoint where the provided entry is located.
- * @param entry_type type of the entry (file / folder).
  * @param entry_id entry's id.
  * @param action requested action. For example, "delete". See `storage_access_action_type`
  * data type in the database schema for a list of available action types.
@@ -130,10 +167,10 @@ async fn get_storage_entry_access_rule_cascade_up(
 pub async fn check_storage_entry_access(
     endpoint_id: i32,
 
-    entry_type: &StorageEntryType,
     entry_id: i64,
 
     action: &str,
+    user_id: i32,
     user_groups: &Vec<i32>,
 
     pool: &RequestPool,
@@ -158,9 +195,9 @@ pub async fn check_storage_entry_access(
 
     let check_result = get_storage_entry_access_rule_cascade_up(
         endpoint_id,
-        entry_type,
         entry_id,
         action,
+        user_id,
         user_groups,
         pool,
     )
@@ -169,13 +206,7 @@ pub async fn check_storage_entry_access(
     match check_result {
         Ok(check_result) => match check_result {
             StorageAccessCheckResult::Explicit(explicit_access_type) => {
-                if explicit_access_type == StorageAccessType::Allow
-                    || explicit_access_type == StorageAccessType::Unset
-                {
-                    return true;
-                } else if explicit_access_type == StorageAccessType::Deny {
-                    return false;
-                }
+                explicitly_allowed = explicit_access_type;
             }
 
             StorageAccessCheckResult::Inherited(group_rules) => {
@@ -195,14 +226,18 @@ pub async fn check_storage_entry_access(
             }
         },
 
-        Err(_) => {
+        Err(err) => {
+            error!("{:?}", err);
             return false;
         }
     }
 
-    // Not denied and not allowed by any rules. Assume allowed
+    // Not denied and not allowed by any rules. This means that the entry access is
+    // inherited all the way from the endpoint root. Check if user has access to the endpoint root.
     if !explicitly_denied && !explicitly_allowed {
-        action_allowed = true;
+        let group_rights = get_group_rights(&pool, user_groups).await;
+
+        action_allowed = check_endpoint_root_access(endpoint_id, group_rights);
     }
 
     // Explicitly denied by a rule and not allowed by any rules. 100% denied
@@ -230,8 +265,7 @@ pub async fn check_storage_entry_access(
  * This function tests provided entries in bulk.
  *
  * @param endpoint_id id of the storage endpoint where all the provided entries are located.
- * @param entries entries to be checked. A tuple of two vectors: the first vector contains
- * file ids, the second one contains folder ids.
+ * @param entries entries to be checked.
  * @param action requested action. For example, "delete". See `storage_access_action_type`
  * data type in the database schema for a list of available action types.
  * @param user_groups ids of the user groups that are being checked.
@@ -243,9 +277,10 @@ pub async fn check_storage_entry_access(
  */
 pub async fn check_bulk_storage_entries_access_cascade_up(
     endpoint_id: i32,
-    entries: (&Vec<i64>, &Vec<i64>),
+    entries: &Vec<i64>,
 
     action: &str,
+    user_id: i32,
     user_groups: &Vec<i32>,
 
     pool: &RequestPool,
@@ -263,8 +298,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         }
     };
 
-    let (file_ids, folder_ids) = entries;
-
     // TODO: Return a list of entries that have denied access
     // ^ This will be slower, but more convenient for the user.
     // It would be nice to show an error message and allow the user
@@ -274,12 +307,10 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     #[derive(FromRow, Serialize, Debug)]
     pub struct RootResultRow {
         entry_id: i64,
-        entry_type: String,
 
         parent_folder: Option<i64>,
 
         access_type: Option<String>,
-        executor_id: Option<i32>,
     }
 
     #[derive(FromRow, Serialize, Debug)]
@@ -287,45 +318,40 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         tree_step: i32,
         entry_id: i64,
         access_type: String,
+        executor_type: String,
         executor_id: i32,
-        entry_type: String,
         target_entry_id: i64,
     }
 
-    // Get access rules for the provided entries themeelves
+    // Get access rules for the provided entries themeselves
+    // TODO optimize. Is one Select possible here?
     let root_result = sqlx::query_as::<_, RootResultRow>(
-        "SELECT storage_files.id AS entry_id, storage_files.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, 'file' AS entry_type FROM storage_files
+        "SELECT storage_entries.id AS entry_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id  FROM storage_entries
         LEFT JOIN storage_access ON
-        storage_access.entry_id = storage_files.id
-        AND storage_access.endpoint_id = storage_files.endpoint_id
-        AND storage_access.entry_type = 'file'::storage_entry_type
+        storage_access.entry_id = storage_entries.id
+        AND storage_access.endpoint_id = storage_entries.endpoint_id
         AND storage_access.action = $3::storage_access_action_type
         AND storage_access.access_type != 'inherit'::storage_access_type
-        AND storage_access.executor_type = 'user_group'::storage_access_executor_type
-        AND storage_access.executor_id = ANY($4)
-        WHERE storage_files.endpoint_id = $2 AND storage_files.id = ANY($1)
-        UNION ALL
-        SELECT storage_folders.id AS entry_id, storage_folders.parent_folder, storage_access.access_type::TEXT, storage_access.executor_id, 'folder' AS entry_type FROM storage_folders
-        LEFT JOIN storage_access ON
-        storage_access.entry_id = storage_folders.id
-        AND storage_access.endpoint_id = storage_folders.endpoint_id
-        AND storage_access.entry_type = 'folder'::storage_entry_type
-        AND storage_access.action = $3::storage_access_action_type
-        AND storage_access.access_type != 'inherit'::storage_access_type
-        AND storage_access.executor_type = 'user_group'::storage_access_executor_type
-        AND storage_access.executor_id = ANY($4)
-        WHERE storage_folders.endpoint_id = $2 AND storage_folders.id = ANY($5)",
+        AND
+        (
+            (storage_access.executor_type = 'user_group'::storage_access_executor_type
+            AND storage_access.executor_id = ANY($4))
+            OR
+            (storage_access.executor_type = 'user'::storage_access_executor_type
+            AND storage_access.executor_id = $5)
+        )
+        WHERE storage_entries.endpoint_id = $2 AND storage_entries.id = ANY($1)",
     )
-    .bind(&file_ids)
+    .bind(&entries)
     .bind(endpoint_id)
     .bind(action)
     .bind(&user_groups)
-    .bind(&folder_ids)
+    .bind(user_id)
     .fetch_all(pool)
     .await;
 
     if root_result.is_err() {
-        dbg!(&root_result.unwrap_err());
+        error!("{:?}", root_result.unwrap_err());
 
         return false;
     }
@@ -376,61 +402,82 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         .map(|folder| folder.clone())
         .collect::<Vec<i64>>();
 
-    // TODO maybe can we get rid of the storage_generate_entries_access_tree function???? That would be nice, I don't like it
     let tree_result_for_inheriting_entries = sqlx::query_as::<_, StorageGenerateEntriesAccessTreeRow>(
-        "SELECT tree_step, entry_id, access_type::TEXT, executor_id, entry_type::TEXT, target_entry_id FROM storage_generate_entries_access_tree($1, 'folder'::storage_entry_type, $2::storage_access_action_type, $3, $4)",
+        "SELECT tree_step, entry_id, access_type::TEXT, executor_type::TEXT, executor_id, target_entry_id FROM storage_generate_entries_access_tree($1, $2::storage_access_action_type, $3, $4, $5)",
     )
     .bind(endpoint_id)
     .bind(action)
     .bind(&user_groups)
+    .bind(user_id)
     .bind(parent_folders_for_inheriting_entries_ids)
     .fetch_all(pool)
     .await;
 
     if tree_result_for_inheriting_entries.is_err() {
-        dbg!(&tree_result_for_inheriting_entries.unwrap_err());
+        error!("{:?}", tree_result_for_inheriting_entries.unwrap_err());
 
         return false;
     }
 
     let tree_result_for_inheriting_entries = tree_result_for_inheriting_entries.unwrap();
 
+    // TODO ew @cleanup
+    let group_rights = get_group_rights(&pool, user_groups).await;
+
+    let entry_root_access = check_endpoint_root_access(endpoint_id, group_rights);
+
     // Parents of the target entries have no access rules set for the requested action.
-    // Therefore, the action is allowed.
+    // That means that the action access is inherited all the way from the endpoint root.
     if tree_result_for_inheriting_entries.is_empty() {
-        return true;
+        return entry_root_access;
     }
 
     let mut last_target_entry_id = tree_result_for_inheriting_entries[0].target_entry_id;
 
     let mut allow_found = false;
     let mut deny_found = false;
+    let mut at_least_one_inheriting_from_root = false;
 
     for tree_step in tree_result_for_inheriting_entries {
         if last_target_entry_id != tree_step.target_entry_id {
+            if deny_found {
+                if !allow_found {
+                    return false;
+                }
+            } else {
+                if !allow_found {
+                    at_least_one_inheriting_from_root = true;
+                }
+            }
+
+            // We have processed one entry, reset the state and move on to the next one.
             deny_found = false;
             allow_found = false;
             last_target_entry_id = tree_step.target_entry_id;
         }
 
         if tree_step.access_type == "deny" {
-            if !allow_found {
-                return false;
-            } else {
-                deny_found = true;
-            }
-        }
-
-        if tree_step.access_type == "allow" {
-            if deny_found {
-                return false;
-            } else {
-                allow_found = true;
-            }
+            deny_found = true;
+        } else if tree_step.access_type == "allow" {
+            allow_found = true;
         }
     }
 
-    // Parents of the target entries have no denying access rules set for the requested action.
-    // The action is allowed.
-    true
+    // Check the result of the last tree step
+    // TODO ew @cleanup
+    if deny_found {
+        if !allow_found {
+            return false;
+        }
+    } else {
+        if !allow_found {
+            at_least_one_inheriting_from_root = true;
+        }
+    }
+
+    if at_least_one_inheriting_from_root {
+        entry_root_access
+    } else {
+        true
+    }
 }

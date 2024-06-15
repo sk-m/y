@@ -142,15 +142,26 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                     feature: Some("storage"),
                 },
                 Right {
-                    name: "storage_upload",
-                    options: vec![],
-                    tags: vec![],
+                    name: "storage_root_access",
+                    options: vec![
+                        RightOption {
+                            name: "allow_any_endpoint",
+                            value_type: RightValueType::Boolean,
+                            value_source: None,
+                        },
+                        RightOption {
+                            name: "accessible_endpoints",
+                            value_type: RightValueType::StringArray,
+                            value_source: Some("storage_endpoints"),
+                        },
+                    ],
+                    tags: vec![RightTag::Administrative],
                     feature: Some("storage"),
                 },
                 Right {
-                    name: "storage_delete",
+                    name: "manage_storage_locations",
                     options: vec![],
-                    tags: vec![],
+                    tags: vec![RightTag::Administrative],
                     feature: Some("storage"),
                 },
                 Right {

@@ -205,6 +205,17 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
           <Show when={!props.isRenaming && props.entry.extension}>
             <div class="extension">{props.entry.extension}</div>
           </Show>
+          <Show when={!props.isRenaming && props.entry.entry_type === "folder"}>
+            <div class="icon">
+              <Icon
+                name="folder_open"
+                type="outlined"
+                size={16}
+                fill={1}
+                wght={600}
+              />
+            </div>
+          </Show>
           <input
             hidden={!props.isRenaming}
             ref={(ref) => (nameFieldRef = ref)}

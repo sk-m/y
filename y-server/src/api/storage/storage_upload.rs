@@ -13,12 +13,10 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::time::Instant;
 
-use crate::storage_access::check_storage_entry_access;
-use crate::storage_entry::{
-    generate_image_entry_thumbnail, generate_video_entry_thumbnail, StorageEntryType,
-};
-use crate::user::{get_user_from_request, get_user_groups};
-use crate::{storage_endpoint::get_storage_endpoint, user::get_client_rights, util::RequestPool};
+use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
+use crate::storage_entry::{generate_image_entry_thumbnail, generate_video_entry_thumbnail};
+use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
+use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
 
 const MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION: u64 = 50_000_000;
 
@@ -67,7 +65,6 @@ async fn storage_upload(
 
     // Check the rights
     let client = get_user_from_request(&pool, &req).await;
-    let client_rights = get_client_rights(&pool, &req).await;
 
     let client_user_id = if client.is_some() {
         let client_user = &client.as_ref().unwrap().0;
@@ -77,25 +74,19 @@ async fn storage_upload(
         None
     };
 
-    let action_allowed = client_rights
-        .iter()
-        .find(|right| right.right_name.eq("storage_upload"))
-        .is_some();
+    let action_allowed;
 
-    if !action_allowed {
-        return sink_and_error("storage.upload.unauthorized", &mut payload).await;
-    }
-
+    // TODO @cleanup
     if let Some(target_folder_id) = target_folder_id {
-        let action_allowed = if let Some((client_user, _)) = client {
+        action_allowed = if let Some((client_user, _)) = client {
             let user_groups = get_user_groups(&**pool, client_user.id).await;
             let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
 
             check_storage_entry_access(
                 endpoint_id,
-                &StorageEntryType::Folder,
                 target_folder_id,
                 "upload",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )
@@ -103,10 +94,23 @@ async fn storage_upload(
         } else {
             false
         };
+    } else {
+        // folder_id == NULL means the root level of the endpoint
 
-        if !action_allowed {
-            return sink_and_error("storage.upload.unauthorized", &mut payload).await;
+        action_allowed = if let Some(client_user_id) = client_user_id {
+            let user_groups = get_user_groups(&**pool, client_user_id).await;
+            let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+            let group_rights = get_group_rights(&pool, &group_ids).await;
+
+            check_endpoint_root_access(endpoint_id, group_rights)
+        } else {
+            false
         }
+    }
+
+    if !action_allowed {
+        return sink_and_error("storage.upload.unauthorized", &mut payload).await;
     }
 
     // Get the target endpoint's base path, so we know where to save the files
@@ -232,7 +236,7 @@ async fn storage_upload(
                             if try_to_find_each_folder {
                                 find_folder_result = if folder_id.is_some() {
                                     sqlx::query_scalar::<_, i64>(
-                                    "SELECT id FROM storage_folders WHERE endpoint_id = $1 AND name = $2 AND parent_folder = $3",
+                                    "SELECT id FROM storage_entries WHERE endpoint_id = $1 AND name = $2 AND parent_folder = $3 AND entry_type = 'folder'::storage_entry_type",
                                     )
                                     .bind(endpoint_id)
                                     .bind(path_segment)
@@ -241,7 +245,7 @@ async fn storage_upload(
                                     .await
                                 } else {
                                     sqlx::query_scalar::<_, i64>(
-                                    "SELECT id FROM storage_folders WHERE endpoint_id = $1 AND name = $2 AND parent_folder IS NULL",
+                                    "SELECT id FROM storage_entries WHERE endpoint_id = $1 AND name = $2 AND parent_folder IS NULL AND entry_type = 'folder'::storage_entry_type",
                                     )
                                     .bind(endpoint_id)
                                     .bind(path_segment)
@@ -265,7 +269,7 @@ async fn storage_upload(
                                     // all the following segmens and will jump straight into their creation.
                                     try_to_find_each_folder = false;
 
-                                    let create_folder_result = sqlx::query_scalar::<_, i64>("INSERT INTO storage_folders (endpoint_id, parent_folder, name) VALUES ($1, $2, $3) RETURNING id")
+                                    let create_folder_result = sqlx::query_scalar::<_, i64>("INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type) VALUES ($1, $2, $3, 'folder'::storage_entry_type) RETURNING id")
                                     .bind(endpoint_id)
                                     .bind(folder_id)
                                     .bind(path_segment)
@@ -344,7 +348,7 @@ async fn storage_upload(
                         None
                     };
 
-                    let create_file_result = sqlx::query("INSERT INTO storage_files (endpoint_id, filesystem_id, parent_folder, name, extension, mime_type, size_bytes, created_by, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())")
+                    let create_file_result = sqlx::query("INSERT INTO storage_entries (endpoint_id, filesystem_id, parent_folder, name, extension, mime_type, size_bytes, created_by, created_at, entry_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), 'file'::storage_entry_type)")
                     .bind(endpoint_id)
                     .bind(&file_id)
                     .bind(parent_folder_id)
@@ -386,8 +390,7 @@ async fn storage_upload(
     }
 
     if cfg!(debug_assertions) {
-        info!("storage/upload: {}ms", now.elapsed().as_millis());
-        dbg!(&uploaded_files);
+        debug!("storage/upload: {}ms", now.elapsed().as_millis());
     }
 
     // Generate thumbnails

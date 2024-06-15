@@ -6,9 +6,8 @@ use sqlx::prelude::FromRow;
 
 use crate::request::error;
 
-use crate::storage_access::check_storage_entry_access;
-use crate::storage_entry::StorageEntryType;
-use crate::user::{get_user_from_request, get_user_groups};
+use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
+use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
 #[derive(Serialize, FromRow, Debug)]
@@ -49,26 +48,25 @@ async fn storage_entries(
     let action_allowed: bool;
 
     if let Some((client_user, _)) = client {
-        if let Some(folder_id) = folder_id {
-            let user_groups = get_user_groups(&**pool, client_user.id).await;
-            let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+        let user_groups = get_user_groups(&**pool, client_user.id).await;
+        let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
 
+        if let Some(folder_id) = folder_id {
             action_allowed = check_storage_entry_access(
                 endpoint_id,
-                &StorageEntryType::Folder,
                 folder_id,
                 "list_entries",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )
             .await
         } else {
             // folder_id == NULL means the root level of the endpoint
-            // TODO this means that anyone can list entries of the root level.
-            // This is probably not what we want
-            // Maybe we should return the storage_list group right?
 
-            action_allowed = true
+            let group_rights = get_group_rights(&pool, &group_ids).await;
+
+            action_allowed = check_endpoint_root_access(endpoint_id, group_rights);
         };
     } else {
         action_allowed = false
@@ -82,7 +80,7 @@ async fn storage_entries(
         // Entries inside of a folder
 
         sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, NULL as extension, NULL as mime_type, NULL as size_bytes, NULL as created_by, NULL as created_at, 'folder' as entry_type FROM storage_folders WHERE endpoint_id = $1 AND parent_folder = $2 UNION ALL SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, 'file' as entry_type FROM storage_files WHERE endpoint_id = $1 AND parent_folder = $2",
+            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2",
         )
         .bind(endpoint_id)
         .bind(folder_id)
@@ -92,7 +90,7 @@ async fn storage_entries(
         // Entries on the root level
 
         sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, NULL as extension, NULL as mime_type, NULL as size_bytes, NULL as created_by, NULL as created_at, 'folder' as entry_type FROM storage_folders WHERE endpoint_id = $1 AND parent_folder IS NULL UNION ALL SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, 'file' as entry_type FROM storage_files WHERE endpoint_id = $1 AND parent_folder IS NULL",
+            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL",
         )
         .bind(endpoint_id)
         .fetch_all(&**pool)

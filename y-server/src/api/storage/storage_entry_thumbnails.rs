@@ -13,10 +13,9 @@ use sqlx::prelude::FromRow;
 
 use crate::request::error;
 
-use crate::storage_access::check_storage_entry_access;
+use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
 use crate::storage_endpoint::get_storage_endpoint;
-use crate::storage_entry::StorageEntryType;
-use crate::user::{get_user_from_request, get_user_groups};
+use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
 const MAX_ENTRIES_PER_REEQUEST: usize = 200;
@@ -54,35 +53,33 @@ async fn storage_entry_thumbnails(
     // ? we check for the "list_entries" rule for each file??
 
     // TODO: slow. This endpoint should be as fast as possible, this check is not ideal
+    let client = get_user_from_request(&**pool, &req).await;
     let action_allowed: bool;
 
-    if let Some(parent_folder_id) = parent_folder_id {
-        let client = get_user_from_request(&**pool, &req).await;
+    if let Some((client_user, _)) = client {
+        let user_groups = get_user_groups(&**pool, client_user.id).await;
+        let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
 
-        if let Some((client_user, _)) = client {
-            let user_groups = get_user_groups(&**pool, client_user.id).await;
-            let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
-
+        if let Some(parent_folder_id) = parent_folder_id {
             action_allowed = check_storage_entry_access(
                 endpoint_id,
-                &StorageEntryType::Folder,
                 parent_folder_id,
                 "list_entries",
+                client_user.id,
                 &group_ids,
                 &**pool,
             )
             .await;
         } else {
-            action_allowed = false;
-        }
-    } else {
-        // folder_id == NULL means the root level of the endpoint
-        // TODO do we want to allow everyone to get thumbnails for the root level?
-        // TODO maybe we should check for the "list_entries" rule for the endpoint instead?
-        // (we would have to bring back the list_entries rule)
+            // folder_id == NULL means the root level of the endpoint
 
-        action_allowed = true;
-    };
+            let group_rights = get_group_rights(&pool, &group_ids).await;
+
+            action_allowed = check_endpoint_root_access(endpoint_id, group_rights);
+        };
+    } else {
+        action_allowed = false
+    }
 
     if !action_allowed {
         return error("storage.entry_thumbnails.unauthorized");
@@ -127,9 +124,9 @@ async fn storage_entry_thumbnails(
     let mut thumbnails: HashMap<String, String> = HashMap::new();
 
     let file_entries = sqlx::query_as::<_, EntryRow>(if query.parent_folder_id.is_none() {
-        "SELECT id, filesystem_id FROM storage_files WHERE endpoint_id = $1 AND parent_folder IS NULL AND id = ANY($3)"
+        "SELECT id, filesystem_id FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL AND id = ANY($3) AND entry_type = 'file'::storage_entry_type"
     } else {
-        "SELECT id, filesystem_id FROM storage_files WHERE endpoint_id = $1 AND parent_folder = $2 AND id = ANY($3)"
+        "SELECT id, filesystem_id FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND id = ANY($3) AND entry_type = 'file'::storage_entry_type"
     })
         .bind(endpoint_id)
         .bind(parent_folder_id)
