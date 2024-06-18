@@ -611,6 +611,9 @@ const FileExplorerPage: Component = () => {
   // eslint-disable-next-line sonarjs/cognitive-complexity
   onMount(() => {
     const keydownHandler = (event: KeyboardEvent) => {
+      if ((event.target as HTMLElement | undefined)?.nodeName === "INPUT")
+        return
+
       // Go up one folder
       if (event.ctrlKey && event.key === "Backspace") {
         event.preventDefault()
