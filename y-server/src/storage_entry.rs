@@ -17,14 +17,6 @@ pub enum StorageEntryType {
     Folder,
 }
 
-impl StorageEntryType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            StorageEntryType::File => "file",
-            StorageEntryType::Folder => "folder",
-        }
-    }
-}
 
 #[derive(FromRow, Serialize)]
 pub struct StorageFolder {
@@ -187,7 +179,6 @@ async fn get_subfolders_level_with_access_rules(
             LEFT JOIN storage_access ON
             storage_access.entry_id = storage_entries.id
             AND storage_access.endpoint_id = storage_entries.endpoint_id
-            AND storage_access.entry_type = 'folder'::storage_entry_type
             AND storage_access.action = $4::storage_access_action_type
             AND storage_access.access_type != 'inherit'::storage_access_type
             AND storage_access.executor_type = 'user_group'::storage_access_executor_type
@@ -455,7 +446,6 @@ pub async fn delete_entries(
                 LEFT JOIN storage_access ON
                 storage_access.entry_id = storage_entries.id
                 AND storage_access.endpoint_id = storage_entries.endpoint_id
-                AND storage_access.entry_type = 'file'::storage_entry_type
                 AND storage_access.action = 'delete'::storage_access_action_type
                 AND storage_access.access_type != 'inherit'::storage_access_type
                 AND storage_access.executor_type = 'user_group'::storage_access_executor_type
