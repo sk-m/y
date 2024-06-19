@@ -166,18 +166,29 @@ export const SelectField = <
           <div class="panel">
             <div class="available-options">
               <For each={props.options}>
-                {(option) => (
-                  <button
-                    type="button"
-                    classList={{
-                      option: true,
-                      selected: props.value()?.includes(option.id),
-                    }}
-                    onClick={() => toggleOption(option.id)}
-                  >
-                    <div class="name">{option.name}</div>
-                  </button>
-                )}
+                {(option) => {
+                  const selected = createMemo(
+                    () => props.value()?.includes(option.id) ?? false
+                  )
+
+                  return (
+                    <button
+                      type="button"
+                      classList={{
+                        option: true,
+                        selected: selected(),
+                      }}
+                      onClick={() => toggleOption(option.id)}
+                    >
+                      <input
+                        class="checkbox"
+                        type="checkbox"
+                        checked={selected()}
+                      />
+                      <div class="name">{option.name}</div>
+                    </button>
+                  )
+                }}
               </For>
             </div>
           </div>

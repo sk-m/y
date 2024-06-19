@@ -79,6 +79,10 @@ i {
   font-variation-settings: "slnt" -10;
 }
 
+input[type="checkbox"] {
+  accent-color: var(--color-primary);
+}
+
 :root {
   --text-sm: 12px;
   --text-body: 13px;

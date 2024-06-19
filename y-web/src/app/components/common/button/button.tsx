@@ -9,6 +9,7 @@ export type ButtonProps = {
   variant?: "primary" | "secondary" | "text"
   size?: "md" | "sm" | "xs" | "xs-squared"
   leadingIcon?: string
+  color?: "primary" | "red" | "blue"
 
   disabled?: boolean
 
@@ -29,6 +30,7 @@ export const Button: ComponentWithChildren<ButtonProps> = (props) => {
         [props.size ?? "md"]: true,
         [props.variant ?? "primary"]: true,
         disabled: props.disabled,
+        [`color-${props.color ?? "primary"}`]: true,
       }}
     >
       <button

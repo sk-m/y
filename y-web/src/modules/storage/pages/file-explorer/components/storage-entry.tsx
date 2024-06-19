@@ -160,6 +160,9 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
             onChange={(_, event) => {
               props.onSelect!(event)
             }}
+            buttonProps={{
+              onDblClick: (event) => event.stopPropagation(),
+            }}
           />
         </div>
       </Show>

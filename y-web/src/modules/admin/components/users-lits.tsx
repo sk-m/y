@@ -228,7 +228,7 @@ export const UsersList: Component = () => {
               }}
             >
               <InputField
-                placeholder="Search users"
+                label="Search query"
                 width="100%"
                 inputProps={{
                   name: "users-search",

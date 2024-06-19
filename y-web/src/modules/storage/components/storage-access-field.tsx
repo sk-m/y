@@ -20,7 +20,6 @@ import { Note } from "@/app/components/common/note/note"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { toastCtl } from "@/app/core/toast"
-import { useForm } from "@/app/core/use-form"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { DEFAULT_DEBOUNCE_MS } from "@/app/core/utils"
 import { useUserGroups } from "@/modules/admin/user-groups/user-groups.service"
@@ -188,23 +187,10 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
   const { notify } = toastCtl
   const queryClient = useQueryClient()
 
-  const form = useForm<
-    {
-      executorsSearch: string
-    },
-    ["executorsSearch"]
-  >({
-    defaultValues: {
-      executorsSearch: "",
-    },
-    watch: ["executorsSearch"],
-  })
+  const [executorsSearchFieldValue, setExecutorsSearchFieldValue] =
+    createSignal("")
 
-  // TODO this is messy
-  const executorsSearchFieldValue = form.watch("executorsSearch")
-  const [executorsSearch, setExecutorsSearch] = createSignal(
-    executorsSearchFieldValue()
-  )
+  const [executorsSearch, setExecutorsSearch] = createSignal("")
 
   let executorsSearchTimeout: number | undefined
 
@@ -376,12 +362,12 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
         </div>
       </div>
 
-      <Stack
-        style={{
-          padding: "0 0.75em 0.75em 0.75em",
-        }}
-      >
-        <Show when={!areAccessRulesEnforced()}>
+      <Show when={!areAccessRulesEnforced()}>
+        <Stack
+          style={{
+            padding: "0 0.75em 0.75em 0.75em",
+          }}
+        >
           <Note
             type="critical"
             fontSize="var(--text-sm)"
@@ -391,11 +377,40 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
           >
             Access rules are disabled
           </Note>
-        </Show>
-      </Stack>
+        </Stack>
+      </Show>
 
       <Show when={isFieldExpanded()}>
         <div class="value">
+          <Show when={!props.readonly}>
+            <div class="buttons">
+              <Stack direction="row" spacing={"0.75em"}>
+                <Button
+                  width="100%"
+                  size="xs"
+                  onClick={toggleAvailableExecutorsOpen}
+                  {...(isAvailableExecutorsOpen()
+                    ? {
+                        leadingIcon: "check",
+                        variant: "primary",
+                        color: "blue",
+                      }
+                    : {
+                        leadingIcon: "add",
+                        variant: "secondary",
+                      })}
+                />
+                <Button
+                  width="100%"
+                  size="xs"
+                  variant="secondary"
+                  leadingIcon="save"
+                  onClick={saveAccessRules}
+                />
+              </Stack>
+            </div>
+          </Show>
+
           <Show
             when={state.executors.length > 0}
             fallback={
@@ -517,27 +532,6 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
               </For>
             </div>
           </Show>
-
-          <Show when={!props.readonly}>
-            <div class="buttons">
-              <Stack direction="row" spacing={"0.75em"}>
-                <Button
-                  width="100%"
-                  size="xs"
-                  variant="secondary"
-                  leadingIcon="add"
-                  onClick={toggleAvailableExecutorsOpen}
-                />
-                <Button
-                  width="100%"
-                  size="xs"
-                  variant="secondary"
-                  leadingIcon="save"
-                  onClick={saveAccessRules}
-                />
-              </Stack>
-            </div>
-          </Show>
         </div>
       </Show>
       <div class="floating-container">
@@ -546,52 +540,67 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
             <InputField
               width="100%"
               placeholder="Search..."
-              {...form.register("executorsSearch")}
+              inputProps={{
+                name: "executors-search",
+                autocomplete: "off",
+                value: executorsSearchFieldValue(),
+                onInput: (event) =>
+                  setExecutorsSearchFieldValue(event.currentTarget.value),
+              }}
             />
           </div>
 
-          <div class="section">
-            <div class="section-label">User groups</div>
-            <div class="section-access-entries">
-              <For each={userGroups()}>
-                {(group) => (
-                  <StorageAccessAvailableExecutor
-                    executorType="user_group"
-                    executorId={group.id}
-                    executorName={group.name}
-                    selected={selectedGroupIds().includes(group.id)}
-                    onSelect={(selected) =>
-                      onSelectExecutor(
-                        "user_group",
-                        group.id,
-                        group.name,
-                        selected
-                      )
-                    }
-                  />
-                )}
-              </For>
+          <Show when={userGroups().length > 0}>
+            <div class="section">
+              <div class="section-label">User groups</div>
+              <div class="section-access-entries">
+                <For each={userGroups()}>
+                  {(group) => (
+                    <StorageAccessAvailableExecutor
+                      executorType="user_group"
+                      executorId={group.id}
+                      executorName={group.name}
+                      selected={selectedGroupIds().includes(group.id)}
+                      onSelect={(selected) =>
+                        onSelectExecutor(
+                          "user_group",
+                          group.id,
+                          group.name,
+                          selected
+                        )
+                      }
+                    />
+                  )}
+                </For>
+              </div>
             </div>
-          </div>
+          </Show>
 
-          <div class="section">
-            <div class="section-label">Users</div>
-            <div class="section-access-entries">
-              <For each={users()}>
-                {(user) => (
-                  <StorageAccessAvailableExecutor
-                    executorType="user"
-                    executorId={user.id}
-                    executorName={user.username}
-                    selected={selectedUserIds().includes(user.id)}
-                    onSelect={(selected) =>
-                      onSelectExecutor("user", user.id, user.username, selected)
-                    }
-                  />
-                )}
-              </For>
+          <Show when={users().length > 0}>
+            <div class="section">
+              <div class="section-label">Users</div>
+              <div class="section-access-entries">
+                <For each={users()}>
+                  {(user) => (
+                    <StorageAccessAvailableExecutor
+                      executorType="user"
+                      executorId={user.id}
+                      executorName={user.username}
+                      selected={selectedUserIds().includes(user.id)}
+                      onSelect={(selected) =>
+                        onSelectExecutor(
+                          "user",
+                          user.id,
+                          user.username,
+                          selected
+                        )
+                      }
+                    />
+                  )}
+                </For>
+              </div>
             </div>
-          </div>
+          </Show>
         </div>
       </div>
     </div>

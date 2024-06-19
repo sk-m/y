@@ -500,9 +500,7 @@ const UserGroupPage: Component = () => {
                     <Button
                       leadingIcon="delete"
                       onClick={() => setDeleteConfirmationModalOpen(true)}
-                      style={{
-                        color: "var(--color-error)",
-                      }}
+                      color="red"
                     >
                       Delete group
                     </Button>

@@ -119,7 +119,7 @@ export const UserGroupsList: Component = () => {
           }}
         >
           <InputField
-            placeholder="Search user groups"
+            label="Search query"
             width="100%"
             inputProps={{
               name: "user-groups-search",

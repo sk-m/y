@@ -60,6 +60,7 @@ export const NewFolderEntry: Component<NewFolderEntryProps> = (props) => {
           <input
             ref={(ref) => (newFolderNameInputRef = ref)}
             type="text"
+            name="new-folder-name"
             class="name-input"
           />
         </div>

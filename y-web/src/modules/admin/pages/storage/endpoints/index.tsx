@@ -6,6 +6,8 @@ import { Button } from "@/app/components/common/button/button"
 import { Card } from "@/app/components/common/card/card"
 import { Icon } from "@/app/components/common/icon/icon"
 import { Container } from "@/app/components/common/layout/container"
+import { Note } from "@/app/components/common/note/note"
+import { Pill } from "@/app/components/common/pill/pill"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
@@ -62,7 +64,14 @@ const StorageEndpointsPage: Component = () => {
           </Breadcrumb>
         </Breadcrumbs>
 
-        <Show when={endpoints().length > 0}>
+        <Show
+          when={endpoints().length > 0}
+          fallback={
+            <Note type="secondary" fontSize="var(--text-sm)">
+              No storage endpoints defined. Create a new one to start.
+            </Note>
+          }
+        >
           <Stack spacing="1em">
             <Text variant="h3">Storage endpoints</Text>
 
@@ -83,8 +92,14 @@ const StorageEndpointsPage: Component = () => {
                       />
                     </div>
                     <div class="main-info">
-                      <div class="endpoint-name">{endpoint.name}</div>
-                      <div class="endpoint-description">
+                      <div class="endpoint-name">
+                        <div>{endpoint.name}</div>
+
+                        <Show when={endpoint.access_rules_enabled}>
+                          <Pill variant="success">access rules</Pill>
+                        </Show>
+                      </div>
+                      <div class="endpoint-subtext">
                         <Text variant="secondary" fontSize={"var(--text-sm)"}>
                           {endpoint.description}
                         </Text>
@@ -123,7 +138,7 @@ const StorageEndpointsPage: Component = () => {
               </Stack>
             </div>
 
-            <Button onClick={() => navigate("new")} leadingIcon="add_circle">
+            <Button onClick={() => navigate("new")} leadingIcon="library_add">
               Create endpoint
             </Button>
           </Stack>

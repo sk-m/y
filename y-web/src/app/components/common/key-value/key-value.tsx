@@ -136,6 +136,7 @@ export const KeyValue = <TValue,>(props: KeyValueProps<TValue>) => {
                   setValue(() => event.currentTarget.value as TValue)
                 }
                 ref={(ref) => (inputRef = ref)}
+                autocomplete="off"
               />
             }
           >

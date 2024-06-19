@@ -2,7 +2,7 @@
 
 @keyframes page-show {
   0% {
-    opacity: 0;
+    opacity: 0.25;
   }
   100% {
     opacity: 1;
@@ -43,6 +43,6 @@
   }
 
   > * {
-    animation: page-show 0.15s ease-out 0s 1 forwards;
+    animation: page-show 0.33s cubic-bezier(0, 0.55, 0.45, 1) 0s 1 forwards;
   }
 }

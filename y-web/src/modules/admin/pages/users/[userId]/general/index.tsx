@@ -149,35 +149,33 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
       />
 
       <Stack spacing={"1.5em"}>
-        <Card>
-          <Stack direction="row" justifyContent="space-between">
-            <div class="ui-card-label">
-              <div class="label-strip" />
-              <Text
-                variant="h3"
-                style={{
-                  margin: "0",
-                }}
-              >
-                General info
-              </Text>
-            </div>
-
-            <KeyValueFields
+        <Stack spacing={"0.5em"}>
+          <div class="ui-card-label">
+            <div class="label-strip" />
+            <Text
+              variant="h3"
               style={{
-                width: "50%",
+                margin: "0",
               }}
             >
-              <KeyValue
-                readonly
-                keyWidth="100px"
-                label="Joined on"
-                value={format(new Date(props.user.created_at), "dd.MM.yyyy")}
-                onChange={() => void 0}
-              />
-            </KeyValueFields>
-          </Stack>
-        </Card>
+              General info
+            </Text>
+          </div>
+
+          <KeyValueFields
+            style={{
+              width: "50%",
+            }}
+          >
+            <KeyValue
+              readonly
+              keyWidth="100px"
+              label="Joined on"
+              value={format(new Date(props.user.created_at), "dd.MM.yyyy")}
+              onChange={() => void 0}
+            />
+          </KeyValueFields>
+        </Stack>
 
         <Show when={passwordUpdateAllowed() || deleteAllowed()}>
           <Show when={passwordUpdateAllowed()}>
@@ -207,7 +205,7 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
                 </div>
 
                 <Button
-                  leadingIcon="edit"
+                  leadingIcon="password"
                   onClick={() => setUpdatePasswordModalOpen(true)}
                 >
                   Set password
@@ -242,9 +240,7 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
                 <Button
                   leadingIcon="delete"
                   onClick={() => setDeleteModalOpen(true)}
-                  style={{
-                    color: "var(--color-error)",
-                  }}
+                  color="red"
                 >
                   Delete user
                 </Button>

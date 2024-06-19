@@ -742,6 +742,7 @@ const FileExplorerPage: Component = () => {
     >
       <input
         hidden
+        name="upload-files"
         ref={uploadFilesInputRef!}
         type="file"
         multiple
@@ -750,6 +751,7 @@ const FileExplorerPage: Component = () => {
 
       <input
         hidden
+        name="upload-folder"
         ref={uploadFoldersInputRef!}
         type="file"
         directory
@@ -821,6 +823,8 @@ const FileExplorerPage: Component = () => {
             <Stack direction="row" alignItems="center" spacing="1em">
               <div class="entries-search-container">
                 <input
+                  name="search-folder"
+                  autocomplete="off"
                   classList={{
                     "non-empty": search() !== "",
                   }}
@@ -851,9 +855,10 @@ const FileExplorerPage: Component = () => {
               <div class="top-container-separator" />
 
               <Button
-                variant="secondary"
+                variant="primary"
                 size="xs"
                 leadingIcon="cloud_upload"
+                color="blue"
                 onClick={(event) => {
                   openUploadContextMenu(event)
                 }}
