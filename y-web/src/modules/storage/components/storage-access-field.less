@@ -66,10 +66,24 @@
 
         border-radius: @border-radius-primary;
 
-        > .executor-header-hint {
-          color: var(--color-text-grey-1);
-          font-size: 12px;
-          font-weight: 500;
+        &.selected {
+          background-color: var(--color-primary-t-1);
+
+          box-shadow: 0 0 0 1px var(--color-primary-t-15),
+            0 5px 10px 0 var(--color-primary-t-15);
+
+          > .executor-header > .executor-label > .icon {
+            background-color: var(--color-primary-t-15);
+          }
+
+          .buttons > .button {
+            box-shadow: @border-primary-lighter;
+
+            &.select {
+              box-shadow: 0 0 0 1px var(--color-primary-t-3);
+              background-color: var(--color-primary-t-15);
+            }
+          }
         }
 
         > .executor-header {
@@ -102,6 +116,10 @@
           }
 
           > .buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.25em;
+
             > .button {
               display: flex;
               align-items: center;
@@ -115,8 +133,6 @@
               outline: none;
 
               cursor: pointer;
-
-              transition: 0.15s;
 
               &.remove {
                 color: var(--color-error);
@@ -291,10 +307,6 @@
       }
     }
 
-    > .buttons .ui-button {
-      width: 50%;
-    }
-
     &:hover {
       > .add-executor-button {
         opacity: 1;
@@ -303,13 +315,14 @@
   }
 
   > .floating-container {
-    position: absolute;
+    position: fixed;
 
     z-index: 1;
 
-    top: 5em;
+    top: 10em;
+    left: calc(50% - 125px);
 
-    width: 100%;
+    width: 250px;
 
     background-color: white;
     border-radius: @border-radius-primary;
@@ -333,7 +346,7 @@
       height: 100%;
       max-height: 50vh;
 
-      padding: 0.5em 0.75em;
+      padding: 0.75em 0.75em;
 
       overflow-x: hidden;
       overflow-y: auto;

@@ -10,6 +10,7 @@ export type ButtonProps = {
   size?: "md" | "sm" | "xs" | "xs-squared"
   leadingIcon?: string
   color?: "primary" | "red" | "blue"
+  title?: string
 
   disabled?: boolean
 
@@ -25,6 +26,7 @@ export type ButtonProps = {
 export const Button: ComponentWithChildren<ButtonProps> = (props) => {
   return (
     <div
+      title={props.title}
       classList={{
         "ui-button": true,
         [props.size ?? "md"]: true,
@@ -32,9 +34,10 @@ export const Button: ComponentWithChildren<ButtonProps> = (props) => {
         disabled: props.disabled,
         [`color-${props.color ?? "primary"}`]: true,
       }}
+      style={{ width: props.width ?? "auto" }}
     >
       <button
-        style={{ width: props.width ?? "auto", ...props.style }}
+        style={props.style}
         type={props.buttonType ?? "button"}
         onClick={(event) => props.onClick?.(event)}
       >

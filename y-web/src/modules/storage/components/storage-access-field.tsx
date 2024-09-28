@@ -9,7 +9,12 @@ import {
   createSignal,
   on,
 } from "solid-js"
-import { SetStoreFunction, createStore, produce } from "solid-js/store"
+import {
+  SetStoreFunction,
+  createStore,
+  produce,
+  reconcile,
+} from "solid-js/store"
 
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
@@ -50,6 +55,8 @@ export type StorageEntryExecutor = {
 export type StorageEntryAccessSettings = {
   executors: StorageEntryExecutor[]
 }
+
+type SelectedExecutorSignature = `${IStorageAccessRuleExecutorType}:${number}`
 
 type StorageAccessAvailableExecutorProps = {
   executorType: IStorageAccessRuleExecutorType
@@ -215,7 +222,12 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
   )
 
   // eslint-disable-next-line solid/reactivity
-  const [state, setState] = createStore<StorageEntryAccessSettings>(props.value)
+  const [state, setState] = createStore<StorageEntryAccessSettings>({
+    executors: [],
+  })
+  const [selectedExecutors, setSelectedExecutors] = createSignal<
+    SelectedExecutorSignature[]
+  >([])
 
   const [isAvailableExecutorsOpen, setIsAvailableExecutorsOpen] =
     createSignal(false)
@@ -251,9 +263,22 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
       .map((executor) => executor.executorId)
   )
 
+  const selectExecutor = (executor: SelectedExecutorSignature) => {
+    setSelectedExecutors((executors) => {
+      return executors.includes(executor)
+        ? executors.filter((id) => id !== executor)
+        : [...executors, executor]
+    })
+  }
+
   createEffect(() => {
-    setState("executors", props.value.executors)
+    // TODO stucturedClone hack
+    setState("executors", structuredClone(props.value.executors))
   })
+
+  const resetField = () => {
+    setState("executors", reconcile(props.value.executors))
+  }
 
   const saveAccessRules = () => {
     const rules: IStorageAccessRule[] = []
@@ -382,34 +407,15 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
 
       <Show when={isFieldExpanded()}>
         <div class="value">
-          <Show when={!props.readonly}>
-            <div class="buttons">
-              <Stack direction="row" spacing={"0.75em"}>
-                <Button
-                  width="100%"
-                  size="xs"
-                  onClick={toggleAvailableExecutorsOpen}
-                  {...(isAvailableExecutorsOpen()
-                    ? {
-                        leadingIcon: "check",
-                        variant: "primary",
-                        color: "blue",
-                      }
-                    : {
-                        leadingIcon: "add",
-                        variant: "secondary",
-                      })}
-                />
-                <Button
-                  width="100%"
-                  size="xs"
-                  variant="secondary"
-                  leadingIcon="save"
-                  onClick={saveAccessRules}
-                />
-              </Stack>
-            </div>
-          </Show>
+          <Button
+            size="xs"
+            variant={state.executors.length > 0 ? "secondary" : "primary"}
+            leadingIcon={state.executors.length > 0 ? "edit" : "add"}
+            onClick={toggleAvailableExecutorsOpen}
+            disabled={isAvailableExecutorsOpen()}
+          >
+            {state.executors.length > 0 ? "edit" : "add"} executors
+          </Button>
 
           <Show
             when={state.executors.length > 0}
@@ -427,115 +433,170 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
           >
             <div class="executors">
               <For each={state.executors}>
-                {(executor, executorIndex) => (
-                  <>
-                    <div class="executor">
-                      <div class="executor-header-hint">
-                        executor {executorIndex() + 1}
-                      </div>
-                      <div class="executor-header">
-                        <div class="executor-label">
-                          <div class="icon">
-                            <Switch>
-                              <Match when={executor.executorType === "user"}>
-                                <Icon
-                                  name="person"
-                                  wght={500}
-                                  size={12}
-                                  fill={1}
-                                />
-                              </Match>
-                              <Match
-                                when={executor.executorType === "user_group"}
-                              >
-                                <Icon
-                                  name="group"
-                                  wght={500}
-                                  size={12}
-                                  fill={1}
-                                />
-                              </Match>
-                            </Switch>
-                          </div>
-                          <div class="name">{executor.executorName}</div>
-                        </div>
-                        <Show when={!props.readonly}>
-                          <div class="buttons">
-                            <button
-                              class="button"
-                              onClick={() => removeExecutor(executorIndex())}
-                            >
-                              <Icon
-                                name="close"
-                                wght={600}
-                                size={12}
-                                fill={1}
-                              />
-                            </button>
-                          </div>
-                        </Show>
-                      </div>
+                {(executor, executorIndex) => {
+                  const selected = createMemo(() =>
+                    selectedExecutors().includes(
+                      `${executor.executorType}:${executor.executorId}`
+                    )
+                  )
+
+                  return (
+                    <>
                       <div
                         classList={{
-                          "executor-actions": true,
-                          readonly: props.readonly,
+                          executor: true,
+                          selected: selected(),
                         }}
                       >
-                        <Show when={props.entryType === "folder"}>
+                        <div class="executor-header">
+                          <div class="executor-label">
+                            <div class="icon">
+                              <Switch>
+                                <Match when={executor.executorType === "user"}>
+                                  <Icon
+                                    name="person"
+                                    wght={500}
+                                    size={12}
+                                    fill={1}
+                                  />
+                                </Match>
+                                <Match
+                                  when={executor.executorType === "user_group"}
+                                >
+                                  <Icon
+                                    name="group"
+                                    wght={500}
+                                    size={12}
+                                    fill={1}
+                                  />
+                                </Match>
+                              </Switch>
+                            </div>
+                            <div class="name">{executor.executorName}</div>
+                          </div>
+                          <Show when={!props.readonly}>
+                            <div class="buttons">
+                              <button
+                                title="select"
+                                class="button select"
+                                onClick={() =>
+                                  selectExecutor(
+                                    `${executor.executorType}:${executor.executorId}`
+                                  )
+                                }
+                              >
+                                <Icon
+                                  name={
+                                    selected() ? "remove_selection" : "select"
+                                  }
+                                  wght={600}
+                                  size={12}
+                                  fill={1}
+                                />
+                              </button>
+                              <button
+                                title="remove"
+                                class="button"
+                                onClick={() => removeExecutor(executorIndex())}
+                              >
+                                <Icon
+                                  name="close"
+                                  wght={600}
+                                  size={12}
+                                  fill={1}
+                                />
+                              </button>
+                            </div>
+                          </Show>
+                        </div>
+                        <div
+                          classList={{
+                            "executor-actions": true,
+                            readonly: props.readonly,
+                          }}
+                        >
+                          <Show when={props.entryType === "folder"}>
+                            <StorageAccessSelectedExecutorAction
+                              executorIndex={executorIndex()}
+                              actionType="list_entries"
+                              accessType={executor.actions.list_entries}
+                              setState={setState}
+                            />
+                            <StorageAccessSelectedExecutorAction
+                              executorIndex={executorIndex()}
+                              actionType="upload"
+                              accessType={executor.actions.upload}
+                              setState={setState}
+                            />
+                          </Show>
                           <StorageAccessSelectedExecutorAction
                             executorIndex={executorIndex()}
-                            actionType="list_entries"
-                            accessType={executor.actions.list_entries}
+                            actionType="download"
+                            accessType={executor.actions.download}
                             setState={setState}
                           />
                           <StorageAccessSelectedExecutorAction
                             executorIndex={executorIndex()}
-                            actionType="upload"
-                            accessType={executor.actions.upload}
+                            actionType="rename"
+                            accessType={executor.actions.rename}
                             setState={setState}
                           />
-                        </Show>
-                        <StorageAccessSelectedExecutorAction
-                          executorIndex={executorIndex()}
-                          actionType="download"
-                          accessType={executor.actions.download}
-                          setState={setState}
-                        />
-                        <StorageAccessSelectedExecutorAction
-                          executorIndex={executorIndex()}
-                          actionType="rename"
-                          accessType={executor.actions.rename}
-                          setState={setState}
-                        />
-                        <StorageAccessSelectedExecutorAction
-                          executorIndex={executorIndex()}
-                          actionType="move"
-                          accessType={executor.actions.move}
-                          setState={setState}
-                        />
-                        <StorageAccessSelectedExecutorAction
-                          executorIndex={executorIndex()}
-                          actionType="delete"
-                          accessType={executor.actions.delete}
-                          setState={setState}
-                        />
-                        <StorageAccessSelectedExecutorAction
-                          executorIndex={executorIndex()}
-                          actionType="manage_access"
-                          accessType={executor.actions.manage_access}
-                          setState={setState}
-                        />
+                          <StorageAccessSelectedExecutorAction
+                            executorIndex={executorIndex()}
+                            actionType="move"
+                            accessType={executor.actions.move}
+                            setState={setState}
+                          />
+                          <StorageAccessSelectedExecutorAction
+                            executorIndex={executorIndex()}
+                            actionType="delete"
+                            accessType={executor.actions.delete}
+                            setState={setState}
+                          />
+                          <StorageAccessSelectedExecutorAction
+                            executorIndex={executorIndex()}
+                            actionType="manage_access"
+                            accessType={executor.actions.manage_access}
+                            setState={setState}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
+                    </>
+                  )
+                }}
               </For>
             </div>
+          </Show>
+
+          <Show when={!props.readonly}>
+            <Stack direction="row" alignItems="center" spacing={"0.5em"}>
+              <Button
+                title="Reset"
+                size="xs-squared"
+                variant="secondary"
+                leadingIcon="undo"
+                onClick={resetField}
+              />
+
+              <Button
+                width="100%"
+                size="xs"
+                variant="primary"
+                leadingIcon="save"
+                onClick={saveAccessRules}
+              >
+                Save
+              </Button>
+            </Stack>
           </Show>
         </div>
       </Show>
       <div class="floating-container">
         <div class="available-access-entries-container">
+          <div class="header">
+            <Text fontWeight={500}>Select executors</Text>
+          </div>
+
           <div class="search">
             <InputField
               width="100%"
@@ -549,6 +610,14 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
               }}
             />
           </div>
+
+          <Show when={userGroups().length === 0 && users().length === 0}>
+            <Note type="secondary">
+              <Text fontSize="var(--text-sm)" fontWeight={500}>
+                No results
+              </Text>
+            </Note>
+          </Show>
 
           <Show when={userGroups().length > 0}>
             <div class="section">
@@ -601,6 +670,14 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
               </div>
             </div>
           </Show>
+
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={toggleAvailableExecutorsOpen}
+          >
+            Close
+          </Button>
         </div>
       </div>
     </div>
