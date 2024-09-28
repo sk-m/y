@@ -251,6 +251,11 @@
           "artifacts_disabled": "Artifacts are disabled for this endpoint",
           "invalid_file_ids_param": "Invalid entry_ids parameter",
           "too_many_entries_requested": "Too many entries requested"
+        },
+        "create_storage_access_rules": {
+          "unauthorized": "Permission denied",
+          "internal": "Other",
+          "invalid_input": "Invalid input"
         }
       }
     }
