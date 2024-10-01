@@ -45,3 +45,5 @@ export const TUserGroupDetails = z.object({
   rights: z.array(TUserGroupRight),
   group_type: z.nullable(z.string()),
 })
+
+export type IUserGroupDetails = z.infer<typeof TUserGroupDetails>

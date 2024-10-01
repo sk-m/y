@@ -122,7 +122,7 @@ const AdminLayout: Component = () => {
           <Route path="/users" component={UsersListPage} />
           <Route path="/user-groups" component={UserGroupsPage} />
           <Route path="/user-groups/new" component={NewUserGroupPage} />
-          <Route path="/user-groups/:groupId" component={UserGroupPage} />
+          <Route path="/user-groups/:groupId/*" component={UserGroupPage} />
           <Route path="/users/:userId/*" component={UserPage} />
           <Route path="/users/new" component={NewUserPage} />
           <Route path="/features" component={FeaturesPage} />
