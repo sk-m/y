@@ -1,5 +1,7 @@
 import { JSX } from "solid-js"
 
+import { NavLink } from "@solidjs/router"
+
 import { ComponentWithChildren } from "@/module"
 
 import "./link.less"
@@ -13,7 +15,7 @@ export type LinkProps = {
 
 export const Link: ComponentWithChildren<LinkProps> = (props) => {
   return (
-    <a
+    <NavLink
       href={props.href}
       classList={{
         "ui-link": true,
@@ -22,6 +24,6 @@ export const Link: ComponentWithChildren<LinkProps> = (props) => {
       style={props.style}
     >
       {props.children}
-    </a>
+    </NavLink>
   )
 }
