@@ -85,12 +85,15 @@ const UserGroupPage: Component = () => {
     return (locationParts.length > 3 && locationParts[4]) || "general"
   })
 
-  const navigateToSubpage = (subpage: string) =>
-    groupId() && navigate(`${USER_GROUPS_ROUTE}/${groupId()}/${subpage}`)
+  const navigateToSubpage = (subpage: string, replace = false) =>
+    groupId() &&
+    navigate(`${USER_GROUPS_ROUTE}/${groupId()}/${subpage}`, {
+      replace,
+    })
 
   createEffect(() => {
     if (!isNonSystemGroup() && currentSubpage() === "general") {
-      navigateToSubpage("rights")
+      navigateToSubpage("rights", true)
     }
   })
 
