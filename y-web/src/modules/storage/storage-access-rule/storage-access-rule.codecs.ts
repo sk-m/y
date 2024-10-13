@@ -42,6 +42,12 @@ export const TCreateStorageAccessRules = z.object({
   rules: z.array(TStorageAccessRule),
 })
 
+const TGetStorageEntryAccessRulesTemplate = z.object({
+  id: z.number(),
+  name: z.string(),
+})
+
 export const TGetStorageEntryAccessRules = z.object({
   rules: z.array(TStorageAccessRule),
+  templates: z.array(TGetStorageEntryAccessRulesTemplate),
 })
