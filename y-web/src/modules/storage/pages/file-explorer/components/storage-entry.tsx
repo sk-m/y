@@ -5,9 +5,11 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  on,
   onCleanup,
   onMount,
 } from "solid-js"
+import { isDev } from "solid-js/web"
 
 import { Checkbox } from "@/app/components/common/checkbox/checkbox"
 import { Icon } from "@/app/components/common/icon/icon"
@@ -19,7 +21,8 @@ export type StorageEntryProps = {
 
   entry: IStorageEntry
 
-  selected?: boolean
+  isSelected?: boolean
+  isActive?: boolean
   isContextMenuTarget?: boolean
   thumbnails?: Record<number, string>
   isRenaming?: boolean
@@ -34,10 +37,14 @@ export type StorageEntryProps = {
 }
 
 export const StorageEntry: Component<StorageEntryProps> = (props) => {
+  let itemInfoRef: HTMLDivElement | undefined
   let nameFieldRef: HTMLInputElement
+  let nameFloaterRef: HTMLDivElement | undefined
 
   const [isAboutToRecieve, setIsAboutToReceive] = createSignal(false)
   const [isDragging, setIsDragging] = createSignal(false)
+  const [showNameFloaterOnHover, setShowNameFloaterOnHover] =
+    createSignal(false)
 
   // prettier-ignore
   const thumbnail = createMemo(() =>
@@ -118,6 +125,21 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
     })
   })
 
+  createEffect(
+    on(
+      () => props.entry.name,
+      () => {
+        if (
+          nameFloaterRef &&
+          itemInfoRef &&
+          nameFloaterRef.clientWidth >= itemInfoRef.clientWidth
+        ) {
+          setShowNameFloaterOnHover(true)
+        }
+      }
+    )
+  )
+
   return (
     // TODO: Should be a clickable <button />
     <div
@@ -130,7 +152,8 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       onDrop={onDrop}
       classList={{
         item: true,
-        selected: props.selected,
+        selected: props.isSelected,
+        active: props.isActive,
         "context-menu-target": props.isContextMenuTarget,
         "about-to-receive": isAboutToRecieve(),
         dragging: isDragging(),
@@ -156,7 +179,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
         <div class="item-select-container">
           <Checkbox
             size="m"
-            value={props.selected}
+            value={props.isSelected}
             onChange={(_, event) => {
               props.onSelect!(event)
             }}
@@ -167,6 +190,22 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
         </div>
       </Show>
       <div class="item-thumb">
+        <Show when={isDev}>
+          <div
+            style={{
+              position: "absolute",
+              right: "0.25em",
+              bottom: "0.25em",
+              "font-family": "monospace",
+              color: "white",
+              background: "rgba(2,2,2,0.33)",
+              padding: "0.1em 0.25em",
+              "border-radius": "0.25em",
+            }}
+          >
+            {props.entry.id}
+          </div>
+        </Show>
         <Show
           when={thumbnail()}
           fallback={
@@ -190,18 +229,21 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
           />
         </Show>
       </div>
-      <div class="item-info">
-        <div
-          class="item-name"
-          title={
-            props.isRenaming
-              ? // eslint-disable-next-line no-undefined
-                undefined
-              : `${props.entry.name}${
-                  props.entry.extension ? `.${props.entry.extension}` : ""
-                }`
-          }
-        >
+      <div
+        ref={itemInfoRef}
+        classList={{
+          "item-info": true,
+          "show-name-floater": showNameFloaterOnHover(),
+        }}
+      >
+        <div ref={nameFloaterRef} class="item-name-floater">
+          <div class="name">
+            {`${props.entry.name}${
+              props.entry.extension ? `.${props.entry.extension}` : ""
+            }`}
+          </div>
+        </div>
+        <div class="item-name">
           <div hidden={props.isRenaming} class="name">
             {props.entry.name}
           </div>

@@ -1206,6 +1206,10 @@ const FileExplorerPage: Component = () => {
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
                 {(entry, index) => {
+                  const active = createMemo(
+                    () => infoPanelSelectedEntry()?.id === entry.id
+                  )
+
                   const selected = createMemo(() =>
                     selectedEntries().has(`${entry.entry_type}:${entry.id}`)
                   )
@@ -1225,7 +1229,8 @@ const FileExplorerPage: Component = () => {
                       }}
                       isRenaming={isRenaming()}
                       entry={entry}
-                      selected={selected()}
+                      isSelected={selected()}
+                      isActive={active()}
                       isContextMenuTarget={isContextMenuTarget()}
                       thumbnails={thumbnails()}
                       onDblClick={() => {

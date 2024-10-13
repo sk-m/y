@@ -163,11 +163,11 @@
 
             height: fit-content;
 
-            border-radius: 6px;
+            border-radius: @border-radius-primary;
 
             background-color: var(--color-grey-15);
 
-            box-shadow: 0 5px 10px 0 rgba(21, 23, 46, 0.075);
+            box-shadow: 0 0.1em 0.5em 0 rgba(@brand-black-rgb, 0.1);
 
             transition: 0.15s;
 
@@ -193,6 +193,11 @@
 
                 background-color: var(--color-grey-15);
               }
+            }
+
+            &.active {
+              box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(@brand-black-rgb, 0.9),
+                0 0 8px 4px rgba(@brand-black-rgb, 0.33) !important;
             }
 
             &:hover,
@@ -260,7 +265,7 @@
 
               color: var(--color-primary-d-1);
 
-              border-radius: 6px;
+              border-radius: @border-radius-primary;
               background-color: var(--color-primary-o-1);
               border: 1px solid var(--color-primary-t-3);
 
@@ -321,7 +326,7 @@
               background-color: rgba(255, 255, 255, 0.6);
               // box-shadow: 0 0 0 1px var(--color-border-2);
 
-              border-radius: 6px;
+              border-radius: @border-radius-primary;
 
               // hidden state
               opacity: 0;
@@ -335,14 +340,14 @@
               width: 100%;
               height: 6em;
 
-              border-top-right-radius: 6px;
-              border-top-left-radius: 6px;
+              border-top-right-radius: 8px;
+              border-top-left-radius: 8px;
 
               transition: 0.15s;
 
               > .thumbnail {
                 width: 100%;
-                height: calc(100% + 4px);
+                height: calc(100% + 5px);
 
                 border-top-right-radius: inherit;
                 border-top-left-radius: inherit;
@@ -368,7 +373,7 @@
 
             > .item-info {
               position: relative;
-              z-index: 1;
+              // z-index: 1;
 
               flex-shrink: 0;
               padding: 0.5em 0.75em;
@@ -376,11 +381,60 @@
               user-select: none;
 
               background-color: white;
-              box-shadow: @border-light;
 
-              border-radius: 6px;
+              box-shadow: @border-secondary;
+              // box-shadow: @border-secondary,
+              //   inset 0 -2px 10px -8px rgba(@brand-black-rgb, 0.25);
+
+              border-radius: @border-radius-primary;
 
               transition: 0.15s;
+
+              &.show-name-floater:hover {
+                > .item-name {
+                  opacity: 0;
+                }
+
+                > .item-name-floater {
+                  opacity: 1;
+                }
+              }
+
+              > .item-name-floater {
+                position: absolute;
+                z-index: 2;
+
+                display: flex;
+                align-items: center;
+
+                top: 0;
+                left: 0;
+
+                height: 100%;
+                width: auto;
+                max-width: 50vw;
+
+                padding: 0em 0.75em;
+
+                pointer-events: none;
+
+                border-radius: 8px;
+                background-color: var(--color-grey-15);
+                box-shadow: 0 0 0 1px var(--color-border-2),
+                  0 5px 15px 0 rgba(@brand-black-rgb, 0.1);
+
+                color: var(--color-text-grey-05);
+                font-size: var(--text-body);
+                font-weight: 500;
+
+                word-break: keep-all;
+                white-space: nowrap;
+
+                // default state
+                opacity: 0;
+
+                transition: 0.15s;
+              }
 
               > .item-name {
                 display: flex;
@@ -389,6 +443,11 @@
 
                 font-size: var(--text-body);
                 font-weight: 500;
+
+                // default state
+                opacity: 1;
+
+                transition: 0.15s;
 
                 > .name-input {
                   color: var(--color-text);
