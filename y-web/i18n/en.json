@@ -108,6 +108,11 @@
         "accessible_endpoints": {
           "label": "Endpoints with root access"
         }
+      },
+      "storage_manage_access": {
+        "allow_managing_templates": {
+          "description": "Allow managing access rule templates."
+        }
       }
     },
     "storage_feature": {

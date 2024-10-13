@@ -173,6 +173,10 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_rename_entry::storage_rename_entry)
                     .service(crate::api::storage::storage_get::storage_get)
                     .service(crate::api::storage::storage_create_access_rules::storage_create_access_rules)
+                    .service(crate::api::storage::storage_create_access_rules_template::storage_create_access_rules_template)
+                    .service(crate::api::storage::storage_entry_add_access_rules_template::storage_entry_add_access_rules_template)
+                    .service(crate::api::storage::storage_entry_remove_access_rules_template::storage_entry_remove_access_rules_template)
+                    .service(crate::api::storage::storage_access_rules_templates::storage_access_rules_templates)
                     .service(crate::api::storage::storage_get_access_rules::storage_get_access_rules)
             )
             .service(

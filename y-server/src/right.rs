@@ -137,7 +137,11 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                 },
                 Right {
                     name: "storage_manage_access",
-                    options: vec![],
+                    options: vec![RightOption {
+                        name: "allow_managing_templates",
+                        value_type: RightValueType::Boolean,
+                        value_source: None,
+                    }],
                     tags: vec![RightTag::Administrative],
                     feature: Some("storage"),
                 },
