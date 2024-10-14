@@ -180,6 +180,7 @@ const StorageEndpointPage = () => {
                               id: status,
                             }))}
                             width="100%"
+                            hideCheckboxes
                             {...inputProps}
                           />
                         )}
