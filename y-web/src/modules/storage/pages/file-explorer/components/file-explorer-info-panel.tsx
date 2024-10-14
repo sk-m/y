@@ -7,6 +7,7 @@ import {
   KeyValueFields,
 } from "@/app/components/common/key-value/key-value"
 import { formatBytes } from "@/app/core/format-utils"
+import { useUser } from "@/modules/admin/user/user.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
 import {
   StorageAccessField,
@@ -44,6 +45,17 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
       ? props.thumbnails?.[props.entry.id]
       : null)
   )
+
+  // TODO is this a good idea?
+  const createdBy = createMemo(() => {
+    if (props.entry.created_by === null) return null
+
+    const $createdBy = useUser(() => ({
+      userId: props.entry.created_by!,
+    }))
+
+    return $createdBy.data
+  })
 
   const $entryAccessRules = useStorageEntryAccessRules(() => ({
     endpointId: props.endpointId,
@@ -121,6 +133,13 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
               onChange={() => void 0}
             />
           </Show>
+          <KeyValue
+            direction="column"
+            label="Created by"
+            readonly
+            value={createdBy()?.username ?? "-"}
+            onChange={() => void 0}
+          />
           <Show when={props.entry.created_at}>
             <KeyValue
               direction="column"
