@@ -66,7 +66,11 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
     const rules = $entryAccessRules.data?.rules ?? []
     const executors: Record<number, StorageEntryExecutor> = {}
 
-    if (rules.length === 0) return { executors: [] }
+    if (rules.length === 0)
+      return {
+        executors: [],
+        templates: $entryAccessRules.data?.templates ?? [],
+      }
 
     for (const rule of rules) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -87,6 +91,7 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
 
     return {
       executors: Object.values(executors),
+      templates: $entryAccessRules.data?.templates ?? [],
     }
   })
 

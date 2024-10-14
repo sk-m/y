@@ -40,11 +40,71 @@
     padding: 0.75em;
     padding-top: 0;
 
-    > .message {
-      text-align: center;
+    > .section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+
+      > .section-label {
+        color: rgba(@brand-black-rgb, 0.5);
+        font-weight: 500;
+        font-size: var(--text-sm);
+      }
     }
 
-    > .executors {
+    > .section > .templates {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+
+      > .template {
+        box-sizing: border-box;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        width: 100%;
+
+        padding: 0.33em 0.66em;
+
+        box-shadow: 0 0 0 1px var(--color-border-15);
+        border-radius: 6px;
+
+        > .name {
+          font-size: var(--text-sm);
+          font-weight: 500;
+        }
+
+        > .actions {
+          display: flex;
+          align-items: center;
+          gap: 0.5em;
+
+          > .action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 0.25em;
+
+            cursor: pointer;
+
+            border: none;
+            background-color: transparent;
+            border-radius: 6px;
+
+            transition: 0.15s;
+
+            &:hover {
+              background-color: var(--color-grey-2);
+            }
+          }
+        }
+      }
+    }
+
+    > .section > .executors {
       display: flex;
       flex-direction: column;
       gap: 1em;
