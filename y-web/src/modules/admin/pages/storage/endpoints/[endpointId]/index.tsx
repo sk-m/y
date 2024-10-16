@@ -132,7 +132,7 @@ const StorageEndpointPage = () => {
             <TabContent>
               <Stack spacing={"1.5em"}>
                 <Card>
-                  <Stack direction="row" justifyContent="space-between">
+                  <Stack spacing={"1.5em"}>
                     <div class="ui-card-label">
                       <div class="label-strip" />
                       <Text
@@ -146,6 +146,7 @@ const StorageEndpointPage = () => {
                     </div>
 
                     <KeyValueFields
+                      textAlign="left"
                       style={{
                         width: "50%",
                       }}
@@ -281,7 +282,7 @@ const StorageEndpointPage = () => {
                               title: value ? "Enabled" : "Disabled",
                               content: "Setting updated successfully.",
                               severity: "success",
-                              icon: "check",
+                              icon: value ? "toggle_on" : "toggle_off",
                             })
                           })
                         }}

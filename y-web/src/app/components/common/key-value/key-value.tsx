@@ -35,6 +35,7 @@ export type KeyValueProps<TValue> = {
 }
 
 export type KeyValueFieldsProps = {
+  textAlign?: "left" | "right"
   style?: JSX.CSSProperties
 }
 
@@ -42,7 +43,13 @@ export const KeyValueFields: ComponentWithChildren<KeyValueFieldsProps> = (
   props
 ) => {
   return (
-    <div class="ui-keyvalue-fields" style={props.style}>
+    <div
+      classList={{
+        "ui-keyvalue-fields": true,
+        [`align-${props.textAlign ?? "right"}`]: true,
+      }}
+      style={props.style}
+    >
       {props.children}
     </div>
   )

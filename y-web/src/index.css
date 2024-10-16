@@ -116,6 +116,7 @@ input[type="checkbox"] {
   --color-primary-d-1: hsl(234, 100%, 33%);
 
   --color-primary-d-1-t-1: hsla(234, 100%, 33%, 0.1);
+  --color-primary-d-1-t-2: hsla(234, 100%, 33%, 0.2);
   --color-primary-d-1-t-4: hsla(234, 100%, 33%, 0.4);
   --color-primary-d-1-t-5: hsla(234, 100%, 33%, 0.5);
 

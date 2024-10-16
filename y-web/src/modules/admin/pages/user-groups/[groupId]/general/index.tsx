@@ -153,7 +153,7 @@ const UserGroupGeneralSubpage: Component<UserGroupGeneralSubpageProps> = (
           when={props.groupManagementAllowed && props.group.group_type === null}
         >
           <Card>
-            <Stack direction="row" justifyContent="space-between">
+            <Stack spacing={"1.5em"}>
               <div class="ui-card-label">
                 <div class="label-strip" />
                 <Text
@@ -167,6 +167,7 @@ const UserGroupGeneralSubpage: Component<UserGroupGeneralSubpageProps> = (
               </div>
 
               <KeyValueFields
+                textAlign="left"
                 style={{
                   width: "500px",
                 }}

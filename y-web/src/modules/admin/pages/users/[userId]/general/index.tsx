@@ -163,6 +163,7 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
           </div>
 
           <KeyValueFields
+            textAlign="left"
             style={{
               width: "50%",
             }}

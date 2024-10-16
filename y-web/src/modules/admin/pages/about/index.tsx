@@ -1,5 +1,6 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { Component } from "solid-js"
+import { isDev } from "solid-js/web"
 
 import { Container } from "@/app/components/common/layout/container"
 import { Link } from "@/app/components/common/link/link"
@@ -33,6 +34,7 @@ const AboutPage: Component = () => {
           </Text>
           <Text variant="secondary" fontSize={"var(--text-sm)"}>
             {VERSION.version}
+            {isDev ? " (dev build)" : ""}
           </Text>
         </Stack>
         <Stack direction="row" alignItems="center" spacing={"1em"}>
