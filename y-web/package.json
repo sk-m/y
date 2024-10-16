@@ -33,7 +33,7 @@
     "@types/downloadjs": "^1.4.6",
     "date-fns": "^2.30.0",
     "downloadjs": "^1.4.7",
-    "material-symbols": "^0.10.0",
+    "material-symbols": "^0.25.0",
     "solid-js": "^1.8.7",
     "zod": "^3.22.4"
   }
