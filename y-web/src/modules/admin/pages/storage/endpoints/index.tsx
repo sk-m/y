@@ -78,34 +78,47 @@ const StorageEndpointsPage: Component = () => {
             <div class="endpoint-cards-container">
               <For each={endpoints()}>
                 {(endpoint) => (
-                  <Link class="endpoint" href={`${endpoint.id}`}>
-                    <div class="icon">
-                      <Icon fill={1} type="rounded" name="hard_drive" />
+                  <div class="endpoint-container">
+                    <Link class="endpoint" href={`${endpoint.id}`}>
+                      <div class="header">
+                        <div class="icon">
+                          <Icon
+                            fill={0}
+                            type="rounded"
+                            name="hard_drive"
+                            wght={500}
+                          />
 
-                      <div
-                        classList={{
-                          "status-dot": true,
-                          active: endpoint.status === "active",
-                          readonly: endpoint.status === "read_only",
-                          disabled: endpoint.status === "disabled",
-                        }}
-                      />
-                    </div>
-                    <div class="main-info">
-                      <div class="endpoint-name">
-                        <div>{endpoint.name}</div>
+                          <div
+                            classList={{
+                              "status-dot": true,
+                              active: endpoint.status === "active",
+                              readonly: endpoint.status === "read_only",
+                              disabled: endpoint.status === "disabled",
+                            }}
+                          />
+                        </div>
 
+                        <div class="endpoint-name">
+                          <div>{endpoint.name}</div>
+                        </div>
+                      </div>
+
+                      <div class="pills">
                         <Show when={endpoint.access_rules_enabled}>
                           <Pill variant="success">access rules</Pill>
                         </Show>
                       </div>
-                      <div class="endpoint-subtext">
-                        <Text variant="secondary" fontSize={"var(--text-sm)"}>
-                          {endpoint.description}
-                        </Text>
+
+                      <div class="main-info">
+                        <div class="endpoint-subtext">
+                          <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                            {endpoint.description}
+                          </Text>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+                  </div>
                 )}
               </For>
             </div>
