@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+#[allow(dead_code)]
 #[derive(Serialize)]
 pub enum RightTag {
     #[serde(rename = "dangerous")]
@@ -8,6 +9,7 @@ pub enum RightTag {
     Administrative,
 }
 
+#[allow(dead_code)]
 #[derive(Serialize)]
 pub enum RightValueType {
     #[serde(rename = "boolean")]
