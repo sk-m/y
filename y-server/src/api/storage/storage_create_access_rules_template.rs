@@ -1,5 +1,4 @@
 use actix_web::{post, web, HttpResponse, Responder};
-use log::*;
 use serde::Deserialize;
 use sqlx::QueryBuilder;
 use validator::Validate;

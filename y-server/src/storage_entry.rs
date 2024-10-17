@@ -818,3 +818,49 @@ pub fn generate_video_entry_thumbnail(
         Ok(())
     }
 }
+
+pub fn generate_audio_entry_cover_thumbnail(
+    filesystem_id: &str,
+    endpoint_path: &str,
+    endpoint_artifacts_path: &str,
+) -> Result<(), String> {
+    let ffmpeg_bin_path = env::var("FFMPEG_BIN");
+
+    if let Ok(ffmpeg_bin_path) = &ffmpeg_bin_path {
+        let ffmpeg_bin_path = Path::new(&ffmpeg_bin_path);
+
+        if ffmpeg_bin_path.exists() {
+            let file_path = Path::new(endpoint_path).join(&filesystem_id);
+            let endpoint_thumbnails_path = Path::new(endpoint_artifacts_path).join("thumbnails");
+
+            let ffmpeg_result = Command::new(ffmpeg_bin_path)
+                .arg("-i")
+                .arg(file_path.to_str().unwrap())
+                .arg("-an")
+                .arg("-c:v")
+                .arg("libwebp")
+                .arg(
+                    endpoint_thumbnails_path
+                        .join(&filesystem_id)
+                        .with_extension("webp")
+                        .to_str()
+                        .unwrap(),
+                )
+                .output();
+
+            if let Ok(ffmpeg_result) = ffmpeg_result {
+                if ffmpeg_result.status.success() {
+                    Ok(())
+                } else {
+                    Err("Could not generate a cover image thumbnail for an audio storage entry".to_string())
+                }
+            } else {
+                Err("Could not execute the ffmpeg command".to_string())
+            }
+        } else {
+            Err("Could not find the ffmpeg binary".to_string())
+        }
+    } else {
+        Ok(())
+    }
+}

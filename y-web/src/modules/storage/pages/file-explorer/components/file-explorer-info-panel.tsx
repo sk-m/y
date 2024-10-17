@@ -2,6 +2,7 @@ import { Component, Show, createMemo } from "solid-js"
 
 import { format } from "date-fns"
 
+import { Icon } from "@/app/components/common/icon/icon"
 import {
   KeyValue,
   KeyValueFields,
@@ -99,7 +100,9 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
     <div class="file-explorer-info-panel">
       <Show when={thumbnail()}>
         <div
-          class="thumbnail-container"
+          classList={{
+            "thumbnail-container": true,
+          }}
           onClick={() => {
             props.onThumbnailClick?.()
           }}
@@ -109,6 +112,21 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
             class="thumbnail"
             src={`data:image/jpeg;base64, ${thumbnail() ?? ""}`}
           />
+          <Show when={props.entry.mime_type?.startsWith("audio/")}>
+            <div class="hover-icon">
+              <Icon
+                name="play_arrow"
+                size={64}
+                wght={500}
+                type="outlined"
+                fill={1}
+              />
+            </div>
+            <div class="info-text">
+              <Icon name="music_note" size={16} wght={500} type="outlined" />
+              <div class="text">Cover art</div>
+            </div>
+          </Show>
         </div>
       </Show>
 

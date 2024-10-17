@@ -132,7 +132,7 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    // Make sure the environment is setup correctly
+    // Make sure the environment is set up correctly
     let upload_staging_folder = Path::new("upload_staging");
 
     if !upload_staging_folder.exists() {

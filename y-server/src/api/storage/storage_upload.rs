@@ -14,7 +14,10 @@ use std::io::Write;
 use std::time::Instant;
 
 use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
-use crate::storage_entry::{generate_image_entry_thumbnail, generate_video_entry_thumbnail};
+use crate::storage_entry::{
+    generate_audio_entry_cover_thumbnail, generate_image_entry_thumbnail,
+    generate_video_entry_thumbnail,
+};
 use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
 
@@ -438,6 +441,22 @@ async fn storage_upload(
                                 if generate_thumbnail_result.is_err() {
                                     error!(
                                         "Failed to create a thumbnail for an uploaded video file. {}",
+                                        generate_thumbnail_result.unwrap_err()
+                                    );
+                                }
+                            }
+
+                            "audio/mpeg" | "audio/x-flac" | "audio/x-wav" | "audio/aac" => {
+                                let generate_thumbnail_result =
+                                    generate_audio_entry_cover_thumbnail(
+                                        &filesystem_id,
+                                        &target_endpoint.base_path.as_str(),
+                                        &target_endpoint_artifacts_path.as_str(),
+                                    );
+
+                                if generate_thumbnail_result.is_err() {
+                                    error!(
+                                        "Failed to create a cover image thumbnail for an uploaded audio file. {}",
                                         generate_thumbnail_result.unwrap_err()
                                     );
                                 }
