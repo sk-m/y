@@ -2,6 +2,7 @@ pub mod storage_access_rules_templates;
 pub mod storage_create_access_rules;
 pub mod storage_create_access_rules_template;
 pub mod storage_create_folder;
+pub mod storage_delete_access_rules_template;
 pub mod storage_delete_entries;
 pub mod storage_download;
 pub mod storage_download_zip;

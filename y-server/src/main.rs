@@ -178,6 +178,7 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_entry_remove_access_rules_template::storage_entry_remove_access_rules_template)
                     .service(crate::api::storage::storage_access_rules_templates::storage_access_rules_templates)
                     .service(crate::api::storage::storage_get_access_rules::storage_get_access_rules)
+                    .service(crate::api::storage::storage_delete_access_rules_template::storage_delete_access_rules_template)
             )
             .service(
                 web::scope("/api/admin")
