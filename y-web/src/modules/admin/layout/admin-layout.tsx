@@ -42,6 +42,10 @@ const StorageEndpointPage = lazy(
   async () => import("@/modules/admin/pages/storage/endpoints/[endpointId]")
 )
 
+const StorageAccessTemplatesPage = lazy(
+  async () => import("@/modules/admin/pages/storage/access-templates")
+)
+
 const AboutPage = lazy(async () => import("@/modules/admin/pages/about"))
 
 const FeaturesPage = lazy(async () => import("@/modules/admin/pages/features"))
@@ -89,6 +93,20 @@ const AdminLayout: Component = () => {
               />
             </AsideEntry>
 
+            {/* <AsideEntry
+              icon="page_info"
+              title="Configuration"
+              to="config/general"
+              relatedPaths={["config", "config/general"]}
+            >
+              <AsideEntry
+                subEntry
+                icon="manufacturing"
+                title="Genral"
+                to="config/general"
+              />
+            </AsideEntry> */}
+
             <Show when={storagePageAllowed()}>
               <AsideEntry
                 icon="hard_drive"
@@ -102,10 +120,14 @@ const AdminLayout: Component = () => {
                   title="Endpoints"
                   to="storage/endpoints"
                 />
+                <AsideEntry
+                  subEntry
+                  icon="contract"
+                  title="Access Templates"
+                  to="storage/access-templates"
+                />
               </AsideEntry>
             </Show>
-
-            {/* <AsideEntry icon="tune" title="Instance config" to="config" /> */}
 
             <Show when={featuresPageAllowed()}>
               <AsideEntry icon="bolt" title="Features" to="features" />
@@ -134,6 +156,10 @@ const AdminLayout: Component = () => {
           <Route
             path="/storage/endpoints/new"
             component={NewStorageEndpointPage}
+          />
+          <Route
+            path="/storage/access-templates"
+            component={StorageAccessTemplatesPage}
           />
           <Route path="/about" component={AboutPage} />
         </Routes>
