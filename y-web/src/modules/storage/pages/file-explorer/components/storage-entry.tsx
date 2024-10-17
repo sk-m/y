@@ -108,7 +108,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
   })
 
   onMount(() => {
-    const handler = (event: KeyboardEvent) => {
+    const keyUpHandler = (event: KeyboardEvent) => {
       if (event.key === "Enter") {
         props.onRename?.(nameFieldRef!.value)
       }
@@ -118,10 +118,16 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       }
     }
 
-    nameFieldRef.addEventListener("keyup", handler)
+    const blurHandler = () => {
+      props.onCancelRename?.()
+    }
+
+    nameFieldRef.addEventListener("keyup", keyUpHandler)
+    nameFieldRef.addEventListener("blur", blurHandler)
 
     onCleanup(() => {
-      nameFieldRef.removeEventListener("keyup", handler)
+      nameFieldRef.removeEventListener("keyup", keyUpHandler)
+      nameFieldRef.removeEventListener("blur", blurHandler)
     })
   })
 
@@ -194,13 +200,15 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
           <div
             style={{
               position: "absolute",
+              top: "0.25em",
               right: "0.25em",
-              bottom: "0.25em",
               "font-family": "monospace",
               color: "white",
               background: "rgba(2,2,2,0.33)",
               padding: "0.1em 0.25em",
               "border-radius": "0.25em",
+              "backdrop-filter": "blur(2px)",
+              "font-size": "12px",
             }}
           >
             {props.entry.id}

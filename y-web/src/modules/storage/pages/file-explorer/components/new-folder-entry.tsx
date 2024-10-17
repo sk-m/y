@@ -22,17 +22,29 @@ export const NewFolderEntry: Component<NewFolderEntryProps> = (props) => {
 
   onMount(() => {
     if (newFolderNameInputRef) {
-      const handler = (event: KeyboardEvent) => {
+      const keyUpHandler = (event: KeyboardEvent) => {
         if (event.key === "Enter") {
           props.onCreate(newFolderNameInputRef!.value)
           newFolderNameInputRef!.value = ""
         }
+
+        if (event.key === "Escape") {
+          newFolderNameInputRef!.value = ""
+          props.onClose()
+        }
       }
 
-      newFolderNameInputRef.addEventListener("keyup", handler)
+      const blurHandler = () => {
+        newFolderNameInputRef!.value = ""
+        props.onClose()
+      }
+
+      newFolderNameInputRef.addEventListener("keyup", keyUpHandler)
+      newFolderNameInputRef.addEventListener("blur", blurHandler)
 
       onCleanup(() => {
-        newFolderNameInputRef?.removeEventListener("keyup", handler)
+        newFolderNameInputRef?.removeEventListener("keyup", keyUpHandler)
+        newFolderNameInputRef?.removeEventListener("blur", blurHandler)
       })
     }
   })
