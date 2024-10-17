@@ -1,7 +1,9 @@
 /* eslint-disable unicorn/consistent-function-scoping */
 import {
   Component,
+  Match,
   Show,
+  Switch,
   createEffect,
   createMemo,
   createSignal,
@@ -52,6 +54,8 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       ? props.thumbnails?.[props.entry.id]
       : null)
   )
+
+  const fileMimeType = createMemo(() => props.entry.mime_type?.split("/") ?? [])
 
   const onDragStart = (event: DragEvent) => {
     setIsDragging(true)
@@ -258,7 +262,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
           <Show when={!props.isRenaming && props.entry.extension}>
             <div class="extension">{props.entry.extension}</div>
           </Show>
-          <Show when={!props.isRenaming && props.entry.entry_type === "folder"}>
+          {/* <Show when={!props.isRenaming && props.entry.entry_type === "folder"}>
             <div class="icon">
               <Icon
                 name="folder_open"
@@ -268,13 +272,77 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
                 wght={600}
               />
             </div>
-          </Show>
+          </Show> */}
           <input
             hidden={!props.isRenaming}
             ref={(ref) => (nameFieldRef = ref)}
             type="text"
             class="name-input"
           />
+        </div>
+        <div class="item-details">
+          <div class="left">
+            <Show when={props.entry.entry_type === "folder"}>
+              <div class="block">
+                <Icon
+                  name="folder_open"
+                  type="outlined"
+                  size={12}
+                  fill={1}
+                  wght={600}
+                />
+              </div>
+            </Show>
+            <Switch>
+              <Match when={fileMimeType()[0] === "image"}>
+                <div class="block">
+                  <Icon
+                    name="imagesmode"
+                    type="rounded"
+                    size={12}
+                    fill={1}
+                    wght={600}
+                  />
+                </div>
+              </Match>
+              <Match when={fileMimeType()[0] === "audio"}>
+                <div class="block">
+                  <Icon
+                    name="music_note"
+                    type="rounded"
+                    size={12}
+                    fill={1}
+                    wght={600}
+                  />
+                </div>
+              </Match>
+              <Match when={fileMimeType()[0] === "video"}>
+                <div class="block">
+                  <Icon
+                    name="play_arrow"
+                    type="rounded"
+                    size={12}
+                    fill={1}
+                    wght={600}
+                  />
+                </div>
+              </Match>
+            </Switch>
+          </div>
+          <div class="right">
+            <Show when={props.entry.entry_type === "file"}>
+              <div class="block">
+                <div class="text">-</div>
+                <Icon
+                  name="arrow_downward"
+                  type="sharp"
+                  size={12}
+                  fill={1}
+                  wght={600}
+                />
+              </div>
+            </Show>
+          </div>
         </div>
       </div>
     </div>

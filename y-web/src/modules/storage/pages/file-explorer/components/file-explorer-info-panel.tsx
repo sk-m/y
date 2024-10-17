@@ -47,6 +47,8 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
       : null)
   )
 
+  const fileMimeType = createMemo(() => props.entry.mime_type?.split("/") ?? [])
+
   // TODO is this a good idea?
   const createdBy = createMemo(() => {
     if (props.entry.created_by === null) return null
@@ -112,7 +114,11 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
             class="thumbnail"
             src={`data:image/jpeg;base64, ${thumbnail() ?? ""}`}
           />
-          <Show when={props.entry.mime_type?.startsWith("audio/")}>
+          <Show
+            when={
+              fileMimeType()[0] === "audio" || fileMimeType()[0] === "video"
+            }
+          >
             <div class="hover-icon">
               <Icon
                 name="play_arrow"
@@ -122,10 +128,12 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
                 fill={1}
               />
             </div>
-            <div class="info-text">
-              <Icon name="music_note" size={16} wght={500} type="outlined" />
-              <div class="text">Cover art</div>
-            </div>
+            <Show when={fileMimeType()[0] === "audio"}>
+              <div class="info-text">
+                <Icon name="music_note" size={16} wght={500} type="outlined" />
+                <div class="text">Cover art</div>
+              </div>
+            </Show>
           </Show>
         </div>
       </Show>
