@@ -332,7 +332,11 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
           <div class="right">
             <Show when={props.entry.entry_type === "file"}>
               <div class="block">
-                <div class="text">-</div>
+                <div class="text">
+                  {props.entry.downloads_count === 0
+                    ? "-"
+                    : props.entry.downloads_count}
+                </div>
                 <Icon
                   name="arrow_downward"
                   type="sharp"

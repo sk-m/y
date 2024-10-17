@@ -75,6 +75,16 @@ async fn storage_download(
 
     match entry {
         Ok(entry) => {
+            // TODO don't block
+            sqlx::query(
+                "UPDATE storage_entries SET downloads_count = downloads_count + 1 WHERE id = $1 AND endpoint_id = $2",
+            )
+            .bind(file_id)
+            .bind(endpoint_id)
+            .execute(&**pool)
+            .await
+            .unwrap();
+
             let file_path = Path::new(&entry.base_path).join(&entry.filesystem_id);
 
             let mut file = actix_files::NamedFile::open(file_path).unwrap();
