@@ -132,6 +132,13 @@ export type Form<
 
   submit: (event?: Event) => void
 
+  getValue: <
+    FieldName extends string,
+    FieldValue extends ValueFromPath<FieldValues, FieldName>
+  >(
+    fieldName: FieldNameFromPath<FieldValues, FieldName>
+  ) => FieldValue | null
+
   setValue: <
     FieldName extends string,
     FieldValue extends ValueFromPath<FieldValues, FieldName>
@@ -576,6 +583,25 @@ export const useForm = <
     setForm("fieldErrors", reconcile(errors))
   }
 
+  const getValue = <
+    FieldName extends string,
+    FieldValue extends ValueFromPath<FieldValues, FieldName>
+  >(
+    fieldName: FieldNameFromPath<FieldValues, FieldName>
+  ) => {
+    const field = form.fields.find((f) => f.name === fieldName)
+
+    if (!field) return null
+
+    return (
+      field.controlled
+        ? field.controller?.[0]()
+        : (field.inputRef?.type === "checkbox"
+            ? field.inputRef.checked
+            : field.inputRef?.value) ?? null
+    ) as FieldValue | null
+  }
+
   const setValue = <
     FieldName extends string,
     FieldValue extends ValueFromPath<FieldValues, FieldName>
@@ -697,6 +723,7 @@ export const useForm = <
     useFieldset,
     submit,
     setValue,
+    getValue,
     errors,
   }
 }

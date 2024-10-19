@@ -10,6 +10,7 @@ export type ButtonProps = {
   size?: "md" | "sm" | "xs" | "xs-squared"
   leadingIcon?: string
   color?: "primary" | "red" | "blue"
+  textColor?: "primary" | "secondary"
   title?: string
 
   disabled?: boolean
@@ -33,10 +34,12 @@ export const Button: ComponentWithChildren<ButtonProps> = (props) => {
         [props.variant ?? "primary"]: true,
         disabled: props.disabled,
         [`color-${props.color ?? "primary"}`]: true,
+        [`text-color-${props.textColor ?? "primary"}`]: true,
       }}
       style={{ width: props.width ?? "auto" }}
     >
       <button
+        disabled={props.disabled}
         style={props.style}
         type={props.buttonType ?? "button"}
         onClick={(event) => props.onClick?.(event)}

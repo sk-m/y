@@ -46,9 +46,13 @@ const StorageAccessTemplatesPage = lazy(
   async () => import("@/modules/admin/pages/storage/access-templates")
 )
 
-const AboutPage = lazy(async () => import("@/modules/admin/pages/about"))
+const ConfigGeneralPage = lazy(
+  async () => import("@/modules/admin/pages/config/general")
+)
 
 const FeaturesPage = lazy(async () => import("@/modules/admin/pages/features"))
+
+const AboutPage = lazy(async () => import("@/modules/admin/pages/about"))
 
 const AdminLayout: Component = () => {
   const $auth = useAuth()
@@ -58,6 +62,13 @@ const AdminLayout: Component = () => {
     () =>
       $auth.data?.user_rights.some(
         (right) => right.right_name === "update_features"
+      ) ?? false
+  )
+
+  const configPageAllowed = createMemo(
+    () =>
+      $auth.data?.user_rights.some(
+        (right) => right.right_name === "update_config"
       ) ?? false
   )
 
@@ -93,19 +104,21 @@ const AdminLayout: Component = () => {
               />
             </AsideEntry>
 
-            {/* <AsideEntry
-              icon="page_info"
-              title="Configuration"
-              to="config/general"
-              relatedPaths={["config", "config/general"]}
-            >
+            <Show when={configPageAllowed()}>
               <AsideEntry
-                subEntry
-                icon="manufacturing"
-                title="Genral"
+                icon="page_info"
+                title="Configuration"
                 to="config/general"
-              />
-            </AsideEntry> */}
+                relatedPaths={["config", "config/general"]}
+              >
+                <AsideEntry
+                  subEntry
+                  icon="manufacturing"
+                  title="General"
+                  to="config/general"
+                />
+              </AsideEntry>
+            </Show>
 
             <Show when={storagePageAllowed()}>
               <AsideEntry
@@ -148,6 +161,7 @@ const AdminLayout: Component = () => {
           <Route path="/users/:userId/*" component={UserPage} />
           <Route path="/users/new" component={NewUserPage} />
           <Route path="/features" component={FeaturesPage} />
+          <Route path="/config/general" component={ConfigGeneralPage} />
           <Route path="/storage/endpoints" component={StorageEndpointsPage} />
           <Route
             path="/storage/endpoints/:endpointId"
