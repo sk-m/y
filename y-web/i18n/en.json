@@ -31,6 +31,10 @@
         "name": "Toggle features",
         "description": "Allows enabling and disabling y's features via the Features page."
       },
+      "update_config": {
+        "name": "Instance config administation",
+        "description": "Allows editing y's configuration, including all feature configs."
+      },
       "delete_user": {
         "name": "Delete users",
         "description": "Unlike blocking or hiding, deleting a user is an irreversible action. All data related to a deleted user is forever lost."
