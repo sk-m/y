@@ -1,3 +1,4 @@
+pub mod config;
 pub mod create_storage_endpoint;
 pub mod create_storage_location;
 pub mod create_user;

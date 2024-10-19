@@ -1,4 +1,5 @@
 mod api;
+mod config;
 mod db;
 mod request;
 mod right;
@@ -201,9 +202,15 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::admin::storage_endpoints::storage_enpoints)
                     .service(crate::api::admin::storage_endpoint::storage_enpoint)
                     .service(crate::api::admin::update_storage_endpoint::update_storage_endpoint)
+                    .service(crate::api::admin::config::config_options::config_options)
+                    .service(crate::api::admin::config::config_set::config_set)
                     ,
             )
-            .service(web::scope("/api").service(crate::api::user_rights::user_rights))
+            .service(
+                web::scope("/api")
+                    .service(crate::api::user_rights::user_rights)
+                    .service(crate::api::instance_config::instance_config)
+            )
     })
     .bind((server_address, server_port))?
     .run()
