@@ -120,6 +120,7 @@ const UserGroupGeneralSubpage: Component<UserGroupGeneralSubpageProps> = (
             </Button>
             <Button
               disabled={$deleteUserGroup.isLoading}
+              color="red"
               onClick={() => {
                 $deleteUserGroup.mutate(
                   {

@@ -15,6 +15,7 @@ import { DEFAULT_DEBOUNCE_MS } from "@/app/core/utils"
 
 import { Icon } from "../icon/icon"
 import { InputError, InputErrorProps } from "../input-error/input-error"
+import { Note } from "../note/note"
 import { Text } from "../text/text"
 import "./select-field.less"
 
@@ -232,6 +233,18 @@ export const SelectField = <
                   onInput={(event) => setSearch(event.target.value)}
                 />
               </div>
+            </Show>
+
+            <Show when={props.options.length === 0}>
+              <Note
+                type="secondary"
+                fontSize="var(--text-sm)"
+                style={{
+                  background: "transparent",
+                }}
+              >
+                No results
+              </Note>
             </Show>
 
             <div class="available-options">

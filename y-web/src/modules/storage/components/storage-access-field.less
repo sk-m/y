@@ -5,17 +5,17 @@
 
   border-radius: @border-radius-primary;
 
-  box-shadow: @border-secondary, 0 1px 2px 0 rgba(@brand-black-rgb, 0.05),
-    0 5px 10px 0 rgba(@brand-black-rgb, 0.075);
+  box-shadow: @border-primary-lighter;
 
   > .field-label {
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    background-color: transparent;
-
     padding: 0.75em;
+
+    background-color: transparent;
+    border-bottom: 1px solid transparent;
 
     cursor: pointer;
 
@@ -38,7 +38,6 @@
     gap: 1em;
 
     padding: 0.75em;
-    padding-top: 0;
 
     > .section {
       display: flex;
@@ -484,7 +483,17 @@
     }
   }
 
-  &.open {
+  &.expanded {
+    > .field-label {
+      border-top-left-radius: @border-radius-primary;
+      border-top-right-radius: @border-radius-primary;
+
+      background-color: rgba(@brand-black-rgb, 0.04);
+      border-bottom: 1px solid rgba(@brand-black-rgb, 0.15);
+    }
+  }
+
+  &.floater-shown {
     > .floating-container {
       opacity: 1;
       pointer-events: all;

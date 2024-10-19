@@ -183,6 +183,7 @@ export const UsersList: Component = () => {
             </Button>
             <Button
               disabled={$deleteUsers.isLoading}
+              color="red"
               onClick={() => {
                 $deleteUsers.mutate(
                   {

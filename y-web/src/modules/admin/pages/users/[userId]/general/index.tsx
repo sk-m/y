@@ -113,6 +113,7 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
             </Button>
             <Button
               disabled={$deleteUsers.isLoading}
+              color="red"
               onClick={() => {
                 $deleteUsers.mutate(
                   {

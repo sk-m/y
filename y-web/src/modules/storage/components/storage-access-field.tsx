@@ -542,7 +542,8 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
       <div
         classList={{
           "storage-access-field": true,
-          open: isAvailableExecutorsOpen(),
+          "floater-shown": isAvailableExecutorsOpen(),
+          expanded: isFieldExpanded(),
         }}
       >
         <div class="field-label" onClick={toggleFieldExpanded}>
