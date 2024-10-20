@@ -72,8 +72,12 @@ async fn create_storage_endpoint(
 
     let create_test_file_result = fs::write(base_path.join("test_file"), "you can delete me");
     let create_thumbnails_dir_result = fs::create_dir(artifacts_path.join("thumbnails"));
+    let create_preview_videos_dir_result = fs::create_dir(artifacts_path.join("preview_videos"));
 
-    match create_thumbnails_dir_result.and(create_test_file_result) {
+    match create_thumbnails_dir_result
+        .and(create_preview_videos_dir_result)
+        .and(create_test_file_result)
+    {
         Ok(_) => {
             fs::remove_file(base_path.join("test_file")).unwrap();
 

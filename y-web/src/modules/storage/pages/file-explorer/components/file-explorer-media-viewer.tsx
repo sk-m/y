@@ -52,7 +52,7 @@ export const FileExplorerMediaViewer: Component<
   const [volume, setVolume] = createSignal(1)
 
   const previewUrl = createMemo(() => {
-    return `/api${apiStorageEntries}/${props.endpointId}/get/${props.entry.id}`
+    return `/api${apiStorageEntries}/${props.endpointId}/get/${props.entry.id}?preview=true`
   })
 
   createEffect(

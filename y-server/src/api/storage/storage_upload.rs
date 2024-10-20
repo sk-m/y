@@ -15,8 +15,8 @@ use std::time::Instant;
 
 use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
 use crate::storage_entry::{
-    generate_audio_entry_cover_thumbnail, generate_image_entry_thumbnail,
-    generate_video_entry_thumbnail,
+    generate_audio_entry_cover_thumbnail, generate_browser_friendly_video,
+    generate_image_entry_thumbnail, generate_video_entry_thumbnail,
 };
 use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
@@ -399,7 +399,7 @@ async fn storage_upload(
     // Generate thumbnails
     std::thread::spawn(move || {
         if let Some(target_endpoint_artifacts_path) = &target_endpoint.artifacts_path {
-            for filesystem_id in uploaded_files {
+            for filesystem_id in &uploaded_files {
                 let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
 
                 let file_kind = infer::get_from_path(&path);
@@ -431,7 +431,7 @@ async fn storage_upload(
                             }
 
                             "video/mp4" | "video/webm" | "video/mov" | "video/avi"
-                            | "video/mpeg" | "video/quicktime" => {
+                            | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
                                 let generate_thumbnail_result = generate_video_entry_thumbnail(
                                     &filesystem_id,
                                     &target_endpoint.base_path.as_str(),
@@ -458,6 +458,38 @@ async fn storage_upload(
                                     error!(
                                         "Failed to create a cover image thumbnail for an uploaded audio file. {}",
                                         generate_thumbnail_result.unwrap_err()
+                                    );
+                                }
+                            }
+
+                            _ => {}
+                        }
+                    }
+                }
+            }
+
+            for filesystem_id in &uploaded_files {
+                let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
+
+                let file_kind = infer::get_from_path(&path);
+
+                if !file_kind.is_err() {
+                    if let Some(file_kind) = file_kind.unwrap() {
+                        let mime_type = file_kind.mime_type();
+
+                        match mime_type {
+                            "video/mp4" | "video/webm" | "video/mov" | "video/avi"
+                            | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
+                                let generate_preview_result = generate_browser_friendly_video(
+                                    &filesystem_id,
+                                    &target_endpoint.base_path.as_str(),
+                                    &target_endpoint_artifacts_path.as_str(),
+                                );
+
+                                if generate_preview_result.is_err() {
+                                    error!(
+                                        "Failed to create a browser friendly preview for an uploaded video file. {}",
+                                        generate_preview_result.unwrap_err()
                                     );
                                 }
                             }

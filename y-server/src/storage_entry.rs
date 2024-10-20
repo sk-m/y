@@ -648,6 +648,11 @@ pub async fn delete_entries(
                 .join(file_filesystem_id)
                 .with_extension("webp");
 
+            let preview_video_path = Path::new(&endpoint_artifacts_path)
+                .join("preview_videos")
+                .join(file_filesystem_id)
+                .with_extension("mp4");
+
             if thumbnail_path.exists() {
                 let fs_remove_thumbnail_result = remove_file(thumbnail_path);
 
@@ -657,6 +662,19 @@ pub async fn delete_entries(
                         endpoint_id,
                         file_filesystem_id,
                         fs_remove_thumbnail_result.unwrap_err()
+                    );
+                }
+            }
+
+            if preview_video_path.exists() {
+                let fs_remove_preview_video_result = remove_file(preview_video_path);
+
+                if fs_remove_preview_video_result.is_err() {
+                    error!(
+                        "(storage entry -> delete entries) Could not remove a preview video from the filesystem. endpoint_id = {}. filesystem_id = {}. {}",
+                        endpoint_id,
+                        file_filesystem_id,
+                        fs_remove_preview_video_result.unwrap_err()
                     );
                 }
             }
@@ -818,6 +836,100 @@ pub fn generate_video_entry_thumbnail(
         Ok(())
     }
 }
+
+pub fn  generate_browser_friendly_video(
+    filesystem_id: &str,
+    endpoint_path: &str,
+    endpoint_artifacts_path: &str,
+) -> Result<(), String> {
+    let ffmpeg_bin_path = env::var("FFMPEG_BIN");
+    let ffmpeg_hwaccel_nvenc = env::var("FFMPEG_HWACCEL_NVENC").unwrap_or("false".to_string()) == "true";
+
+    if let Ok(ffmpeg_bin_path) = &ffmpeg_bin_path {
+        let ffmpeg_bin_path = Path::new(&ffmpeg_bin_path);
+
+        if ffmpeg_bin_path.exists() {
+            let file_path = Path::new(endpoint_path).join(&filesystem_id);
+            let endpoint_preview_videos_path = Path::new(endpoint_artifacts_path).join("preview_videos");
+
+            if !endpoint_preview_videos_path.exists() {
+                let create_dir_result = std::fs::create_dir(&endpoint_preview_videos_path);
+
+                if create_dir_result.is_err() {
+                    return Err("Could not create a directory for preview videos".to_string());
+                }
+            }
+
+            // TODO make the options configurable via the web interface!
+            let ffmpeg_result =
+                if ffmpeg_hwaccel_nvenc {
+                    Command::new(ffmpeg_bin_path)
+                       .arg("-y")
+                       .arg("-vsync")
+                       .arg("0")
+                       .arg("-hwaccel")
+                       .arg("cuda")
+                       .arg("-hwaccel_output_format")
+                       .arg("cuda")
+                       .arg("-i")
+                       .arg(file_path.to_str().unwrap())
+                       .arg("-c:v")
+                       .arg("h264_nvenc")
+                       .arg("-b:v")
+                       .arg("2M")
+                       .arg("-b:a")
+                       .arg("192k")
+                       .arg("-vf")
+                       .arg("scale_cuda=-2:720")
+                       .arg(
+                           endpoint_preview_videos_path
+                               .join(&filesystem_id)
+                               .with_extension("mp4")
+                               .to_str()
+                               .unwrap(),
+                       )
+                       .output()
+                } else {
+                    Command::new(ffmpeg_bin_path)
+                       .arg("-y")
+                       .arg("-i")
+                       .arg(file_path.to_str().unwrap())
+                       .arg("-c:v")
+                       .arg("libx264")
+                       .arg("-b:v")
+                       .arg("2M")
+                       .arg("-b:a")
+                       .arg("192k")
+                       .arg("-vf")
+                       .arg("scale=-2:720")
+                       .arg(
+                           endpoint_preview_videos_path
+                               .join(&filesystem_id)
+                               .with_extension("mp4")
+                               .to_str()
+                               .unwrap(),
+                       )
+                       .output()
+                };
+
+            if let Ok(ffmpeg_result) = ffmpeg_result {
+                if ffmpeg_result.status.success() {
+                    Ok(())
+                } else {
+                    dbg!(ffmpeg_result);
+                    Err("Could not generate a browser friendly video render for a storage entry".to_string())
+                }
+            } else {
+                Err("Could not execute the ffmpeg command".to_string())
+            }
+        } else {
+            Err("Could not find the ffmpeg binary".to_string())
+        }
+    } else {
+        Ok(())
+    }
+}
+
 
 pub fn generate_audio_entry_cover_thumbnail(
     filesystem_id: &str,
