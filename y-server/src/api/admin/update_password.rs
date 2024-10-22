@@ -1,3 +1,5 @@
+use std::env;
+
 use crate::user::get_client_rights;
 use crate::util::RequestPool;
 use crate::{request::error, user::get_user_groups};
@@ -21,6 +23,11 @@ async fn update_password(
     path: web::Path<i32>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let pbkdf2_rounds = env::var("PBKDF2_ROUNDS")
+        .unwrap_or("600000".to_string())
+        .parse::<u32>()
+        .unwrap();
+
     let target_user_id = path.into_inner();
 
     let client_rights = get_client_rights(&pool, &req).await;
@@ -29,6 +36,13 @@ async fn update_password(
     let mut change_user_password_right_present = false;
     let mut client_right_groups_blacklist: Vec<i32> = vec![];
 
+    // TODO This will not work as expected.
+    // For example, if the user is a member of both "mod" and "admin" groups, and the "mod" group blacklists
+    // changing passwords for admins, and "admin" group DOES NOT, the action will be prohibited anyway,
+    // just because AT LEAST ONE of user's groups blacklists this action.
+    // This shouldn't work like that, because the user is also a member of the "admin" group, which DOES
+    // NOT prohibit this action.
+    // In other words, we should prohibit only if ALL the user's groups blacklist this action, NOT just ONE.
     for right in client_rights {
         if right.right_name.eq("change_user_password") {
             change_user_password_right_present = true;
@@ -63,7 +77,16 @@ async fn update_password(
     }
 
     let password_salt = SaltString::generate(&mut OsRng);
-    let password_hash = Pbkdf2.hash_password(form.password.as_bytes(), &password_salt);
+    let password_hash = Pbkdf2.hash_password_customized(
+        form.password.as_bytes(),
+        None,
+        None,
+        pbkdf2::Params {
+            rounds: pbkdf2_rounds,
+            output_length: 32,
+        },
+        &password_salt,
+    );
 
     match password_hash {
         Ok(password_hash) => {
