@@ -1,11 +1,15 @@
-use std::{collections::HashMap, env, fs::remove_file, path::Path, process::Command};
+use std::{
+    collections::HashMap, env, fs::remove_file, path::Path, process::Command, time::Instant,
+};
 
 use async_recursion::async_recursion;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 use crate::{
-    storage_access::StorageAccessType, storage_endpoint::get_storage_endpoint, util::RequestPool,
+    storage_access::{process_storage_entry, ProccessEntryRuleInput, StorageAccessType},
+    storage_endpoint::get_storage_endpoint,
+    util::RequestPool,
 };
 use log::*;
 
@@ -16,7 +20,6 @@ pub enum StorageEntryType {
     #[serde(rename = "folder")]
     Folder,
 }
-
 
 #[derive(FromRow, Serialize)]
 pub struct StorageFolder {
@@ -160,92 +163,125 @@ async fn get_subfolders_level(
 async fn get_subfolders_level_with_access_rules(
     endpoint_id: i32,
     folder_parents: &mut HashMap<i64, Option<i64>>,
-    folder_access: &mut HashMap<i64, StorageAccessType>,
     folder_ids: Vec<i64>,
-    access_user_group_ids: &Vec<i32>,
+    access: (i32, &Vec<i32>),
     access_action: &str,
     pool: &RequestPool,
-) -> Result<(), String> {   
-    #[derive(FromRow)]
-    struct GetSubfoltersLevelRow {
-        id: i64,
-        parent_folder: i64,
-        access_type: Option<String>,
-    }
+) -> Result<(), String> {
+    let (access_user_id, access_user_group_ids) = access;
 
-    let next_level_folders = 
-        sqlx::query_as::<_, GetSubfoltersLevelRow>(
-            "SELECT storage_entries.id, storage_entries.parent_folder, storage_access.access_type::TEXT FROM storage_entries
-            LEFT JOIN storage_access ON
-            storage_access.entry_id = storage_entries.id
+    let next_level_folders =
+        sqlx::query_as::<_, ProccessEntryRuleInput>(
+            "SELECT 2 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, NULL AS filesystem_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM storage_entries
+
+            LEFT JOIN storage_access
+            ON storage_access.entry_id = storage_entries.id
             AND storage_access.endpoint_id = storage_entries.endpoint_id
             AND storage_access.action = $4::storage_access_action_type
             AND storage_access.access_type != 'inherit'::storage_access_type
-            AND storage_access.executor_type = 'user_group'::storage_access_executor_type
-            AND storage_access.executor_id = ANY($3)
-            WHERE storage_entries.endpoint_id = $1 AND storage_entries.parent_folder = ANY($2) AND storage_entries.entry_type = 'folder'::storage_entry_type"
+            AND (
+                (storage_access.executor_type = 'user_group'::storage_access_executor_type
+                AND storage_access.executor_id = ANY($3))
+                OR
+                (storage_access.executor_type = 'user'::storage_access_executor_type
+                AND storage_access.executor_id = $5)
+            )
+
+            WHERE storage_entries.endpoint_id = $1
+            AND storage_entries.parent_folder = ANY($2)
+            AND storage_entries.entry_type = 'folder'::storage_entry_type
+
+            UNION ALL
+
+            SELECT 1 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, NULL AS filesystem_id, storage_entries.parent_folder, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id FROM storage_entries
+
+            LEFT JOIN storage_access_template_entries
+            ON storage_access_template_entries.entry_id = storage_entries.id
+            AND storage_access_template_entries.entry_endpoint_id = storage_entries.endpoint_id
+
+            LEFT JOIN storage_access_template_rules
+            ON storage_access_template_entries.template_id = storage_access_template_rules.template_id
+            AND storage_access_template_rules.action = $4::storage_access_action_type
+            AND storage_access_template_rules.access_type != 'inherit'::storage_access_type
+            AND (
+                (storage_access_template_rules.executor_type = 'user_group'::storage_access_executor_type
+                AND storage_access_template_rules.executor_id = ANY($3))
+                OR
+                (storage_access_template_rules.executor_type = 'user'::storage_access_executor_type
+                AND storage_access_template_rules.executor_id = $5)
+            )
+
+            WHERE storage_entries.endpoint_id = $1
+            AND storage_entries.parent_folder = ANY($2)
+            AND storage_entries.entry_type = 'folder'::storage_entry_type
+
+            ORDER BY entry_id ASC, rule_source DESC"
         )
         .bind(endpoint_id)
-        .bind(folder_ids)
+        .bind(&folder_ids)
         .bind(access_user_group_ids)
         .bind(access_action)
+        .bind(access_user_id)
         .fetch_all(pool)
         .await;
 
     match &next_level_folders {
         Ok(next_level_folders) => {
-            let mut next_level_folder_ids: Vec<i64> = Vec::new();
-            let mut last_pushed_folder_id: i64 = -1;
+            if next_level_folders.len() > 0 {
+                let mut next_level_folder_ids: Vec<i64> = Vec::new();
 
-            for row in next_level_folders {
-                let folder_id = row.id;
-                let folder_access_type = if let Some(access_type) = &row.access_type {
-                    match access_type.as_str() {
-                        "allow" => StorageAccessType::Allow,
-                        "deny" => StorageAccessType::Deny,
-                        _ => StorageAccessType::Unset,
-                    }
-                } else {
-                    StorageAccessType::Unset
-                };
+                let mut last_entry_id = next_level_folders[0].entry_id;
+                let mut start_i = 0;
 
-                if last_pushed_folder_id == folder_id {
-                    if let Some(folder_access_entry) = folder_access.get_mut(&folder_id) {
-                        if folder_access_type != StorageAccessType::Unset
-                            && (folder_access_entry == &StorageAccessType::Unset
-                                || folder_access_entry == &StorageAccessType::Deny)
+                // Break up the rows from the database into slices. Each slice contains rules for one entry.
+                for i in 0..next_level_folders.len() {
+                    let _rule = &next_level_folders[i];
+
+                    if _rule.entry_id != last_entry_id || i == next_level_folders.len() - 1 {
+                        let end_i = if i == next_level_folders.len() - 1 {
+                            i + 1
+                        } else {
+                            i
+                        };
+
+                        // _rule is NOT the entry we are currenly processing! It's the next one! Hence the _ prefix
+                        let target_entry = &next_level_folders[start_i];
+
+                        let (result_groups, result_user) =
+                            process_storage_entry(&next_level_folders[start_i..end_i]);
+
+                        if result_user.0 == StorageAccessType::Deny
+                            || (!result_groups.is_empty()
+                                && result_groups
+                                    .values()
+                                    .all(|x| x.0 == StorageAccessType::Deny))
                         {
-                            *folder_access_entry = folder_access_type;
+                            return Err("Access denied".to_string());
                         }
-                    } else {
-                        folder_access.insert(folder_id, folder_access_type);
+
+                        next_level_folder_ids.push(target_entry.entry_id);
+                        folder_parents.insert(target_entry.entry_id, target_entry.parent_folder);
+
+                        start_i = i;
                     }
-                } else {
-                    folder_access.insert(folder_id, folder_access_type);
-                    next_level_folder_ids.push(folder_id);
-                    folder_parents.insert(folder_id, Some(row.parent_folder));
+
+                    last_entry_id = _rule.entry_id;
                 }
 
-                last_pushed_folder_id = folder_id;
-            }
-
-            if next_level_folder_ids.len() > 0 {
-                get_subfolders_level_with_access_rules(
+                let _ = get_subfolders_level_with_access_rules(
                     endpoint_id,
                     folder_parents,
-                    folder_access,
                     next_level_folder_ids,
-                    access_user_group_ids,
+                    access,
                     access_action,
                     pool,
                 )
-                .await?;
+                .await;
             }
 
             return Ok(());
         }
-        Err(err) => {
-            error!("Could not query the database for the next level of folders {:?}", err);
+        Err(_) => {
             return Err("Could not query the database for the next level of folders".to_string());
         }
     }
@@ -327,6 +363,7 @@ pub async fn resolve_entries(
  * @param endpoint_id - Storage endpoint id
  * @param target_folders - Vector of folder ids to be deleted (can be empty)
  * @param target_files - Vector of file ids to be deleted (can be empty)
+ * @param access - Tuple of user id and user group ids that will be used to check access rules
  * @param pool - Database connection pool
  *
  * @returns (usize, usize) - (total number of deleted files, total number of deleted folders)
@@ -336,10 +373,12 @@ pub async fn delete_entries(
     target_folders: Vec<i64>,
     target_files: Vec<i64>,
 
-    access_user_group_ids: Option<&Vec<i32>>,
+    access: Option<(i32, &Vec<i32>)>,
 
     pool: &RequestPool,
 ) -> Result<(usize, usize), String> {
+    let now = Instant::now();
+
     // Find the endpoint so we know where the files we find will be stored physically
     let target_endpoint = get_storage_endpoint(endpoint_id, pool).await;
 
@@ -353,25 +392,11 @@ pub async fn delete_entries(
     let endpoint_artifacts_path = target_endpoint.artifacts_path;
     let endpoint_files_path = Path::new(&endpoint_base_path);
 
-    // Setup the containers where the results of the recursive search will be stored
-    
     // HashMap of folders to their parent folder id
     // pre-populate it with the target folders. We set the parent to None (as if they are inside the endpoint's root folder)
     // because we do not care about anything above the target folders. We just pretend that they reside inside the root
     let mut folder_parents: HashMap<i64, Option<i64>> =
         target_folders.iter().map(|id| (*id, None)).collect();
-
-    // HashMap of files to their parent folder id
-    // pre-populate it with the target files. We set the parent to None (as if they are inside the endpoint's root folder)
-    // because we do not care about anything above the target files. We just pretend that they reside inside the root
-    let mut file_parents: HashMap<i64, Option<i64>> =
-        target_files.iter().map(|id| (*id, None)).collect();
-
-    // HashMap of folders and files to their *explicit* access rules
-    // (explicit meaning the rules are set directly to the files and
-    // folders themselves, not inherited from parents)
-    let mut folder_access: HashMap<i64, StorageAccessType> = HashMap::new();
-    let mut file_access: HashMap<i64, StorageAccessType> = HashMap::new();
 
     // Arrays of *all* the files and folders we will find after the recursive search
     // These may be the files and folders arbitrarily deep inside the target folders
@@ -380,18 +405,17 @@ pub async fn delete_entries(
 
     // Recursively find all the folders that reside inside target folders
     if folder_parents.len() > 0 {
-        if let Some(access_user_group_ids) = access_user_group_ids {
+        if let Some(access) = access {
             let get_subfolders_result = get_subfolders_level_with_access_rules(
                 endpoint_id,
                 &mut folder_parents,
-                &mut folder_access,
                 target_folders,
-                &access_user_group_ids,
+                access,
                 "delete",
                 pool,
             )
             .await;
-    
+
             if get_subfolders_result.is_err() {
                 return Err(get_subfolders_result.unwrap_err());
             }
@@ -400,7 +424,8 @@ pub async fn delete_entries(
         } else {
             all_folders = target_folders.clone();
 
-            let get_subfolders_result = get_subfolders_level(endpoint_id, &mut all_folders, target_folders, pool).await;
+            let get_subfolders_result =
+                get_subfolders_level(endpoint_id, &mut all_folders, target_folders, pool).await;
 
             if get_subfolders_result.is_err() {
                 return Err(get_subfolders_result.unwrap_err());
@@ -432,74 +457,105 @@ pub async fn delete_entries(
 
     // Delete files *inside* provided target folders (arbitrarily deep inside)
     if all_folders.len() > 0 {
-        if let Some(user_group_ids) = access_user_group_ids {
-            #[derive(FromRow)]
-            struct GetFileIdAndAccessRow {
-                id: i64,
-                filesystem_id: String,
-                parent_folder: Option<i64>,
-                access_type: Option<String>,
-            }
+        if let Some(access) = access {
+            let (access_user_id, access_user_group_ids) = access;
 
-            let files_info_result = sqlx::query_as::<_, GetFileIdAndAccessRow>(
-                "SELECT storage_entries.id, storage_entries.filesystem_id, storage_entries.parent_folder, storage_access.access_type::TEXT FROM storage_entries
-                LEFT JOIN storage_access ON
-                storage_access.entry_id = storage_entries.id
+            let files_info_result = sqlx::query_as::<_, ProccessEntryRuleInput>(
+                "SELECT 2 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, storage_entries.filesystem_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM storage_entries
+
+                LEFT JOIN storage_access
+                ON storage_access.entry_id = storage_entries.id
                 AND storage_access.endpoint_id = storage_entries.endpoint_id
-                AND storage_access.action = 'delete'::storage_access_action_type
                 AND storage_access.access_type != 'inherit'::storage_access_type
-                AND storage_access.executor_type = 'user_group'::storage_access_executor_type
-                AND storage_access.executor_id = ANY($3)
+                AND storage_access.action = 'delete'::storage_access_action_type
+                AND (
+                    (storage_access.executor_type = 'user_group'::storage_access_executor_type
+                    AND storage_access.executor_id = ANY($3))
+                    OR
+                    (storage_access.executor_type = 'user'::storage_access_executor_type
+                    AND storage_access.executor_id = $4)
+                )
+
                 WHERE storage_entries.endpoint_id = $1
                 AND storage_entries.parent_folder = ANY($2)
-                AND storage_entries.entry_type = 'file'::storage_entry_type"
+                AND storage_entries.entry_type = 'file'::storage_entry_type
+
+                UNION ALL
+
+                SELECT 1 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, storage_entries.filesystem_id, storage_entries.parent_folder, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id FROM storage_entries
+
+                LEFT JOIN storage_access_template_entries
+                ON storage_access_template_entries.entry_id = storage_entries.id
+                AND storage_access_template_entries.entry_endpoint_id = storage_entries.endpoint_id
+
+                LEFT JOIN storage_access_template_rules
+                ON storage_access_template_entries.template_id = storage_access_template_rules.template_id
+                AND storage_access_template_rules.access_type != 'inherit'::storage_access_type
+                AND storage_access_template_rules.action = 'delete'::storage_access_action_type
+                AND (
+                    (storage_access_template_rules.executor_type = 'user_group'::storage_access_executor_type
+                    AND storage_access_template_rules.executor_id = ANY($3))
+                    OR
+                    (storage_access_template_rules.executor_type = 'user'::storage_access_executor_type
+                    AND storage_access_template_rules.executor_id = $4)
+                )
+
+                WHERE storage_entries.endpoint_id = $1
+                AND storage_entries.parent_folder = ANY($2)
+                AND storage_entries.entry_type = 'file'::storage_entry_type
+
+                ORDER BY entry_id ASC, rule_source DESC"
             )
             .bind(endpoint_id)
             .bind(&all_folders)
-            .bind(user_group_ids)
+            .bind(access_user_group_ids)
+            .bind(access_user_id)
             .fetch_all(&mut *transaction).await;
 
             if files_info_result.is_err() {
-                return Err(
-                    "Could not retrieve info about files from the database".to_string()
-                );
+                return Err("Could not retrieve info about files from the database".to_string());
             }
 
             let files_info_result = files_info_result.unwrap();
 
-            let mut last_pushed_file_id: i64 = -1;
+            if !files_info_result.is_empty() {
+                let mut last_entry_id = files_info_result[0].entry_id;
+                let mut start_i = 0;
 
-            for row in files_info_result {
-                let file_id = row.id;
-                let file_access_type = if let Some(access_type) = &row.access_type {
-                    match access_type.as_str() {
-                        "allow" => StorageAccessType::Allow,
-                        "deny" => StorageAccessType::Deny,
-                        _ => StorageAccessType::Unset,
-                    }
-                } else {
-                    StorageAccessType::Unset
-                };
+                // Break up the rows from the database into slices. Each slice contains rules for one entry.
+                for i in 0..files_info_result.len() {
+                    let _rule = &files_info_result[i];
 
-                if last_pushed_file_id == file_id {
-                    if let Some(file_access_entry) = file_access.get_mut(&file_id) {
-                        if file_access_type != StorageAccessType::Unset
-                            && (file_access_entry == &StorageAccessType::Unset
-                                || file_access_entry == &StorageAccessType::Deny)
+                    if _rule.entry_id != last_entry_id || i == files_info_result.len() - 1 {
+                        let end_i = if i == files_info_result.len() - 1 {
+                            i + 1
+                        } else {
+                            i
+                        };
+
+                        // _rule is NOT the entry we are currenly processing! It's the next one! Hence the _ prefix
+                        let target_entry = &files_info_result[start_i];
+
+                        let (result_groups, result_user) =
+                            process_storage_entry(&files_info_result[start_i..end_i]);
+
+                        if result_user.0 == StorageAccessType::Deny
+                            || (!result_groups.is_empty()
+                                && result_groups
+                                    .values()
+                                    .all(|x| x.0 == StorageAccessType::Deny))
                         {
-                            *file_access_entry = file_access_type;
+                            return Err("Access denied".to_string());
                         }
-                    } else {
-                        file_access.insert(file_id, file_access_type);
-                    }
-                } else {
-                    file_access.insert(file_id, file_access_type);
-                    file_parents.insert(file_id, row.parent_folder);
-                    file_filesystem_ids.push(row.filesystem_id);
-                    all_files.push(file_id);
-                }
 
-                last_pushed_file_id = file_id;
+                        file_filesystem_ids.push(target_entry.filesystem_id.clone().unwrap());
+                        all_files.push(target_entry.entry_id);
+
+                        start_i = i;
+                    }
+
+                    last_entry_id = _rule.entry_id;
+                }
             }
 
             let delete_folder_files_result = sqlx::query_as::<_, EntryIdAndFilesystemId>(
@@ -524,8 +580,7 @@ pub async fn delete_entries(
 
             match delete_folder_files_result {
                 Ok(delete_folder_files_result) => {
-                    all_files
-                        .extend(delete_folder_files_result.iter().map(|entry| entry.id));
+                    all_files.extend(delete_folder_files_result.iter().map(|entry| entry.id));
 
                     file_filesystem_ids.extend(
                         delete_folder_files_result
@@ -559,66 +614,23 @@ pub async fn delete_entries(
 
     // Delete provided target folders & their subfolders
     if all_folders.len() > 0 {
-        let delete_folders_result = sqlx::query(
-            "DELETE FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2)",
-        )
-        .bind(endpoint_id)
-        .bind(&all_folders)
-        .execute(&mut *transaction)
-        .await;
+        let delete_folders_result =
+            sqlx::query("DELETE FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2)")
+                .bind(endpoint_id)
+                .bind(&all_folders)
+                .execute(&mut *transaction)
+                .await;
 
         if delete_folders_result.is_err() {
             return Err("Could not delete folders from the database".to_string());
         }
     }
 
-    // Now we have deleted all the underlying files and folders from the database,
-    // but we have not yet commited our changes, because we need to perform access rules check first
-    if access_user_group_ids.is_some() {
-        let mut cascade_down_check_result = true;
-
-        'files_loop: for file in file_access {
-            match file.1 {
-                StorageAccessType::Allow => {
-                    continue;
-                }
-                StorageAccessType::Deny => {
-                    cascade_down_check_result = false;
-                    break 'files_loop;
-                }
-                _ => {
-                    let mut parent = &file_parents[&file.0];
-    
-                    'parents_loop: loop {
-                        if let Some(some_parent) = parent {
-                            if let Some(access_type) = folder_access.get(some_parent) {
-                                match access_type {
-                                    StorageAccessType::Allow => {
-                                        break 'parents_loop;
-                                    }
-                                    StorageAccessType::Deny => {
-                                        cascade_down_check_result = false;
-                                        break 'files_loop;
-                                    }
-                                    _ => {}
-                                }
-                            }
-    
-                            parent = &folder_parents[some_parent];
-                            continue 'parents_loop;
-                        }
-    
-                        break 'parents_loop;
-                    }
-                }
-            }
-        }
-
-        if !cascade_down_check_result {
-            transaction.rollback().await.unwrap();
-    
-            return Err("Unauthorized".to_string());
-        }
+    if cfg!(debug_assertions) {
+        debug!(
+            "delete_entries tree traversal & access checks: {}ms",
+            now.elapsed().as_millis()
+        );
     }
 
     let transaction_result = transaction.commit().await;
@@ -724,14 +736,13 @@ pub async fn rename_entry(
     new_name: &str,
     pool: &RequestPool,
 ) -> Result<(), String> {
-    let rename_result = sqlx::query(
-        "UPDATE storage_entries SET name = $1 WHERE id = $2 AND endpoint_id = $3",
-    )
-    .bind(new_name)
-    .bind(entry_id)
-    .bind(endpoint_id)
-    .execute(& *pool)
-    .await;
+    let rename_result =
+        sqlx::query("UPDATE storage_entries SET name = $1 WHERE id = $2 AND endpoint_id = $3")
+            .bind(new_name)
+            .bind(entry_id)
+            .bind(endpoint_id)
+            .execute(&*pool)
+            .await;
 
     if rename_result.is_err() {
         return Err("Could not rename a storage entry".to_string());
@@ -837,20 +848,22 @@ pub fn generate_video_entry_thumbnail(
     }
 }
 
-pub fn  generate_browser_friendly_video(
+pub fn generate_browser_friendly_video(
     filesystem_id: &str,
     endpoint_path: &str,
     endpoint_artifacts_path: &str,
 ) -> Result<(), String> {
     let ffmpeg_bin_path = env::var("FFMPEG_BIN");
-    let ffmpeg_hwaccel_nvenc = env::var("FFMPEG_HWACCEL_NVENC").unwrap_or("false".to_string()) == "true";
+    let ffmpeg_hwaccel_nvenc =
+        env::var("FFMPEG_HWACCEL_NVENC").unwrap_or("false".to_string()) == "true";
 
     if let Ok(ffmpeg_bin_path) = &ffmpeg_bin_path {
         let ffmpeg_bin_path = Path::new(&ffmpeg_bin_path);
 
         if ffmpeg_bin_path.exists() {
             let file_path = Path::new(endpoint_path).join(&filesystem_id);
-            let endpoint_preview_videos_path = Path::new(endpoint_artifacts_path).join("preview_videos");
+            let endpoint_preview_videos_path =
+                Path::new(endpoint_artifacts_path).join("preview_videos");
 
             if !endpoint_preview_videos_path.exists() {
                 let create_dir_result = std::fs::create_dir(&endpoint_preview_videos_path);
@@ -861,63 +874,65 @@ pub fn  generate_browser_friendly_video(
             }
 
             // TODO make the options configurable via the web interface!
-            let ffmpeg_result =
-                if ffmpeg_hwaccel_nvenc {
-                    Command::new(ffmpeg_bin_path)
-                       .arg("-y")
-                       .arg("-vsync")
-                       .arg("0")
-                       .arg("-hwaccel")
-                       .arg("cuda")
-                       .arg("-hwaccel_output_format")
-                       .arg("cuda")
-                       .arg("-i")
-                       .arg(file_path.to_str().unwrap())
-                       .arg("-c:v")
-                       .arg("h264_nvenc")
-                       .arg("-b:v")
-                       .arg("2M")
-                       .arg("-b:a")
-                       .arg("192k")
-                       .arg("-vf")
-                       .arg("scale_cuda=-2:720")
-                       .arg(
-                           endpoint_preview_videos_path
-                               .join(&filesystem_id)
-                               .with_extension("mp4")
-                               .to_str()
-                               .unwrap(),
-                       )
-                       .output()
-                } else {
-                    Command::new(ffmpeg_bin_path)
-                       .arg("-y")
-                       .arg("-i")
-                       .arg(file_path.to_str().unwrap())
-                       .arg("-c:v")
-                       .arg("libx264")
-                       .arg("-b:v")
-                       .arg("2M")
-                       .arg("-b:a")
-                       .arg("192k")
-                       .arg("-vf")
-                       .arg("scale=-2:720")
-                       .arg(
-                           endpoint_preview_videos_path
-                               .join(&filesystem_id)
-                               .with_extension("mp4")
-                               .to_str()
-                               .unwrap(),
-                       )
-                       .output()
-                };
+            let ffmpeg_result = if ffmpeg_hwaccel_nvenc {
+                Command::new(ffmpeg_bin_path)
+                    .arg("-y")
+                    .arg("-vsync")
+                    .arg("0")
+                    .arg("-hwaccel")
+                    .arg("cuda")
+                    .arg("-hwaccel_output_format")
+                    .arg("cuda")
+                    .arg("-i")
+                    .arg(file_path.to_str().unwrap())
+                    .arg("-c:v")
+                    .arg("h264_nvenc")
+                    .arg("-b:v")
+                    .arg("2M")
+                    .arg("-b:a")
+                    .arg("192k")
+                    .arg("-vf")
+                    .arg("scale_cuda=-2:720")
+                    .arg(
+                        endpoint_preview_videos_path
+                            .join(&filesystem_id)
+                            .with_extension("mp4")
+                            .to_str()
+                            .unwrap(),
+                    )
+                    .output()
+            } else {
+                Command::new(ffmpeg_bin_path)
+                    .arg("-y")
+                    .arg("-i")
+                    .arg(file_path.to_str().unwrap())
+                    .arg("-c:v")
+                    .arg("libx264")
+                    .arg("-b:v")
+                    .arg("2M")
+                    .arg("-b:a")
+                    .arg("192k")
+                    .arg("-vf")
+                    .arg("scale=-2:720")
+                    .arg(
+                        endpoint_preview_videos_path
+                            .join(&filesystem_id)
+                            .with_extension("mp4")
+                            .to_str()
+                            .unwrap(),
+                    )
+                    .output()
+            };
 
             if let Ok(ffmpeg_result) = ffmpeg_result {
                 if ffmpeg_result.status.success() {
                     Ok(())
                 } else {
                     dbg!(ffmpeg_result);
-                    Err("Could not generate a browser friendly video render for a storage entry".to_string())
+                    Err(
+                        "Could not generate a browser friendly video render for a storage entry"
+                            .to_string(),
+                    )
                 }
             } else {
                 Err("Could not execute the ffmpeg command".to_string())
@@ -929,7 +944,6 @@ pub fn  generate_browser_friendly_video(
         Ok(())
     }
 }
-
 
 pub fn generate_audio_entry_cover_thumbnail(
     filesystem_id: &str,
@@ -964,7 +978,10 @@ pub fn generate_audio_entry_cover_thumbnail(
                 if ffmpeg_result.status.success() {
                     Ok(())
                 } else {
-                    Err("Could not generate a cover image thumbnail for an audio storage entry".to_string())
+                    Err(
+                        "Could not generate a cover image thumbnail for an audio storage entry"
+                            .to_string(),
+                    )
                 }
             } else {
                 Err("Could not execute the ffmpeg command".to_string())

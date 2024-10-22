@@ -80,7 +80,7 @@ async fn storage_delete_entries(
             endpoint_id,
             target_folders,
             target_files,
-            Some(&group_ids),
+            Some((client_user.id, &group_ids)),
             &**pool,
         )
         .await;
