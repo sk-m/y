@@ -6,7 +6,7 @@ import { unsafe_t } from "@/i18n"
 import {
   UserGroupFieldValues,
   UserGroupWatchedFields,
-} from "@/modules/admin/pages/user-groups/[groupId]"
+} from "@/modules/admin/pages/user-groups/[groupId]/rights"
 import { useUserGroups } from "@/modules/admin/user-groups/user-groups.service"
 import {
   IUserRight,
