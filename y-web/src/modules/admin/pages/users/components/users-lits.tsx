@@ -28,11 +28,10 @@ import { toastCtl } from "@/app/core/toast"
 import { useTableState } from "@/app/core/use-table-state"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
+import { deleteUsers } from "@/modules/admin/users/users.api"
 import { IUser } from "@/modules/admin/users/users.codecs"
 import { useUsers, usersKey } from "@/modules/admin/users/users.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
-
-import { deleteUsers } from "../users/users.api"
 
 export type UserEntryProps = {
   user: IUser

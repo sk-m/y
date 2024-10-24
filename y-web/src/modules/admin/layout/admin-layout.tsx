@@ -12,9 +12,7 @@ import { useAuth } from "@/modules/core/auth/auth.service"
 import { useFeatures } from "../feature/feature.service"
 import UserPage from "../pages/users/[userId]"
 
-const UsersListPage = lazy(
-  async () => import("@/modules/admin/pages/users-list")
-)
+const UsersListPage = lazy(async () => import("@/modules/admin/pages/users"))
 
 const NewUserPage = lazy(async () => import("@/modules/admin/pages/users/new"))
 

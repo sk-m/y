@@ -11,7 +11,7 @@ import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
-import { UsersList } from "../components/users-lits"
+import { UsersList } from "./components/users-lits"
 
 const UsersListPage: Component = () => {
   const $auth = useAuth()
