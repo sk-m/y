@@ -6,7 +6,7 @@ import {
   TGetStorageEntryThumbnails,
   TGetStorageFolderPath,
 } from "./storage-entry.codecs"
-import { downloadResponseBlob } from "./storage-entry.util"
+import { downloadFileURL, downloadResponseBlob } from "./storage-entry.util"
 
 export const apiStorageFolderPath = "/storage/folder-path" as const
 export const apiStorageEntries = "/storage/entries" as const
@@ -166,23 +166,19 @@ export const deleteStorageEntries = async (
 export type DownloadStorageFileInput = {
   endpointId: number | string
   fileId: number | string
+  fileName: string
 }
 
-export const downloadStorageFile = async (input: DownloadStorageFileInput) => {
+export const downloadStorageFile = (input: DownloadStorageFileInput) => {
   const query = new URLSearchParams()
 
   query.set("file_id", input.fileId.toString())
 
-  return fetch(
-    `/api${apiStorageEntries}/${input.endpointId}/download?${query.toString()}`,
-    {
-      method: "GET",
-      mode: "cors",
-      // eslint-disable-next-line sonarjs/no-duplicate-string
-      credentials: "same-origin",
-      referrerPolicy: "same-origin",
-    }
-  ).then(downloadResponseBlob)
+  const url = `/api${apiStorageEntries}/${
+    input.endpointId
+  }/download?${query.toString()}`
+
+  downloadFileURL(url, input.fileName)
 }
 
 export type DownloadStorageFilesZipInput = {

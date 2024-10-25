@@ -567,9 +567,13 @@ const FileExplorerPage: Component = () => {
   }
 
   const downloadFile = (fileId: number) => {
-    void downloadStorageFile({
+    const fileName =
+      folderEntries().find((entry) => entry.id === fileId)?.name ?? "file"
+
+    downloadStorageFile({
       endpointId: params.endpointId as string,
-      fileId,
+      fileId: fileId.toString(),
+      fileName,
     })
   }
 
