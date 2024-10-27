@@ -484,17 +484,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b75356056920673b02621b35afd0f7dda9306d03c79a30f5c56c44cf256e3de"
 
 [[package]]
-name = "async-trait"
-version = "0.1.83"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "721cae7de5c34fbb2acd27e21e6d2cf7b886dce0c27388d46c4e6c47ea4318dd"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.65",
-]
-
-[[package]]
 name = "atoi"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3198,7 +3187,6 @@ dependencies = [
  "actix-rt",
  "actix-web",
  "async-recursion",
- "async-trait",
  "base64 0.21.7",
  "chrono",
  "cron",
@@ -3219,7 +3207,6 @@ dependencies = [
  "serde_with",
  "simplelog",
  "sqlx",
- "tokio",
  "uuid",
  "validator",
  "zip",
