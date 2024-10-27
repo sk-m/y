@@ -10,6 +10,7 @@ mod storage_entry;
 mod user;
 mod user_group;
 mod util;
+mod vfs;
 
 use crate::storage_archives::cleanup_storage_archives;
 use actix_web::{web, App, HttpServer};
@@ -23,6 +24,7 @@ use std::process::exit;
 use std::{env, fs};
 use std::{str::FromStr, time::Duration};
 use util::RequestPool;
+use vfs::vfs_main;
 
 async fn process_cli_arguments(pool: &RequestPool) {
     let cli_arguments: Vec<String> = env::args().collect();
@@ -107,6 +109,8 @@ async fn main() -> std::io::Result<()> {
 
     // Connect to the database
     let pool = db::connect().await;
+
+    let fs = vfs_main(pool.clone());
 
     // Process command line arguments. We might want to do something and terminate
     process_cli_arguments(&pool).await;
@@ -216,6 +220,7 @@ async fn main() -> std::io::Result<()> {
     .run()
     .and_then(|_| async {
         info!("Server stopped");
+        fs.join();
         Ok(())
     })
     .await

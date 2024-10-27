@@ -34,3 +34,8 @@ rustix = "=0.37.25"
 base64 = "0.21.7"
 infer = "0.15.0"
 validator = { version = "0.17.0", features = ["derive"] }
+
+async-trait = "0.1.83"
+libc = "0.2.161"
+tokio = "1.41.0"
+fuser = "0.15.0"
