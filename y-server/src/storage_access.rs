@@ -121,14 +121,15 @@ pub fn process_storage_entry(
             continue;
         }
 
-        // TODO use enum instead of string. SQLX should support automatic conversion from string to enum
-        let access_type = if rule.access_type.is_none() {
-            StorageAccessType::Unset
-        } else {
-            StorageAccessType::from_str(rule.access_type.as_ref().unwrap())
-        };
-
         let executor_type = rule.executor_type.as_ref().unwrap();
+        let executor_id = rule.executor_id.unwrap();
+
+        // TODO use enum instead of string. SQLX should support automatic conversion from string to enum
+        let access_type = if let Some(access_type) = &rule.access_type {
+            StorageAccessType::from_str(access_type)
+        } else {
+            StorageAccessType::Unset
+        };
 
         match executor_type.as_str() {
             // TODO Enum instead of string!
@@ -148,7 +149,7 @@ pub fn process_storage_entry(
             }
             "user_group" => {
                 if access_type != StorageAccessType::Unset {
-                    if let Some(entry) = group_rules.get_mut(&rule.executor_id.unwrap()) {
+                    if let Some(entry) = group_rules.get_mut(&executor_id) {
                         // We already have an access rule set for this group. Check if the rule we are processing has a higher priority and is not sourced from higher up the tree than the current value.
 
                         // TODO! what I said above. I think this check ALWAYS returns false and is redundant
@@ -157,10 +158,8 @@ pub fn process_storage_entry(
                         }
                     } else {
                         // We have not seen this group "mentioned" in a rule before. Add it to the map.
-                        group_rules.insert(
-                            rule.executor_id.unwrap(),
-                            (access_type, rule.rule_source, rule.tree_step),
-                        );
+                        group_rules
+                            .insert(executor_id, (access_type, rule.rule_source, rule.tree_step));
                     }
                 }
             }
@@ -225,16 +224,17 @@ async fn get_storage_entry_access_rule_cascade_up(
         .fetch_all(pool)
         .await;
 
-    if let Ok(tree_rules) = tree_rules {
-        let (group_rules, user_rule) = process_storage_entry(&tree_rules);
+    match tree_rules {
+        Ok(tree_rules) => {
+            let (group_rules, user_rule) = process_storage_entry(&tree_rules);
 
-        if user_rule.0 == StorageAccessType::Allow || user_rule.0 == StorageAccessType::Deny {
-            return Ok(StorageAccessCheckResult::Explicit(user_rule.0));
+            if user_rule.0 == StorageAccessType::Allow || user_rule.0 == StorageAccessType::Deny {
+                return Ok(StorageAccessCheckResult::Explicit(user_rule.0));
+            }
+
+            Ok(StorageAccessCheckResult::Inherited(group_rules))
         }
-
-        Ok(StorageAccessCheckResult::Inherited(group_rules))
-    } else {
-        Err(tree_rules.unwrap_err())
+        Err(err) => Err(err),
     }
 }
 
@@ -473,13 +473,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
                         .values()
                         .all(|x| x.0 == StorageAccessType::Deny))
             {
-                dbg!(
-                    "Target entry denies access",
-                    &root_result[start_i..end_i],
-                    &result_user,
-                    &result_groups
-                );
-
                 return false;
             }
 
@@ -543,8 +536,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         return entry_root_access;
     }
 
-    dbg!(&tree_result_for_inheriting_entries);
-
     let mut last_target_entry_id = tree_result_for_inheriting_entries[0]
         .target_entry_id
         .unwrap();
@@ -586,13 +577,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
             {
                 // Early check. If some target entry inherits from a branch that denies access, then we are already done here.
 
-                dbg!(
-                    "Some branch denies access. Short-circuiting.",
-                    &tree_result_for_inheriting_entries[start_i..end_i],
-                    &result_user,
-                    &result_groups
-                );
-
                 return false;
             } else if !at_least_one_inheriting_from_root
                 && result_user.0 == StorageAccessType::Unset
@@ -611,12 +595,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     // entries that either deny access or inherit access rules from a branch that denies access.
     // Lastly, we might need to check user's access to the endpoint root, if at least one entry inherits
     // rules aaaalllll the way up from the root of the endpoint. If not, we are done - access granted.
-
-    dbg!(
-        "We are done here!",
-        &at_least_one_allows,
-        &at_least_one_inheriting_from_root
-    );
 
     if !at_least_one_allows {
         at_least_one_inheriting_from_root = true;

@@ -398,10 +398,14 @@ pub async fn delete_entries(
     let mut folder_parents: HashMap<i64, Option<i64>> =
         target_folders.iter().map(|id| (*id, None)).collect();
 
-    // Arrays of *all* the files and folders we will find after the recursive search
-    // These may be the files and folders arbitrarily deep inside the target folders
-    let mut all_files: Vec<i64> = target_files.clone();
+    // Arrays of *all* the folders we will find after the recursive search
+    // These may be the arbitrarily deep inside the target folders
     let mut all_folders: Vec<i64> = Vec::new();
+
+    // We will store the filesystem ids of all the files we are about to delete
+    // We need to know the filesystem ids to actually delete the files from
+    // the filesystem after we delete them from the database
+    let mut file_filesystem_ids: Vec<String> = Vec::new();
 
     // Recursively find all the folders that reside inside target folders
     if folder_parents.len() > 0 {
@@ -443,17 +447,6 @@ pub async fn delete_entries(
     }
 
     let mut transaction = transaction.unwrap();
-
-    // We will store the filesystem ids of all the files we are about to delete
-    // We need to know the filesystem ids to actually delete the files from
-    // the filesystem after we delete them from the database
-    let mut file_filesystem_ids: Vec<String> = Vec::new();
-
-    #[derive(FromRow)]
-    struct EntryIdAndFilesystemId {
-        id: i64,
-        filesystem_id: String,
-    }
 
     // Delete files *inside* provided target folders (arbitrarily deep inside)
     if all_folders.len() > 0 {
@@ -549,7 +542,6 @@ pub async fn delete_entries(
                         }
 
                         file_filesystem_ids.push(target_entry.filesystem_id.clone().unwrap());
-                        all_files.push(target_entry.entry_id);
 
                         start_i = i;
                     }
@@ -558,7 +550,7 @@ pub async fn delete_entries(
                 }
             }
 
-            let delete_folder_files_result = sqlx::query_as::<_, EntryIdAndFilesystemId>(
+            let delete_folder_files_result = sqlx::query(
                 "DELETE FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2) AND entry_type = 'file'::storage_entry_type",
             )
             .bind(endpoint_id)
@@ -570,8 +562,8 @@ pub async fn delete_entries(
                 return Err("Could not delete files from the database".to_string());
             }
         } else {
-            let delete_folder_files_result = sqlx::query_as::<_, EntryIdAndFilesystemId>(
-                "DELETE FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2) AND entry_type = 'file'::storage_entry_type RETURNING id, filesystem_id",
+            let delete_folder_files_result = sqlx::query_scalar::<_, String>(
+                "DELETE FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2) AND entry_type = 'file'::storage_entry_type RETURNING filesystem_id",
             )
             .bind(endpoint_id)
             .bind(&all_folders)
@@ -580,13 +572,7 @@ pub async fn delete_entries(
 
             match delete_folder_files_result {
                 Ok(delete_folder_files_result) => {
-                    all_files.extend(delete_folder_files_result.iter().map(|entry| entry.id));
-
-                    file_filesystem_ids.extend(
-                        delete_folder_files_result
-                            .into_iter()
-                            .map(|entry| entry.filesystem_id),
-                    );
+                    file_filesystem_ids.extend(delete_folder_files_result.into_iter());
                 }
                 Err(_) => {
                     return Err("Could not delete files from the database".to_string());
@@ -928,7 +914,6 @@ pub fn generate_browser_friendly_video(
                 if ffmpeg_result.status.success() {
                     Ok(())
                 } else {
-                    dbg!(ffmpeg_result);
                     Err(
                         "Could not generate a browser friendly video render for a storage entry"
                             .to_string(),
