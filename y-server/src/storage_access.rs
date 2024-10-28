@@ -449,6 +449,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     let root_result = root_result.unwrap();
 
     let mut parent_folders_for_inheriting_entries_set: HashSet<i64> = HashSet::new();
+    let mut at_least_one_inheriting_from_root = false;
 
     let mut last_entry_id = root_result[0].entry_id;
     let mut start_i = 0;
@@ -484,8 +485,11 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
             // The entry is inheriting rules from somewhere up the tree
             if result_user.0 == StorageAccessType::Unset && (result_groups.is_empty()) {
-                parent_folders_for_inheriting_entries_set
-                    .insert(target_entry.parent_folder.unwrap());
+                if let Some(parent_folder_id) = target_entry.parent_folder {
+                    parent_folders_for_inheriting_entries_set.insert(parent_folder_id);
+                } else {
+                    at_least_one_inheriting_from_root = true;
+                }
             }
 
             start_i = i;
@@ -547,7 +551,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     let mut start_i = 0;
 
     let mut at_least_one_allows = false;
-    let mut at_least_one_inheriting_from_root = false;
 
     // Break up the rows from the database into slices. Each slice contains rules for one branch.
     // A branch starts from the *parent folder* of some target entry and goes all the way up to the root.
