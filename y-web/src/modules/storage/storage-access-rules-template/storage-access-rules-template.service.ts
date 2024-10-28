@@ -1,5 +1,7 @@
 import { createQuery } from "@tanstack/solid-query"
 
+import { ServiceOptions } from "@/app/core/utils"
+
 import {
   StorageAccessRulesTemplatesInput,
   storageAccessRulesTemplates,
@@ -10,10 +12,7 @@ export const storageAccessRulesTemplatesKey =
 
 export const useStorageAccessRulesTemplates = (
   input: () => StorageAccessRulesTemplatesInput,
-  options: {
-    refetchOnWindowFocus?: boolean
-    refetchInterval?: number
-  } = {}
+  options: ServiceOptions = {}
 ) => {
   return createQuery(
     () => [storageAccessRulesTemplatesKey, input()],

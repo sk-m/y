@@ -70,8 +70,12 @@ pub struct ProccessEntryRuleInput {
     pub access_type: Option<String>,
     pub executor_type: Option<String>,
     pub executor_id: Option<i32>,
+
+    #[sqlx(default)]
     pub parent_folder: Option<i64>,
+    #[sqlx(default)]
     pub target_entry_id: Option<i64>,
+    #[sqlx(default)]
     pub filesystem_id: Option<String>,
 }
 
@@ -110,10 +114,10 @@ pub fn process_storage_entry(
     let mut group_rules: HashMap<i32, (StorageAccessType, i32, i32)> = HashMap::new();
     let mut user_rule: (StorageAccessType, i32, i32) = (StorageAccessType::Unset, -1, 1);
 
-    // TODO! Are we sure we need to compare rule_sources? The SQL query will always ORDER BY rule_source DESC.
+    // TODO Are we sure we need to compare rule_sources? The SQL query will always ORDER BY rule_source DESC.
     // I think we should just rely on the input data. The higher rule source will always be processed first, so no overrides should happen, hence no checks and no keeping track of rule_source.
     // Don't forget to update the function docs if you change this! Specify that the input slice should be sorted in a specific way.
-    // TODO! check if what I said above is true. I'm not sure...
+    // TODO check if what I said above is true. I'm not sure...
 
     for rule in rules {
         // TODO This function should not accept executor_type or executor_id as Options. They should always be set.
@@ -121,14 +125,15 @@ pub fn process_storage_entry(
             continue;
         }
 
-        // TODO use enum instead of string. SQLX should support automatic conversion from string to enum
-        let access_type = if rule.access_type.is_none() {
-            StorageAccessType::Unset
-        } else {
-            StorageAccessType::from_str(rule.access_type.as_ref().unwrap())
-        };
-
         let executor_type = rule.executor_type.as_ref().unwrap();
+        let executor_id = rule.executor_id.unwrap();
+
+        // TODO use enum instead of string. SQLX should support automatic conversion from string to enum
+        let access_type = if let Some(access_type) = &rule.access_type {
+            StorageAccessType::from_str(access_type)
+        } else {
+            StorageAccessType::Unset
+        };
 
         match executor_type.as_str() {
             // TODO Enum instead of string!
@@ -138,29 +143,25 @@ pub fn process_storage_entry(
                 // We check if tree_step is the same because we don't want a rule from higher up a tree overriding a rule
                 // from lower down.
                 if user_rule.0 == StorageAccessType::Unset
-
-                    // ! TODO what I said above. I think this check ALWAYS returns false and is redundant
+                    // TODO what I said above. I think this check ALWAYS returns false and is redundant
                     || (rule.tree_step == user_rule.2 && rule.rule_source > user_rule.1)
-                // ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 {
                     user_rule = (access_type, rule.rule_source, rule.tree_step);
                 }
             }
             "user_group" => {
                 if access_type != StorageAccessType::Unset {
-                    if let Some(entry) = group_rules.get_mut(&rule.executor_id.unwrap()) {
+                    if let Some(entry) = group_rules.get_mut(&executor_id) {
                         // We already have an access rule set for this group. Check if the rule we are processing has a higher priority and is not sourced from higher up the tree than the current value.
 
-                        // TODO! what I said above. I think this check ALWAYS returns false and is redundant
+                        // TODO what I said above. I think this check ALWAYS returns false and is redundant
                         if rule.tree_step == (*entry).2 && rule.rule_source > (*entry).1 {
                             (*entry).0 = access_type;
                         }
                     } else {
                         // We have not seen this group "mentioned" in a rule before. Add it to the map.
-                        group_rules.insert(
-                            rule.executor_id.unwrap(),
-                            (access_type, rule.rule_source, rule.tree_step),
-                        );
+                        group_rules
+                            .insert(executor_id, (access_type, rule.rule_source, rule.tree_step));
                     }
                 }
             }
@@ -183,7 +184,7 @@ async fn get_storage_entry_access_rule_cascade_up(
     pool: &RequestPool,
 ) -> Result<StorageAccessCheckResult, sqlx::Error> {
     let tree_rules = sqlx::query_as::<_, ProccessEntryRuleInput>("
-        SELECT NULL AS filesystem_id, NULL AS target_entry_id, NULL AS parent_folder, tree.tree_step::INT4, 2 AS rule_source, storage_access.entry_id, NULL as template_id, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
+        SELECT tree.tree_step::INT4, 2 AS rule_source, storage_access.entry_id, NULL as template_id, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
 
         JOIN storage_access
         ON storage_access.entry_id = tree.entry_id
@@ -198,7 +199,7 @@ async fn get_storage_entry_access_rule_cascade_up(
 
         UNION ALL
 
-        SELECT NULL AS filesystem_id, NULL AS target_entry_id, NULL AS parent_folder, tree.tree_step::INT4, 1 AS rule_source, tree.entry_id, storage_access_template_rules.template_id, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id
+        SELECT tree.tree_step::INT4, 1 AS rule_source, tree.entry_id, storage_access_template_rules.template_id, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id
         FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
 
         JOIN storage_access_template_entries
@@ -225,16 +226,17 @@ async fn get_storage_entry_access_rule_cascade_up(
         .fetch_all(pool)
         .await;
 
-    if let Ok(tree_rules) = tree_rules {
-        let (group_rules, user_rule) = process_storage_entry(&tree_rules);
+    match tree_rules {
+        Ok(tree_rules) => {
+            let (group_rules, user_rule) = process_storage_entry(&tree_rules);
 
-        if user_rule.0 == StorageAccessType::Allow || user_rule.0 == StorageAccessType::Deny {
-            return Ok(StorageAccessCheckResult::Explicit(user_rule.0));
+            if user_rule.0 == StorageAccessType::Allow || user_rule.0 == StorageAccessType::Deny {
+                return Ok(StorageAccessCheckResult::Explicit(user_rule.0));
+            }
+
+            Ok(StorageAccessCheckResult::Inherited(group_rules))
         }
-
-        Ok(StorageAccessCheckResult::Inherited(group_rules))
-    } else {
-        Err(tree_rules.unwrap_err())
+        Err(err) => Err(err),
     }
 }
 
@@ -391,7 +393,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
     // Get access rules for the provided entries themeselves. No tree traversal here.
     let root_result = sqlx::query_as::<_, ProccessEntryRuleInput>(
-        "SELECT NULL AS filesystem_id, NULL AS target_entry_id, 1 AS tree_step, storage_entries.id AS entry_id, 2 AS rule_source, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM storage_entries
+        "SELECT 1 AS tree_step, storage_entries.id AS entry_id, 2 AS rule_source, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM storage_entries
 
         LEFT JOIN storage_access
         ON storage_access.entry_id = storage_entries.id
@@ -411,7 +413,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
         UNION ALL
 
-        SELECT NULL AS filesystem_id, NULL AS target_entry_id, 1 AS tree_step, storage_entries.id AS entry_id, 1 AS rule_source, storage_entries.parent_folder, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id FROM storage_entries
+        SELECT 1 AS tree_step, storage_entries.id AS entry_id, 1 AS rule_source, storage_entries.parent_folder, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id FROM storage_entries
 
         LEFT JOIN storage_access_template_entries
         ON storage_access_template_entries.entry_id = storage_entries.id
@@ -449,6 +451,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     let root_result = root_result.unwrap();
 
     let mut parent_folders_for_inheriting_entries_set: HashSet<i64> = HashSet::new();
+    let mut at_least_one_inheriting_from_root = false;
 
     let mut last_entry_id = root_result[0].entry_id;
     let mut start_i = 0;
@@ -472,20 +475,16 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
                         .values()
                         .all(|x| x.0 == StorageAccessType::Deny))
             {
-                dbg!(
-                    "Target entry denies access",
-                    &root_result[start_i..end_i],
-                    &result_user,
-                    &result_groups
-                );
-
                 return false;
             }
 
             // The entry is inheriting rules from somewhere up the tree
             if result_user.0 == StorageAccessType::Unset && (result_groups.is_empty()) {
-                parent_folders_for_inheriting_entries_set
-                    .insert(target_entry.parent_folder.unwrap());
+                if let Some(parent_folder_id) = target_entry.parent_folder {
+                    parent_folders_for_inheriting_entries_set.insert(parent_folder_id);
+                } else {
+                    at_least_one_inheriting_from_root = true;
+                }
             }
 
             start_i = i;
@@ -513,7 +512,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         .collect::<Vec<i64>>();
 
     let tree_result_for_inheriting_entries = sqlx::query_as::<_, ProccessEntryRuleInput>(
-        "SELECT tree_step, rule_source, entry_id, template_id, access_type::TEXT, executor_type::TEXT, executor_id, target_entry_id, NULL AS parent_folder, NULL AS filesystem_id FROM storage_generate_entries_access_tree($1, $2::storage_access_action_type, $3, $4, $5)",
+        "SELECT tree_step, rule_source, entry_id, template_id, access_type::TEXT, executor_type::TEXT, executor_id, target_entry_id FROM storage_generate_entries_access_tree($1, $2::storage_access_action_type, $3, $4, $5)",
     )
     .bind(endpoint_id)
     .bind(action)
@@ -539,15 +538,12 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         return entry_root_access;
     }
 
-    dbg!(&tree_result_for_inheriting_entries);
-
     let mut last_target_entry_id = tree_result_for_inheriting_entries[0]
         .target_entry_id
         .unwrap();
     let mut start_i = 0;
 
     let mut at_least_one_allows = false;
-    let mut at_least_one_inheriting_from_root = false;
 
     // Break up the rows from the database into slices. Each slice contains rules for one branch.
     // A branch starts from the *parent folder* of some target entry and goes all the way up to the root.
@@ -583,13 +579,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
             {
                 // Early check. If some target entry inherits from a branch that denies access, then we are already done here.
 
-                dbg!(
-                    "Some branch denies access. Short-circuiting.",
-                    &tree_result_for_inheriting_entries[start_i..end_i],
-                    &result_user,
-                    &result_groups
-                );
-
                 return false;
             } else if !at_least_one_inheriting_from_root
                 && result_user.0 == StorageAccessType::Unset
@@ -608,12 +597,6 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
     // entries that either deny access or inherit access rules from a branch that denies access.
     // Lastly, we might need to check user's access to the endpoint root, if at least one entry inherits
     // rules aaaalllll the way up from the root of the endpoint. If not, we are done - access granted.
-
-    dbg!(
-        "We are done here!",
-        &at_least_one_allows,
-        &at_least_one_inheriting_from_root
-    );
 
     if !at_least_one_allows {
         at_least_one_inheriting_from_root = true;

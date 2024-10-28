@@ -393,7 +393,7 @@ async fn storage_upload(
     }
 
     if cfg!(debug_assertions) {
-        debug!("storage/upload: {}ms", now.elapsed().as_millis());
+        info!("storage/upload: {}ms", now.elapsed().as_millis());
     }
 
     // Generate thumbnails

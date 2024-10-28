@@ -1,5 +1,7 @@
 import { createQuery } from "@tanstack/solid-query"
 
+import { ServiceOptions } from "@/app/core/utils"
+
 import {
   GetStorageEndpointInput,
   storageEndpoint,
@@ -10,10 +12,7 @@ export const adminStorageEndpointsKey = "admin-storage-endpoints" as const
 
 export const useStorageEndpoint = (
   input: () => GetStorageEndpointInput,
-  options?: {
-    refetchOnWindowFocus?: boolean
-    refetchInterval?: number
-  }
+  options?: ServiceOptions
 ) => {
   return createQuery(
     () => [adminStorageEndpointsKey, input()],
@@ -24,10 +23,7 @@ export const useStorageEndpoint = (
 
 export const useStorageEndpoints = (
   _input: () => Record<string, never>,
-  options?: {
-    refetchOnWindowFocus?: boolean
-    refetchInterval?: number
-  }
+  options?: ServiceOptions
 ) => {
   return createQuery(
     () => [adminStorageEndpointsKey],
