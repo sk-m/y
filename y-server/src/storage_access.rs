@@ -114,10 +114,10 @@ pub fn process_storage_entry(
     let mut group_rules: HashMap<i32, (StorageAccessType, i32, i32)> = HashMap::new();
     let mut user_rule: (StorageAccessType, i32, i32) = (StorageAccessType::Unset, -1, 1);
 
-    // TODO! Are we sure we need to compare rule_sources? The SQL query will always ORDER BY rule_source DESC.
+    // TODO Are we sure we need to compare rule_sources? The SQL query will always ORDER BY rule_source DESC.
     // I think we should just rely on the input data. The higher rule source will always be processed first, so no overrides should happen, hence no checks and no keeping track of rule_source.
     // Don't forget to update the function docs if you change this! Specify that the input slice should be sorted in a specific way.
-    // TODO! check if what I said above is true. I'm not sure...
+    // TODO check if what I said above is true. I'm not sure...
 
     for rule in rules {
         // TODO This function should not accept executor_type or executor_id as Options. They should always be set.
@@ -143,10 +143,8 @@ pub fn process_storage_entry(
                 // We check if tree_step is the same because we don't want a rule from higher up a tree overriding a rule
                 // from lower down.
                 if user_rule.0 == StorageAccessType::Unset
-
-                    // ! TODO what I said above. I think this check ALWAYS returns false and is redundant
+                    // TODO what I said above. I think this check ALWAYS returns false and is redundant
                     || (rule.tree_step == user_rule.2 && rule.rule_source > user_rule.1)
-                // ! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 {
                     user_rule = (access_type, rule.rule_source, rule.tree_step);
                 }
@@ -156,7 +154,7 @@ pub fn process_storage_entry(
                     if let Some(entry) = group_rules.get_mut(&executor_id) {
                         // We already have an access rule set for this group. Check if the rule we are processing has a higher priority and is not sourced from higher up the tree than the current value.
 
-                        // TODO! what I said above. I think this check ALWAYS returns false and is redundant
+                        // TODO what I said above. I think this check ALWAYS returns false and is redundant
                         if rule.tree_step == (*entry).2 && rule.rule_source > (*entry).1 {
                             (*entry).0 = access_type;
                         }
