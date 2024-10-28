@@ -36,3 +36,4 @@ infer = "0.15.0"
 validator = { version = "0.17.0", features = ["derive"] }
 libc = "0.2.161"
 fuser = "0.15.0"
+users = "0.11.0"
