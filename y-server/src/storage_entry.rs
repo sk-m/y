@@ -121,34 +121,53 @@ async fn traverse_folder(
 #[async_recursion]
 async fn get_subfolders_level(
     endpoint_id: i32,
-    all_folders: &mut Vec<i64>,
-    folder_ids: Vec<i64>,
+    folder_ids: &mut Vec<i64>,
+    filesystem_ids: &mut Vec<String>,
+    target_folder_ids: Vec<i64>,
     pool: &RequestPool,
 ) -> Result<(), String> {
     #[derive(FromRow)]
-    struct StorageFolderIdRow {
+    struct EntryRow {
         id: i64,
+        filesystem_id: Option<String>,
     }
 
-    let next_level_folders = sqlx::query_as::<_, StorageFolderIdRow>(
-        "SELECT id FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2) AND storage_entries.entry_type = 'folder'::storage_entry_type",
+    let next_level_entries = sqlx::query_as::<_, EntryRow>(
+        "SELECT id, filesystem_id FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2)",
     )
     .bind(endpoint_id)
-    .bind(folder_ids)
+    .bind(target_folder_ids)
     .fetch_all(pool)
     .await;
 
-    match &next_level_folders {
-        Ok(next_level_folders) => {
+    match &next_level_entries {
+        Ok(next_level_entries) => {
             let mut next_level_folder_ids: Vec<i64> = Vec::new();
 
-            for folder in next_level_folders {
-                next_level_folder_ids.push(folder.id);
-                all_folders.push(folder.id);
+            for entry in next_level_entries {
+                if entry.filesystem_id.is_some() {
+                    // File
+                    filesystem_ids.push(entry.filesystem_id.clone().unwrap());
+                } else {
+                    // Folder
+                    next_level_folder_ids.push(entry.id);
+                    folder_ids.push(entry.id);
+                }
             }
 
             if next_level_folder_ids.len() > 0 {
-                get_subfolders_level(endpoint_id, all_folders, next_level_folder_ids, pool).await?;
+                let next_iteration = get_subfolders_level(
+                    endpoint_id,
+                    folder_ids,
+                    filesystem_ids,
+                    next_level_folder_ids,
+                    pool,
+                )
+                .await;
+
+                if next_iteration.is_err() {
+                    return Err(next_iteration.unwrap_err());
+                }
             }
 
             return Ok(());
@@ -163,6 +182,7 @@ async fn get_subfolders_level(
 async fn get_subfolders_level_with_access_rules(
     endpoint_id: i32,
     folder_parents: &mut HashMap<i64, Option<i64>>,
+    filesystem_ids: &mut Vec<String>,
     folder_ids: Vec<i64>,
     access: (i32, &Vec<i32>),
     access_action: &str,
@@ -170,9 +190,9 @@ async fn get_subfolders_level_with_access_rules(
 ) -> Result<(), String> {
     let (access_user_id, access_user_group_ids) = access;
 
-    let next_level_folders =
+    let next_level_entries =
         sqlx::query_as::<_, ProccessEntryRuleInput>(
-            "SELECT 2 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, NULL AS filesystem_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM storage_entries
+            "SELECT 2 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, filesystem_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM storage_entries
 
             LEFT JOIN storage_access
             ON storage_access.entry_id = storage_entries.id
@@ -189,11 +209,10 @@ async fn get_subfolders_level_with_access_rules(
 
             WHERE storage_entries.endpoint_id = $1
             AND storage_entries.parent_folder = ANY($2)
-            AND storage_entries.entry_type = 'folder'::storage_entry_type
 
             UNION ALL
 
-            SELECT 1 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, NULL AS filesystem_id, storage_entries.parent_folder, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id FROM storage_entries
+            SELECT 1 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, filesystem_id, storage_entries.parent_folder, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id FROM storage_entries
 
             LEFT JOIN storage_access_template_entries
             ON storage_access_template_entries.entry_id = storage_entries.id
@@ -213,7 +232,6 @@ async fn get_subfolders_level_with_access_rules(
 
             WHERE storage_entries.endpoint_id = $1
             AND storage_entries.parent_folder = ANY($2)
-            AND storage_entries.entry_type = 'folder'::storage_entry_type
 
             ORDER BY entry_id ASC, rule_source DESC"
         )
@@ -225,30 +243,30 @@ async fn get_subfolders_level_with_access_rules(
         .fetch_all(pool)
         .await;
 
-    match &next_level_folders {
-        Ok(next_level_folders) => {
-            if next_level_folders.len() > 0 {
+    match &next_level_entries {
+        Ok(next_level_entries) => {
+            if next_level_entries.len() > 0 {
                 let mut next_level_folder_ids: Vec<i64> = Vec::new();
 
-                let mut last_entry_id = next_level_folders[0].entry_id;
+                let mut last_entry_id = next_level_entries[0].entry_id;
                 let mut start_i = 0;
 
                 // Break up the rows from the database into slices. Each slice contains rules for one entry.
-                for i in 0..next_level_folders.len() {
-                    let _rule = &next_level_folders[i];
+                for i in 0..next_level_entries.len() {
+                    let _rule = &next_level_entries[i];
 
-                    if _rule.entry_id != last_entry_id || i == next_level_folders.len() - 1 {
-                        let end_i = if i == next_level_folders.len() - 1 {
+                    if _rule.entry_id != last_entry_id || i == next_level_entries.len() - 1 {
+                        let end_i = if i == next_level_entries.len() - 1 {
                             i + 1
                         } else {
                             i
                         };
 
                         // _rule is NOT the entry we are currenly processing! It's the next one! Hence the _ prefix
-                        let target_entry = &next_level_folders[start_i];
+                        let target_entry = &next_level_entries[start_i];
 
                         let (result_groups, result_user) =
-                            process_storage_entry(&next_level_folders[start_i..end_i]);
+                            process_storage_entry(&next_level_entries[start_i..end_i]);
 
                         if result_user.0 == StorageAccessType::Deny
                             || (!result_groups.is_empty()
@@ -259,8 +277,15 @@ async fn get_subfolders_level_with_access_rules(
                             return Err("Access denied".to_string());
                         }
 
-                        next_level_folder_ids.push(target_entry.entry_id);
-                        folder_parents.insert(target_entry.entry_id, target_entry.parent_folder);
+                        if target_entry.filesystem_id.is_some() {
+                            // File
+                            filesystem_ids.push(target_entry.filesystem_id.clone().unwrap());
+                        } else {
+                            // Folder
+                            next_level_folder_ids.push(target_entry.entry_id);
+                            folder_parents
+                                .insert(target_entry.entry_id, target_entry.parent_folder);
+                        }
 
                         start_i = i;
                     }
@@ -268,15 +293,20 @@ async fn get_subfolders_level_with_access_rules(
                     last_entry_id = _rule.entry_id;
                 }
 
-                let _ = get_subfolders_level_with_access_rules(
+                let next_iteration = get_subfolders_level_with_access_rules(
                     endpoint_id,
                     folder_parents,
+                    filesystem_ids,
                     next_level_folder_ids,
                     access,
                     access_action,
                     pool,
                 )
                 .await;
+
+                if next_iteration.is_err() {
+                    return Err(next_iteration.unwrap_err());
+                }
             }
 
             return Ok(());
@@ -388,10 +418,6 @@ pub async fn delete_entries(
 
     let target_endpoint = target_endpoint.unwrap();
 
-    let endpoint_base_path = target_endpoint.base_path;
-    let endpoint_artifacts_path = target_endpoint.artifacts_path;
-    let endpoint_files_path = Path::new(&endpoint_base_path);
-
     // HashMap of folders to their parent folder id
     // pre-populate it with the target folders. We set the parent to None (as if they are inside the endpoint's root folder)
     // because we do not care about anything above the target folders. We just pretend that they reside inside the root
@@ -413,6 +439,7 @@ pub async fn delete_entries(
             let get_subfolders_result = get_subfolders_level_with_access_rules(
                 endpoint_id,
                 &mut folder_parents,
+                &mut file_filesystem_ids,
                 target_folders,
                 access,
                 "delete",
@@ -428,8 +455,14 @@ pub async fn delete_entries(
         } else {
             all_folders = target_folders.clone();
 
-            let get_subfolders_result =
-                get_subfolders_level(endpoint_id, &mut all_folders, target_folders, pool).await;
+            let get_subfolders_result = get_subfolders_level(
+                endpoint_id,
+                &mut all_folders,
+                &mut file_filesystem_ids,
+                target_folders,
+                pool,
+            )
+            .await;
 
             if get_subfolders_result.is_err() {
                 return Err(get_subfolders_result.unwrap_err());
@@ -450,105 +483,10 @@ pub async fn delete_entries(
 
     // Delete files *inside* provided target folders (arbitrarily deep inside)
     if all_folders.len() > 0 {
-        if let Some(access) = access {
-            let (access_user_id, access_user_group_ids) = access;
-
-            let files_info_result = sqlx::query_as::<_, ProccessEntryRuleInput>(
-                "SELECT 2 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, storage_entries.filesystem_id, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM storage_entries
-
-                LEFT JOIN storage_access
-                ON storage_access.entry_id = storage_entries.id
-                AND storage_access.endpoint_id = storage_entries.endpoint_id
-                AND storage_access.access_type != 'inherit'::storage_access_type
-                AND storage_access.action = 'delete'::storage_access_action_type
-                AND (
-                    (storage_access.executor_type = 'user_group'::storage_access_executor_type
-                    AND storage_access.executor_id = ANY($3))
-                    OR
-                    (storage_access.executor_type = 'user'::storage_access_executor_type
-                    AND storage_access.executor_id = $4)
-                )
-
-                WHERE storage_entries.endpoint_id = $1
-                AND storage_entries.parent_folder = ANY($2)
-                AND storage_entries.entry_type = 'file'::storage_entry_type
-
-                UNION ALL
-
-                SELECT 1 AS rule_source, 1 AS tree_step, storage_entries.id AS entry_id, storage_entries.id AS target_entry_id, storage_entries.filesystem_id, storage_entries.parent_folder, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id FROM storage_entries
-
-                LEFT JOIN storage_access_template_entries
-                ON storage_access_template_entries.entry_id = storage_entries.id
-                AND storage_access_template_entries.entry_endpoint_id = storage_entries.endpoint_id
-
-                LEFT JOIN storage_access_template_rules
-                ON storage_access_template_entries.template_id = storage_access_template_rules.template_id
-                AND storage_access_template_rules.access_type != 'inherit'::storage_access_type
-                AND storage_access_template_rules.action = 'delete'::storage_access_action_type
-                AND (
-                    (storage_access_template_rules.executor_type = 'user_group'::storage_access_executor_type
-                    AND storage_access_template_rules.executor_id = ANY($3))
-                    OR
-                    (storage_access_template_rules.executor_type = 'user'::storage_access_executor_type
-                    AND storage_access_template_rules.executor_id = $4)
-                )
-
-                WHERE storage_entries.endpoint_id = $1
-                AND storage_entries.parent_folder = ANY($2)
-                AND storage_entries.entry_type = 'file'::storage_entry_type
-
-                ORDER BY entry_id ASC, rule_source DESC"
-            )
-            .bind(endpoint_id)
-            .bind(&all_folders)
-            .bind(access_user_group_ids)
-            .bind(access_user_id)
-            .fetch_all(&mut *transaction).await;
-
-            if files_info_result.is_err() {
-                return Err("Could not retrieve info about files from the database".to_string());
-            }
-
-            let files_info_result = files_info_result.unwrap();
-
-            if !files_info_result.is_empty() {
-                let mut last_entry_id = files_info_result[0].entry_id;
-                let mut start_i = 0;
-
-                // Break up the rows from the database into slices. Each slice contains rules for one entry.
-                for i in 0..files_info_result.len() {
-                    let _rule = &files_info_result[i];
-
-                    if _rule.entry_id != last_entry_id || i == files_info_result.len() - 1 {
-                        let end_i = if i == files_info_result.len() - 1 {
-                            i + 1
-                        } else {
-                            i
-                        };
-
-                        // _rule is NOT the entry we are currenly processing! It's the next one! Hence the _ prefix
-                        let target_entry = &files_info_result[start_i];
-
-                        let (result_groups, result_user) =
-                            process_storage_entry(&files_info_result[start_i..end_i]);
-
-                        if result_user.0 == StorageAccessType::Deny
-                            || (!result_groups.is_empty()
-                                && result_groups
-                                    .values()
-                                    .all(|x| x.0 == StorageAccessType::Deny))
-                        {
-                            return Err("Access denied".to_string());
-                        }
-
-                        file_filesystem_ids.push(target_entry.filesystem_id.clone().unwrap());
-
-                        start_i = i;
-                    }
-
-                    last_entry_id = _rule.entry_id;
-                }
-            }
+        if access.is_some() {
+            // If access is Some, then we have previosly called `get_subfolders_level_with_access_rules`
+            // which already populated file_filesystem_ids vector with all the files that were found
+            // inside folders
 
             let delete_folder_files_result = sqlx::query(
                 "DELETE FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2) AND entry_type = 'file'::storage_entry_type",
@@ -562,6 +500,10 @@ pub async fn delete_entries(
                 return Err("Could not delete files from the database".to_string());
             }
         } else {
+            // if access is None, then we have previosly called `get_subfolders_level`, which
+            // does not populate the file_filesystem_ids vector, so we need to do that here -
+            // add each file which resides inside some folder
+
             let delete_folder_files_result = sqlx::query_scalar::<_, String>(
                 "DELETE FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = ANY($2) AND entry_type = 'file'::storage_entry_type RETURNING filesystem_id",
             )
@@ -595,6 +537,8 @@ pub async fn delete_entries(
             return Err("Could not delete files from the database".to_string());
         }
 
+        // Populate the vector with files that were explicitly selected for deletion (not the
+        // ones that reside inside some selected folder - we do that earlier)
         file_filesystem_ids.extend(delete_target_files_result.unwrap());
     }
 
@@ -613,9 +557,11 @@ pub async fn delete_entries(
     }
 
     if cfg!(debug_assertions) {
-        debug!(
-            "delete_entries tree traversal & access checks: {}ms",
-            now.elapsed().as_millis()
+        info!(
+            "delete_entries tree traversal & access checks: {}ms; {} files, {} folders",
+            now.elapsed().as_millis(),
+            file_filesystem_ids.len(),
+            all_folders.len()
         );
     }
 
@@ -627,6 +573,10 @@ pub async fn delete_entries(
 
     // We have successfully deleted all the underlying files and folders from the database,
     // now we can actually delete the files from the filesystem
+    let endpoint_base_path = target_endpoint.base_path;
+    let endpoint_artifacts_path = target_endpoint.artifacts_path;
+    let endpoint_files_path = Path::new(&endpoint_base_path);
+
     for file_filesystem_id in &file_filesystem_ids {
         let file_path = endpoint_files_path.join(file_filesystem_id);
         let fs_remove_result = remove_file(file_path);
