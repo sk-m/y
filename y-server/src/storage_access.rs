@@ -70,8 +70,12 @@ pub struct ProccessEntryRuleInput {
     pub access_type: Option<String>,
     pub executor_type: Option<String>,
     pub executor_id: Option<i32>,
+
+    #[sqlx(default)]
     pub parent_folder: Option<i64>,
+    #[sqlx(default)]
     pub target_entry_id: Option<i64>,
+    #[sqlx(default)]
     pub filesystem_id: Option<String>,
 }
 
@@ -182,7 +186,7 @@ async fn get_storage_entry_access_rule_cascade_up(
     pool: &RequestPool,
 ) -> Result<StorageAccessCheckResult, sqlx::Error> {
     let tree_rules = sqlx::query_as::<_, ProccessEntryRuleInput>("
-        SELECT NULL AS filesystem_id, NULL AS target_entry_id, NULL AS parent_folder, tree.tree_step::INT4, 2 AS rule_source, storage_access.entry_id, NULL as template_id, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
+        SELECT tree.tree_step::INT4, 2 AS rule_source, storage_access.entry_id, NULL as template_id, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
 
         JOIN storage_access
         ON storage_access.entry_id = tree.entry_id
@@ -197,7 +201,7 @@ async fn get_storage_entry_access_rule_cascade_up(
 
         UNION ALL
 
-        SELECT NULL AS filesystem_id, NULL AS target_entry_id, NULL AS parent_folder, tree.tree_step::INT4, 1 AS rule_source, tree.entry_id, storage_access_template_rules.template_id, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id
+        SELECT tree.tree_step::INT4, 1 AS rule_source, tree.entry_id, storage_access_template_rules.template_id, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id
         FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
 
         JOIN storage_access_template_entries
@@ -391,7 +395,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
     // Get access rules for the provided entries themeselves. No tree traversal here.
     let root_result = sqlx::query_as::<_, ProccessEntryRuleInput>(
-        "SELECT NULL AS filesystem_id, NULL AS target_entry_id, 1 AS tree_step, storage_entries.id AS entry_id, 2 AS rule_source, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM storage_entries
+        "SELECT 1 AS tree_step, storage_entries.id AS entry_id, 2 AS rule_source, storage_entries.parent_folder, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM storage_entries
 
         LEFT JOIN storage_access
         ON storage_access.entry_id = storage_entries.id
@@ -411,7 +415,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
         UNION ALL
 
-        SELECT NULL AS filesystem_id, NULL AS target_entry_id, 1 AS tree_step, storage_entries.id AS entry_id, 1 AS rule_source, storage_entries.parent_folder, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id FROM storage_entries
+        SELECT 1 AS tree_step, storage_entries.id AS entry_id, 1 AS rule_source, storage_entries.parent_folder, storage_access_template_rules.access_type::TEXT, storage_access_template_rules.executor_type::TEXT, storage_access_template_rules.executor_id FROM storage_entries
 
         LEFT JOIN storage_access_template_entries
         ON storage_access_template_entries.entry_id = storage_entries.id
@@ -510,7 +514,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         .collect::<Vec<i64>>();
 
     let tree_result_for_inheriting_entries = sqlx::query_as::<_, ProccessEntryRuleInput>(
-        "SELECT tree_step, rule_source, entry_id, template_id, access_type::TEXT, executor_type::TEXT, executor_id, target_entry_id, NULL AS parent_folder, NULL AS filesystem_id FROM storage_generate_entries_access_tree($1, $2::storage_access_action_type, $3, $4, $5)",
+        "SELECT tree_step, rule_source, entry_id, template_id, access_type::TEXT, executor_type::TEXT, executor_id, target_entry_id FROM storage_generate_entries_access_tree($1, $2::storage_access_action_type, $3, $4, $5)",
     )
     .bind(endpoint_id)
     .bind(action)
