@@ -580,21 +580,23 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
             <div class="section">
               <div class="section-label">Templates</div>
 
-              <div class="add-template">
-                <SelectField
-                  multi={false}
-                  options={availableTemplatesOptions()}
-                  value={() => null}
-                  onChange={(newTemplateId) =>
-                    addAccessRulesTemplate(Number.parseInt(newTemplateId, 10))
-                  }
-                  hideCheckboxes
-                  hideSelected
-                  enableSearch
-                  searchPlaceholder="Add template..."
-                  onSearch={setAddTemplateSearch}
-                />
-              </div>
+              <Show when={!props.readonly}>
+                <div class="add-template">
+                  <SelectField
+                    multi={false}
+                    options={availableTemplatesOptions()}
+                    value={() => null}
+                    onChange={(newTemplateId) =>
+                      addAccessRulesTemplate(Number.parseInt(newTemplateId, 10))
+                    }
+                    hideCheckboxes
+                    hideSelected
+                    enableSearch
+                    searchPlaceholder="Add template..."
+                    onSearch={setAddTemplateSearch}
+                  />
+                </div>
+              </Show>
 
               <div class="templates">
                 <For each={state.templates}>
@@ -602,20 +604,29 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
                     <div class="template">
                       <div class="name">{template.name}</div>
                       <div class="actions">
-                        <button
-                          title="remove"
-                          class="action"
-                          onClick={() => removeAccessRulesTemplate(template.id)}
-                        >
-                          <Icon name={"close"} wght={600} size={12} fill={1} />
-                        </button>
+                        <Show when={!props.readonly}>
+                          <button
+                            title="remove"
+                            class="action"
+                            onClick={() =>
+                              removeAccessRulesTemplate(template.id)
+                            }
+                          >
+                            <Icon
+                              name={"close"}
+                              wght={600}
+                              size={12}
+                              fill={1}
+                            />
+                          </button>
+                        </Show>
                       </div>
                     </div>
                   )}
                 </For>
               </div>
 
-              <Show when={selectedExecutors().length > 0}>
+              <Show when={!props.readonly && selectedExecutors().length > 0}>
                 <Note type="secondary">
                   <Stack direction="column" spacing={"0.75em"}>
                     <Text variant="secondary" fontSize={"var(--text-sm)"}>
@@ -638,37 +649,39 @@ export const StorageAccessField: Component<StorageAccessFieldProps> = (
             <div class="section">
               <div class="section-label">Custom rules</div>
 
-              <Show
-                when={state.executors.length === 0}
-                fallback={
-                  <Button
-                    size="xs"
-                    variant={"primary"}
-                    leadingIcon={"add"}
-                    onClick={toggleAvailableExecutorsOpen}
-                    disabled={isAvailableExecutorsOpen()}
-                  >
-                    add executors
-                  </Button>
-                }
-              >
-                <Note type="secondary">
-                  <Stack direction="column" spacing={"0.75em"}>
-                    <Text variant="secondary" fontSize={"var(--text-sm)"}>
-                      Select executors to define custom rules
-                    </Text>
+              <Show when={!props.readonly}>
+                <Show
+                  when={state.executors.length === 0}
+                  fallback={
                     <Button
                       size="xs"
                       variant={"primary"}
-                      color="blue"
                       leadingIcon={"add"}
                       onClick={toggleAvailableExecutorsOpen}
                       disabled={isAvailableExecutorsOpen()}
                     >
                       add executors
                     </Button>
-                  </Stack>
-                </Note>
+                  }
+                >
+                  <Note type="secondary">
+                    <Stack direction="column" spacing={"0.75em"}>
+                      <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                        Select executors to define custom rules
+                      </Text>
+                      <Button
+                        size="xs"
+                        variant={"primary"}
+                        color="blue"
+                        leadingIcon={"add"}
+                        onClick={toggleAvailableExecutorsOpen}
+                        disabled={isAvailableExecutorsOpen()}
+                      >
+                        add executors
+                      </Button>
+                    </Stack>
+                  </Note>
+                </Show>
               </Show>
 
               <div class="executors">
