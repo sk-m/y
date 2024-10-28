@@ -2,12 +2,29 @@
 
 @keyframes toast-enter {
   0% {
-    transform: scale(0.66) translateX(100%);
-    opacity: 0;
+    transform: translateY(100%);
+  }
+  50% {
+    transform: translateY(-25%);
   }
   100% {
-    transform: scale(1) translateX(0);
-    opacity: 1;
+    transform: translateY(0);
+
+    background-color: white;
+    box-shadow: @border-primary-lighter,
+      0 5px 10px 0 rgba(@brand-black-rgb, 0.075);
+  }
+}
+
+@keyframes app-toast-icon-enter {
+  0% {
+    transform: scale(0.1) rotate(-50deg);
+  }
+  50% {
+    transform: scale(2.25) rotate(-25deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
   }
 }
 
@@ -42,7 +59,7 @@
         0 5px 10px 0 rgba(@brand-black-rgb, 0.075);
       background-color: white;
 
-      animation: toast-enter 0.33s cubic-bezier(0.83, 0, 0.17, 1) 0s 1 forwards;
+      animation: toast-enter 0.25s ease-out 0s 1 forwards;
       transition: 0.15s;
 
       &:hover {
@@ -54,14 +71,26 @@
         background-color: var(--color-primary-t-1);
       }
 
-      &.severity-success > .icon-container {
-        color: var(--color-success);
+      &.severity-success {
         background-color: var(--color-success-t-1);
+        box-shadow: 0 0 0 1px var(--color-success),
+          0 0 10px 0 var(--color-success-t-1);
+
+        > .icon-container {
+          color: var(--color-success);
+          background-color: var(--color-success-t-1);
+        }
       }
 
-      &.severity-error > .icon-container {
-        color: var(--color-error);
+      &.severity-error {
         background-color: var(--color-error-o-1);
+        box-shadow: 0 0 0 1px var(--color-error),
+          0 0 10px 0 var(--color-error-o-1);
+
+        > .icon-container {
+          color: var(--color-error);
+          background-color: var(--color-error-o-1);
+        }
       }
 
       &.severity-warning > .icon-container {
@@ -77,6 +106,11 @@
         padding: 0.5em;
 
         border-radius: 6px;
+
+        .ui-icon {
+          animation: app-toast-icon-enter 0.5s cubic-bezier(0, 0.55, 0.45, 1)
+            forwards;
+        }
       }
 
       > .content-container {

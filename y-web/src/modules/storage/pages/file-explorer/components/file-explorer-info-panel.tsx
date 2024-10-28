@@ -2,11 +2,13 @@ import { Component, Show, createMemo } from "solid-js"
 
 import { format } from "date-fns"
 
+import { Icon } from "@/app/components/common/icon/icon"
 import {
   KeyValue,
   KeyValueFields,
 } from "@/app/components/common/key-value/key-value"
 import { formatBytes } from "@/app/core/format-utils"
+import { useUser } from "@/modules/admin/user/user.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
 import {
   StorageAccessField,
@@ -45,6 +47,19 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
       : null)
   )
 
+  const fileMimeType = createMemo(() => props.entry.mime_type?.split("/") ?? [])
+
+  // TODO is this a good idea?
+  const createdBy = createMemo(() => {
+    if (props.entry.created_by === null) return null
+
+    const $createdBy = useUser(() => ({
+      userId: props.entry.created_by!,
+    }))
+
+    return $createdBy.data
+  })
+
   const $entryAccessRules = useStorageEntryAccessRules(() => ({
     endpointId: props.endpointId,
     entryId: props.entry.id,
@@ -54,7 +69,11 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
     const rules = $entryAccessRules.data?.rules ?? []
     const executors: Record<number, StorageEntryExecutor> = {}
 
-    if (rules.length === 0) return { executors: [] }
+    if (rules.length === 0)
+      return {
+        executors: [],
+        templates: $entryAccessRules.data?.templates ?? [],
+      }
 
     for (const rule of rules) {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -75,6 +94,7 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
 
     return {
       executors: Object.values(executors),
+      templates: $entryAccessRules.data?.templates ?? [],
     }
   })
 
@@ -82,7 +102,9 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
     <div class="file-explorer-info-panel">
       <Show when={thumbnail()}>
         <div
-          class="thumbnail-container"
+          classList={{
+            "thumbnail-container": true,
+          }}
           onClick={() => {
             props.onThumbnailClick?.()
           }}
@@ -92,6 +114,27 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
             class="thumbnail"
             src={`data:image/jpeg;base64, ${thumbnail() ?? ""}`}
           />
+          <Show
+            when={
+              fileMimeType()[0] === "audio" || fileMimeType()[0] === "video"
+            }
+          >
+            <div class="hover-icon">
+              <Icon
+                name="play_arrow"
+                size={64}
+                wght={500}
+                type="outlined"
+                fill={1}
+              />
+            </div>
+            <Show when={fileMimeType()[0] === "audio"}>
+              <div class="info-text">
+                <Icon name="music_note" size={16} wght={500} type="outlined" />
+                <div class="text">Cover art</div>
+              </div>
+            </Show>
+          </Show>
         </div>
       </Show>
 
@@ -121,6 +164,13 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
               onChange={() => void 0}
             />
           </Show>
+          <KeyValue
+            direction="column"
+            label="Created by"
+            readonly
+            value={createdBy()?.username ?? "-"}
+            onChange={() => void 0}
+          />
           <Show when={props.entry.created_at}>
             <KeyValue
               direction="column"

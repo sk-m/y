@@ -567,9 +567,13 @@ const FileExplorerPage: Component = () => {
   }
 
   const downloadFile = (fileId: number) => {
-    void downloadStorageFile({
+    const fileName =
+      folderEntries().find((entry) => entry.id === fileId)?.name ?? "file"
+
+    downloadStorageFile({
       endpointId: params.endpointId as string,
-      fileId,
+      fileId: fileId.toString(),
+      fileName,
     })
   }
 
@@ -611,6 +615,9 @@ const FileExplorerPage: Component = () => {
   // eslint-disable-next-line sonarjs/cognitive-complexity
   onMount(() => {
     const keydownHandler = (event: KeyboardEvent) => {
+      if ((event.target as HTMLElement | undefined)?.nodeName === "INPUT")
+        return
+
       // Go up one folder
       if (event.ctrlKey && event.key === "Backspace") {
         event.preventDefault()
@@ -739,6 +746,7 @@ const FileExplorerPage: Component = () => {
     >
       <input
         hidden
+        name="upload-files"
         ref={uploadFilesInputRef!}
         type="file"
         multiple
@@ -747,6 +755,7 @@ const FileExplorerPage: Component = () => {
 
       <input
         hidden
+        name="upload-folder"
         ref={uploadFoldersInputRef!}
         type="file"
         directory
@@ -818,6 +827,8 @@ const FileExplorerPage: Component = () => {
             <Stack direction="row" alignItems="center" spacing="1em">
               <div class="entries-search-container">
                 <input
+                  name="search-folder"
+                  autocomplete="off"
                   classList={{
                     "non-empty": search() !== "",
                   }}
@@ -848,9 +859,10 @@ const FileExplorerPage: Component = () => {
               <div class="top-container-separator" />
 
               <Button
-                variant="secondary"
+                variant="primary"
                 size="xs"
                 leadingIcon="cloud_upload"
+                color="blue"
                 onClick={(event) => {
                   openUploadContextMenu(event)
                 }}
@@ -1198,6 +1210,10 @@ const FileExplorerPage: Component = () => {
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
                 {(entry, index) => {
+                  const active = createMemo(
+                    () => infoPanelSelectedEntry()?.id === entry.id
+                  )
+
                   const selected = createMemo(() =>
                     selectedEntries().has(`${entry.entry_type}:${entry.id}`)
                   )
@@ -1217,7 +1233,8 @@ const FileExplorerPage: Component = () => {
                       }}
                       isRenaming={isRenaming()}
                       entry={entry}
-                      selected={selected()}
+                      isSelected={selected()}
+                      isActive={active()}
                       isContextMenuTarget={isContextMenuTarget()}
                       thumbnails={thumbnails()}
                       onDblClick={() => {

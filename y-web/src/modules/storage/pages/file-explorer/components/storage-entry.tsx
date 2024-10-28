@@ -1,13 +1,17 @@
 /* eslint-disable unicorn/consistent-function-scoping */
 import {
   Component,
+  Match,
   Show,
+  Switch,
   createEffect,
   createMemo,
   createSignal,
+  on,
   onCleanup,
   onMount,
 } from "solid-js"
+import { isDev } from "solid-js/web"
 
 import { Checkbox } from "@/app/components/common/checkbox/checkbox"
 import { Icon } from "@/app/components/common/icon/icon"
@@ -19,7 +23,8 @@ export type StorageEntryProps = {
 
   entry: IStorageEntry
 
-  selected?: boolean
+  isSelected?: boolean
+  isActive?: boolean
   isContextMenuTarget?: boolean
   thumbnails?: Record<number, string>
   isRenaming?: boolean
@@ -34,10 +39,14 @@ export type StorageEntryProps = {
 }
 
 export const StorageEntry: Component<StorageEntryProps> = (props) => {
+  let itemInfoRef: HTMLDivElement | undefined
   let nameFieldRef: HTMLInputElement
+  let nameFloaterRef: HTMLDivElement | undefined
 
   const [isAboutToRecieve, setIsAboutToReceive] = createSignal(false)
   const [isDragging, setIsDragging] = createSignal(false)
+  const [showNameFloaterOnHover, setShowNameFloaterOnHover] =
+    createSignal(false)
 
   // prettier-ignore
   const thumbnail = createMemo(() =>
@@ -45,6 +54,8 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       ? props.thumbnails?.[props.entry.id]
       : null)
   )
+
+  const fileMimeType = createMemo(() => props.entry.mime_type?.split("/") ?? [])
 
   const onDragStart = (event: DragEvent) => {
     setIsDragging(true)
@@ -101,7 +112,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
   })
 
   onMount(() => {
-    const handler = (event: KeyboardEvent) => {
+    const keyUpHandler = (event: KeyboardEvent) => {
       if (event.key === "Enter") {
         props.onRename?.(nameFieldRef!.value)
       }
@@ -111,12 +122,33 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       }
     }
 
-    nameFieldRef.addEventListener("keyup", handler)
+    const blurHandler = () => {
+      props.onCancelRename?.()
+    }
+
+    nameFieldRef.addEventListener("keyup", keyUpHandler)
+    nameFieldRef.addEventListener("blur", blurHandler)
 
     onCleanup(() => {
-      nameFieldRef.removeEventListener("keyup", handler)
+      nameFieldRef.removeEventListener("keyup", keyUpHandler)
+      nameFieldRef.removeEventListener("blur", blurHandler)
     })
   })
+
+  createEffect(
+    on(
+      () => props.entry.name,
+      () => {
+        if (
+          nameFloaterRef &&
+          itemInfoRef &&
+          nameFloaterRef.clientWidth >= itemInfoRef.clientWidth
+        ) {
+          setShowNameFloaterOnHover(true)
+        }
+      }
+    )
+  )
 
   return (
     // TODO: Should be a clickable <button />
@@ -130,7 +162,8 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       onDrop={onDrop}
       classList={{
         item: true,
-        selected: props.selected,
+        selected: props.isSelected,
+        active: props.isActive,
         "context-menu-target": props.isContextMenuTarget,
         "about-to-receive": isAboutToRecieve(),
         dragging: isDragging(),
@@ -156,14 +189,35 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
         <div class="item-select-container">
           <Checkbox
             size="m"
-            value={props.selected}
+            value={props.isSelected}
             onChange={(_, event) => {
               props.onSelect!(event)
+            }}
+            buttonProps={{
+              onDblClick: (event) => event.stopPropagation(),
             }}
           />
         </div>
       </Show>
       <div class="item-thumb">
+        <Show when={isDev}>
+          <div
+            style={{
+              position: "absolute",
+              top: "0.25em",
+              right: "0.25em",
+              "font-family": "monospace",
+              color: "white",
+              background: "rgba(2,2,2,0.33)",
+              padding: "0.1em 0.25em",
+              "border-radius": "0.25em",
+              "backdrop-filter": "blur(2px)",
+              "font-size": "12px",
+            }}
+          >
+            {props.entry.id}
+          </div>
+        </Show>
         <Show
           when={thumbnail()}
           fallback={
@@ -187,25 +241,28 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
           />
         </Show>
       </div>
-      <div class="item-info">
-        <div
-          class="item-name"
-          title={
-            props.isRenaming
-              ? // eslint-disable-next-line no-undefined
-                undefined
-              : `${props.entry.name}${
-                  props.entry.extension ? `.${props.entry.extension}` : ""
-                }`
-          }
-        >
+      <div
+        ref={itemInfoRef}
+        classList={{
+          "item-info": true,
+          "show-name-floater": showNameFloaterOnHover(),
+        }}
+      >
+        <div ref={nameFloaterRef} class="item-name-floater">
+          <div class="name">
+            {`${props.entry.name}${
+              props.entry.extension ? `.${props.entry.extension}` : ""
+            }`}
+          </div>
+        </div>
+        <div class="item-name">
           <div hidden={props.isRenaming} class="name">
             {props.entry.name}
           </div>
           <Show when={!props.isRenaming && props.entry.extension}>
             <div class="extension">{props.entry.extension}</div>
           </Show>
-          <Show when={!props.isRenaming && props.entry.entry_type === "folder"}>
+          {/* <Show when={!props.isRenaming && props.entry.entry_type === "folder"}>
             <div class="icon">
               <Icon
                 name="folder_open"
@@ -215,13 +272,81 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
                 wght={600}
               />
             </div>
-          </Show>
+          </Show> */}
           <input
             hidden={!props.isRenaming}
             ref={(ref) => (nameFieldRef = ref)}
             type="text"
             class="name-input"
           />
+        </div>
+        <div class="item-details">
+          <div class="left">
+            <Show when={props.entry.entry_type === "folder"}>
+              <div class="block">
+                <Icon
+                  name="folder_open"
+                  type="outlined"
+                  size={12}
+                  fill={1}
+                  wght={600}
+                />
+              </div>
+            </Show>
+            <Switch>
+              <Match when={fileMimeType()[0] === "image"}>
+                <div class="block">
+                  <Icon
+                    name="imagesmode"
+                    type="rounded"
+                    size={12}
+                    fill={1}
+                    wght={600}
+                  />
+                </div>
+              </Match>
+              <Match when={fileMimeType()[0] === "audio"}>
+                <div class="block">
+                  <Icon
+                    name="music_note"
+                    type="rounded"
+                    size={12}
+                    fill={1}
+                    wght={600}
+                  />
+                </div>
+              </Match>
+              <Match when={fileMimeType()[0] === "video"}>
+                <div class="block">
+                  <Icon
+                    name="play_arrow"
+                    type="rounded"
+                    size={12}
+                    fill={1}
+                    wght={600}
+                  />
+                </div>
+              </Match>
+            </Switch>
+          </div>
+          <div class="right">
+            <Show when={props.entry.entry_type === "file"}>
+              <div class="block">
+                <div class="text">
+                  {props.entry.downloads_count === 0
+                    ? "-"
+                    : props.entry.downloads_count}
+                </div>
+                <Icon
+                  name="arrow_downward"
+                  type="sharp"
+                  size={12}
+                  fill={1}
+                  wght={600}
+                />
+              </div>
+            </Show>
+          </div>
         </div>
       </div>
     </div>

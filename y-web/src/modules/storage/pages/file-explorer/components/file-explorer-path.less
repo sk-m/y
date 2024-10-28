@@ -1,3 +1,5 @@
+@import "@/variables.less";
+
 @keyframes path-segment-slide-in {
   0% {
     opacity: 0;
@@ -34,7 +36,8 @@
       color: var(--color-primary);
 
       background-color: var(--color-primary-t-15);
-      box-shadow: 0 2px 8px var(--color-primary-t-15);
+      box-shadow: 0 2px 8px var(--color-primary-t-15),
+        inset 0 -2px 10px -8px hsla(234, 100%, 45%, 0.33);
 
       > .text {
         color: var(--color-primary);
@@ -102,7 +105,8 @@
         border-radius: 4px;
 
         background-color: var(--color-primary-t-15);
-        box-shadow: 0 2px 8px var(--color-primary-t-15);
+        box-shadow: 0 2px 8px var(--color-primary-t-15),
+          inset 0 -2px 10px -8px hsla(234, 100%, 45%, 0.33);
       }
 
       &.about-to-receive + *,

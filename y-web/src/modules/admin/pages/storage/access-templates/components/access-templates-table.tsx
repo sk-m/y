@@ -1,7 +1,6 @@
 import { Component, For, Show, createMemo, createSignal } from "solid-js"
 
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
-import { format } from "date-fns"
 
 import { Button } from "@/app/components/common/button/button"
 import { ExpandButton } from "@/app/components/common/expand-button/expand-button"
@@ -16,7 +15,6 @@ import { Note } from "@/app/components/common/note/note"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { ListPageSwitcher } from "@/app/components/list-page-switcher/list-page-switcher"
-import { ListEntryLink } from "@/app/components/list/components/list-entry-link"
 import { ListEntryTitleLeader } from "@/app/components/list/components/list-entry-title-leader"
 import {
   List,
@@ -27,20 +25,21 @@ import {
 import { toastCtl } from "@/app/core/toast"
 import { useTableState } from "@/app/core/use-table-state"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
-import { routes } from "@/app/routes"
-import { IUser } from "@/modules/admin/users/users.codecs"
-import { useUsers, usersKey } from "@/modules/admin/users/users.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
+import { deleteStorageAccessRulesTemplates } from "@/modules/storage/storage-access-rules-template/storage-access-rules-template.api"
+import { IStorageAccessRulesTemplate } from "@/modules/storage/storage-access-rules-template/storage-access-rules-template.codecs"
+import {
+  storageAccessRulesTemplatesKey,
+  useStorageAccessRulesTemplates,
+} from "@/modules/storage/storage-access-rules-template/storage-access-rules-template.service"
 
-import { deleteUsers } from "../users/users.api"
-
-export type UserEntryProps = {
-  user: IUser
+export type TemplateEntryProps = {
+  template: IStorageAccessRulesTemplate
   onSelect: (entry: number) => void
   selected: boolean
 }
 
-const UserEntry: Component<UserEntryProps> = (props) => {
+const TemplateEntry: Component<TemplateEntryProps> = (props) => {
   return (
     <div
       style={{
@@ -59,9 +58,9 @@ const UserEntry: Component<UserEntryProps> = (props) => {
       >
         <input
           type="checkbox"
-          name={`user-${props.user.id}`}
+          name={`storage-access-template-${props.template.id}`}
           checked={props.selected}
-          onChange={() => props.onSelect(props.user.id)}
+          onChange={() => props.onSelect(props.template.id)}
         />
         <div
           style={{
@@ -72,21 +71,16 @@ const UserEntry: Component<UserEntryProps> = (props) => {
           }}
         >
           <Stack direction="row" alignItems="center">
-            <ListEntryTitleLeader>{props.user.id}.</ListEntryTitleLeader>
-            <ListEntryLink href={`${routes["/admin/users"]}/${props.user.id}`}>
-              <Text fontWeight={500}>{props.user.username}</Text>
-            </ListEntryLink>
+            <ListEntryTitleLeader>{props.template.id}.</ListEntryTitleLeader>
+            <Text fontWeight={500}>{props.template.name}</Text>
           </Stack>
-          <Text variant="secondary" fontSize={"var(--text-sm)"}>
-            Joined {format(new Date(props.user.created_at), "dd.MM.yyyy")}
-          </Text>
         </div>
       </div>
     </div>
   )
 }
 
-export const UsersList: Component = () => {
+export const StorageAccessTemplatesList: Component = () => {
   const $auth = useAuth()
   const queryClient = useQueryClient()
   const { notify } = toastCtl
@@ -95,7 +89,7 @@ export const UsersList: Component = () => {
     defaultRowsPerPage: 25,
   })
 
-  const $users = useUsers(
+  const $templates = useStorageAccessRulesTemplates(
     () => ({
       search: tableState.search(),
       limit: tableState.rowsPerPage(),
@@ -108,16 +102,19 @@ export const UsersList: Component = () => {
     }
   )
 
-  const $deleteUsers = createMutation(deleteUsers)
+  const $deleteTemplates = createMutation(deleteStorageAccessRulesTemplates)
 
   const deleteActionAllowed = createMemo(
     () =>
       $auth.data?.user_rights.some(
-        (right) => right.right_name === "delete_user"
+        (right) =>
+          right.right_name === "storage_manage_access" &&
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          right.right_options?.["allow_managing_templates"] === true
       ) ?? false
   )
 
-  const users = createMemo(() => $users.data?.users ?? [])
+  const templates = createMemo(() => $templates.data?.templates ?? [])
 
   const noneSelected = createMemo(() => tableState.selectedEntries().size === 0)
 
@@ -166,12 +163,12 @@ export const UsersList: Component = () => {
         <Stack spacing={"1.5em"}>
           <Text>
             Are you sure you want to delete {tableState.selectedEntries().size}{" "}
-            user(s)?
+            template(s)?
           </Text>
 
           <Text>
-            This action is irreversible. All data associated with the users will
-            be deleted forever.
+            This action is irreversible. Templates will be automatically
+            unassigned from all entries that include them.
           </Text>
 
           <Stack direction="row" justifyContent="space-between">
@@ -182,23 +179,26 @@ export const UsersList: Component = () => {
               Cancel
             </Button>
             <Button
-              disabled={$deleteUsers.isLoading}
+              disabled={$deleteTemplates.isLoading}
+              color="red"
               onClick={() => {
-                $deleteUsers.mutate(
+                $deleteTemplates.mutate(
                   {
-                    userIds: [...tableState.selectedEntries()],
+                    templateIds: [...tableState.selectedEntries()],
                   },
                   {
                     onSuccess: () => {
                       notify({
-                        title: "Users deleted",
-                        content: "Selected users were deleted",
+                        title: "Templates deleted",
+                        content: "Selected templates were deleted",
                         severity: "success",
                         icon: "check",
                       })
 
                       setDeleteConfirmationModalOpen(false)
-                      void queryClient.invalidateQueries([usersKey])
+                      void queryClient.invalidateQueries([
+                        storageAccessRulesTemplatesKey,
+                      ])
                       return tableState.setSelectedEntries(() => new Set())
                     },
                     onError: (error) => genericErrorToast(error),
@@ -206,12 +206,12 @@ export const UsersList: Component = () => {
                 )
               }}
             >
-              {$deleteUsers.isLoading ? "Deleting..." : "Delete"}
+              {$deleteTemplates.isLoading ? "Deleting..." : "Delete"}
             </Button>
           </Stack>
         </Stack>
       </Modal>
-      <Show when={$users.isSuccess}>
+      <Show when={$templates.isSuccess}>
         <List>
           <ListHead
             style={{
@@ -228,10 +228,10 @@ export const UsersList: Component = () => {
               }}
             >
               <InputField
-                placeholder="Search users"
+                label="Search query"
                 width="100%"
                 inputProps={{
-                  name: "users-search",
+                  name: "storage-access-templates-search",
                   autocomplete: "off",
                   value: tableState.searchText(),
                   onInput: (event) =>
@@ -245,7 +245,7 @@ export const UsersList: Component = () => {
                 label={
                   noneSelected()
                     ? null
-                    : `${tableState.selectedEntries().size} users`
+                    : `${tableState.selectedEntries().size} templates`
                 }
               >
                 <ExpandButtonEntries>
@@ -256,7 +256,7 @@ export const UsersList: Component = () => {
                         onClick={() =>
                           tableState.setSelectedEntries(
                             // eslint-disable-next-line solid/reactivity
-                            () => new Set(users().map((group) => group.id))
+                            () => new Set(templates().map((group) => group.id))
                           )
                         }
                         icon="select_all"
@@ -291,19 +291,19 @@ export const UsersList: Component = () => {
             </div>
           </ListHead>
 
-          <Show when={users().length === 0}>
+          <Show when={templates().length === 0}>
             <Note type="secondary">
-              No users found. Try changing your search query.
+              No templates found. Try changing your search query.
             </Note>
           </Show>
 
           <ListEntries>
-            <For each={users()}>
-              {(user) => (
-                <UserEntry
-                  selected={tableState.selectedEntries().has(user.id)}
+            <For each={templates()}>
+              {(template) => (
+                <TemplateEntry
+                  selected={tableState.selectedEntries().has(template.id)}
                   onSelect={tableState.onSelect}
-                  user={user}
+                  template={template}
                 />
               )}
             </For>
@@ -313,10 +313,10 @@ export const UsersList: Component = () => {
             <ListPageSwitcher
               currentPage={tableState.page()}
               rowsPerPage={tableState.rowsPerPage()}
-              totalCount={$users.data?.total_count ?? 0}
-              currentCount={$users.data?.users.length ?? 0}
+              totalCount={$templates.data?.total_count ?? 0}
+              currentCount={$templates.data?.templates.length ?? 0}
               onPageChange={tableState.setPage}
-              query={$users}
+              query={$templates}
             />
           </ListFooter>
         </List>

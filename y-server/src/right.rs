@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+#[allow(dead_code)]
 #[derive(Serialize)]
 pub enum RightTag {
     #[serde(rename = "dangerous")]
@@ -8,6 +9,7 @@ pub enum RightTag {
     Administrative,
 }
 
+#[allow(dead_code)]
 #[derive(Serialize)]
 pub enum RightValueType {
     #[serde(rename = "boolean")]
@@ -54,12 +56,20 @@ pub fn get_right_categories() -> Vec<RightCategory> {
         },
         RightCategory {
             name: "instance_administration",
-            rights: vec![Right {
-                name: "update_features",
-                options: vec![],
-                tags: vec![RightTag::Administrative],
-                feature: None,
-            }],
+            rights: vec![
+                Right {
+                    name: "update_features",
+                    options: vec![],
+                    tags: vec![RightTag::Administrative],
+                    feature: None,
+                },
+                Right {
+                    name: "update_config",
+                    options: vec![],
+                    tags: vec![RightTag::Administrative],
+                    feature: None,
+                },
+            ],
         },
         RightCategory {
             name: "user_administration",
@@ -137,7 +147,11 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                 },
                 Right {
                     name: "storage_manage_access",
-                    options: vec![],
+                    options: vec![RightOption {
+                        name: "allow_managing_templates",
+                        value_type: RightValueType::Boolean,
+                        value_source: None,
+                    }],
                     tags: vec![RightTag::Administrative],
                     feature: Some("storage"),
                 },

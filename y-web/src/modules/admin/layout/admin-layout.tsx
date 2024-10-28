@@ -12,9 +12,7 @@ import { useAuth } from "@/modules/core/auth/auth.service"
 import { useFeatures } from "../feature/feature.service"
 import UserPage from "../pages/users/[userId]"
 
-const UsersListPage = lazy(
-  async () => import("@/modules/admin/pages/users-list")
-)
+const UsersListPage = lazy(async () => import("@/modules/admin/pages/users"))
 
 const NewUserPage = lazy(async () => import("@/modules/admin/pages/users/new"))
 
@@ -42,9 +40,17 @@ const StorageEndpointPage = lazy(
   async () => import("@/modules/admin/pages/storage/endpoints/[endpointId]")
 )
 
-const AboutPage = lazy(async () => import("@/modules/admin/pages/about"))
+const StorageAccessTemplatesPage = lazy(
+  async () => import("@/modules/admin/pages/storage/access-templates")
+)
+
+const ConfigGeneralPage = lazy(
+  async () => import("@/modules/admin/pages/config/general")
+)
 
 const FeaturesPage = lazy(async () => import("@/modules/admin/pages/features"))
+
+const AboutPage = lazy(async () => import("@/modules/admin/pages/about"))
 
 const AdminLayout: Component = () => {
   const $auth = useAuth()
@@ -54,6 +60,13 @@ const AdminLayout: Component = () => {
     () =>
       $auth.data?.user_rights.some(
         (right) => right.right_name === "update_features"
+      ) ?? false
+  )
+
+  const configPageAllowed = createMemo(
+    () =>
+      $auth.data?.user_rights.some(
+        (right) => right.right_name === "update_config"
       ) ?? false
   )
 
@@ -89,6 +102,22 @@ const AdminLayout: Component = () => {
               />
             </AsideEntry>
 
+            <Show when={configPageAllowed()}>
+              <AsideEntry
+                icon="page_info"
+                title="Configuration"
+                to="config/general"
+                relatedPaths={["config", "config/general"]}
+              >
+                <AsideEntry
+                  subEntry
+                  icon="manufacturing"
+                  title="General"
+                  to="config/general"
+                />
+              </AsideEntry>
+            </Show>
+
             <Show when={storagePageAllowed()}>
               <AsideEntry
                 icon="hard_drive"
@@ -102,10 +131,14 @@ const AdminLayout: Component = () => {
                   title="Endpoints"
                   to="storage/endpoints"
                 />
+                <AsideEntry
+                  subEntry
+                  icon="contract"
+                  title="Access Templates"
+                  to="storage/access-templates"
+                />
               </AsideEntry>
             </Show>
-
-            {/* <AsideEntry icon="tune" title="Instance config" to="config" /> */}
 
             <Show when={featuresPageAllowed()}>
               <AsideEntry icon="bolt" title="Features" to="features" />
@@ -122,10 +155,11 @@ const AdminLayout: Component = () => {
           <Route path="/users" component={UsersListPage} />
           <Route path="/user-groups" component={UserGroupsPage} />
           <Route path="/user-groups/new" component={NewUserGroupPage} />
-          <Route path="/user-groups/:groupId" component={UserGroupPage} />
+          <Route path="/user-groups/:groupId/*" component={UserGroupPage} />
           <Route path="/users/:userId/*" component={UserPage} />
           <Route path="/users/new" component={NewUserPage} />
           <Route path="/features" component={FeaturesPage} />
+          <Route path="/config/general" component={ConfigGeneralPage} />
           <Route path="/storage/endpoints" component={StorageEndpointsPage} />
           <Route
             path="/storage/endpoints/:endpointId"
@@ -134,6 +168,10 @@ const AdminLayout: Component = () => {
           <Route
             path="/storage/endpoints/new"
             component={NewStorageEndpointPage}
+          />
+          <Route
+            path="/storage/access-templates"
+            component={StorageAccessTemplatesPage}
           />
           <Route path="/about" component={AboutPage} />
         </Routes>

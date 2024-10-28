@@ -3,7 +3,7 @@ use log::*;
 use std::path::Path;
 
 use actix_web::{get, web, Responder};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
 use crate::request::error;
@@ -19,6 +19,12 @@ struct StorageEntryAndBasePathRow {
     filesystem_id: String,
     mime_type: Option<String>,
     base_path: String,
+    artifacts_path: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct StorageGetQuery {
+    preview: Option<bool>,
 }
 
 #[get("/entries/{endpoint_id}/get/{file_id}")]
@@ -26,7 +32,11 @@ async fn storage_get(
     pool: web::Data<RequestPool>,
     path: web::Path<(i32, i64)>,
     req: actix_web::HttpRequest,
+    query: web::Query<StorageGetQuery>,
 ) -> impl Responder {
+    let query = query.into_inner();
+    let is_preview = query.preview.unwrap_or(false);
+
     let (endpoint_id, file_id) = path.into_inner();
 
     let client = get_user_from_request(&**pool, &req).await;
@@ -53,7 +63,7 @@ async fn storage_get(
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
-        "SELECT storage_entries.name, storage_entries.extension, storage_entries.filesystem_id, storage_entries.mime_type, storage_endpoints.base_path FROM storage_entries
+        "SELECT storage_entries.name, storage_entries.extension, storage_entries.filesystem_id, storage_entries.mime_type, storage_endpoints.base_path, storage_endpoints.artifacts_path FROM storage_entries
         RIGHT OUTER JOIN storage_endpoints ON storage_entries.endpoint_id = storage_endpoints.id
         WHERE storage_entries.id = $1 AND endpoint_id = $2",
     )
@@ -64,7 +74,30 @@ async fn storage_get(
 
     match entry {
         Ok(entry) => {
-            let file_path = Path::new(&entry.base_path).join(&entry.filesystem_id);
+            let mut is_preview_version = false;
+
+            // TODO cleanup
+            let file_path = if is_preview {
+                if let Some(artifacts_path) = &entry.artifacts_path {
+                    let browser_friendly_version_path = Path::new(artifacts_path)
+                        .join("preview_videos")
+                        .join(&entry.filesystem_id)
+                        .with_extension("mp4");
+
+                    if browser_friendly_version_path.exists() {
+                        is_preview_version = true;
+
+                        browser_friendly_version_path
+                    } else {
+                        Path::new(&entry.base_path).join(&entry.filesystem_id)
+                    }
+                } else {
+                    Path::new(&entry.base_path).join(&entry.filesystem_id)
+                }
+            } else {
+                Path::new(&entry.base_path).join(&entry.filesystem_id)
+            };
+
             let file = actix_files::NamedFile::open(file_path).unwrap();
 
             let mut res = file.into_response(&req);
@@ -76,6 +109,15 @@ async fn storage_get(
                     "private, stale-while-revalidate, max-age=432000", // 432000 = 5 days
                 ),
             );
+
+            if is_preview_version {
+                // It seems that the default value for this header is already `inline`,
+                // so this does not have any actual effect. We do this just to be more explicit.
+                res.headers_mut().insert(
+                    header::CONTENT_DISPOSITION,
+                    HeaderValue::from_static("inline"),
+                );
+            }
 
             if entry.mime_type.is_some() {
                 res.headers_mut().insert(

@@ -17,9 +17,6 @@ importers:
       '@tanstack/solid-query':
         specifier: ^4.32.6
         version: 4.32.6(solid-js@1.8.7)
-      '@types/downloadjs':
-        specifier: ^1.4.6
-        version: 1.4.6
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
@@ -27,8 +24,8 @@ importers:
         specifier: ^1.4.7
         version: 1.4.7
       material-symbols:
-        specifier: ^0.10.0
-        version: 0.10.0
+        specifier: ^0.25.0
+        version: 0.25.0
       solid-js:
         specifier: ^1.8.7
         version: 1.8.7
@@ -39,6 +36,9 @@ importers:
       '@trivago/prettier-plugin-sort-imports':
         specifier: ^4.1.1
         version: 4.1.1(prettier@2.8.8)
+      '@types/downloadjs':
+        specifier: ^1.4.6
+        version: 1.4.6
       '@typescript-eslint/eslint-plugin':
         specifier: ^5.59.9
         version: 5.59.9(@typescript-eslint/parser@5.62.0(eslint@8.42.0)(typescript@5.1.6))(eslint@8.42.0)(typescript@5.1.6)
@@ -1308,8 +1308,8 @@ packages:
     resolution: {integrity: sha512-LS9X+dc8KLxXCb8dni79fLIIUA5VyZoyjSMCwTluaXA0o27cCK0bhXkpgw+sTXVpPy/lSO57ilRixqk0vDmtRA==}
     engines: {node: '>=6'}
 
-  material-symbols@0.10.0:
-    resolution: {integrity: sha512-/C4LI/s8o1lz1M4AUA0qVQ3zqYGe3eF30ftRrtT48OY3pGOmScJFZo0TX0CGhoRNF2D59PNrpoccAyBBmtXoig==}
+  material-symbols@0.25.0:
+    resolution: {integrity: sha512-YYT13NN+EO3UUVMnSnzdVTwonNa1OvohavS6rUQ/Bk8ShWjlZEL0HekCd11aWW1n6bI+r4Q+po3Ti+9gmkpinw==}
 
   merge-anything@5.1.4:
     resolution: {integrity: sha512-7PWKwGOs5WWcpw+/OvbiFiAvEP6bv/QHiicigpqMGKIqPPAtGhBLR8LFJW+Zu6m9TXiR/a8+AiPlGG0ko1ruoQ==}
@@ -3194,7 +3194,7 @@ snapshots:
       semver: 5.7.1
     optional: true
 
-  material-symbols@0.10.0: {}
+  material-symbols@0.25.0: {}
 
   merge-anything@5.1.4:
     dependencies:

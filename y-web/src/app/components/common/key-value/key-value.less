@@ -2,6 +2,14 @@
   display: flex;
   flex-direction: column;
   gap: 0.5em;
+
+  &.align-left .ui-keyvalue > .key {
+    text-align: left;
+  }
+
+  &.align-right .ui-keyvalue > .key {
+    text-align: right;
+  }
 }
 
 .ui-keyvalue {
@@ -37,7 +45,6 @@
 
     color: rgba(0, 0, 0, 0.5);
     font-weight: 500;
-    text-align: right;
   }
 
   > .value {

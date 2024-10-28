@@ -9,7 +9,7 @@ import { unsafe_t } from "@/i18n"
 import {
   UserGroupFieldValues,
   UserGroupWatchedFields,
-} from "../../pages/user-groups/[groupId]"
+} from "../../pages/user-groups/[groupId]/rights"
 import {
   IUserRight,
   IUserRightOption,

@@ -1,5 +1,6 @@
 import {
   Component,
+  JSX,
   Show,
   createEffect,
   createSignal,
@@ -23,6 +24,8 @@ export type CheckboxProps = {
   size?: "m" | "l"
 
   disabled?: boolean
+
+  buttonProps?: JSX.ButtonHTMLAttributes<HTMLButtonElement>
 }
 
 export const Checkbox: Component<CheckboxProps> = (props) => {
@@ -109,6 +112,7 @@ export const Checkbox: Component<CheckboxProps> = (props) => {
           [props.size ?? "m"]: true,
           checked: checked(),
         }}
+        {...props.buttonProps}
       >
         <Icon name="check" wght={100} size={18} grad={-25} />
       </button>

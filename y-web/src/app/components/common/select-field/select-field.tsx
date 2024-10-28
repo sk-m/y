@@ -2,14 +2,20 @@ import {
   Accessor,
   For,
   JSX,
+  Match,
   Show,
+  Switch,
   createEffect,
   createMemo,
   createSignal,
+  on,
 } from "solid-js"
+
+import { DEFAULT_DEBOUNCE_MS } from "@/app/core/utils"
 
 import { Icon } from "../icon/icon"
 import { InputError, InputErrorProps } from "../input-error/input-error"
+import { Note } from "../note/note"
 import { Text } from "../text/text"
 import "./select-field.less"
 
@@ -30,10 +36,18 @@ export type SelectProps<
   width?: string
 
   disabled?: boolean
+
+  hideSelected?: boolean
+
+  enableSearch?: boolean
+  searchPlaceholder?: string
+  onSearch?: (search: string) => void
+
+  hideCheckboxes?: boolean
 } & (IsMulti extends false
     ? {
         multi: false
-        value: Accessor<TOption["id"]>
+        value: Accessor<TOption["id"] | null>
         onChange: (value: TOption["id"]) => void
       }
     : {
@@ -49,6 +63,10 @@ export const SelectField = <
   props: SelectProps<IsMulti, TOption>
 ) => {
   const [active, setActive] = createSignal(false)
+  const [search, setSearch] = createSignal("")
+
+  let searchFiledRef: HTMLInputElement | undefined
+  let searchDebounce: number | undefined
 
   const options = createMemo(() => {
     const newOptions: Record<string, SelectOption> = {}
@@ -86,6 +104,18 @@ export const SelectField = <
     }
   })
 
+  createEffect(
+    on(search, () => {
+      clearTimeout(searchDebounce)
+
+      searchDebounce = setTimeout(() => {
+        if (props.onSearch) {
+          props.onSearch(search())
+        }
+      }, DEFAULT_DEBOUNCE_MS)
+    })
+  )
+
   return (
     <div
       classList={{
@@ -111,45 +141,75 @@ export const SelectField = <
       </Show>
 
       <div classList={{ field: true, multi: props.multi }}>
-        <div class="container" onClick={toggleActive}>
-          <div class="selected-options">
-            <Show
-              when={props.multi}
-              fallback={
-                <div class="single-option">
-                  {
-                    // prettier-ignore
-                    props.multi
+        <div
+          class="container"
+          onClick={() => {
+            if (active()) setActive(false)
+            else {
+              if (props.enableSearch) {
+                searchFiledRef?.focus()
+              } else {
+                toggleActive()
+              }
+            }
+          }}
+        >
+          <Switch fallback={<div />}>
+            <Match when={!props.hideSelected}>
+              <div class="selected-options">
+                <Show
+                  when={props.multi}
+                  fallback={
+                    <div class="single-option">
+                      {
+                        // prettier-ignore
+                        props.multi
                     ? ""
                     : (props.value()
                     ? options()[props.value()!]?.name
                     : "")
+                      }
+                    </div>
                   }
-                </div>
-              }
-            >
-              <For each={props.multi ? props.value() : []}>
-                {(selectedOptionId) => {
-                  const selectedOption = createMemo(
-                    () => options()[selectedOptionId]
-                  )
+                >
+                  <For each={props.multi ? props.value() : []}>
+                    {(selectedOptionId) => {
+                      const selectedOption = createMemo(
+                        () => options()[selectedOptionId]
+                      )
 
-                  return (
-                    <button
-                      type="button"
-                      classList={{
-                        option: true,
-                        unknown: !selectedOption(),
-                      }}
-                      onClick={() => toggleOption(selectedOptionId)}
-                    >
-                      {selectedOption()?.name ?? "(unknown) "}
-                    </button>
-                  )
+                      return (
+                        <button
+                          type="button"
+                          classList={{
+                            option: true,
+                            unknown: !selectedOption(),
+                          }}
+                          onClick={() => toggleOption(selectedOptionId)}
+                        >
+                          {selectedOption()?.name ?? "(unknown) "}
+                        </button>
+                      )
+                    }}
+                  </For>
+                </Show>
+              </div>
+            </Match>
+            <Match when={props.hideSelected && props.enableSearch}>
+              <input
+                ref={searchFiledRef}
+                class="search-input"
+                type="text"
+                placeholder={props.searchPlaceholder ?? "Search..."}
+                onInput={(event) => setSearch(event.target.value)}
+                onClick={(event) => event.stopPropagation()}
+                onFocus={(event) => {
+                  event.stopPropagation()
+                  setActive(true)
                 }}
-              </For>
-            </Show>
-          </div>
+              />
+            </Match>
+          </Switch>
 
           <div class="floater">
             <div class="expand-button">
@@ -164,20 +224,56 @@ export const SelectField = <
 
         <div class="expand-floater">
           <div class="panel">
+            <Show when={props.enableSearch && !props.hideSelected}>
+              <div class="search-container">
+                <input
+                  class="search-input"
+                  type="text"
+                  placeholder={props.searchPlaceholder ?? "Search..."}
+                  onInput={(event) => setSearch(event.target.value)}
+                />
+              </div>
+            </Show>
+
+            <Show when={props.options.length === 0}>
+              <Note
+                type="secondary"
+                fontSize="var(--text-sm)"
+                style={{
+                  background: "transparent",
+                }}
+              >
+                No results
+              </Note>
+            </Show>
+
             <div class="available-options">
               <For each={props.options}>
-                {(option) => (
-                  <button
-                    type="button"
-                    classList={{
-                      option: true,
-                      selected: props.value()?.includes(option.id),
-                    }}
-                    onClick={() => toggleOption(option.id)}
-                  >
-                    <div class="name">{option.name}</div>
-                  </button>
-                )}
+                {(option) => {
+                  const selected = createMemo(
+                    () => props.value()?.includes(option.id) ?? false
+                  )
+
+                  return (
+                    <button
+                      type="button"
+                      classList={{
+                        option: true,
+                        selected: selected(),
+                      }}
+                      onClick={() => toggleOption(option.id)}
+                    >
+                      <Show when={!props.hideCheckboxes}>
+                        <input
+                          class="checkbox"
+                          type="checkbox"
+                          checked={selected()}
+                        />
+                      </Show>
+                      <div class="name">{option.name}</div>
+                    </button>
+                  )
+                }}
               </For>
             </div>
           </div>

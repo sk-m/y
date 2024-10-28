@@ -1,6 +1,18 @@
-import { Component } from "solid-js"
+/* eslint-disable no-undefined */
+import { Component, createMemo } from "solid-js"
+
+import { useInstanceConfig } from "@/modules/core/instance-config/instance-config.service"
 
 export const InstanceLogo: Component = () => {
+  const $instanceConfig = useInstanceConfig()
+
+  const instanceLogoURL = createMemo(
+    () =>
+      $instanceConfig.data?.instance_config.find(
+        (config) => config.key === "instance.logo_url"
+      )?.value
+  )
+
   return (
     <img
       style={{
@@ -10,7 +22,7 @@ export const InstanceLogo: Component = () => {
         "user-select": "none",
       }}
       draggable={false}
-      src="https://fakeimg.pl/48x48"
+      src={instanceLogoURL() ?? undefined}
       alt="Logo"
     />
   )

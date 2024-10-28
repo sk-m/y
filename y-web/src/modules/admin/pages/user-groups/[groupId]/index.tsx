@@ -1,61 +1,36 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import {
   Component,
-  For,
   Match,
   Show,
   Switch,
   createEffect,
   createMemo,
-  createSignal,
-  untrack,
 } from "solid-js"
 
-import { useNavigate, useParams } from "@solidjs/router"
-import { createMutation, useQueryClient } from "@tanstack/solid-query"
-
-import { Button } from "@/app/components/common/button/button"
-import { Card } from "@/app/components/common/card/card"
-import { Icon } from "@/app/components/common/icon/icon"
 import {
-  KeyValue,
-  KeyValueFields,
-} from "@/app/components/common/key-value/key-value"
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "@solidjs/router"
+
+import { Icon } from "@/app/components/common/icon/icon"
 import { Container } from "@/app/components/common/layout/container"
-import { Modal } from "@/app/components/common/modal/modal"
 import { Pill } from "@/app/components/common/pill/pill"
 import { Stack } from "@/app/components/common/stack/stack"
+import { Tab, TabContent, TabsContainer } from "@/app/components/common/tab/tab"
 import { Text } from "@/app/components/common/text/text"
-import { toastCtl } from "@/app/core/toast"
-import { useForm } from "@/app/core/use-form"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
-import {
-  UpdateUserGroupInput,
-  deleteUserGroup,
-  updateUserGroup,
-} from "@/modules/admin/user-groups/user-groups.api"
-import {
-  IUserGroupRightOptionValue,
-  userGroupType,
-} from "@/modules/admin/user-groups/user-groups.codecs"
-import {
-  useUserGroup,
-  userGroupKey,
-  userGroupsKey,
-} from "@/modules/admin/user-groups/user-groups.service"
-import { useUserRights } from "@/modules/admin/user-rights/user-rights.service"
-import { authKey, useAuth } from "@/modules/core/auth/auth.service"
+import { userGroupType } from "@/modules/admin/user-groups/user-groups.codecs"
+import { useUserGroup } from "@/modules/admin/user-groups/user-groups.service"
+import { useAuth } from "@/modules/core/auth/auth.service"
 
-import { UserGroupRight } from "../../../components/user-group/user-group-right"
-import { UserGroupRightCategory } from "../../../components/user-group/user-group-right-category"
-
-export type UserGroupFieldValues = {
-  [K in `right:${string}`]: boolean
-} & { [K in `right_option:${string}`]: IUserGroupRightOptionValue }
-
-export type UserGroupWatchedFields = ["right:*", "right_option:*"]
+import UserGroupGeneralSubpage from "./general"
+import UserGroupRightsSubpage from "./rights"
 
 const USER_GROUPS_ROUTE = routes["/admin/user-groups"]
 
@@ -64,10 +39,9 @@ const UserGroupPage: Component = () => {
 
   const params = useParams()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { notify } = toastCtl
+  const location = useLocation()
 
-  let formRef: HTMLFormElement | undefined
+  const groupId = createMemo(() => params.groupId as string)
 
   const groupManagementPermissions = createMemo(() => {
     let groupManagementAllowed = false
@@ -91,25 +65,11 @@ const UserGroupPage: Component = () => {
     return { groupManagementAllowed, groupDeletionAllowed }
   })
 
-  const [updateConfirmationModalOpen, setUpdateConfirmationModalOpen] =
-    createSignal(false)
-  const [deleteConfirmationModalOpen, setDeleteConfirmationModalOpen] =
-    createSignal(false)
-
-  const $updateUserGroup = createMutation(updateUserGroup)
-  const $deleteUserGroup = createMutation(deleteUserGroup)
-
-  const $userRights = useUserRights()
   const $userGroup = useUserGroup(() => ({
     userGroupId: Number.parseInt(params.groupId!, 10),
   }))
 
-  const userRights = createMemo(
-    () =>
-      $userRights.data ?? {
-        categories: [],
-      }
-  )
+  const isNonSystemGroup = createMemo(() => !$userGroup.data?.group_type)
 
   createEffect(() => {
     if ($userGroup.isError) {
@@ -118,458 +78,129 @@ const UserGroupPage: Component = () => {
     }
   })
 
-  const onSubmit = (values: UserGroupFieldValues) => {
-    if (!$userGroup.data?.id) return
+  const currentSubpage = createMemo(() => {
+    const locationParts = location.pathname.split("/")
 
-    const rights: {
-      [key: string]: {
-        granted: boolean
-        options: Record<string, unknown>
-      }
-    } = {}
-
-    // ! TODO add support for non-flat FieldValues
-    for (const [field, value] of Object.entries(values)) {
-      if (field.startsWith("right:")) {
-        rights[field.replace("right:", "")] = {
-          granted: value as boolean,
-          options: {},
-        }
-        // eslint-disable-next-line sonarjs/elseif-without-else
-      } else if (field.startsWith("right_option:")) {
-        const parts = field.split(":")
-
-        const rightName = parts[1] as string
-        // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-        const optionName = parts[2] as string
-
-        if (rights[rightName]) {
-          rights[rightName]!.options[optionName] = value
-        }
-      }
-    }
-
-    void $updateUserGroup.mutate(
-      {
-        userGroupId: $userGroup.data.id,
-        rights,
-      },
-      {
-        onSuccess: () => {
-          notify({
-            title: "Changes saved",
-            content: "User group was updated",
-            severity: "success",
-            icon: "check",
-          })
-
-          void queryClient.invalidateQueries(authKey)
-          void queryClient.invalidateQueries([userGroupsKey])
-          void queryClient.invalidateQueries([userGroupKey, $userGroup.data.id])
-        },
-        onError: (error) => genericErrorToast(error),
-        onSettled: () => {
-          setUpdateConfirmationModalOpen(false)
-        },
-      }
-    )
-  }
-
-  const form = useForm<UserGroupFieldValues, UserGroupWatchedFields>({
-    defaultValues: {},
-    disabled: () =>
-      !$userGroup.data || !$userRights.data || $updateUserGroup.isLoading,
-    onSubmit,
-    watch: ["right:*", "right_option:*"],
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    return (locationParts.length > 3 && locationParts[4]) || "general"
   })
 
-  const { setValue, submit } = form
+  const navigateToSubpage = (subpage: string, replace = false) =>
+    groupId() &&
+    navigate(`${USER_GROUPS_ROUTE}/${groupId()}/${subpage}`, {
+      replace,
+    })
 
-  // ! TODO implement form.reset()
   createEffect(() => {
-    if ($userGroup.data && $userRights.data) {
-      for (const right of $userGroup.data.rights) {
-        untrack(() => setValue(`right:${right.right_name}`, () => true))
-
-        for (const [name, value] of Object.entries(right.right_options)) {
-          untrack(() =>
-            setValue(`right_option:${right.right_name}:${name}`, () => value)
-          )
-        }
-      }
+    if (!isNonSystemGroup() && currentSubpage() === "general") {
+      navigateToSubpage("rights", true)
     }
   })
-
-  const saveKeyValue = (key: keyof UpdateUserGroupInput, value: string) => {
-    if (!$userGroup.data) return
-
-    void $updateUserGroup.mutate(
-      {
-        userGroupId: $userGroup.data.id,
-        [key]: value,
-      },
-      {
-        onSuccess: () => {
-          void queryClient.invalidateQueries([userGroupsKey])
-          void queryClient.invalidateQueries([userGroupKey, $userGroup.data.id])
-        },
-        onError: (error) => genericErrorToast(error),
-      }
-    )
-  }
 
   return (
-    <>
-      <Modal
-        open={updateConfirmationModalOpen()}
-        keepMounted
-        onClose={() => setUpdateConfirmationModalOpen(false)}
-        style={{
-          "max-width": "450px",
-        }}
-        header={
-          <Stack spacing={"1.5em"} direction="row" alignItems="center">
-            <div
-              style={{
-                display: "flex",
-                "align-items": "center",
-                "justify-content": "center",
+    <Show when={$userGroup.data}>
+      <Container size="m">
+        <Breadcrumbs
+          style={{
+            "margin-bottom": "1em",
+          }}
+        >
+          <Breadcrumb path={routes["/admin"]}>Administration</Breadcrumb>
+          <Breadcrumb path={USER_GROUPS_ROUTE}>Groups</Breadcrumb>
+          <Breadcrumb path={`${USER_GROUPS_ROUTE}/${$userGroup.data!.id}`}>
+            {$userGroup.data!.name}
+          </Breadcrumb>
+        </Breadcrumbs>
 
-                padding: "1em",
+        <Stack spacing="1.5em">
+          <Stack spacing={"0.5em"}>
+            <Text variant="h2">{$userGroup.data?.name ?? ""}</Text>
 
-                "background-color": "var(--color-border-15)",
-                "border-radius": "15px",
-              }}
-            >
-              <Icon grad={25} wght={500} size={24} name="warning" />
-            </div>
-            <Stack spacing="0.5em">
-              <Text
-                variant="h2"
-                style={{
-                  margin: 0,
-                }}
-                color="var(--color-text-grey-025)"
+            <Switch>
+              <Match
+                when={$userGroup.data?.group_type === userGroupType.everyone}
               >
-                Confirm changes
-              </Text>
-            </Stack>
+                <Text fontSize={"var(--text-sm)"}>
+                  <Pill>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      spacing={"0.25em"}
+                    >
+                      <Icon name="settings" size={12} wght={500} />
+                      <span>System group</span>
+                    </Stack>
+                  </Pill>
+                </Text>
+              </Match>
+              <Match when={$userGroup.data?.group_type === userGroupType.user}>
+                <Text fontSize={"var(--text-sm)"}>
+                  <Pill>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      spacing={"0.25em"}
+                    >
+                      <Icon name="settings" size={12} wght={500} />
+                      <span>System group</span>
+                    </Stack>
+                  </Pill>
+                </Text>
+              </Match>
+            </Switch>
           </Stack>
-        }
-      >
-        <Stack spacing={"1.5em"}>
-          <Text>
-            Are you sure you want to commit your changes to this group?
-          </Text>
 
-          <Text>
-            All users that are assigned to this group will be affected
-            immediately.
-          </Text>
-
-          <Stack direction="row" justifyContent="space-between">
-            <Button
-              variant="secondary"
-              onClick={() => setUpdateConfirmationModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              disabled={$updateUserGroup.isLoading}
-              onClick={() => {
-                void formRef?.dispatchEvent(new Event("submit"))
-              }}
-            >
-              {$updateUserGroup.isLoading ? "Saving..." : "Confirm"}
-            </Button>
+          <Stack>
+            <TabsContainer>
+              <Show when={isNonSystemGroup()}>
+                <Tab
+                  label="General"
+                  onClick={() => navigateToSubpage("")}
+                  selected={currentSubpage() === "general"}
+                />
+              </Show>
+              <Tab
+                label="Rights"
+                selected={currentSubpage() === "rights"}
+                onClick={() => navigateToSubpage("rights")}
+              />
+            </TabsContainer>
           </Stack>
         </Stack>
-      </Modal>
-      <Modal
-        open={deleteConfirmationModalOpen()}
-        keepMounted
-        onClose={() => setDeleteConfirmationModalOpen(false)}
-        style={{
-          "max-width": "450px",
-        }}
-        header={
-          <Stack spacing={"1.5em"} direction="row" alignItems="center">
-            <div
-              style={{
-                display: "flex",
-                "align-items": "center",
-                "justify-content": "center",
 
-                padding: "1em",
-
-                "background-color": "var(--color-border-15)",
-                "border-radius": "15px",
-              }}
-            >
-              <Icon grad={25} wght={500} size={24} name="warning" />
-            </div>
-            <Stack spacing="0.5em">
-              <Text
-                variant="h2"
-                style={{
-                  margin: 0,
-                }}
-                color="var(--color-text-grey-025)"
-              >
-                Confirm group deletion
-              </Text>
-            </Stack>
-          </Stack>
-        }
-      >
-        <Stack spacing={"1.5em"}>
-          <Text>Are you sure you want to delete this user group?</Text>
-
-          <Text>
-            All users that are assigned to this group will unsassigned
-            automatically.
-          </Text>
-
-          <Stack direction="row" justifyContent="space-between">
-            <Button
-              variant="secondary"
-              onClick={() => setDeleteConfirmationModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              disabled={$deleteUserGroup.isLoading}
-              onClick={() => {
-                if (!$userGroup.data?.id) return
-                $deleteUserGroup.mutate(
-                  {
-                    userGroupId: $userGroup.data.id,
-                  },
-                  {
-                    onSuccess: () => {
-                      notify({
-                        title: "Group deleted",
-                        content: "User group was deleted",
-                        severity: "success",
-                        icon: "check",
-                      })
-
-                      void queryClient.invalidateQueries([userGroupsKey])
-                      navigate(USER_GROUPS_ROUTE)
-                    },
-                    onError: (error) => genericErrorToast(error),
-                  }
-                )
-              }}
-            >
-              {$deleteUserGroup.isLoading ? "Deleting..." : "Confirm"}
-            </Button>
-          </Stack>
-        </Stack>
-      </Modal>
-      <Show when={$userGroup.data}>
-        <Container size="m">
-          <Breadcrumbs
-            style={{
-              "margin-bottom": "1em",
-            }}
-          >
-            <Breadcrumb path={routes["/admin"]}>Administration</Breadcrumb>
-            <Breadcrumb path={USER_GROUPS_ROUTE}>Groups</Breadcrumb>
-            <Breadcrumb path={`${USER_GROUPS_ROUTE}/${$userGroup.data!.id}`}>
-              {$userGroup.data!.name}
-            </Breadcrumb>
-          </Breadcrumbs>
-
-          <Stack spacing="2em">
-            <Stack spacing={"0.5em"}>
-              <Text
-                variant="h1"
-                style={{
-                  display: "flex",
-                  "align-items": "center",
-                  gap: "0.5em",
-                }}
-              >
-                <Icon name="groups" grad={25} wght={500} />
-                {$userGroup.data?.name ?? ""}
-              </Text>
-              <Switch>
-                <Match
-                  when={$userGroup.data?.group_type === userGroupType.everyone}
-                >
-                  <Text fontSize={"var(--text-sm)"}>
-                    <Pill>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={"0.25em"}
-                      >
-                        <Icon name="settings" size={12} wght={500} />
-                        <span>System group</span>
-                      </Stack>
-                    </Pill>
-                  </Text>
-                </Match>
-                <Match
-                  when={$userGroup.data?.group_type === userGroupType.user}
-                >
-                  <Text fontSize={"var(--text-sm)"}>
-                    <Pill>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={"0.25em"}
-                      >
-                        <Icon name="settings" size={12} wght={500} />
-                        <span>System group</span>
-                      </Stack>
-                    </Pill>
-                  </Text>
-                </Match>
-              </Switch>
-            </Stack>
-
-            <Stack spacing={"1em"}>
-              <Show
-                when={
-                  groupManagementPermissions().groupManagementAllowed &&
-                  $userGroup.data?.group_type === null
+        <TabContent>
+          <Show when={$userGroup.data}>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <UserGroupGeneralSubpage
+                    group={$userGroup.data!}
+                    groupManagementAllowed={
+                      groupManagementPermissions().groupManagementAllowed
+                    }
+                    groupDeletionAllowed={
+                      groupManagementPermissions().groupDeletionAllowed
+                    }
+                  />
                 }
-              >
-                <Card>
-                  <Stack direction="row" justifyContent="space-between">
-                    <div class="ui-card-label">
-                      <div class="label-strip" />
-                      <Text
-                        variant="h3"
-                        style={{
-                          margin: "0",
-                        }}
-                      >
-                        General configuration
-                      </Text>
-                    </div>
-
-                    <KeyValueFields
-                      style={{
-                        width: "500px",
-                      }}
-                    >
-                      <KeyValue
-                        keyWidth="100px"
-                        label="Group name"
-                        value={$userGroup.data?.name ?? ""}
-                        onChange={(value) => saveKeyValue("name", value)}
-                      />
-                    </KeyValueFields>
-                  </Stack>
-                </Card>
-              </Show>
-
-              <Show
-                when={
-                  groupManagementPermissions().groupDeletionAllowed &&
-                  $userGroup.data?.group_type === null
+              />
+              <Route
+                path="/rights"
+                element={
+                  <UserGroupRightsSubpage
+                    group={$userGroup.data!}
+                    groupManagementAllowed={
+                      groupManagementPermissions().groupManagementAllowed
+                    }
+                  />
                 }
-              >
-                <Card>
-                  <Stack
-                    direction="row"
-                    spacing={"1em"}
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <div class="ui-card-label">
-                      <div class="label-strip" />
-                      <Stack spacing={"0.33em"}>
-                        <Text
-                          variant="h3"
-                          style={{
-                            margin: "0",
-                          }}
-                        >
-                          Delete group
-                        </Text>
-                        <Text variant="secondary" fontSize={"var(--text-sm)"}>
-                          Irreversibly delete this user group and unassign all
-                          users.
-                        </Text>
-                      </Stack>
-                    </div>
-                    <Button
-                      leadingIcon="delete"
-                      onClick={() => setDeleteConfirmationModalOpen(true)}
-                      style={{
-                        color: "var(--color-error)",
-                      }}
-                    >
-                      Delete group
-                    </Button>
-                  </Stack>
-                </Card>
-              </Show>
-            </Stack>
-
-            <form ref={formRef as HTMLFormElement} onSubmit={submit}>
-              <Stack spacing="2em">
-                <For each={userRights().categories}>
-                  {(category) => (
-                    <UserGroupRightCategory category={category}>
-                      <Stack>
-                        <For each={category.rights}>
-                          {(right) => (
-                            <>
-                              <hr />
-                              <UserGroupRight
-                                disabled={
-                                  !groupManagementPermissions()
-                                    .groupManagementAllowed
-                                }
-                                right={right}
-                                form={form}
-                              />
-                            </>
-                          )}
-                        </For>
-                      </Stack>
-                    </UserGroupRightCategory>
-                  )}
-                </For>
-
-                <Stack
-                  direction="row"
-                  spacing="1em"
-                  alignItems="center"
-                  justifyContent="space-between"
-                >
-                  <Button
-                    leadingIcon="chevron_left"
-                    variant="text"
-                    disabled={$updateUserGroup.isLoading}
-                    onClick={() => navigate(USER_GROUPS_ROUTE)}
-                  >
-                    Back
-                  </Button>
-                  <Stack direction="row" spacing="1em">
-                    <Show
-                      when={groupManagementPermissions().groupManagementAllowed}
-                    >
-                      <Button
-                        disabled={$updateUserGroup.isLoading}
-                        onClick={() => setUpdateConfirmationModalOpen(true)}
-                      >
-                        Save changes
-                      </Button>
-                    </Show>
-                  </Stack>
-                </Stack>
-              </Stack>
-            </form>
-          </Stack>
-        </Container>
-      </Show>
-    </>
+              />
+            </Routes>
+          </Show>
+        </TabContent>
+      </Container>
+    </Show>
   )
 }
 

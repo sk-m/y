@@ -12,6 +12,7 @@ export type TextProps = {
   color?: JSX.CSSProperties["color"]
   monospace?: boolean
   container?: "text" | "pill"
+  italic?: boolean
 
   style?: JSX.CSSProperties
 }
@@ -44,6 +45,7 @@ export const Text: ComponentWithChildren<TextProps> = (props) => {
 
   const classList = createMemo(() => ({
     "ui-text": true,
+    italic: props.italic,
     pill: props.container === "pill",
   }))
 

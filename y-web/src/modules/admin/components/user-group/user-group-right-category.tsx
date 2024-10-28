@@ -23,6 +23,9 @@ export const UserGroupRightCategory: ComponentWithChildren<
         <Stack
           style={{
             padding: "1.25em 1.5em",
+            "background-color": "var(--color-grey-1)",
+            "border-top-left-radius": "8px",
+            "border-top-right-radius": "8px",
           }}
           spacing="0.5em"
         >

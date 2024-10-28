@@ -30,6 +30,8 @@ export const TStorageEntry = z.object({
     .refine((x) => x && !Number.isNaN(Date.parse(x)))
     .nullable(),
   created_by: z.number().nullable(),
+
+  downloads_count: z.number(),
 })
 
 export type IStorageEntry = z.infer<typeof TStorageEntry>

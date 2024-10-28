@@ -10,7 +10,7 @@ import {
 
 import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
-import { Tab, TabsContainer } from "@/app/components/common/tab/tab"
+import { Tab, TabContent, TabsContainer } from "@/app/components/common/tab/tab"
 import { Text } from "@/app/components/common/text/text"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
@@ -76,12 +76,12 @@ const UserPage: Component = () => {
         </Breadcrumb>
       </Breadcrumbs>
 
-      <Stack spacing="2em">
+      <Stack spacing="1.5em">
         <Show when={$user.data}>
           <Text variant="h2">{$user.data!.username}</Text>
         </Show>
 
-        <Stack spacing="1.5em">
+        <Stack>
           <TabsContainer>
             <Tab
               label="General"
@@ -90,28 +90,28 @@ const UserPage: Component = () => {
             />
             <Show when={allowedTabs().groupsTabAllowed}>
               <Tab
-                label="Groups"
+                label="User groups"
                 selected={currentSubpage() === "groups"}
                 onClick={() => navigateToSubpage("groups")}
               />
             </Show>
           </TabsContainer>
 
-          <hr />
-
           <Show when={$user.data}>
-            <Routes>
-              <Route
-                path="/"
-                element={<UserGeneralSubpage user={$user.data!} />}
-              />
-              <Show when={allowedTabs().groupsTabAllowed}>
+            <TabContent>
+              <Routes>
                 <Route
-                  path="/groups"
-                  element={<UserGroupsSubpage user={$user.data!} />}
+                  path="/"
+                  element={<UserGeneralSubpage user={$user.data!} />}
                 />
-              </Show>
-            </Routes>
+                <Show when={allowedTabs().groupsTabAllowed}>
+                  <Route
+                    path="/groups"
+                    element={<UserGroupsSubpage user={$user.data!} />}
+                  />
+                </Show>
+              </Routes>
+            </TabContent>
           </Show>
         </Stack>
       </Stack>

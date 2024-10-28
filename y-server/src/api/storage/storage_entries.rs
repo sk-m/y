@@ -21,6 +21,7 @@ struct StorageEntryRow {
     size_bytes: Option<i64>,
     created_by: Option<i32>,
     created_at: Option<String>,
+    downloads_count: i32,
 }
 
 #[derive(Serialize)]
@@ -80,7 +81,7 @@ async fn storage_entries(
         // Entries inside of a folder
 
         sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2",
+            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT, downloads_count FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2",
         )
         .bind(endpoint_id)
         .bind(folder_id)
@@ -90,7 +91,7 @@ async fn storage_entries(
         // Entries on the root level
 
         sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL",
+            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT, downloads_count FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL",
         )
         .bind(endpoint_id)
         .fetch_all(&**pool)

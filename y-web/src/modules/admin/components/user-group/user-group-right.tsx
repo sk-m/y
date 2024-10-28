@@ -6,10 +6,11 @@ import { Text } from "@/app/components/common/text/text"
 import { Form } from "@/app/core/use-form"
 import { unsafe_t } from "@/i18n"
 
+import "../../pages/user-groups/[groupId]"
 import {
   UserGroupFieldValues,
   UserGroupWatchedFields,
-} from "../../pages/user-groups/[groupId]"
+} from "../../pages/user-groups/[groupId]/rights"
 import { IUserRight } from "../../user-rights/user-rights.codecs"
 import { UserGroupRightOption } from "./user-group-right-option"
 import { UserGroupRightTag } from "./user-group-right-tag"

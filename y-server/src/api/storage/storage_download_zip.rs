@@ -70,6 +70,22 @@ async fn storage_download_zip(
 
     match resolved_entries {
         Ok(resolved_entries) => {
+            // Increment downloads count for each file that will be included in the zip archive
+            let filesystem_ids = resolved_entries
+                .iter()
+                .map(|(_, filesystem_id)| filesystem_id.as_str())
+                .collect::<Vec<&str>>();
+
+            // TODO don't block
+            sqlx::query(
+                "UPDATE storage_entries SET downloads_count = downloads_count + 1 WHERE filesystem_id = ANY($1) AND endpoint_id = $2",
+            )
+            .bind(filesystem_ids)
+            .bind(endpoint_id)
+            .execute(&**pool)
+            .await
+            .unwrap();
+
             let file_uuid = uuid::Uuid::new_v4().to_string();
 
             let zip_staging_path = Path::new("upload_staging").join(&file_uuid);

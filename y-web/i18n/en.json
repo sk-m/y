@@ -31,6 +31,10 @@
         "name": "Toggle features",
         "description": "Allows enabling and disabling y's features via the Features page."
       },
+      "update_config": {
+        "name": "Instance config administation",
+        "description": "Allows editing y's configuration, including all feature configs."
+      },
       "delete_user": {
         "name": "Delete users",
         "description": "Unlike blocking or hiding, deleting a user is an irreversible action. All data related to a deleted user is forever lost."
@@ -107,6 +111,11 @@
         },
         "accessible_endpoints": {
           "label": "Endpoints with root access"
+        }
+      },
+      "storage_manage_access": {
+        "allow_managing_templates": {
+          "description": "Allow managing access rule templates."
         }
       }
     },
@@ -251,6 +260,11 @@
           "artifacts_disabled": "Artifacts are disabled for this endpoint",
           "invalid_file_ids_param": "Invalid entry_ids parameter",
           "too_many_entries_requested": "Too many entries requested"
+        },
+        "create_storage_access_rules": {
+          "unauthorized": "Permission denied",
+          "internal": "Other",
+          "invalid_input": "Invalid input"
         }
       }
     }

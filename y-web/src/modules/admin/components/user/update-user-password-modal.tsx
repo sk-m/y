@@ -89,7 +89,7 @@ export const AdminUpdateUserPasswordModal: Component<
               "border-radius": "15px",
             }}
           >
-            <Icon grad={25} wght={500} size={24} name="key" />
+            <Icon grad={25} wght={500} size={24} name="password" />
           </div>
           <Stack spacing="0.5em">
             <Text
@@ -99,7 +99,7 @@ export const AdminUpdateUserPasswordModal: Component<
               }}
               color="var(--color-text-grey-025)"
             >
-              Update password
+              Change password
             </Text>
             <Text variant="secondary" fontWeight={500}>
               {props.user?.username}
@@ -110,7 +110,7 @@ export const AdminUpdateUserPasswordModal: Component<
     >
       <Stack spacing={"1.5em"}>
         <Text>
-          New password will not be sent to the user, don't forget to write it
+          New password will not be sent to the user. Don't forget to write it
           down.
         </Text>
 

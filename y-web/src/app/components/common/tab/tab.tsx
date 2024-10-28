@@ -15,6 +15,10 @@ export const TabsContainer: ComponentWithChildren = (props) => {
   return <div class="ui-tabs-container">{props.children}</div>
 }
 
+export const TabContent: ComponentWithChildren = (props) => {
+  return <div class="ui-tab-content">{props.children}</div>
+}
+
 export const Tab: Component<TabProps> = (props) => {
   return (
     <button

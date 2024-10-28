@@ -156,13 +156,7 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
             Are you sure you want to commit your changes to this user's groups?
           </Text>
 
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            style={{
-              "margin-top": "1.5em",
-            }}
-          >
+          <Stack direction="row" justifyContent="space-between">
             <Button
               variant="secondary"
               onClick={() => setConfirmationModalOpen(false)}
@@ -178,58 +172,9 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
           </Stack>
         </Stack>
       </Modal>
-      <Stack spacing="2em" id="page-user-groups-subpage">
-        <Stack spacing="0.33em">
-          <For each={userGroups()}>
-            {(userGroup) => {
-              const isSelected = createMemo(() =>
-                selectedGroups().includes(userGroup.id)
-              )
-
-              const isMutable = createMemo(
-                () =>
-                  clientPermissions().anyGroupIsAllowed ||
-                  clientPermissions().allowedGroups.includes(userGroup.id)
-              )
-
-              return (
-                <div
-                  classList={{
-                    "group-option": true,
-                    disabled: !isMutable(),
-                    selected: isSelected(),
-                  }}
-                >
-                  <Checkbox
-                    size="m"
-                    value={isSelected()}
-                    onChange={(checked) =>
-                      updateSelection(userGroup.id, checked)
-                    }
-                    disabled={!isMutable()}
-                  />
-                  <Link
-                    variant="text-secondary"
-                    href={`${routes["/admin/user-groups"]}/${userGroup.id}`}
-                    style={{
-                      color: "var(--color-text)",
-                    }}
-                  >
-                    <Text fontWeight={480}>{userGroup.name}</Text>
-                  </Link>
-                </div>
-              )
-            }}
-          </For>
-        </Stack>
-
+      <Stack id="page-user-groups-subpage">
         <Card>
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            spacing={"2em"}
-          >
+          <Stack spacing="1.5em">
             <div class="ui-card-label">
               <div class="label-strip" />
               <Stack spacing={"0.33em"}>
@@ -239,20 +184,73 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
                     margin: "0",
                   }}
                 >
-                  Update group membership
-                </Text>
-                <Text variant="secondary" fontSize={"var(--text-sm)"}>
-                  User's permissions will be updated immediately after saving.
+                  Group membership
                 </Text>
               </Stack>
             </div>
 
-            <Button
-              variant="primary"
-              onClick={() => setConfirmationModalOpen(true)}
+            <Stack spacing="0.33em">
+              <For each={userGroups()}>
+                {(userGroup) => {
+                  const isSelected = createMemo(() =>
+                    selectedGroups().includes(userGroup.id)
+                  )
+
+                  const isMutable = createMemo(
+                    () =>
+                      clientPermissions().anyGroupIsAllowed ||
+                      clientPermissions().allowedGroups.includes(userGroup.id)
+                  )
+
+                  return (
+                    <div
+                      classList={{
+                        "group-option": true,
+                        disabled: !isMutable(),
+                        selected: isSelected(),
+                      }}
+                    >
+                      <Checkbox
+                        size="m"
+                        value={isSelected()}
+                        onChange={(checked) =>
+                          updateSelection(userGroup.id, checked)
+                        }
+                        disabled={!isMutable()}
+                      />
+                      <Link
+                        variant="text-secondary"
+                        href={`${routes["/admin/user-groups"]}/${userGroup.id}`}
+                        style={{
+                          color: "var(--color-text)",
+                        }}
+                      >
+                        <Text fontWeight={480}>{userGroup.name}</Text>
+                      </Link>
+                    </div>
+                  )
+                }}
+              </For>
+            </Stack>
+
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              spacing={"2em"}
             >
-              Save groups
-            </Button>
+              <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                User's permissions will be recalculated immediately after
+                saving.
+              </Text>
+
+              <Button
+                variant="primary"
+                onClick={() => setConfirmationModalOpen(true)}
+              >
+                Save changes
+              </Button>
+            </Stack>
           </Stack>
         </Card>
       </Stack>

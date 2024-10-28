@@ -1,4 +1,5 @@
 mod api;
+mod config;
 mod db;
 mod request;
 mod right;
@@ -132,7 +133,7 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    // Make sure the environment is setup correctly
+    // Make sure the environment is set up correctly
     let upload_staging_folder = Path::new("upload_staging");
 
     if !upload_staging_folder.exists() {
@@ -173,7 +174,12 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_rename_entry::storage_rename_entry)
                     .service(crate::api::storage::storage_get::storage_get)
                     .service(crate::api::storage::storage_create_access_rules::storage_create_access_rules)
+                    .service(crate::api::storage::storage_create_access_rules_template::storage_create_access_rules_template)
+                    .service(crate::api::storage::storage_entry_add_access_rules_template::storage_entry_add_access_rules_template)
+                    .service(crate::api::storage::storage_entry_remove_access_rules_template::storage_entry_remove_access_rules_template)
+                    .service(crate::api::storage::storage_access_rules_templates::storage_access_rules_templates)
                     .service(crate::api::storage::storage_get_access_rules::storage_get_access_rules)
+                    .service(crate::api::storage::storage_delete_access_rules_template::storage_delete_access_rules_template)
             )
             .service(
                 web::scope("/api/admin")
@@ -196,9 +202,15 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::admin::storage_endpoints::storage_enpoints)
                     .service(crate::api::admin::storage_endpoint::storage_enpoint)
                     .service(crate::api::admin::update_storage_endpoint::update_storage_endpoint)
+                    .service(crate::api::admin::config::config_options::config_options)
+                    .service(crate::api::admin::config::config_set::config_set)
                     ,
             )
-            .service(web::scope("/api").service(crate::api::user_rights::user_rights))
+            .service(
+                web::scope("/api")
+                    .service(crate::api::user_rights::user_rights)
+                    .service(crate::api::instance_config::instance_config)
+            )
     })
     .bind((server_address, server_port))?
     .run()

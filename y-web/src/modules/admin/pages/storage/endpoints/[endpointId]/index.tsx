@@ -1,10 +1,10 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import { Show, createEffect, createMemo } from "solid-js"
 
 import { useNavigate, useParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Card } from "@/app/components/common/card/card"
-import { Icon } from "@/app/components/common/icon/icon"
 import {
   KeyValue,
   KeyValueFields,
@@ -13,6 +13,7 @@ import { Container } from "@/app/components/common/layout/container"
 import { Pill } from "@/app/components/common/pill/pill"
 import { SelectField } from "@/app/components/common/select-field/select-field"
 import { Stack } from "@/app/components/common/stack/stack"
+import { Tab, TabContent, TabsContainer } from "@/app/components/common/tab/tab"
 import { Text } from "@/app/components/common/text/text"
 import { Toggle } from "@/app/components/common/toggle/toggle"
 import { toastCtl } from "@/app/core/toast"
@@ -107,7 +108,7 @@ const StorageEndpointPage = () => {
           </Breadcrumb>
         </Breadcrumbs>
 
-        <Stack spacing={"2em"}>
+        <Stack spacing={"1.5em"}>
           <Stack spacing={"0.5em"}>
             <Text variant="h2">{$storageEndpoint.data!.name}</Text>
             <Stack direction="row" spacing={"0.5em"}>
@@ -117,183 +118,184 @@ const StorageEndpointPage = () => {
               <StorageEndpointTypePill
                 type={$storageEndpoint.data!.endpoint_type}
               />
-              <Show when={$storageEndpoint.data!.preserve_file_structure}>
-                <Pill
-                  variant="secondary"
-                  style={{
-                    // eslint-disable-next-line sonarjs/no-duplicate-string
-                    "font-size": "var(--text-sm)",
-                  }}
-                >
-                  <Stack spacing={"0.5em"} direction="row" alignItems="center">
-                    <Icon name="account_tree" size={12} wght={500} />
-                    <Text>preserved file structure</Text>
-                  </Stack>
-                </Pill>
+              <Show when={$storageEndpoint.data!.access_rules_enabled}>
+                <Pill variant="success">access rules</Pill>
               </Show>
             </Stack>
           </Stack>
 
-          <Stack spacing={"1.5em"}>
-            <Card>
-              <Stack direction="row" justifyContent="space-between">
-                <div class="ui-card-label">
-                  <div class="label-strip" />
-                  <Text
-                    variant="h3"
-                    style={{
-                      margin: "0",
-                    }}
-                  >
-                    General configuration
-                  </Text>
-                </div>
+          <Stack>
+            <TabsContainer>
+              <Tab label="General" selected={true} />
+            </TabsContainer>
 
-                <KeyValueFields
-                  style={{
-                    width: "50%",
-                  }}
-                >
-                  <KeyValue<IStorageEndpointStatus>
-                    keyWidth="100px"
-                    label="Status"
-                    getValueString={(value) =>
-                      (
-                        unsafe_t(
-                          `main.storage_feature.endpoint_status.${
-                            value as string
-                          }`
-                        ) ??
-                        value ??
-                        ""
-                      ).toLowerCase()
-                    }
-                    value={$storageEndpoint.data?.status ?? "disabled"}
-                    onChange={(value) => updateKeyValue("status", value)}
-                    inputField={(inputProps) => (
-                      <SelectField<
-                        false,
-                        { name: string; id: IStorageEndpointStatus }
-                      >
-                        multi={false}
-                        options={storageEndpointStatus.map((status) => ({
-                          name:
-                            unsafe_t(
-                              `main.storage_feature.endpoint_status.${status}`
-                            ) ?? status,
-                          id: status,
-                        }))}
-                        width="100%"
-                        {...inputProps}
-                      />
-                    )}
-                  />
-                  <KeyValue
-                    keyWidth="100px"
-                    label="Name"
-                    value={$storageEndpoint.data?.name ?? ""}
-                    onChange={(value) => updateKeyValue("name", value)}
-                  />
-                  <KeyValue
-                    keyWidth="100px"
-                    label="Short description"
-                    value={$storageEndpoint.data?.description ?? ""}
-                    onChange={(value) => updateKeyValue("description", value)}
-                  />
-                </KeyValueFields>
-              </Stack>
-            </Card>
-
-            <Card>
-              <Stack direction="row" justifyContent="space-between">
-                <div class="ui-card-label">
-                  <div class="label-strip" />
-                  <Stack spacing={"0.33"}>
-                    <Text
-                      variant="h3"
-                      style={{
-                        margin: "0",
-                      }}
-                    >
-                      Filesystem paths
-                    </Text>
-                    <Text variant="secondary" fontSize={"var(--text-sm)"}>
-                      Endpoint's paths can not be updated after creation.
-                    </Text>
-                  </Stack>
-                </div>
-
-                <KeyValueFields
-                  style={{
-                    width: "50%",
-                  }}
-                >
-                  <KeyValue
-                    readonly
-                    keyWidth="100px"
-                    label="Base path"
-                    value={$storageEndpoint.data?.base_path ?? ""}
-                    onChange={() => void 0}
-                  />
-                  <KeyValue
-                    readonly
-                    keyWidth="100px"
-                    label="Artifacts path"
-                    value={$storageEndpoint.data?.artifacts_path ?? ""}
-                    onChange={() => void 0}
-                  />
-                </KeyValueFields>
-              </Stack>
-            </Card>
-
-            <Card>
+            <TabContent>
               <Stack spacing={"1.5em"}>
-                <div class="ui-card-label">
-                  <div class="label-strip" />
-                  <Stack spacing={"0.33"}>
-                    <Stack
-                      direction="row"
-                      spacing={"0.33em"}
-                      alignItems="center"
-                    >
+                <Card>
+                  <Stack spacing={"1.5em"}>
+                    <div class="ui-card-label">
+                      <div class="label-strip" />
                       <Text
                         variant="h3"
                         style={{
                           margin: "0",
                         }}
                       >
-                        Access rules
+                        General configuration
                       </Text>
-                      <Pill variant="warning">experimental</Pill>
-                    </Stack>
-                    <Text variant="secondary" fontSize={"var(--text-sm)"}>
-                      Manage storage permissions on a per-entry basis.
-                    </Text>
+                    </div>
+
+                    <KeyValueFields
+                      textAlign="left"
+                      style={{
+                        width: "50%",
+                      }}
+                    >
+                      <KeyValue<IStorageEndpointStatus>
+                        keyWidth="100px"
+                        label="Status"
+                        getValueString={(value) =>
+                          (
+                            unsafe_t(
+                              `main.storage_feature.endpoint_status.${
+                                value as string
+                              }`
+                            ) ??
+                            value ??
+                            ""
+                          ).toLowerCase()
+                        }
+                        value={$storageEndpoint.data?.status ?? "disabled"}
+                        onChange={(value) => updateKeyValue("status", value)}
+                        inputField={(inputProps) => (
+                          <SelectField<
+                            false,
+                            { name: string; id: IStorageEndpointStatus }
+                          >
+                            multi={false}
+                            options={storageEndpointStatus.map((status) => ({
+                              name:
+                                unsafe_t(
+                                  `main.storage_feature.endpoint_status.${status}`
+                                ) ?? status,
+                              id: status,
+                            }))}
+                            width="100%"
+                            hideCheckboxes
+                            {...inputProps}
+                          />
+                        )}
+                      />
+                      <KeyValue
+                        keyWidth="100px"
+                        label="Name"
+                        value={$storageEndpoint.data?.name ?? ""}
+                        onChange={(value) => updateKeyValue("name", value)}
+                      />
+                      <KeyValue
+                        keyWidth="100px"
+                        label="Short description"
+                        value={$storageEndpoint.data?.description ?? ""}
+                        onChange={(value) =>
+                          updateKeyValue("description", value)
+                        }
+                      />
+                    </KeyValueFields>
                   </Stack>
-                </div>
-                <Stack direction="row" spacing={"1em"} alignItems="center">
-                  <Toggle
-                    value={() =>
-                      $storageEndpoint.data?.access_rules_enabled ?? false
-                    }
-                    onChange={(value) => {
-                      updateKeyValue("access_rules_enabled", value, () => {
-                        notify({
-                          title: value ? "Enabled" : "Disabled",
-                          content: "Setting updated successfully.",
-                          severity: "success",
-                          icon: "check",
-                        })
-                      })
-                    }}
-                    size="m"
-                  />
-                  <Text variant="secondary" fontSize={"var(--text-sm)"}>
-                    Enforce storage access rules for this endpoint.
-                  </Text>
-                </Stack>
+                </Card>
+
+                <Card>
+                  <Stack direction="row" justifyContent="space-between">
+                    <div class="ui-card-label">
+                      <div class="label-strip" />
+                      <Stack spacing={"0.33"}>
+                        <Text
+                          variant="h3"
+                          style={{
+                            margin: "0",
+                          }}
+                        >
+                          Filesystem paths
+                        </Text>
+                        <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                          Endpoint's paths can not be updated after creation.
+                        </Text>
+                      </Stack>
+                    </div>
+
+                    <KeyValueFields
+                      style={{
+                        width: "50%",
+                      }}
+                    >
+                      <KeyValue
+                        readonly
+                        keyWidth="100px"
+                        label="Base path"
+                        value={$storageEndpoint.data?.base_path ?? ""}
+                        onChange={() => void 0}
+                      />
+                      <KeyValue
+                        readonly
+                        keyWidth="100px"
+                        label="Artifacts path"
+                        value={$storageEndpoint.data?.artifacts_path ?? ""}
+                        onChange={() => void 0}
+                      />
+                    </KeyValueFields>
+                  </Stack>
+                </Card>
+
+                <Card>
+                  <Stack spacing={"1.5em"}>
+                    <div class="ui-card-label">
+                      <div class="label-strip" />
+                      <Stack spacing={"0.33"}>
+                        <Stack
+                          direction="row"
+                          spacing={"0.33em"}
+                          alignItems="center"
+                        >
+                          <Text
+                            variant="h3"
+                            style={{
+                              margin: "0",
+                            }}
+                          >
+                            Access rules
+                          </Text>
+                          <Pill variant="warning">experimental</Pill>
+                        </Stack>
+                        <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                          Manage storage permissions on a per-entry basis.
+                        </Text>
+                      </Stack>
+                    </div>
+                    <Stack direction="row" spacing={"1em"} alignItems="center">
+                      <Toggle
+                        value={() =>
+                          $storageEndpoint.data?.access_rules_enabled ?? false
+                        }
+                        onChange={(value) => {
+                          updateKeyValue("access_rules_enabled", value, () => {
+                            notify({
+                              title: value ? "Enabled" : "Disabled",
+                              content: "Setting updated successfully.",
+                              severity: "success",
+                              icon: value ? "toggle_on" : "toggle_off",
+                            })
+                          })
+                        }}
+                        size="m"
+                      />
+                      <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                        Enforce storage access rules for this endpoint.
+                      </Text>
+                    </Stack>
+                  </Stack>
+                </Card>
               </Stack>
-            </Card>
+            </TabContent>
           </Stack>
         </Stack>
       </Show>

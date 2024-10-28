@@ -1,4 +1,4 @@
-import { Component, Show, createSignal } from "solid-js"
+import { Component, Show, createMemo, createSignal } from "solid-js"
 
 import { useNavigate } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
@@ -16,6 +16,7 @@ import { unsafe_t } from "@/i18n"
 import { login, logout } from "@/modules/core/auth/auth.api"
 import { authKey, useAuth } from "@/modules/core/auth/auth.service"
 
+import { useInstanceConfig } from "../../instance-config/instance-config.service"
 import "./login.less"
 
 const LoginPage: Component = () => {
@@ -27,6 +28,15 @@ const LoginPage: Component = () => {
 
   const $login = createMutation(login)
   const $logout = createMutation(logout)
+
+  const $instanceConfig = useInstanceConfig()
+
+  const instanceName = createMemo(
+    () =>
+      $instanceConfig.data?.instance_config.find(
+        (config) => config.key === "instance.name"
+      )?.value
+  )
 
   const performLogout = () => {
     // eslint-disable-next-line no-undefined
@@ -87,7 +97,7 @@ const LoginPage: Component = () => {
     <div id="page-login">
       <div class="login-container">
         <div class="form-container">
-          <div class="instance-name">{"y"}</div>
+          <div class="instance-name">{instanceName()}</div>
 
           <Show
             when={$auth.isSuccess && $auth.data.id}

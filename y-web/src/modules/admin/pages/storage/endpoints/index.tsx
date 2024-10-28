@@ -6,6 +6,8 @@ import { Button } from "@/app/components/common/button/button"
 import { Card } from "@/app/components/common/card/card"
 import { Icon } from "@/app/components/common/icon/icon"
 import { Container } from "@/app/components/common/layout/container"
+import { Note } from "@/app/components/common/note/note"
+import { Pill } from "@/app/components/common/pill/pill"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
@@ -62,35 +64,61 @@ const StorageEndpointsPage: Component = () => {
           </Breadcrumb>
         </Breadcrumbs>
 
-        <Show when={endpoints().length > 0}>
+        <Show
+          when={endpoints().length > 0}
+          fallback={
+            <Note type="secondary" fontSize="var(--text-sm)">
+              No storage endpoints defined. Create a new one to start.
+            </Note>
+          }
+        >
           <Stack spacing="1em">
             <Text variant="h3">Storage endpoints</Text>
 
             <div class="endpoint-cards-container">
               <For each={endpoints()}>
                 {(endpoint) => (
-                  <Link class="endpoint" href={`${endpoint.id}`}>
-                    <div class="icon">
-                      <Icon fill={1} type="rounded" name="hard_drive" />
+                  <div class="endpoint-container">
+                    <Link class="endpoint" href={`${endpoint.id}`}>
+                      <div class="header">
+                        <div class="icon">
+                          <Icon
+                            fill={0}
+                            type="rounded"
+                            name="hard_drive"
+                            wght={500}
+                          />
 
-                      <div
-                        classList={{
-                          "status-dot": true,
-                          active: endpoint.status === "active",
-                          readonly: endpoint.status === "read_only",
-                          disabled: endpoint.status === "disabled",
-                        }}
-                      />
-                    </div>
-                    <div class="main-info">
-                      <div class="endpoint-name">{endpoint.name}</div>
-                      <div class="endpoint-description">
-                        <Text variant="secondary" fontSize={"var(--text-sm)"}>
-                          {endpoint.description}
-                        </Text>
+                          <div
+                            classList={{
+                              "status-dot": true,
+                              active: endpoint.status === "active",
+                              readonly: endpoint.status === "read_only",
+                              disabled: endpoint.status === "disabled",
+                            }}
+                          />
+                        </div>
+
+                        <div class="endpoint-name">
+                          <div>{endpoint.name}</div>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
+
+                      <div class="pills">
+                        <Show when={endpoint.access_rules_enabled}>
+                          <Pill variant="success">access rules</Pill>
+                        </Show>
+                      </div>
+
+                      <div class="main-info">
+                        <div class="endpoint-subtext">
+                          <Text variant="secondary" fontSize={"var(--text-sm)"}>
+                            {endpoint.description}
+                          </Text>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
                 )}
               </For>
             </div>
@@ -123,7 +151,7 @@ const StorageEndpointsPage: Component = () => {
               </Stack>
             </div>
 
-            <Button onClick={() => navigate("new")} leadingIcon="add_circle">
+            <Button onClick={() => navigate("new")} leadingIcon="library_add">
               Create endpoint
             </Button>
           </Stack>

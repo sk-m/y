@@ -72,7 +72,7 @@ const NewUserPage: Component = () => {
   const { register, submit, errors } = form
 
   return (
-    <Container size="s">
+    <Container size="xs">
       <Breadcrumbs
         style={{
           "margin-bottom": "1em",

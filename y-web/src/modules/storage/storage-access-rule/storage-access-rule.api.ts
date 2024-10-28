@@ -1,4 +1,4 @@
-import { get, post } from "@/app/core/request"
+import { del, get, post, put } from "@/app/core/request"
 
 import {
   IStorageAccessRule,
@@ -35,4 +35,32 @@ export const createStorageAccessRules = async (
       rules: input.rules,
     },
   })
+}
+
+export type RemoveStorageEntryAccessRulesTemplateInput = {
+  endpointId: number
+  entryId: number
+  templateId: number
+}
+
+export const removeStorageEntryAccessRulesTemplate = async (
+  input: RemoveStorageEntryAccessRulesTemplateInput
+) => {
+  return del(
+    `${apiStorageAccessRules}/${input.endpointId}/${input.entryId}/template/${input.templateId}`
+  )
+}
+
+export type AddStorageEntryAccessRulesTemplateInput = {
+  endpointId: number
+  entryId: number
+  templateId: number
+}
+
+export const addStorageEntryAccessRulesTemplate = async (
+  input: AddStorageEntryAccessRulesTemplateInput
+) => {
+  return put(
+    `${apiStorageAccessRules}/${input.endpointId}/${input.entryId}/template/${input.templateId}`
+  )
 }

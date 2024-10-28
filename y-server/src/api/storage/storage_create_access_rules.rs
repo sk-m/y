@@ -83,7 +83,7 @@ async fn storage_create_access_rules(
             .await;
 
     if delete_result.is_err() {
-        return error("storage.create_storage_access_rules.other");
+        return error("storage.create_storage_access_rules.internal");
     }
 
     if !rules.is_empty() {
@@ -111,7 +111,7 @@ async fn storage_create_access_rules(
         let create_result = query.execute(&mut *transaction).await;
 
         if create_result.is_err() {
-            return error("storage.create_storage_access_rules.other");
+            return error("storage.create_storage_access_rules.internal");
         }
     }
 
@@ -121,7 +121,7 @@ async fn storage_create_access_rules(
         Ok(_) => HttpResponse::Ok().body("{}"),
         Err(err) => {
             error!("{}", err);
-            error("storage.create_storage_access_rules.other")
+            error("storage.create_storage_access_rules.internal")
         }
     }
 }

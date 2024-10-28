@@ -1,3 +1,5 @@
+use std::env;
+
 use actix_web::{post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
@@ -30,6 +32,11 @@ async fn create_user(
     form: web::Json<CreateUserInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
+    let pbkdf2_rounds = env::var("PBKDF2_ROUNDS")
+        .unwrap_or("600000".to_string())
+        .parse::<u32>()
+        .unwrap();
+
     let form = form.into_inner();
 
     if form.validate().is_err() {
@@ -59,7 +66,16 @@ async fn create_user(
     }
 
     let password_salt = SaltString::generate(&mut OsRng);
-    let password_hash = Pbkdf2.hash_password(form.password.as_bytes(), &password_salt);
+    let password_hash = Pbkdf2.hash_password_customized(
+        form.password.as_bytes(),
+        None,
+        None,
+        pbkdf2::Params {
+            rounds: pbkdf2_rounds,
+            output_length: 32,
+        },
+        &password_salt,
+    );
 
     match password_hash {
         Ok(password_hash) => {

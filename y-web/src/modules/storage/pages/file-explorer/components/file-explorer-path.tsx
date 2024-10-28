@@ -1,4 +1,5 @@
 import { Component, Index, createSelector, createSignal } from "solid-js"
+import { isDev } from "solid-js/web"
 
 import { Icon } from "@/app/components/common/icon/icon"
 import { SelectedEntry } from "@/modules/storage/file-explorer/use-file-explorer"
@@ -97,7 +98,8 @@ export const FileExplorerPath: Component<FileExplorerPathProps> = (props) => {
               onDragLeave={onDragLeave}
               onDrop={(event) => onDrop(event, segment().id)}
             >
-              {segment().name} /
+              {segment().name}
+              {isDev ? ` [${segment().id}]` : ""} /
             </button>
           )}
         </Index>

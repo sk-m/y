@@ -1,0 +1,1 @@
+ALTER TABLE public.storage_entries DROP COLUMN IF EXISTS downloads_count;
