@@ -9,3 +9,9 @@ export type Tail<T extends unknown[]> = T extends [unknown, ...infer R]
 export const debug = (...args: unknown[]) => {
   if (DEV) console.debug(...args)
 }
+
+export type ServiceOptions = Partial<{
+  refetchOnWindowFocus: boolean
+  refetchInterval: number
+  refetchOnMount: boolean
+}>

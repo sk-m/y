@@ -1,5 +1,7 @@
 import { createQuery } from "@tanstack/solid-query"
 
+import { ServiceOptions } from "@/app/core/utils"
+
 import {
   GetUserGroupInput,
   UserGroupsInput,
@@ -12,10 +14,7 @@ export const userGroupKey = "users-group" as const
 
 export const useUserGroups = (
   input: () => UserGroupsInput,
-  options: {
-    refetchOnWindowFocus?: boolean
-    refetchInterval?: number
-  } = {}
+  options: ServiceOptions = {}
 ) => {
   return createQuery(
     () => [userGroupsKey, input()],
