@@ -35,33 +35,29 @@ impl Filesystem for YFS {
 
         let adjusted_parent_ino = parent as i64 - 1;
 
-        let full_name = name.to_string_lossy();
-        let name_separator = full_name.rfind('.').unwrap_or(full_name.len());
-        let (target_name, mut target_extension) = full_name.split_at(name_separator);
+        let name = name.to_string_lossy();
+        let separator = name.rfind('.').unwrap_or(name.len());
 
-        if target_extension.len() > 0 {
-            target_extension = target_extension.trim_start_matches('.');
-        }
+        // TODO! extensions are ignored at the moment
+        let (target_name, target_extension) = name.split_at(separator);
 
         let entry_result = if adjusted_parent_ino == 0 {
             block_on(
                 sqlx::query_as::<_, StorageEntry>(
-                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL AND name = $2 AND extension = $3",
+                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL AND name = $2",
                 )
                 .bind(self.endpoint_id)
                 .bind(target_name)
-                .bind(target_extension)
                 .fetch_one(&self.db_pool),
             )
         } else {
             block_on(
                 sqlx::query_as::<_, StorageEntry>(
-                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND name = $3 AND extension = $4",
+                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND name = $3",
                 )
                 .bind(self.endpoint_id)
                 .bind(adjusted_parent_ino)
                 .bind(target_name)
-                .bind(target_extension)
                 .fetch_one(&self.db_pool),
             )
         };
