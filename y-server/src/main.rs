@@ -95,7 +95,8 @@ async fn main() -> std::io::Result<()> {
     // Initialize the logger
     CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Info,
+            // LevelFilter::Info,
+            LevelFilter::Debug,
             Config::default(),
             TerminalMode::Mixed,
             ColorChoice::Auto,
@@ -114,6 +115,7 @@ async fn main() -> std::io::Result<()> {
     let fs = vfs_mount(
         1,
         "/mnt/test",
+        // TODO! do not pool.clone() !!!
         pool.clone(),
         (get_current_uid(), get_current_gid()),
     );
@@ -153,6 +155,7 @@ async fn main() -> std::io::Result<()> {
     // Start up the job scheduler
     info!("Setting up the job scheduler");
 
+    // TODO! do not pool.clone() !!!
     let jobs_database_pool = pool.clone();
     setup_job_scheduler(jobs_database_pool);
 
@@ -161,6 +164,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            // TODO! do not pool.clone() !!!
             .app_data(web::Data::new(pool.clone()))
             .service(
                 web::scope("/api/auth")
@@ -226,7 +230,10 @@ async fn main() -> std::io::Result<()> {
     .run()
     .and_then(|_| async {
         info!("Server stopped");
+
+        info!("Unmounting virtual file system");
         fs.join();
+
         Ok(())
     })
     .await
