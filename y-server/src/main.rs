@@ -25,7 +25,7 @@ use std::{env, fs};
 use std::{str::FromStr, time::Duration};
 use users::{get_current_gid, get_current_uid};
 use util::RequestPool;
-use vfs::vfs_main;
+use vfs::vfs_mount;
 
 async fn process_cli_arguments(pool: &RequestPool) {
     let cli_arguments: Vec<String> = env::args().collect();
@@ -111,9 +111,12 @@ async fn main() -> std::io::Result<()> {
     // Connect to the database
     let pool = db::connect().await;
 
-    // TODO! tests without endoint_id. This will not work if there are multiple endpoints set up
-    // TODO Make sure to pass the endpoint_id to the vfs_main function in the future
-    let fs = vfs_main(pool.clone(), get_current_uid(), get_current_gid());
+    let fs = vfs_mount(
+        1,
+        "/mnt/test",
+        pool.clone(),
+        (get_current_uid(), get_current_gid()),
+    );
 
     // Process command line arguments. We might want to do something and terminate
     process_cli_arguments(&pool).await;

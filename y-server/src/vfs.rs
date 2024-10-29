@@ -4,8 +4,6 @@ use fuser::{
 };
 use futures::executor::block_on;
 use libc::ENOENT;
-use log::info;
-use std::env;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
@@ -17,13 +15,15 @@ use crate::util::RequestPool;
 const TTL: Duration = Duration::from_secs(60 * 60); // 1 hour
 const PERM: u16 = 0o0444;
 
-struct HelloFS {
+struct YFS {
+    endpoint_id: i32,
+    db_pool: RequestPool,
+
     uid: u32,
     gid: u32,
-    db_pool: RequestPool,
 }
 
-impl Filesystem for HelloFS {
+impl Filesystem for YFS {
     fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
         #[derive(sqlx::FromRow, Debug)]
         struct StorageEntry {
@@ -47,16 +47,18 @@ impl Filesystem for HelloFS {
         let entry_result = if adjusted_parent_ino == 0 {
             block_on(
                 sqlx::query_as::<_, StorageEntry>(
-                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE parent_folder IS NULL AND name = $1",
+                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL AND name = $2",
                 )
+                .bind(self.endpoint_id)
                 .bind(target_name)
                 .fetch_one(&self.db_pool),
             )
         } else {
             block_on(
                 sqlx::query_as::<_, StorageEntry>(
-                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE parent_folder = $1 AND name = $2",
+                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND name = $3",
                 )
+                .bind(self.endpoint_id)
                 .bind(adjusted_parent_ino)
                 .bind(target_name)
                 .fetch_one(&self.db_pool),
@@ -142,8 +144,9 @@ impl Filesystem for HelloFS {
 
             let entry_result = block_on(
                 sqlx::query_as::<_, StorageEntry>(
-                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE id = $1",
+                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND id = $2",
                 )
+                .bind(self.endpoint_id)
                 .bind(adjusted_ino)
                 .fetch_one(&self.db_pool),
             );
@@ -211,8 +214,9 @@ impl Filesystem for HelloFS {
 
         let entry_result = block_on(
             sqlx::query_as::<_, StorageEntry>(
-                "SELECT storage_entries.filesystem_id, storage_endpoints.base_path FROM storage_entries RIGHT OUTER JOIN storage_endpoints ON storage_entries.endpoint_id = storage_endpoints.id WHERE storage_entries.id = $1",
+                "SELECT storage_entries.filesystem_id, storage_endpoints.base_path FROM storage_entries RIGHT OUTER JOIN storage_endpoints ON storage_entries.endpoint_id = storage_endpoints.id WHERE storage_entries.endpoint_id = $1 AND storage_entries.id = $2",
             )
+            .bind(self.endpoint_id)
             .bind(adjusted_ino)
             .fetch_one(&self.db_pool),
         );
@@ -279,16 +283,18 @@ impl Filesystem for HelloFS {
         let entries_result: Vec<StorageEntry> = if adjusted_ino == 0 {
             block_on(
                 sqlx::query_as::<_, StorageEntry>(
-                    "SELECT id, name, extension, entry_type::TEXT FROM storage_entries WHERE parent_folder IS NULL",
+                    "SELECT id, name, extension, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL",
                 )
+                .bind(self.endpoint_id)
                 .fetch_all(&self.db_pool),
             )
             .unwrap_or(vec![])
         } else {
             block_on(
                 sqlx::query_as::<_, StorageEntry>(
-                    "SELECT id, name, extension, entry_type::TEXT FROM storage_entries WHERE parent_folder = $1",
+                    "SELECT id, name, extension, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2",
                 )
+                .bind(self.endpoint_id)
                 .bind(adjusted_ino)
                 .fetch_all(&self.db_pool),
             )
@@ -303,8 +309,9 @@ impl Filesystem for HelloFS {
         if adjusted_ino != 0 {
             let parent_result = block_on(
                 sqlx::query_scalar::<_, Option<i64>>(
-                    "SELECT parent_folder FROM storage_entries WHERE id = $1",
+                    "SELECT parent_folder FROM storage_entries WHERE endpoint_id = $1 AND id = $2",
                 )
+                .bind(self.endpoint_id)
                 .bind(adjusted_ino)
                 .fetch_one(&self.db_pool),
             );
@@ -346,15 +353,33 @@ impl Filesystem for HelloFS {
     }
 }
 
-pub fn vfs_main(db_pool: RequestPool, uid: u32, gid: u32) -> BackgroundSession {
-    let mountpoint = env::var("MOUNTPOINT").unwrap_or("/mnt/test".to_string());
+pub fn vfs_mount(
+    endpoint_id: i32,
+    mountpoint: &str,
+
+    db_pool: RequestPool,
+    executor: (u32, u32),
+) -> BackgroundSession {
     let options = vec![
-        MountOption::RO,
+        MountOption::RW,
         MountOption::NoAtime,
         MountOption::NoExec,
         // MountOption::AutoUnmount,
+        // MountOption::AllowRoot,
         MountOption::FSName("y".to_string()),
     ];
-    // options.push(MountOption::AllowRoot);
-    fuser::spawn_mount2(HelloFS { db_pool, uid, gid }, mountpoint, &options).unwrap()
+
+    let (uid, gid) = executor;
+
+    fuser::spawn_mount2(
+        YFS {
+            db_pool,
+            endpoint_id,
+            uid,
+            gid,
+        },
+        mountpoint,
+        &options,
+    )
+    .unwrap()
 }
