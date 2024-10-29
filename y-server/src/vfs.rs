@@ -24,6 +24,8 @@ struct YFS {
 }
 
 // TODO! most input parameters are currently ignored!
+// TODO we should figure out a better way of handling entry extensions, right now it's a bit of a headache
+// and not all cases are handled. It's not robust at all, edge cases will just break the fs.
 impl Filesystem for YFS {
     fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
         #[derive(sqlx::FromRow, Debug)]
@@ -35,29 +37,48 @@ impl Filesystem for YFS {
 
         let adjusted_parent_ino = parent as i64 - 1;
 
-        let name = name.to_string_lossy();
-        let separator = name.rfind('.').unwrap_or(name.len());
+        let full_name = name.to_string_lossy();
+        let name_separator = full_name.rfind('.').unwrap_or(full_name.len());
 
-        // TODO! extensions are ignored at the moment
-        let (target_name, target_extension) = name.split_at(separator);
+        let (target_name, mut target_extension) = full_name.split_at(name_separator);
+
+        if target_extension.len() > 0 {
+            target_extension = target_extension.trim_start_matches('.');
+        }
 
         let entry_result = if adjusted_parent_ino == 0 {
             block_on(
                 sqlx::query_as::<_, StorageEntry>(
-                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL AND name = $2",
+                    format!(
+                        "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL AND name = $2 AND extension {}",
+                        if target_extension.len() > 0 {
+                            "= $3"
+                        } else {
+                            "IS NULL"
+                        }
+                    ).as_str()
                 )
                 .bind(self.endpoint_id)
                 .bind(target_name)
+                .bind(target_extension)
                 .fetch_one(&self.db_pool),
             )
         } else {
             block_on(
                 sqlx::query_as::<_, StorageEntry>(
-                    "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND name = $3",
+                    format!(
+                        "SELECT id, name, extension, size_bytes, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND name = $3 AND extension {}",
+                        if target_extension.len() > 0 {
+                            "= $4"
+                        } else {
+                            "IS NULL"
+                        }
+                    ).as_str()
                 )
                 .bind(self.endpoint_id)
                 .bind(adjusted_parent_ino)
                 .bind(target_name)
+                .bind(target_extension)
                 .fetch_one(&self.db_pool),
             )
         };
@@ -438,21 +459,33 @@ impl Filesystem for YFS {
         // TODO! Won't work for root entries
         let rename_result = block_on(
             sqlx::query_scalar::<_, Option<i64>>(
-                "UPDATE storage_entries SET parent_folder = $1, name = $2, extension = $3 WHERE endpoint_id = $4 AND parent_folder = $5 AND name = $6 AND extension = $7 RETURNING id",
+                format!(
+                    "UPDATE storage_entries SET parent_folder = $1, name = $2, extension = $3 WHERE endpoint_id = $4 AND parent_folder = $5 AND name = $6 AND extension {} RETURNING id",
+                    if old_extension.len() > 0 {
+                        "= $7"
+                    } else {
+                        "IS NULL"
+                    }
+                ).as_str()
             )
             .bind(adjusted_newparent_ino)
             .bind(new_name)
-            .bind(new_extension)
+            .bind(if new_extension.len() > 0 { Some(new_extension) } else { None })
             .bind(self.endpoint_id)
             .bind(adjusted_parent_ino)
             .bind(old_name)
-            .bind(old_extension)
+            .bind(if old_extension.len() > 0 { Some(old_extension) } else { None })
             .fetch_one(&self.db_pool),
         );
 
         if rename_result.is_ok() {
             reply.ok();
         } else {
+            // TODO return error based on the actual error
+            // We might get an error if the new name already exists
+            // or if the old name does not exist!
+            // these are two different errors and they should be
+            // returned correctly
             reply.error(EEXIST);
         }
     }
