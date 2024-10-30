@@ -1,3 +1,4 @@
+use std::fs;
 use std::{
     collections::HashMap, env, fs::remove_file, path::Path, process::Command, time::Instant,
 };
@@ -596,6 +597,10 @@ pub async fn delete_entries(
                 .join(file_filesystem_id)
                 .with_extension("webp");
 
+            let frames_path = Path::new(&endpoint_artifacts_path)
+                .join("thumbnails")
+                .join(file_filesystem_id);
+
             let preview_video_path = Path::new(&endpoint_artifacts_path)
                 .join("preview_videos")
                 .join(file_filesystem_id)
@@ -610,6 +615,19 @@ pub async fn delete_entries(
                         endpoint_id,
                         file_filesystem_id,
                         fs_remove_thumbnail_result.unwrap_err()
+                    );
+                }
+            }
+
+            if frames_path.exists() {
+                let fs_remove_frames_result = fs::remove_dir_all(frames_path);
+
+                if fs_remove_frames_result.is_err() {
+                    error!(
+                        "(storage entry -> delete entries) Could not remove video frames folder from the filesystem. endpoint_id = {}. filesystem_id = {}. {}",
+                        endpoint_id,
+                        file_filesystem_id,
+                        fs_remove_frames_result.unwrap_err()
                     );
                 }
             }
@@ -735,39 +753,107 @@ pub fn generate_image_entry_thumbnail(
     }
 }
 
-pub fn generate_video_entry_thumbnail(
+pub fn generate_video_entry_thumbnails(
     filesystem_id: &str,
     endpoint_path: &str,
     endpoint_artifacts_path: &str,
 ) -> Result<(), String> {
+    // TODO this function is exceptionally ugly
+
     let ffmpeg_bin_path = env::var("FFMPEG_BIN");
+    let ffprobe_bin_path = env::var("FFPROBE_BIN");
 
-    if let Ok(ffmpeg_bin_path) = &ffmpeg_bin_path {
-        let ffmpeg_bin_path = Path::new(&ffmpeg_bin_path);
+    if !ffmpeg_bin_path.is_ok() || !ffprobe_bin_path.is_ok() {
+        return Ok(());
+    }
 
-        if ffmpeg_bin_path.exists() {
-            let file_path = Path::new(endpoint_path).join(&filesystem_id);
-            let endpoint_thumbnails_path = Path::new(endpoint_artifacts_path).join("thumbnails");
+    let ffmpeg_bin_path = ffmpeg_bin_path.unwrap();
+    let ffprobe_bin_path = ffprobe_bin_path.unwrap();
 
-            let ffmpeg_result = Command::new(ffmpeg_bin_path)
-                .arg("-ss")
-                .arg("00:00:01")
+    let ffmpeg_bin_path = Path::new(&ffmpeg_bin_path);
+    let ffprobe_bin_path = Path::new(&ffprobe_bin_path);
+
+    if ffmpeg_bin_path.exists() && ffprobe_bin_path.exists() {
+        let file_path = Path::new(endpoint_path).join(&filesystem_id);
+        let endpoint_thumbnails_path = Path::new(endpoint_artifacts_path).join("thumbnails");
+        let file_path_string = file_path.to_str().unwrap();
+
+        let thumbnail_result = Command::new(ffmpeg_bin_path)
+            .arg("-ss")
+            .arg("00:00:01")
+            .arg("-i")
+            .arg(file_path.to_str().unwrap())
+            .arg("-frames:v")
+            .arg("1")
+            .arg("-c:v")
+            .arg("libwebp")
+            .arg(
+                endpoint_thumbnails_path
+                    .join(&filesystem_id)
+                    .with_extension("webp")
+                    .to_str()
+                    .unwrap(),
+            )
+            .output();
+
+        if !thumbnail_result.is_ok() {
+            return Err("Could not generate a thumbnail for a video storage entry".to_string());
+        }
+
+        let frames_count_result = Command::new(ffprobe_bin_path)
+            .arg("-v")
+            .arg("error")
+            .arg("-select_streams")
+            .arg("v:0")
+            .arg("-count_packets")
+            .arg("-show_entries")
+            .arg("stream=nb_read_packets")
+            .arg("-of")
+            .arg("csv=p=0")
+            .arg(file_path_string)
+            .output();
+
+        if let Ok(frames_count_result) = frames_count_result {
+            let frames_count_output = String::from_utf8(frames_count_result.stdout);
+
+            if !frames_count_output.is_ok() {
+                return Err("Could not get the number of frames from a video file".to_string());
+            }
+
+            let frames_count = frames_count_output.unwrap().trim().parse::<i32>();
+
+            if frames_count.is_err() {
+                return Err("Could not get the number of frames from a video file".to_string());
+            }
+
+            let frames_count = frames_count.unwrap();
+            let desired_frames = 10;
+
+            let frames_dir_path = &endpoint_thumbnails_path.join(&filesystem_id);
+            fs::create_dir(frames_dir_path).unwrap();
+
+            let frames_result = Command::new(ffmpeg_bin_path)
                 .arg("-i")
-                .arg(file_path.to_str().unwrap())
-                .arg("-frames:v")
-                .arg("1")
+                .arg(file_path_string)
+                .arg("-vf")
+                .arg(format!(
+                    "select='not(mod(n, {}))",
+                    frames_count / desired_frames
+                ))
+                .arg("-vsync")
+                .arg("vfr")
                 .arg("-c:v")
                 .arg("libwebp")
                 .arg(
-                    endpoint_thumbnails_path
-                        .join(&filesystem_id)
+                    frames_dir_path
+                        .join("frame:%02d")
                         .with_extension("webp")
                         .to_str()
                         .unwrap(),
                 )
                 .output();
 
-            if let Ok(ffmpeg_result) = ffmpeg_result {
+            if let Ok(ffmpeg_result) = frames_result {
                 if ffmpeg_result.status.success() {
                     Ok(())
                 } else {
@@ -777,10 +863,10 @@ pub fn generate_video_entry_thumbnail(
                 Err("Could not execute the ffmpeg command".to_string())
             }
         } else {
-            Err("Could not find the ffmpeg binary".to_string())
+            return Err("Could not get the number of frames from a video file".to_string());
         }
     } else {
-        Ok(())
+        Err("Could not find ffmpeg and ffprobe binaries".to_string())
     }
 }
 
@@ -824,7 +910,7 @@ pub fn generate_browser_friendly_video(
                     .arg("-c:v")
                     .arg("h264_nvenc")
                     .arg("-b:v")
-                    .arg("2M")
+                    .arg("600k")
                     .arg("-b:a")
                     .arg("192k")
                     .arg("-vf")
@@ -845,7 +931,7 @@ pub fn generate_browser_friendly_video(
                     .arg("-c:v")
                     .arg("libx264")
                     .arg("-b:v")
-                    .arg("2M")
+                    .arg("600k")
                     .arg("-b:a")
                     .arg("192k")
                     .arg("-vf")

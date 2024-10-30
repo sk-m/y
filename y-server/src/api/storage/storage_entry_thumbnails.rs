@@ -139,8 +139,12 @@ async fn storage_entry_thumbnails(
             for file_entry in file_entries {
                 let thumbnail_path = Path::new(endpoint_artifacts_path.as_str())
                     .join("thumbnails")
-                    .join(file_entry.filesystem_id)
+                    .join(&file_entry.filesystem_id)
                     .with_extension("webp");
+
+                let frames_path = Path::new(endpoint_artifacts_path.as_str())
+                    .join("thumbnails")
+                    .join(&file_entry.filesystem_id);
 
                 if thumbnail_path.exists() {
                     let thumbnail = fs::read(thumbnail_path);
@@ -149,6 +153,37 @@ async fn storage_entry_thumbnails(
                         let thumbnail_base64 = BASE64_STANDARD.encode(thumbnail.unwrap());
 
                         thumbnails.insert(file_entry.id.to_string(), thumbnail_base64);
+                    }
+                }
+
+                // TODO probably ok, but think about optimizing this
+                if frames_path.exists() {
+                    let frames = fs::read_dir(frames_path);
+
+                    if let Ok(frames) = frames {
+                        let mut i = 0;
+
+                        let mut sorted_frames = frames.collect::<Vec<_>>();
+
+                        sorted_frames.sort_by(|a, b| {
+                            let a = a.as_ref().unwrap().file_name();
+                            let b = b.as_ref().unwrap().file_name();
+
+                            a.cmp(&b)
+                        });
+
+                        for frame_path in sorted_frames {
+                            let frame_path = frame_path.unwrap().path();
+                            let frame = fs::read(frame_path);
+
+                            if frame.is_ok() {
+                                let frame_base64 = BASE64_STANDARD.encode(frame.unwrap());
+
+                                thumbnails.insert(format!("{}:{}", file_entry.id, i), frame_base64);
+
+                                i += 1;
+                            }
+                        }
                     }
                 }
             }

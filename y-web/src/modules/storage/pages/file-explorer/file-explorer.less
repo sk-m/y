@@ -152,9 +152,12 @@
         }
 
         > .items {
+          @item-width: 120px;
+          @thumb-height: calc(@item-width / 1.5);
+
           display: grid;
 
-          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(@item-width, 1fr));
 
           column-gap: 0.75em;
           row-gap: 0.75em;
@@ -207,6 +210,12 @@
               > .item-select-container {
                 opacity: 1;
                 pointer-events: all;
+              }
+            }
+
+            &:hover {
+              > .item-thumb > .frame-indicators {
+                opacity: 1;
               }
             }
 
@@ -340,7 +349,7 @@
               z-index: 0;
 
               width: 100%;
-              height: 6em;
+              height: @thumb-height;
 
               border-top-right-radius: 8px;
               border-top-left-radius: 8px;
@@ -355,6 +364,86 @@
                 border-top-left-radius: inherit;
 
                 object-fit: cover;
+              }
+
+              > .frame {
+                position: absolute;
+                z-index: 2;
+
+                top: 0;
+                left: 0;
+
+                width: 100%;
+                height: calc(100% + 5px);
+
+                border-top-right-radius: inherit;
+                border-top-left-radius: inherit;
+
+                object-fit: cover;
+              }
+
+              > .frame-targets {
+                position: absolute;
+                z-index: 2;
+
+                display: flex;
+
+                top: 0;
+                left: 0;
+
+                width: 100%;
+                height: 100%;
+
+                > .target {
+                  z-index: 2;
+                  height: 100%;
+                  width: 100%;
+                }
+              }
+
+              > .frame-indicators {
+                position: absolute;
+                z-index: 3;
+
+                box-sizing: border-box;
+
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                gap: 0.25em;
+
+                bottom: 0;
+                left: 0;
+
+                width: 100%;
+
+                padding: 0.5em 0.75em;
+
+                pointer-events: none;
+
+                // default state
+                opacity: 0;
+
+                transition: 0.15s;
+
+                > .indicator {
+                  width: 0.5em;
+                  height: 0.5em;
+
+                  border-radius: 0.25em;
+
+                  backdrop-filter: blur(5px);
+                  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+
+                  transition: 0.15s;
+
+                  &.active {
+                    width: 2em;
+
+                    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+                  }
+                }
               }
 
               > .icon {

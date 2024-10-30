@@ -16,7 +16,7 @@ use std::time::Instant;
 use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
 use crate::storage_entry::{
     generate_audio_entry_cover_thumbnail, generate_browser_friendly_video,
-    generate_image_entry_thumbnail, generate_video_entry_thumbnail,
+    generate_image_entry_thumbnail, generate_video_entry_thumbnails,
 };
 use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
@@ -432,7 +432,7 @@ async fn storage_upload(
 
                             "video/mp4" | "video/webm" | "video/mov" | "video/avi"
                             | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
-                                let generate_thumbnail_result = generate_video_entry_thumbnail(
+                                let generate_thumbnail_result = generate_video_entry_thumbnails(
                                     &filesystem_id,
                                     &target_endpoint.base_path.as_str(),
                                     &target_endpoint_artifacts_path.as_str(),

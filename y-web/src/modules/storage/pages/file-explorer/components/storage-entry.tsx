@@ -1,6 +1,7 @@
 /* eslint-disable unicorn/consistent-function-scoping */
 import {
   Component,
+  For,
   Match,
   Show,
   Switch,
@@ -26,7 +27,7 @@ export type StorageEntryProps = {
   isSelected?: boolean
   isActive?: boolean
   isContextMenuTarget?: boolean
-  thumbnails?: Record<number, string>
+  thumbnails?: Record<string, string>
   isRenaming?: boolean
 
   onDblClick: (event: MouseEvent) => void
@@ -48,12 +49,33 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
   const [showNameFloaterOnHover, setShowNameFloaterOnHover] =
     createSignal(false)
 
+  const [currentFrame, setCurrentFrame] = createSignal<number | null>(null)
+
   // prettier-ignore
   const thumbnail = createMemo(() =>
     (props.entry.entry_type === "file"
       ? props.thumbnails?.[props.entry.id]
       : null)
   )
+
+  const frames = createMemo(() => {
+    if (props.entry.entry_type !== "file") return []
+
+    if (props.thumbnails?.[`${props.entry.id}:0`]) {
+      const framesArray: string[] = []
+
+      let index = 0
+
+      while (props.thumbnails[`${props.entry.id}:${index}`]) {
+        framesArray.push(props.thumbnails[`${props.entry.id}:${index}`]!)
+        index++
+      }
+
+      return framesArray
+    }
+
+    return []
+  })
 
   const fileMimeType = createMemo(() => props.entry.mime_type?.split("/") ?? [])
 
@@ -239,6 +261,37 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
             class="thumbnail"
             src={`data:image/jpeg;base64, ${thumbnail() ?? ""}`}
           />
+        </Show>
+        <Show when={frames().length > 0}>
+          <For each={frames()}>
+            {(frame, index) => (
+              <img
+                hidden={currentFrame() === null || index() !== currentFrame()}
+                draggable={false}
+                class="frame"
+                src={`data:image/jpeg;base64, ${frame}`}
+              />
+            )}
+          </For>
+          <div class="frame-targets" onMouseLeave={[setCurrentFrame, null]}>
+            <For each={frames()}>
+              {(_, index) => (
+                <div class="target" onMouseEnter={[setCurrentFrame, index]} />
+              )}
+            </For>
+          </div>
+          <div class="frame-indicators">
+            <For each={frames()}>
+              {(_, index) => (
+                <div
+                  classList={{
+                    indicator: true,
+                    active: index() === currentFrame(),
+                  }}
+                />
+              )}
+            </For>
+          </div>
         </Show>
       </div>
       <div
