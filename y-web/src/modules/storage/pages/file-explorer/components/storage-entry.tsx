@@ -16,11 +16,17 @@ import { isDev } from "solid-js/web"
 
 import { Checkbox } from "@/app/components/common/checkbox/checkbox"
 import { Icon } from "@/app/components/common/icon/icon"
+import { isFirefox } from "@/app/core/utils"
 import { SelectedEntry } from "@/modules/storage/file-explorer/use-file-explorer"
 import { IStorageEntry } from "@/modules/storage/storage-entry/storage-entry.codecs"
 
+import { StorageEntryDragletProps } from "./storage-entry-draglet"
+
 export type StorageEntryProps = {
   ref?: (ref: HTMLDivElement) => void
+
+  dragletRef: HTMLDivElement
+  dragletState: StorageEntryDragletProps["state"]
 
   entry: IStorageEntry
 
@@ -82,14 +88,35 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
   const onDragStart = (event: DragEvent) => {
     setIsDragging(true)
 
+    if (!isFirefox) {
+      const draggable = document.createElement("div")
+      event.dataTransfer?.setDragImage(draggable, 0, 0)
+
+      props.dragletState.entry = props.entry
+
+      props.dragletRef.style.display = "flex"
+      props.dragletRef.style.top = `${event.clientY}px`
+      props.dragletRef.style.left = `${event.clientX}px`
+    }
+
     event.dataTransfer?.setData(
       "text/plain",
       `${props.entry.entry_type}:${props.entry.id}`
     )
   }
 
+  const onDrag = (event: DragEvent) => {
+    props.dragletRef.style.top = `${event.clientY}px`
+    props.dragletRef.style.left = `${event.clientX}px`
+  }
+
   const onDragEnd = () => {
     setIsDragging(false)
+
+    if (!isFirefox) {
+      props.dragletState.entry = null
+      props.dragletRef.style.display = "none"
+    }
   }
 
   const onDragOver = (event: DragEvent) => {
@@ -178,6 +205,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       ref={props.ref}
       draggable={true}
       onDragStart={onDragStart}
+      onDrag={isFirefox ? void 0 : onDrag}
       onDragEnd={onDragEnd}
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}

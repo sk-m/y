@@ -1,0 +1,41 @@
+@import "@/variables.less";
+
+.storage-entry-draglet {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  margin-left: 0.5em;
+  margin-top: 0.5em;
+
+  display: none;
+
+  padding: 0.5em 1em;
+
+  color: white;
+
+  background-color: var(--color-primary);
+  border-radius: @border-radius-primary;
+
+  pointer-events: none;
+
+  > .entry-name {
+    display: flex;
+    align-items: center;
+
+    gap: 1em;
+
+    > .icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    > .name {
+      font-family: "Inter", sans-serif;
+      font-size: var(--text-sm);
+      font-weight: 500;
+    }
+  }
+}

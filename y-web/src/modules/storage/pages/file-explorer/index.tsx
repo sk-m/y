@@ -17,6 +17,7 @@ import {
   onCleanup,
   onMount,
 } from "solid-js"
+import { createMutable } from "solid-js/store"
 
 import { useParams, useSearchParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
@@ -66,6 +67,7 @@ import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerSelectionInfo } from "./components/file-explorer-selection-info"
 import { NewFolderEntry } from "./components/new-folder-entry"
 import { StorageEntry } from "./components/storage-entry"
+import { StorageEntryDraglet } from "./components/storage-entry-draglet"
 import "./file-explorer.less"
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -95,6 +97,7 @@ const FileExplorerPage: Component = () => {
   const entryRefs: HTMLDivElement[] = []
   let uploadFilesInputRef: HTMLInputElement
   let uploadFoldersInputRef: HTMLInputElement
+  let dragletRef: HTMLDivElement
 
   // prettier-ignore
   const folderId = createMemo(() =>
@@ -174,6 +177,8 @@ const FileExplorerPage: Component = () => {
     close: closeSelectionContextMenu,
     contextMenuProps: selectionContextMenuProps,
   } = useContextMenu()
+
+  const dragletState = createMutable({ entry: null as IStorageEntry | null })
 
   const [entriesToDelete, setEntriesToDelete] = createSignal<{
     folderIds: number[]
@@ -744,6 +749,8 @@ const FileExplorerPage: Component = () => {
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
     >
+      <StorageEntryDraglet ref={dragletRef!} state={dragletState} />
+
       <input
         hidden
         name="upload-files"
@@ -1230,7 +1237,11 @@ const FileExplorerPage: Component = () => {
                     <StorageEntry
                       ref={(entryRef: HTMLDivElement) => {
                         entryRefs[index()] = entryRef
+
+                        return entryRef
                       }}
+                      dragletRef={dragletRef}
+                      dragletState={dragletState}
                       isRenaming={isRenaming()}
                       entry={entry}
                       isSelected={selected()}
