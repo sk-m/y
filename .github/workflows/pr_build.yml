@@ -16,7 +16,7 @@ jobs:
     - name: Build server
       run: |
         cd y-server
-        cargo build --release --verbose
+        cargo build --release
 
   build_web:
     runs-on: self-hosted
