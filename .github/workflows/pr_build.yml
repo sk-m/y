@@ -16,14 +16,14 @@ jobs:
     - name: Build server
       run: |
         cd y-server
-        cargo build --verbose
+        cargo build --release --verbose
 
   build_web:
     runs-on: self-hosted
 
     strategy:
       matrix:
-        node-version: [20.x]
+        node-version: [18.x]
 
     steps:
     - uses: actions/checkout@v3
