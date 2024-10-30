@@ -192,11 +192,9 @@ export const FileExplorerMediaViewer: Component<
       <div id="file-explorer-media-viewer-container">
         <div class="top-container">
           <div class="left">
-            <div class="container-block">
-              <button class="button" onClick={() => props.onDelete(false)}>
-                <Icon name="delete" wght={500} size={20} />
-              </button>
-            </div>
+            <button class="action-button" onClick={() => props.onDelete(false)}>
+              <Icon name="delete" wght={500} size={20} />
+            </button>
           </div>
           <div class="middle">
             <div class="file-name">
@@ -205,16 +203,12 @@ export const FileExplorerMediaViewer: Component<
             </div>
           </div>
           <div class="right">
-            <div class="container-block">
-              <button class="button" onClick={props.onDownload}>
-                <Icon name="download" wght={500} size={20} />
-              </button>
-            </div>
-            <div class="container-block">
-              <button class="button" onClick={props.onClose}>
-                <Icon name="close" wght={500} size={20} />
-              </button>
-            </div>
+            <button class="action-button" onClick={props.onDownload}>
+              <Icon name="download" wght={500} size={20} />
+            </button>
+            <button class="action-button" onClick={props.onClose}>
+              <Icon name="close" wght={500} size={20} />
+            </button>
           </div>
         </div>
         <div class="main-container">
@@ -294,7 +288,7 @@ export const FileExplorerMediaViewer: Component<
             }}
           >
             <Show when={!isImage()}>
-              <div class="container-block">
+              <div class="action-button volume-slider-container">
                 <Stack direction="row" alignItems="center" spacing={"0.5em"}>
                   <Icon name="brand_awareness" wght={500} size={20} fill={1} />
 
