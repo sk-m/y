@@ -57,7 +57,7 @@ async fn update_storage_endpoint(
             .await;
 
         if result.is_err() {
-            return error("update_storage_endpoint.other");
+            return error("update_storage_endpoint.internal");
         }
     }
 
@@ -71,7 +71,7 @@ async fn update_storage_endpoint(
             .await;
 
         if result.is_err() {
-            return error("update_storage_endpoint.other");
+            return error("update_storage_endpoint.internal");
         }
     }
 
@@ -91,7 +91,7 @@ async fn update_storage_endpoint(
         .await;
 
         if result.is_err() {
-            return error("update_storage_endpoint.other");
+            return error("update_storage_endpoint.internal");
         }
     }
 
@@ -106,7 +106,7 @@ async fn update_storage_endpoint(
                 .await;
 
         if result.is_err() {
-            return error("update_storage_endpoint.other");
+            return error("update_storage_endpoint.internal");
         }
     }
 

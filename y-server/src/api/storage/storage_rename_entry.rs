@@ -30,7 +30,7 @@ async fn storage_rename_entry(
     let form = form.into_inner();
 
     if form.validate().is_err() {
-        return error("storage.rename.invalid_input");
+        return error("storage.invalid_input");
     }
 
     let client = get_user_from_request(&**pool, &req).await;
@@ -53,7 +53,7 @@ async fn storage_rename_entry(
     };
 
     if !action_allowed {
-        return error("storage.rename.unauthorized");
+        return error("storage.access_denied");
     }
 
     let endpoint_id = form.endpoint_id;
@@ -77,6 +77,6 @@ async fn storage_rename_entry(
 
             HttpResponse::Ok().body("{}")
         }
-        Err(_) => error("storage.rename.other"),
+        Err(err) => error(&err.get_code()),
     }
 }

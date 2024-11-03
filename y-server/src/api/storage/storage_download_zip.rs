@@ -1,4 +1,3 @@
-use log::*;
 use std::path::Path;
 
 use crate::request::error;
@@ -43,7 +42,7 @@ async fn storage_download_zip(
         .is_some();
 
     if !action_allowed {
-        return error("storage.download_zip.unauthorized");
+        return error("storage.access_denied");
     }
 
     let form = form.into_inner();
@@ -54,8 +53,9 @@ async fn storage_download_zip(
             .fetch_one(&**pool)
             .await;
 
+    // TODO also check if endpoint is disabled?
     if target_endpoint.is_err() {
-        return error("storage.download_zip.endpoint_not_found");
+        return error("storage.endpoint_not_found");
     }
 
     let target_endpoint_base_path = target_endpoint.unwrap();
@@ -106,7 +106,7 @@ async fn storage_download_zip(
                 let start_file_result = zip.start_file(file_path_str, zip_options);
 
                 if start_file_result.is_err() {
-                    return error("storage.download_zip.internal");
+                    return error("storage.internal");
                 }
 
                 // And write the actual file's contents to the zip archive in chunks
@@ -143,10 +143,8 @@ async fn storage_download_zip(
             return download_file.into_response(&req);
         }
 
-        Err(err) => {
-            error!("{}", err);
-
-            return error("storage.download_zip.internal");
+        Err(_) => {
+            return error("storage.internal");
         }
     }
 }

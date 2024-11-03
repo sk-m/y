@@ -82,20 +82,20 @@ async fn storage_entry_thumbnails(
     }
 
     if !action_allowed {
-        return error("storage.entry_thumbnails.unauthorized");
+        return error("storage.access_denied");
     }
 
     // TODO? cache endpoints?
     let endpoint = get_storage_endpoint(endpoint_id, &**pool).await;
 
     if endpoint.is_err() {
-        return error("storage.entry_thumbnails.endpoint_not_found");
+        return error("storage.endpoint_not_found");
     }
 
     let endpoint = endpoint.unwrap();
 
     if endpoint.artifacts_path.is_none() {
-        return error("storage.entry_thumbnails.artifacts_disabled");
+        return error("storage.endpoint_artifacts_disabled");
     }
 
     let endpoint_artifacts_path = endpoint.artifacts_path.unwrap();
@@ -199,9 +199,6 @@ async fn storage_entry_thumbnails(
 
             return res;
         }
-        Err(e) => {
-            error!("{:?}", e);
-            return error("storage.entry_thumbnails.internal");
-        }
+        Err(_) => error("storage.internal"),
     }
 }

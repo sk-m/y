@@ -22,6 +22,7 @@ pub enum WSSessionLocation {
     None,
 }
 
+#[allow(dead_code)]
 pub struct WSSession {
     pub user_id: Option<i32>,
     pub user_session_id: Option<i32>,

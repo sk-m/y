@@ -28,7 +28,7 @@ async fn delete_storage_location(
         .await;
 
     if delete_location_result.is_err() {
-        return error("delete_storage_location.other");
+        return error("delete_storage_location.internal");
     }
 
     HttpResponse::Ok().body("{}")

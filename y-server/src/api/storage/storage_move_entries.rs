@@ -75,7 +75,7 @@ async fn storage_move_entries(
     };
 
     if !move_allowed {
-        return error("storage.move.unauthorized");
+        return error("storage.access_denied");
     }
 
     let source_parent_folders = sqlx::query_scalar::<_, Option<i64>>(
@@ -106,6 +106,6 @@ async fn storage_move_entries(
 
             HttpResponse::Ok().body("{}")
         }
-        Err(_) => error("storage.move.other"),
+        Err(err) => error(&err.get_code()),
     }
 }

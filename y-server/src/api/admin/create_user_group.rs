@@ -57,6 +57,6 @@ async fn create_user_group(
         Ok(new_group_id) => {
             HttpResponse::Ok().json(web::Json(CreateUserGroupOutput { id: new_group_id }))
         }
-        Err(_) => error("create_user_group.other"),
+        Err(_) => error("create_user_group.internal"),
     };
 }

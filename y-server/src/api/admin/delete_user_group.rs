@@ -37,7 +37,7 @@ async fn delete_user_group(
     .await;
 
     if delete_group_result.is_err() {
-        return error("delete_user_group.other");
+        return error("delete_user_group.internal");
     } else {
         return HttpResponse::Ok().body("{}");
     }

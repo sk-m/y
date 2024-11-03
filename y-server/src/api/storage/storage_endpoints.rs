@@ -1,5 +1,4 @@
 use actix_web::{get, web, HttpResponse, Responder};
-use log::*;
 use serde::Serialize;
 use sqlx::prelude::FromRow;
 
@@ -31,10 +30,6 @@ async fn storage_endpoints(pool: web::Data<RequestPool>) -> impl Responder {
 
     match endpoints {
         Ok(endpoints) => HttpResponse::Ok().json(web::Json(StorageEndpointsOutput { endpoints })),
-        Err(err) => {
-            error!("{}", err);
-
-            return error("storage_endpoints.internal");
-        }
+        Err(_) => error("storage.internal"),
     }
 }

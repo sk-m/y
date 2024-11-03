@@ -14,6 +14,36 @@ use crate::{
 };
 use log::*;
 
+#[allow(dead_code)]
+#[derive(PartialEq)]
+pub enum StorageError {
+    AccessDenied,
+
+    NameConflict,
+    EndpointNotFound,
+    EndpointArtifactsDisabled,
+
+    ConvertError,
+
+    Internal,
+}
+
+impl StorageError {
+    pub fn get_code(&self) -> &'static str {
+        match self {
+            StorageError::AccessDenied => "storage.access_denied",
+
+            StorageError::NameConflict => "storage.name_conflict",
+            StorageError::EndpointNotFound => "storage.endpoint_not_found",
+            StorageError::EndpointArtifactsDisabled => "storage.endpoint_artifacts_disabled",
+
+            StorageError::ConvertError => "storage.convert_error",
+
+            StorageError::Internal => "storage.internal",
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, PartialEq)]
 pub enum StorageEntryType {
     #[serde(rename = "file")]
@@ -50,7 +80,7 @@ async fn traverse_folder(
     target_folder_id: i64,
     current_path: &String,
     pool: &RequestPool,
-) -> Result<(), sqlx::Error> {
+) -> Result<(), StorageError> {
     // TODO these two requests can probably be combined into one
 
     // Find folders inside of the target folder
@@ -90,8 +120,8 @@ async fn traverse_folder(
             }
         }
 
-        Err(err) => {
-            return Err(err);
+        Err(_) => {
+            return Err(StorageError::Internal);
         }
     }
 
@@ -115,7 +145,7 @@ async fn traverse_folder(
 
             Ok(())
         }
-        Err(err) => Err(err),
+        Err(_) => Err(StorageError::Internal),
     }
 }
 
@@ -126,7 +156,7 @@ async fn get_subfolders_level(
     filesystem_ids: &mut Vec<String>,
     target_folder_ids: Vec<i64>,
     pool: &RequestPool,
-) -> Result<(), String> {
+) -> Result<(), StorageError> {
     #[derive(FromRow)]
     struct EntryRow {
         id: i64,
@@ -174,7 +204,7 @@ async fn get_subfolders_level(
             return Ok(());
         }
         Err(_) => {
-            return Err("Could not query the database for the next level of folders".to_string());
+            return Err(StorageError::Internal);
         }
     }
 }
@@ -188,7 +218,7 @@ async fn get_subfolders_level_with_access_rules(
     access: (i32, &Vec<i32>),
     access_action: &str,
     pool: &RequestPool,
-) -> Result<(), String> {
+) -> Result<(), StorageError> {
     let (access_user_id, access_user_group_ids) = access;
 
     let next_level_entries =
@@ -275,7 +305,7 @@ async fn get_subfolders_level_with_access_rules(
                                     .values()
                                     .all(|x| x.0 == StorageAccessType::Deny))
                         {
-                            return Err("Access denied".to_string());
+                            return Err(StorageError::AccessDenied);
                         }
 
                         if target_entry.filesystem_id.is_some() {
@@ -306,14 +336,14 @@ async fn get_subfolders_level_with_access_rules(
                 .await;
 
                 if next_iteration.is_err() {
-                    return Err(next_iteration.unwrap_err());
+                    return next_iteration;
                 }
             }
 
             return Ok(());
         }
         Err(_) => {
-            return Err("Could not query the database for the next level of folders".to_string());
+            return Err(StorageError::Internal);
         }
     }
 }
@@ -334,7 +364,7 @@ pub async fn resolve_entries(
     target_folders: Vec<i64>,
     target_files: Vec<i64>,
     pool: &RequestPool,
-) -> Result<HashMap<String, String>, &str> {
+) -> Result<HashMap<String, String>, StorageError> {
     let current_path = String::new();
     let mut resolved_entries: HashMap<String, String> = HashMap::new();
 
@@ -351,7 +381,7 @@ pub async fn resolve_entries(
             .await;
 
             if result.is_err() {
-                return Err("Unable to traverse the folders tree");
+                return Err(result.unwrap_err());
             }
         }
     }
@@ -380,7 +410,7 @@ pub async fn resolve_entries(
             }
 
             Err(_) => {
-                return Err("Unable to retrieve requested target_files");
+                return Err(StorageError::Internal);
             }
         }
     }
@@ -407,14 +437,14 @@ pub async fn delete_entries(
     access: Option<(i32, &Vec<i32>)>,
 
     pool: &RequestPool,
-) -> Result<(usize, usize), String> {
+) -> Result<(usize, usize), StorageError> {
     let now = Instant::now();
 
     // Find the endpoint so we know where the files we find will be stored physically
     let target_endpoint = get_storage_endpoint(endpoint_id, pool).await;
 
     if target_endpoint.is_err() {
-        return Err("Could not get target endpoint".to_string());
+        return Err(StorageError::EndpointNotFound);
     }
 
     let target_endpoint = target_endpoint.unwrap();
@@ -477,7 +507,7 @@ pub async fn delete_entries(
     let transaction = pool.begin().await;
 
     if transaction.is_err() {
-        return Err("Could not start a transaction".to_string());
+        return Err(StorageError::Internal);
     }
 
     let mut transaction = transaction.unwrap();
@@ -498,7 +528,7 @@ pub async fn delete_entries(
             .await;
 
             if delete_folder_files_result.is_err() {
-                return Err("Could not delete files from the database".to_string());
+                return Err(StorageError::Internal);
             }
         } else {
             // if access is None, then we have previosly called `get_subfolders_level`, which
@@ -518,7 +548,7 @@ pub async fn delete_entries(
                     file_filesystem_ids.extend(delete_folder_files_result.into_iter());
                 }
                 Err(_) => {
-                    return Err("Could not delete files from the database".to_string());
+                    return Err(StorageError::Internal);
                 }
             }
         }
@@ -535,7 +565,7 @@ pub async fn delete_entries(
         .await;
 
         if delete_target_files_result.is_err() {
-            return Err("Could not delete files from the database".to_string());
+            return Err(StorageError::Internal);
         }
 
         // Populate the vector with files that were explicitly selected for deletion (not the
@@ -553,7 +583,7 @@ pub async fn delete_entries(
                 .await;
 
         if delete_folders_result.is_err() {
-            return Err("Could not delete folders from the database".to_string());
+            return Err(StorageError::Internal);
         }
     }
 
@@ -569,7 +599,7 @@ pub async fn delete_entries(
     let transaction_result = transaction.commit().await;
 
     if transaction_result.is_err() {
-        return Err("Could not commit the transaction".to_string());
+        return Err(StorageError::Internal);
     }
 
     // We have successfully deleted all the underlying files and folders from the database,
@@ -663,7 +693,7 @@ pub async fn move_entries(
     entry_ids: &Vec<i64>,
     target_folder_id: Option<i64>,
     pool: &RequestPool,
-) -> Result<(), String> {
+) -> Result<(), StorageError> {
     if entry_ids.len() == 0 {
         return Ok(());
     }
@@ -678,7 +708,7 @@ pub async fn move_entries(
     .await;
 
     if move_result.is_err() {
-        return Err("Could not move storage entries".to_string());
+        return Err(StorageError::NameConflict);
     }
 
     Ok(())
@@ -689,7 +719,7 @@ pub async fn rename_entry(
     entry_id: i64,
     new_name: &str,
     pool: &RequestPool,
-) -> Result<Option<i64>, String> {
+) -> Result<Option<i64>, StorageError> {
     let rename_result =
         sqlx::query_scalar::<_, Option<i64>>("UPDATE storage_entries SET name = $1 WHERE id = $2 AND endpoint_id = $3 RETURNING parent_folder")
             .bind(new_name)
@@ -700,7 +730,7 @@ pub async fn rename_entry(
 
     match rename_result {
         Ok(parent_folder) => Ok(parent_folder),
-        Err(_) => Err("Could not rename a storage entry".to_string()),
+        Err(_) => Err(StorageError::NameConflict),
     }
 }
 
@@ -708,7 +738,7 @@ pub fn generate_image_entry_thumbnail(
     filesystem_id: &str,
     endpoint_path: &str,
     endpoint_artifacts_path: &str,
-) -> Result<(), String> {
+) -> Result<(), StorageError> {
     let convert_bin_path = env::var("IMAGEMAGICK_BIN");
 
     if let Ok(convert_bin_path) = &convert_bin_path {
@@ -739,13 +769,13 @@ pub fn generate_image_entry_thumbnail(
                 if convert_result.status.success() {
                     Ok(())
                 } else {
-                    Err("Could not generate a thumbnail for an image storage entry".to_string())
+                    Err(StorageError::ConvertError)
                 }
             } else {
-                Err("Could not execute the convert command".to_string())
+                Err(StorageError::ConvertError)
             }
         } else {
-            Err("Could not find the convert binary".to_string())
+            Err(StorageError::Internal)
         }
     } else {
         Ok(())
@@ -756,7 +786,7 @@ pub fn generate_video_entry_thumbnails(
     filesystem_id: &str,
     endpoint_path: &str,
     endpoint_artifacts_path: &str,
-) -> Result<(), String> {
+) -> Result<(), StorageError> {
     // TODO this function is exceptionally ugly
 
     let ffmpeg_bin_path = env::var("FFMPEG_BIN");
@@ -796,7 +826,7 @@ pub fn generate_video_entry_thumbnails(
             .output();
 
         if !thumbnail_result.is_ok() {
-            return Err("Could not generate a thumbnail for a video storage entry".to_string());
+            return Err(StorageError::ConvertError);
         }
 
         let frames_count_result = Command::new(ffprobe_bin_path)
@@ -816,13 +846,13 @@ pub fn generate_video_entry_thumbnails(
             let frames_count_output = String::from_utf8(frames_count_result.stdout);
 
             if !frames_count_output.is_ok() {
-                return Err("Could not get the number of frames from a video file".to_string());
+                return Err(StorageError::ConvertError);
             }
 
             let frames_count = frames_count_output.unwrap().trim().parse::<i32>();
 
             if frames_count.is_err() {
-                return Err("Could not get the number of frames from a video file".to_string());
+                return Err(StorageError::ConvertError);
             }
 
             let frames_count = frames_count.unwrap();
@@ -856,16 +886,16 @@ pub fn generate_video_entry_thumbnails(
                 if ffmpeg_result.status.success() {
                     Ok(())
                 } else {
-                    Err("Could not generate a thumbnail for a video storage entry".to_string())
+                    Err(StorageError::ConvertError)
                 }
             } else {
-                Err("Could not execute the ffmpeg command".to_string())
+                Err(StorageError::ConvertError)
             }
         } else {
-            return Err("Could not get the number of frames from a video file".to_string());
+            return Err(StorageError::ConvertError);
         }
     } else {
-        Err("Could not find ffmpeg and ffprobe binaries".to_string())
+        Err(StorageError::Internal)
     }
 }
 
@@ -873,7 +903,7 @@ pub fn generate_browser_friendly_video(
     filesystem_id: &str,
     endpoint_path: &str,
     endpoint_artifacts_path: &str,
-) -> Result<(), String> {
+) -> Result<(), StorageError> {
     let ffmpeg_bin_path = env::var("FFMPEG_BIN");
     let ffmpeg_hwaccel_nvenc =
         env::var("FFMPEG_HWACCEL_NVENC").unwrap_or("false".to_string()) == "true";
@@ -890,7 +920,7 @@ pub fn generate_browser_friendly_video(
                 let create_dir_result = std::fs::create_dir(&endpoint_preview_videos_path);
 
                 if create_dir_result.is_err() {
-                    return Err("Could not create a directory for preview videos".to_string());
+                    return Err(StorageError::Internal);
                 }
             }
 
@@ -949,16 +979,13 @@ pub fn generate_browser_friendly_video(
                 if ffmpeg_result.status.success() {
                     Ok(())
                 } else {
-                    Err(
-                        "Could not generate a browser friendly video render for a storage entry"
-                            .to_string(),
-                    )
+                    Err(StorageError::ConvertError)
                 }
             } else {
-                Err("Could not execute the ffmpeg command".to_string())
+                Err(StorageError::ConvertError)
             }
         } else {
-            Err("Could not find the ffmpeg binary".to_string())
+            Err(StorageError::Internal)
         }
     } else {
         Ok(())
@@ -969,7 +996,7 @@ pub fn generate_audio_entry_cover_thumbnail(
     filesystem_id: &str,
     endpoint_path: &str,
     endpoint_artifacts_path: &str,
-) -> Result<(), String> {
+) -> Result<(), StorageError> {
     let ffmpeg_bin_path = env::var("FFMPEG_BIN");
 
     if let Ok(ffmpeg_bin_path) = &ffmpeg_bin_path {
@@ -998,16 +1025,13 @@ pub fn generate_audio_entry_cover_thumbnail(
                 if ffmpeg_result.status.success() {
                     Ok(())
                 } else {
-                    Err(
-                        "Could not generate a cover image thumbnail for an audio storage entry"
-                            .to_string(),
-                    )
+                    Err(StorageError::ConvertError)
                 }
             } else {
-                Err("Could not execute the ffmpeg command".to_string())
+                Err(StorageError::ConvertError)
             }
         } else {
-            Err("Could not find the ffmpeg binary".to_string())
+            Err(StorageError::Internal)
         }
     } else {
         Ok(())

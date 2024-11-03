@@ -2,7 +2,7 @@ use actix_web::{get, web, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
 
 use crate::{
-    request::{Error, Response},
+    request::{Response, ResponseError},
     user::{get_client_rights, get_user_from_request, UserRight},
     util::RequestPool,
 };
@@ -27,7 +27,7 @@ async fn me(pool: web::Data<RequestPool>, req: HttpRequest) -> impl Responder {
         }))
     } else {
         HttpResponse::Unauthorized().json(Response {
-            error: Error {
+            error: ResponseError {
                 code: "auth.unauthorized".to_string(),
             },
         })

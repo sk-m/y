@@ -106,7 +106,7 @@ async fn update_user_group_membership(
                 .await;
 
         if unassign_groups_result.is_err() {
-            return error("update_user_group_membership.other");
+            return error("update_user_group_membership.internal");
         }
 
         let mut groups_query_builder =
@@ -123,7 +123,7 @@ async fn update_user_group_membership(
                 .await;
 
             if assign_groups_result.is_err() {
-                return error("update_user_group_membership.other");
+                return error("update_user_group_membership.internal");
             }
         }
 
@@ -133,9 +133,9 @@ async fn update_user_group_membership(
             Ok(_) => {
                 return HttpResponse::Ok().body("{}");
             }
-            Err(_) => return error("update_user_group_membership.other"),
+            Err(_) => return error("update_user_group_membership.internal"),
         }
     } else {
-        return error("update_user_group_membership.other");
+        return error("update_user_group_membership.internal");
     }
 }

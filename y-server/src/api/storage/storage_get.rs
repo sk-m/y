@@ -1,5 +1,4 @@
 use actix_web::http::header::{self, HeaderValue};
-use log::*;
 use std::path::Path;
 
 use actix_web::{get, web, Responder};
@@ -59,7 +58,7 @@ async fn storage_get(
     };
 
     if !action_allowed {
-        return error("storage.get.unauthorized");
+        return error("storage.access_denied");
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
@@ -129,10 +128,6 @@ async fn storage_get(
             return res;
         }
 
-        Err(err) => {
-            error!("{}", err);
-
-            return error("storage.get.internal");
-        }
+        Err(_) => error("storage.internal"),
     }
 }

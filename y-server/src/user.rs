@@ -8,6 +8,12 @@ use crate::user_group::UserGroup;
 use crate::util::RequestPool;
 use log::*;
 
+pub enum UserError {
+    GroupNotFound,
+
+    Internal,
+}
+
 #[derive(sqlx::FromRow)]
 pub struct User {
     pub id: i32,

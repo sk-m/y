@@ -53,6 +53,6 @@ async fn create_storage_location(
         Ok(new_location_id) => HttpResponse::Ok().json(web::Json(CreateStorageLocationOutput {
             id: new_location_id,
         })),
-        Err(_) => error("create_storage_location.other"),
+        Err(_) => error("create_storage_location.internal"),
     };
 }

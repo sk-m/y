@@ -1,4 +1,3 @@
-use log::*;
 use std::path::Path;
 
 use actix_web::http::header::{ContentDisposition, DispositionParam, DispositionType};
@@ -60,7 +59,7 @@ async fn storage_download(
     };
 
     if !action_allowed {
-        return error("storage.download.unauthorized");
+        return error("storage.access_denied");
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
@@ -103,10 +102,6 @@ async fn storage_download(
             return file.into_response(&req);
         }
 
-        Err(err) => {
-            error!("{}", err);
-
-            return error("storage.download.internal");
-        }
+        Err(_) => error("storage.internal"),
     }
 }

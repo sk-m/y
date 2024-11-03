@@ -116,7 +116,7 @@ async fn storage_upload(
     }
 
     if !action_allowed {
-        return sink_and_error("storage.upload.unauthorized", &mut payload).await;
+        return sink_and_error("storage.access_denied", &mut payload).await;
     }
 
     // Get the target endpoint's base path, so we know where to save the files
@@ -125,13 +125,13 @@ async fn storage_upload(
     let target_endpoint = get_storage_endpoint(endpoint_id, &pool).await;
 
     if target_endpoint.is_err() {
-        return sink_and_error("storage.upload.endpoint_not_found", &mut payload).await;
+        return sink_and_error("storage.endpoint_not_found", &mut payload).await;
     }
 
     let target_endpoint = target_endpoint.unwrap();
 
     if target_endpoint.status != "active" {
-        return sink_and_error("storage.upload.endpoint_not_active", &mut payload).await;
+        return sink_and_error("storage.endpoint_not_active", &mut payload).await;
     }
 
     let target_endpoint_base_path = Path::new(&target_endpoint.base_path);
@@ -290,7 +290,7 @@ async fn storage_upload(
                                         }
                                         Err(_) => {
                                             return sink_and_error(
-                                                "storage.upload.internal",
+                                                "storage.internal",
                                                 &mut payload,
                                             )
                                             .await;
@@ -331,19 +331,14 @@ async fn storage_upload(
                             let res = file.write(&chunk);
 
                             if res.is_err() {
-                                error!("{}", res.unwrap_err());
-
                                 fs::remove_file(&path).unwrap_or(());
 
-                                return sink_and_error("storage.upload.internal", &mut payload)
-                                    .await;
+                                return sink_and_error("storage.internal", &mut payload).await;
                             }
                         } else {
-                            error!("{}", chunk.unwrap_err());
-
                             fs::remove_file(&path).unwrap_or(());
 
-                            return sink_and_error("storage.upload.internal", &mut payload).await;
+                            return sink_and_error("storage.internal", &mut payload).await;
                         }
                     }
 
@@ -391,7 +386,7 @@ async fn storage_upload(
                 return sink_and_error("storage.upload.no_filename", &mut payload).await;
             }
         } else {
-            return sink_and_error("storage.upload.internal", &mut payload).await;
+            return sink_and_error("storage.internal", &mut payload).await;
         }
     }
 
@@ -426,8 +421,8 @@ async fn storage_upload(
 
                                     if generate_thumbnail_result.is_err() {
                                         error!(
-                                            "Failed to create a thumbnail for an uploaded image file. {}",
-                                            generate_thumbnail_result.unwrap_err()
+                                            "Failed to create a thumbnail for an uploaded image file ({})",
+                                            &filesystem_id
                                         );
                                     }
                                 }
@@ -443,8 +438,8 @@ async fn storage_upload(
 
                                 if generate_thumbnail_result.is_err() {
                                     error!(
-                                        "Failed to create a thumbnail for an uploaded video file. {}",
-                                        generate_thumbnail_result.unwrap_err()
+                                        "Failed to create a thumbnail for an uploaded video file ({})",
+                                        &filesystem_id
                                     );
                                 }
                             }
@@ -459,8 +454,8 @@ async fn storage_upload(
 
                                 if generate_thumbnail_result.is_err() {
                                     error!(
-                                        "Failed to create a cover image thumbnail for an uploaded audio file. {}",
-                                        generate_thumbnail_result.unwrap_err()
+                                        "Failed to create a cover image thumbnail for an uploaded audio file ({})",
+                                        &filesystem_id
                                     );
                                 }
                             }
@@ -491,8 +486,8 @@ async fn storage_upload(
 
                                 if generate_preview_result.is_err() {
                                     error!(
-                                        "Failed to create a browser friendly preview for an uploaded video file. {}",
-                                        generate_preview_result.unwrap_err()
+                                        "Failed to create a browser friendly preview for an uploaded video file ({})",
+                                        &filesystem_id,
                                     );
                                 }
                             }

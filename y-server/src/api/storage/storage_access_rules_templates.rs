@@ -65,7 +65,7 @@ async fn storage_access_rules_templates(
             }));
         }
         Err(_) => {
-            return error("storage_access_rules_templates.internal");
+            return error("storage.internal");
         }
     }
 }

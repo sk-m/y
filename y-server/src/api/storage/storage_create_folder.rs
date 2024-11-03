@@ -1,5 +1,4 @@
 use actix_web::{post, web, HttpResponse, Responder};
-use log::*;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -34,7 +33,7 @@ async fn storage_create_folder(
     let form = form.into_inner();
 
     if form.validate().is_err() {
-        return error("storage.create_folder.invalid_input");
+        return error("storage.invalid_input");
     }
 
     let is_root = form.target_folder.is_none();
@@ -60,18 +59,18 @@ async fn storage_create_folder(
         };
 
         if !action_allowed {
-            return error("storage.create_folder.unauthorized");
+            return error("storage.access_denied");
         }
     }
 
     let target_endpoint = get_storage_endpoint(form.endpoint_id, &pool).await;
 
     if target_endpoint.is_err() {
-        return error("storage.create_folder.endpoint_not_found");
+        return error("storage.endpoint_not_found");
     }
 
     if target_endpoint.unwrap().status != "active" {
-        return error("storage.create_folder.endpoint_not_active");
+        return error("storage.endpoint_not_active");
     }
 
     let new_folder_id = if is_root {
@@ -97,9 +96,6 @@ async fn storage_create_folder(
         Ok(new_folder_id) => {
             HttpResponse::Ok().json(web::Json(StorageCreateFolderOutput { new_folder_id }))
         }
-        Err(err) => {
-            error!("{}", err);
-            return error("storage.create_folder.internal");
-        }
+        Err(_) => error("storage.internal"),
     }
 }

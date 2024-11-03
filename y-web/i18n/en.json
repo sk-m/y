@@ -131,42 +131,42 @@
     "code": {
       "auth": {
         "passwords_do_not_match": "Incorrect password",
-        "other": "Other",
+        "internal": "Internal",
         "authentication_forbidden": "Authentication forbidden",
         "user_does_not_exist": "User does not exist"
       },
       "create_user_group": {
         "invalid_input": "Invalid input",
         "unauthorized": "Permission denied",
-        "other": "Other"
+        "internal": "Internal"
       },
       "create_user": {
         "invalid_input": "Invalid input",
         "unauthorized": "Permission denied",
         "username_taken": "Username is already taken",
-        "other": "Other"
+        "internal": "Internal"
       },
       "delete_user_group": {
         "unauthorized": "Permission denied",
-        "other": "Other"
+        "internal": "Internal"
       },
       "delete_user": {
         "unauthorized": "Permission denied",
-        "other": "Other"
+        "internal": "Internal"
       },
       "update_password": {
         "unauthorized": "Permission denied",
         "user_not_found": "User not found",
-        "other": "Other"
+        "internal": "Internal"
       },
       "update_user_group_membership": {
         "unauthorized": "Permission denied",
-        "other": "Other"
+        "internal": "Internal"
       },
       "update_user_group": {
         "invalid_input": "Invalid input",
         "unauthorized": "Permission denied",
-        "other": "Other"
+        "internal": "Internal"
       },
       "user_group": {
         "not_found": "User group not found"
@@ -176,11 +176,11 @@
       },
       "features": {
         "unauthorized": "Permission denied",
-        "other": "Other"
+        "internal": "Internal"
       },
       "update_feature": {
         "unauthorized": "Permission denied",
-        "other": "Other"
+        "internal": "Internal"
       },
       "create_storage_endpoint": {
         "invalid_data": "Invalid data",
@@ -189,82 +189,39 @@
         "path_not_absolute": "Path must be an absolute path",
         "unauthorized": "Permission denied",
         "os_error": "OS error. Make sure the paths are correct and the server has access to the target directories",
-        "other": "Other"
-      },
-      "storage_endpoints": {
-        "unauthorized": "Permission denied",
-        "internal": "Other"
+        "internal": "Internal"
       },
       "storage_endpoint": {
         "unauthorized": "Permission denied",
-        "internal": "Other"
+        "internal": "Internal"
       },
       "update_storage_endpoint": {
         "invalid_input": "Invalid input",
         "unauthorized": "Permission denied",
-        "other": "Other",
+        "internal": "Internal",
         "invalid_status": "Invalid status"
       },
       "storage": {
+        "access_denined": "Access denied",
+        "invalid_input": "Invalid input",
+        "internal": "Internal error",
+
+        "name_conflict": "Name conflict",
+        "convert_error": "Convert error",
+
+        "endpoint_not_found": "Endpoint not found",
+        "endpoint_not_active": "Endpoint not active",
+        "endpoint_artifacts_disabled": "Endpoint artifacts disabled",
+
         "upload": {
-          "unauthorized": "Permission denied",
-          "internal": "Other",
-          "no_filename": "No filename provided",
-          "endpoint_not_found": "Target endpoint not found",
-          "endpoint_not_active": "Target endpoint is not active"
-        },
-        "create_folder": {
-          "invalid_input": "Invalid input",
-          "unauthorized": "Permission denied",
-          "internal": "Other",
-          "endpoint_not_found": "Target endpoint not found",
-          "endpoint_not_active": "Target endpoint is not active"
-        },
-        "delete_entries": {
-          "unauthorized": "Permission denied",
-          "internal": "Other",
-          "endpoint_not_found": "Target endpoint not found",
-          "endpoint_not_active": "Target endpoint is not active"
-        },
-        "download_zip": {
-          "unauthorized": "Permission denied",
-          "endpoint_not_found": "Target endpoint not found",
-          "internal": "Other"
-        },
-        "get_folder_path": {
-          "unauthorized": "Permission denied",
-          "internal": "Other"
-        },
-        "entries": {
-          "unauthorized": "Permission denied",
-          "internal": "Other"
-        },
-        "move": {
-          "unauthorized": "Permission denied",
-          "internal": "Other"
-        },
-        "rename": {
-          "invalid_input": "Invalid input",
-          "unauthorized": "Permission denied",
-          "internal": "Other"
+          "no_filename": "No filename provided"
         },
         "download": {
-          "unauthorized": "Permission denied",
-          "file_id_required": "file_id parameter is required",
-          "internal": "Other"
+          "file_id_required": "file_id parameter is required"
         },
         "entry_thumbnails": {
-          "unauthorized": "Permission denied",
-          "internal": "Other",
-          "endpoint_not_found": "Target endpoint not found",
-          "artifacts_disabled": "Artifacts are disabled for this endpoint",
           "invalid_file_ids_param": "Invalid entry_ids parameter",
           "too_many_entries_requested": "Too many entries requested"
-        },
-        "create_storage_access_rules": {
-          "unauthorized": "Permission denied",
-          "internal": "Other",
-          "invalid_input": "Invalid input"
         }
       }
     }

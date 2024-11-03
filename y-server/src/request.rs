@@ -15,18 +15,18 @@ pub struct TableInput {
 }
 
 #[derive(Serialize)]
-pub struct Error {
+pub struct ResponseError {
     pub code: String,
 }
 
 #[derive(Serialize)]
 pub struct Response {
-    pub error: Error,
+    pub error: ResponseError,
 }
 
 pub fn error(code: &str) -> HttpResponse {
     HttpResponse::BadRequest().json(web::Json(Response {
-        error: Error {
+        error: ResponseError {
             code: code.to_string(),
         },
     }))

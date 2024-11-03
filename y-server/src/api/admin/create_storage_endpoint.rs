@@ -98,7 +98,7 @@ async fn create_storage_endpoint(
                         id: new_endpoint_id,
                     }))
                 }
-                Err(_) => error("create_storage_endpoint.other"),
+                Err(_) => error("create_storage_endpoint.internal"),
             };
         }
         Err(_) => return error("create_storage_endpoint.os_error"),

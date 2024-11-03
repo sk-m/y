@@ -34,7 +34,7 @@ async fn delete_user(
         .await;
 
     if delete_users_result.is_err() {
-        return error("delete_user.other");
+        return error("delete_user.internal");
     } else {
         return HttpResponse::Ok().body("{}");
     }

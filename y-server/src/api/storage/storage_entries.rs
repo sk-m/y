@@ -1,6 +1,5 @@
 use actix_web::web::Query;
 use actix_web::{get, web, HttpResponse, Responder};
-use log::*;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
@@ -74,7 +73,7 @@ async fn storage_entries(
     }
 
     if !action_allowed {
-        return error("storage.entries.unauthorized");
+        return error("storage.access_denied");
     }
 
     let entries = if folder_id.is_some() {
@@ -99,9 +98,7 @@ async fn storage_entries(
     };
 
     if entries.is_err() {
-        error!("{:?}", entries.unwrap_err());
-
-        return error("storage.entries.internal");
+        return error("storage.internal");
     }
 
     HttpResponse::Ok().json(web::Json(StorageEntriesOutput {
