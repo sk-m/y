@@ -1,5 +1,6 @@
 use log::*;
 use std::fs;
+use std::sync::Mutex;
 use std::{collections::HashMap, fs::OpenOptions, path::Path};
 
 use actix_multipart::Multipart;
@@ -19,6 +20,7 @@ use crate::storage_entry::{
     generate_image_entry_thumbnail, generate_video_entry_thumbnails,
 };
 use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
+use crate::ws::WSState;
 use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
 
 const MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION: u64 = 50_000_000;
@@ -56,6 +58,7 @@ struct QueryParams {
 #[post("/upload")]
 async fn storage_upload(
     pool: web::Data<RequestPool>,
+    ws_state: web::Data<Mutex<WSState>>,
     query: Query<QueryParams>,
     mut payload: Multipart,
     req: actix_web::HttpRequest,
@@ -501,6 +504,20 @@ async fn storage_upload(
             }
         }
     });
+
+    // TODO don't block the request
+    let mut folders_to_update = path_ids_cache
+        .values()
+        .map(|v| Some(v.clone()))
+        .collect::<Vec<Option<i64>>>();
+
+    folders_to_update.push(target_folder_id);
+
+    ws_state
+        .lock()
+        .unwrap()
+        .send_storage_location_updated(client_user_id, endpoint_id, folders_to_update)
+        .await;
 
     HttpResponse::Ok().json(web::Json(StorageUploadOutput { skipped_files }))
 }

@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use actix_web::{delete, web, HttpResponse, Responder};
 use log::*;
 use serde::{Deserialize, Serialize};
@@ -9,6 +11,7 @@ use crate::{
     storage_entry::delete_entries,
     user::{get_user_from_request, get_user_groups},
     util::RequestPool,
+    ws::WSState,
 };
 
 #[derive(Deserialize)]
@@ -27,6 +30,7 @@ struct StorageDeleteEntriesOutput {
 #[delete("/entries")]
 async fn storage_delete_entries(
     pool: web::Data<RequestPool>,
+    ws_state: web::Data<Mutex<WSState>>,
     form: web::Json<StorageDeleteEntriesInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
@@ -39,7 +43,7 @@ async fn storage_delete_entries(
 
     // Perform a cascade up check for the target entries
     // Cascade down check will be performed inside the delete_entries function
-    if let Some((client_user, _)) = client {
+    if let Some((client_user, _)) = &client {
         let user_groups = get_user_groups(&**pool, client_user.id).await;
         let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
 
@@ -75,6 +79,14 @@ async fn storage_delete_entries(
             return error("storage.delete_entries.endpoint_not_active");
         }
 
+        let source_parent_folders = sqlx::query_scalar::<_, Option<i64>>(
+            "SELECT parent_folder FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2)",
+        )
+        .bind(endpoint_id)
+        .bind(&all_entries_ids)
+        .fetch_all(&**pool)
+        .await;
+
         // TODO make sure that folderids are actually folders and fileids are actually files
         let result = delete_entries(
             endpoint_id,
@@ -87,6 +99,19 @@ async fn storage_delete_entries(
 
         match result {
             Ok((deleted_files, deleted_folders)) => {
+                if let Ok(folders_to_update) = source_parent_folders {
+                    // TODO don't block the request here
+                    ws_state
+                        .lock()
+                        .unwrap()
+                        .send_storage_location_updated(
+                            client.map(|(user, _)| user.id),
+                            endpoint_id,
+                            folders_to_update,
+                        )
+                        .await;
+                }
+
                 return HttpResponse::Ok().json(StorageDeleteEntriesOutput {
                     deleted_files,
                     deleted_folders,

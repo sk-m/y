@@ -34,3 +34,4 @@ rustix = "=0.37.25"
 base64 = "0.21.7"
 infer = "0.15.0"
 validator = { version = "0.17.0", features = ["derive"] }
+actix-ws = "0.3.0"

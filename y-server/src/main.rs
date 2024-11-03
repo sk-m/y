@@ -10,6 +10,7 @@ mod storage_entry;
 mod user;
 mod user_group;
 mod util;
+mod ws;
 
 use crate::storage_archives::cleanup_storage_archives;
 use actix_web::{web, App, HttpServer};
@@ -18,11 +19,14 @@ use dotenvy::dotenv;
 use futures::TryFutureExt;
 use log::*;
 use simplelog::*;
+use std::collections::HashMap;
 use std::path::Path;
 use std::process::exit;
+use std::sync::Mutex;
 use std::{env, fs};
 use std::{str::FromStr, time::Duration};
 use util::RequestPool;
+use ws::WSState;
 
 async fn process_cli_arguments(pool: &RequestPool) {
     let cli_arguments: Vec<String> = env::args().collect();
@@ -108,6 +112,11 @@ async fn main() -> std::io::Result<()> {
     // Connect to the database
     let pool = db::connect().await;
 
+    // Global websocket state
+    let ws_state = web::Data::new(Mutex::new(WSState {
+        ws_connections: HashMap::new(),
+    }));
+
     // Process command line arguments. We might want to do something and terminate
     process_cli_arguments(&pool).await;
 
@@ -151,7 +160,9 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::clone(&ws_state))
             .app_data(web::Data::new(pool.clone()))
+            .route("/api/ws", web::get().to(ws::ws))
             .service(
                 web::scope("/api/auth")
                     .service(crate::api::auth::login::login)

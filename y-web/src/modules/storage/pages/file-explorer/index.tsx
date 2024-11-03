@@ -34,6 +34,8 @@ import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 import { useFilesDrop } from "@/app/core/util/use-files-drop"
+import { websocketCtl } from "@/app/core/websocket"
+import { updateLocationStorage } from "@/app/core/websocket.utils"
 import { globalUploadProgressCtl } from "@/app/storage/global-upload-progress"
 import { DropFilesHere } from "@/modules/storage/components/drop-files-here"
 import {
@@ -106,6 +108,8 @@ const FileExplorerPage: Component = () => {
       // eslint-disable-next-line no-undefined
       : undefined)
   )
+
+  const { send: wsSend, onMessage: wsOnMessage } = websocketCtl
 
   const {
     layout,
@@ -242,10 +246,31 @@ const FileExplorerPage: Component = () => {
 
           setSearch("")
           searchInputFieldRef.value = ""
+
+          wsSend(
+            updateLocationStorage(
+              Number.parseInt(params.endpointId as string, 10),
+              folderId() ?? null
+            )
+          )
         })
       }
     )
   )
+
+  // eslint-disable-next-line solid/reactivity
+  wsOnMessage((msg) => {
+    if (
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      msg.type === "storage_location_updated" &&
+      msg.payload.endpoint_id ===
+        Number.parseInt(params.endpointId as string, 10) &&
+      msg.payload.folder_id === (folderId() ?? null)
+    ) {
+      void invalidateEntries()
+      // void refreshThumbnails()
+    }
+  })
 
   const previewableEntries = createMemo(() =>
     folderEntries().filter(

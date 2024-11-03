@@ -50,7 +50,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
   let nameFieldRef: HTMLInputElement
   let nameFloaterRef: HTMLDivElement | undefined
 
-  const [isAboutToRecieve, setIsAboutToReceive] = createSignal(false)
+  const [isAboutToReceive, setIsAboutToReceive] = createSignal(false)
   const [isDragging, setIsDragging] = createSignal(false)
   const [showNameFloaterOnHover, setShowNameFloaterOnHover] =
     createSignal(false)
@@ -215,7 +215,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
         selected: props.isSelected,
         active: props.isActive,
         "context-menu-target": props.isContextMenuTarget,
-        "about-to-receive": isAboutToRecieve(),
+        "about-to-receive": isAboutToReceive(),
         dragging: isDragging(),
       }}
       onDblClick={(event) => props.onDblClick(event)}

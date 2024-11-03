@@ -660,7 +660,7 @@ pub async fn delete_entries(
 */
 pub async fn move_entries(
     endpoint_id: i32,
-    entry_ids: Vec<i64>,
+    entry_ids: &Vec<i64>,
     target_folder_id: Option<i64>,
     pool: &RequestPool,
 ) -> Result<(), String> {
@@ -689,20 +689,19 @@ pub async fn rename_entry(
     entry_id: i64,
     new_name: &str,
     pool: &RequestPool,
-) -> Result<(), String> {
+) -> Result<Option<i64>, String> {
     let rename_result =
-        sqlx::query("UPDATE storage_entries SET name = $1 WHERE id = $2 AND endpoint_id = $3")
+        sqlx::query_scalar::<_, Option<i64>>("UPDATE storage_entries SET name = $1 WHERE id = $2 AND endpoint_id = $3 RETURNING parent_folder")
             .bind(new_name)
             .bind(entry_id)
             .bind(endpoint_id)
-            .execute(&*pool)
+            .fetch_one(&*pool)
             .await;
 
-    if rename_result.is_err() {
-        return Err("Could not rename a storage entry".to_string());
+    match rename_result {
+        Ok(parent_folder) => Ok(parent_folder),
+        Err(_) => Err("Could not rename a storage entry".to_string()),
     }
-
-    Ok(())
 }
 
 pub fn generate_image_entry_thumbnail(
@@ -827,7 +826,7 @@ pub fn generate_video_entry_thumbnails(
             }
 
             let frames_count = frames_count.unwrap();
-            let desired_frames = 10;
+            let desired_frames = 9;
 
             let frames_dir_path = &endpoint_thumbnails_path.join(&filesystem_id);
             fs::create_dir(frames_dir_path).unwrap();
