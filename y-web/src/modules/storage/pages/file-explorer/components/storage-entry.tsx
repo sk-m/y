@@ -398,7 +398,13 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
                 </div>
               </Match>
               <Match when={fileMimeType()[0] === "video"}>
-                <div class="block">
+                <div
+                  classList={{
+                    block: true,
+                    success: props.entry.transcoded_version_available === true,
+                    pending: props.entry.transcoded_version_available === false,
+                  }}
+                >
                   <Icon
                     name="play_arrow"
                     type="rounded"

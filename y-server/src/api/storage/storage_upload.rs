@@ -479,15 +479,7 @@ async fn storage_upload(
                 }
             }
 
-            // Refresh folder when thumbnails are ready
-            // TODO don't block the request
-            let _ = block_on(ws_state2.lock().unwrap().send_storage_location_updated(
-                None,
-                endpoint_id,
-                folders_to_update2,
-                false,
-                true,
-            ));
+            let mut files_to_transcode: Vec<String> = Vec::new();
 
             for filesystem_id in &uploaded_files {
                 let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
@@ -501,23 +493,62 @@ async fn storage_upload(
                         match mime_type {
                             "video/mp4" | "video/webm" | "video/mov" | "video/avi"
                             | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
-                                let generate_preview_result = generate_browser_friendly_video(
-                                    &filesystem_id,
-                                    &target_endpoint.base_path.as_str(),
-                                    &target_endpoint_artifacts_path.as_str(),
-                                );
-
-                                if generate_preview_result.is_err() {
-                                    error!(
-                                        "Failed to create a browser friendly preview for an uploaded video file ({})",
-                                        &filesystem_id,
-                                    );
-                                }
+                                files_to_transcode.push(filesystem_id.clone());
                             }
 
                             _ => {}
                         }
                     }
+                }
+            }
+
+            let _ = block_on(sqlx::query("UPDATE storage_entries SET transcoded_version_available = FALSE WHERE endpoint_id = $1 AND filesystem_id = ANY($2)")
+                .bind(endpoint_id)
+                .bind(&files_to_transcode)
+                .execute(&**pool));
+
+            // Refresh folder when thumbnails are ready
+            let _ = block_on(ws_state2.lock().unwrap().send_storage_location_updated(
+                None,
+                endpoint_id,
+                // TODO stop cloning stuff...
+                folders_to_update2.clone(),
+                if files_to_transcode.is_empty() {
+                    false
+                } else {
+                    true
+                },
+                true,
+            ));
+
+            for filesystem_id in &files_to_transcode {
+                let generate_preview_result = generate_browser_friendly_video(
+                    &filesystem_id,
+                    &target_endpoint.base_path.as_str(),
+                    &target_endpoint_artifacts_path.as_str(),
+                );
+
+                if generate_preview_result.is_ok() {
+                    let parent_folder = block_on(sqlx::query_scalar::<_, Option<i64>>("UPDATE storage_entries SET transcoded_version_available = TRUE WHERE endpoint_id = $1 AND filesystem_id = $2 RETURNING parent_folder")
+                        .bind(endpoint_id)
+                        .bind(filesystem_id)
+                        .fetch_one(&**pool));
+
+                    if let Ok(parent_folder) = parent_folder {
+                        // Refresh folder when a video is ready
+                        let _ = block_on(ws_state2.lock().unwrap().send_storage_location_updated(
+                            None,
+                            endpoint_id,
+                            vec![parent_folder],
+                            true,
+                            false,
+                        ));
+                    }
+                } else {
+                    error!(
+                        "Failed to create a browser friendly preview for an uploaded video file ({})",
+                        &filesystem_id,
+                    );
                 }
             }
         }

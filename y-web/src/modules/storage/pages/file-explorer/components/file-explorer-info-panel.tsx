@@ -134,6 +134,18 @@ export const FileExplorerInfoPanel: Component<FileExplorerInfoPanelProps> = (
                 <div class="text">Cover art</div>
               </div>
             </Show>
+            <Show when={props.entry.transcoded_version_available === true}>
+              <div class="info-text">
+                <Icon
+                  name="play_arrow"
+                  fill={1}
+                  size={16}
+                  wght={500}
+                  type="outlined"
+                />
+                <div class="text">Transcoded video</div>
+              </div>
+            </Show>
           </Show>
         </div>
       </Show>

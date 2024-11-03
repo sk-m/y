@@ -610,6 +610,39 @@
                   .ui-icon {
                     color: var(--color-text-grey-1);
                   }
+
+                  &.success {
+                    background: rgba(34, 204, 0, 0.15);
+                    border-radius: 50%;
+                    box-shadow: 0 0 0 1px rgba(34, 204, 0, 0.15);
+
+                    .ui-icon {
+                      color: green;
+                    }
+                  }
+
+                  &.pending {
+                    @keyframes pulse {
+                      0% {
+                        color: hsla(36, 100%, 55%, 1);
+                        background: rgba(250, 242, 0, 0);
+                        box-shadow: 0 0 0 1px rgba(250, 242, 0, 0);
+                      }
+                      100% {
+                        color: hsla(36, 100%, 25%, 1);
+                        background: rgba(250, 242, 0, 0.5);
+                        box-shadow: 0 0 0 1px rgba(250, 242, 0, 0.5);
+                      }
+                    }
+
+                    border-radius: 50%;
+
+                    .ui-icon {
+                      color: inherit;
+                    }
+
+                    animation: pulse ease-in-out 0.75s infinite alternate;
+                  }
                 }
               }
             }
