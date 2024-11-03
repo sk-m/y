@@ -72,6 +72,7 @@ async fn storage_rename_entry(
                     client.map(|(user, _)| user.id),
                     endpoint_id,
                     vec![parent_folder],
+                    false,
                 )
                 .await;
 

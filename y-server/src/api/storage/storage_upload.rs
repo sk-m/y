@@ -1,3 +1,4 @@
+use futures::executor::block_on;
 use log::*;
 use std::fs;
 use std::sync::Mutex;
@@ -394,6 +395,18 @@ async fn storage_upload(
         info!("storage/upload: {}ms", now.elapsed().as_millis());
     }
 
+    // TODO don't block the request
+    let mut folders_to_update = path_ids_cache
+        .values()
+        .map(|v| Some(v.clone()))
+        .collect::<Vec<Option<i64>>>();
+
+    folders_to_update.push(target_folder_id);
+
+    // TODO no.
+    let ws_state2 = ws_state.clone();
+    let folders_to_update2 = folders_to_update.clone();
+
     // Generate thumbnails
     std::thread::spawn(move || {
         if let Some(target_endpoint_artifacts_path) = &target_endpoint.artifacts_path {
@@ -466,6 +479,15 @@ async fn storage_upload(
                 }
             }
 
+            // Refresh folder when thumbnails are ready
+            // TODO don't block the request
+            let _ = block_on(ws_state2.lock().unwrap().send_storage_location_updated(
+                None,
+                endpoint_id,
+                folders_to_update2,
+                true,
+            ));
+
             for filesystem_id in &uploaded_files {
                 let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
 
@@ -500,18 +522,12 @@ async fn storage_upload(
         }
     });
 
+    // Refresh folder after successful upload
     // TODO don't block the request
-    let mut folders_to_update = path_ids_cache
-        .values()
-        .map(|v| Some(v.clone()))
-        .collect::<Vec<Option<i64>>>();
-
-    folders_to_update.push(target_folder_id);
-
     ws_state
         .lock()
         .unwrap()
-        .send_storage_location_updated(client_user_id, endpoint_id, folders_to_update)
+        .send_storage_location_updated(client_user_id, endpoint_id, folders_to_update, false)
         .await;
 
     HttpResponse::Ok().json(web::Json(StorageUploadOutput { skipped_files }))

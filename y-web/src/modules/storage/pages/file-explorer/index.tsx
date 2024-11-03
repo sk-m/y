@@ -268,7 +268,10 @@ const FileExplorerPage: Component = () => {
       msg.payload.folder_id === (folderId() ?? null)
     ) {
       void invalidateEntries()
-      // void refreshThumbnails()
+
+      if (msg.payload.invalidate_thumbs) {
+        void refreshThumbnails()
+      }
     }
   })
 

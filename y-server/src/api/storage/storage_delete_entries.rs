@@ -107,6 +107,7 @@ async fn storage_delete_entries(
                             client.map(|(user, _)| user.id),
                             endpoint_id,
                             folders_to_update,
+                            false,
                         )
                         .await;
                 }

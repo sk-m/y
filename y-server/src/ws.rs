@@ -43,12 +43,15 @@ impl WSState {
         executor_user_id: Option<i32>,
         endpoint_id: i32,
         folder_ids: Vec<Option<i64>>,
+        invalidate_thumbs: bool,
     ) -> u32 {
         let mut receivers = 0;
 
         for session in self.ws_connections.values_mut() {
             // Don't notify the executor
+            // TODO bug-prone check. Won't work how we expect for anonymous clients.
             if session.user_id.is_none()
+                || executor_user_id.is_none()
                 || (session.user_id.is_some() && session.user_id != executor_user_id)
             {
                 if let WSSessionLocation::Storage(location) = &session.location {
@@ -68,7 +71,8 @@ impl WSState {
                                         "type": "storage_location_updated",
                                         "payload": {
                                             "endpoint_id": endpoint_id,
-                                            "folder_id": location.folder_id
+                                            "folder_id": location.folder_id,
+                                            "invalidate_thumbs": invalidate_thumbs
                                         }
                                     }
                                 )
