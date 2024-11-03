@@ -267,7 +267,9 @@ const FileExplorerPage: Component = () => {
         Number.parseInt(params.endpointId as string, 10) &&
       msg.payload.folder_id === (folderId() ?? null)
     ) {
-      void invalidateEntries()
+      if (msg.payload.invalidate_entries) {
+        void invalidateEntries()
+      }
 
       if (msg.payload.invalidate_thumbs) {
         void refreshThumbnails()

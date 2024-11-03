@@ -43,6 +43,7 @@ impl WSState {
         executor_user_id: Option<i32>,
         endpoint_id: i32,
         folder_ids: Vec<Option<i64>>,
+        invalidate_entries: bool,
         invalidate_thumbs: bool,
     ) -> u32 {
         let mut receivers = 0;
@@ -72,6 +73,7 @@ impl WSState {
                                         "payload": {
                                             "endpoint_id": endpoint_id,
                                             "folder_id": location.folder_id,
+                                            "invalidate_entries": invalidate_entries,
                                             "invalidate_thumbs": invalidate_thumbs
                                         }
                                     }

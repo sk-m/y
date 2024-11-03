@@ -485,6 +485,7 @@ async fn storage_upload(
                 None,
                 endpoint_id,
                 folders_to_update2,
+                false,
                 true,
             ));
 
@@ -527,7 +528,7 @@ async fn storage_upload(
     ws_state
         .lock()
         .unwrap()
-        .send_storage_location_updated(client_user_id, endpoint_id, folders_to_update, false)
+        .send_storage_location_updated(client_user_id, endpoint_id, folders_to_update, true, false)
         .await;
 
     HttpResponse::Ok().json(web::Json(StorageUploadOutput { skipped_files }))

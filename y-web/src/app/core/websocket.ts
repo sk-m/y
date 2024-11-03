@@ -12,6 +12,8 @@ const TWebsocketMessage = z
     payload: z.object({
       endpoint_id: z.number(),
       folder_id: z.number().nullable(),
+
+      invalidate_entries: z.boolean(),
       invalidate_thumbs: z.boolean(),
     }),
   })

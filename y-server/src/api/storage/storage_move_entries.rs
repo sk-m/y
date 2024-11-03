@@ -100,6 +100,7 @@ async fn storage_move_entries(
                         client.map(|(user, _)| user.id),
                         endpoint_id,
                         folders_to_update,
+                        true,
                         false,
                     )
                     .await;
