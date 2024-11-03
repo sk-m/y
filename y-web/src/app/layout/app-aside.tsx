@@ -23,7 +23,12 @@ export const AppAside: ComponentWithChildren = (props) => {
   return (
     <div id="app-aside">
       <div class="section-top">
-        <div class="instance-info">
+        <div
+          class="instance-info"
+          style={{
+            "min-height": "42px",
+          }}
+        >
           <InstanceLogo />
           <div class="instance-name">{instanceName()}</div>
         </div>
