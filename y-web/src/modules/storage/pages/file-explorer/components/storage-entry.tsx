@@ -160,6 +160,8 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
     }
   })
 
+  // TODO not sure I like the idea of adding an event handler to every single storage entry
+  // Can this logic be moved to the files explorer component?
   onMount(() => {
     const keyUpHandler = (event: KeyboardEvent) => {
       if (event.key === "Enter") {

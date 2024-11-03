@@ -724,6 +724,15 @@ const FileExplorerPage: Component = () => {
         deleteEntries(folderIds, fileIds, event.shiftKey)
       }
 
+      // rename highlighted entry
+      if (event.key === "F2") {
+        event.preventDefault()
+
+        if (!infoPanelSelectedEntryId()) return
+
+        setEntryToRename(infoPanelSelectedEntryId())
+      }
+
       // Focus onto search field
       if (event.key === "f" && event.ctrlKey) {
         event.preventDefault()
