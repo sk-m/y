@@ -356,10 +356,13 @@ const FileExplorerPage: Component = () => {
         newFolderName,
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           void invalidateEntries()
 
-          setFolderCreationInitiated(false)
+          batch(() => {
+            setFolderCreationInitiated(false)
+            setInfoPanelSelectedEntryId(response.new_folder_id)
+          })
         },
         onError: (error) => genericErrorToast(error),
       }
