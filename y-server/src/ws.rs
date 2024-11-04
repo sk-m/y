@@ -37,7 +37,24 @@ pub struct WSState {
     pub ws_connections: HashMap<usize, WSSession>,
 }
 
+#[allow(dead_code)]
 impl WSState {
+    pub async fn send_to_user(&mut self, user_id: i32, message: &str) -> u32 {
+        let mut receivers = 0;
+
+        for session in self.ws_connections.values_mut() {
+            if session.user_id == Some(user_id) {
+                let result = session.ws_session.text(message).await;
+
+                if result.is_ok() {
+                    receivers += 1;
+                }
+            }
+        }
+
+        receivers
+    }
+
     pub async fn send_storage_location_updated(
         &mut self,
         executor_user_id: Option<i32>,
@@ -120,7 +137,7 @@ pub async fn ws(
     req: HttpRequest,
     stream: web::Payload,
     pool: web::Data<RequestPool>,
-    data: web::Data<Mutex<WSState>>,
+    ws_state: web::Data<Mutex<WSState>>,
 ) -> Result<HttpResponse, Error> {
     let (res, mut session, stream) = actix_ws::handle(&req, stream)?;
 
@@ -132,10 +149,8 @@ pub async fn ws(
 
     let ws_session_id = rand::thread_rng().gen::<usize>();
 
-    let mut ws_state = data.lock().unwrap();
-
     if let Some((user, user_session)) = session_info {
-        ws_state.ws_connections.insert(
+        ws_state.lock().unwrap().ws_connections.insert(
             ws_session_id,
             WSSession {
                 user_id: Some(user.id),
@@ -147,7 +162,7 @@ pub async fn ws(
             },
         );
     } else {
-        ws_state.ws_connections.insert(
+        ws_state.lock().unwrap().ws_connections.insert(
             ws_session_id,
             WSSession {
                 user_id: None,
@@ -164,6 +179,9 @@ pub async fn ws(
     let mut session2 = session.clone();
     let alive2 = alive.clone();
 
+    let ws_state_heartbeat = ws_state.clone();
+    let ws_state_receive = ws_state.clone();
+
     // Heartbeat task
     actix_web::rt::spawn(async move {
         let mut interval = actix_web::rt::time::interval(Duration::from_secs(5));
@@ -172,17 +190,28 @@ pub async fn ws(
             interval.tick().await;
 
             if session2.ping(b"").await.is_err() {
+                ws_state_heartbeat
+                    .lock()
+                    .unwrap()
+                    .ws_connections
+                    .remove(&ws_session_id);
+
                 break;
             }
 
             if Instant::now().duration_since(*alive2.lock().unwrap()) > Duration::from_secs(10) {
                 let _ = session2.close(None).await;
+
+                ws_state_heartbeat
+                    .lock()
+                    .unwrap()
+                    .ws_connections
+                    .remove(&ws_session_id);
+
                 break;
             }
         }
     });
-
-    let data2 = data.clone();
 
     // Receive task
     actix_web::rt::spawn(async move {
@@ -200,6 +229,13 @@ pub async fn ws(
 
                 AggregatedMessage::Close(reason) => {
                     let _ = session.close(reason).await;
+
+                    ws_state_receive
+                        .lock()
+                        .unwrap()
+                        .ws_connections
+                        .remove(&ws_session_id);
+
                     return;
                 }
 
@@ -222,11 +258,9 @@ pub async fn ws(
                                         let folder_id =
                                             msg_parts.next().and_then(|id| id.parse::<i64>().ok());
 
-                                        let mut ws_state = data2.lock().unwrap();
-                                        let ws_conn_info = ws_state
-                                            .ws_connections
-                                            .get_mut(&ws_session_id)
-                                            .unwrap();
+                                        let mut state = ws_state_receive.lock().unwrap();
+                                        let ws_conn_info =
+                                            state.ws_connections.get_mut(&ws_session_id).unwrap();
 
                                         ws_conn_info.location =
                                             WSSessionLocation::Storage(WSStorageLocation {
@@ -257,6 +291,12 @@ pub async fn ws(
         }
 
         let _ = session.close(None).await;
+
+        ws_state_receive
+            .lock()
+            .unwrap()
+            .ws_connections
+            .remove(&ws_session_id);
     });
 
     // respond immediately with response connected to WS session
