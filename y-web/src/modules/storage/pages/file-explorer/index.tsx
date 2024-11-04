@@ -931,15 +931,14 @@ const FileExplorerPage: Component = () => {
               openGeneralContextMenu(event)
             }}
           >
-            <Show when={isFolderEmpty()}>
+            <Show when={folderEntriesError() || isFolderEmpty()}>
               <div class="folder-notice-container">
                 <Switch
                   fallback={<div class="folder-notice">Empty folder</div>}
                 >
                   <Match
                     when={
-                      folderEntriesError()?.code ===
-                      "storage.entries.unauthorized"
+                      folderEntriesError()?.code === "storage.access_denied"
                     }
                   >
                     <div class="folder-notice error">Folder access denied</div>
