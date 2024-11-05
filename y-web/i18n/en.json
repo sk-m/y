@@ -201,6 +201,9 @@
         "internal": "Internal",
         "invalid_status": "Invalid status"
       },
+      "delete_storage_user_pin": {
+        "not_found": "Pin not found"
+      },
       "storage": {
         "access_denined": "Access denied",
         "invalid_input": "Invalid input",
