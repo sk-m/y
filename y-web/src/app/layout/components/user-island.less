@@ -1,0 +1,82 @@
+@import "@/variables.less";
+
+#user-island {
+  .user-notifications {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0.5em;
+
+    color: rgba(@brand-black-rgb, 0.75);
+    background-color: var(--color-grey-15);
+    border: none;
+    border-radius: 5px;
+
+    cursor: pointer;
+
+    transition: 0.15s;
+
+    > .red-dot {
+      position: absolute;
+
+      bottom: 0.25em;
+      right: 0.35em;
+
+      width: 6px;
+      height: 6px;
+
+      background-color: var(--color-error);
+      // border: 2px solid white;
+      // border: 2px solid var(--color-grey-15);
+      border: 2px solid var(--color-error-o-1);
+      border-radius: 50%;
+
+      // hidden state
+      opacity: 0;
+
+      transition: 0.15s;
+    }
+
+    &.new {
+      color: rgba(@brand-black-rgb, 1);
+
+      > .red-dot {
+        opacity: 1;
+      }
+    }
+  }
+
+  .button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0.5em;
+
+    color: var(--color-text);
+
+    background-color: rgba(@brand-black-rgb, 0.033);
+    border: none;
+    border-radius: 5px;
+
+    cursor: pointer;
+
+    transition: 0.15s;
+
+    > .ui-icon {
+      color: inherit;
+    }
+
+    &:hover {
+      background-color: rgba(@brand-black-rgb, 0.1);
+    }
+
+    &.logout:hover {
+      color: var(--color-error-o-1);
+      background-color: var(--color-error-d-1);
+    }
+  }
+}

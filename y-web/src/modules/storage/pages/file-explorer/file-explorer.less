@@ -1,10 +1,5 @@
 @import "@/variables.less";
 
-.default-box-shadow {
-  box-shadow: 0 0 1px 0 rgba(@brand-black-rgb, 0.1),
-    0 0 0.5em 0 rgba(@brand-black-rgb, 0.05);
-}
-
 #page-storage-file-explorer {
   width: 100%;
 
@@ -44,7 +39,7 @@
 
         border-radius: 10px;
 
-        .default-box-shadow();
+        box-shadow: @app-root-block-box-shadow;
 
         .top-container-separator {
           width: 2px;
@@ -117,7 +112,7 @@
 
         background-color: white;
 
-        .default-box-shadow();
+        box-shadow: @app-root-block-box-shadow;
 
         border-radius: 10px;
 
@@ -685,8 +680,7 @@
 
       background-color: white;
 
-      box-shadow: 0 0 1px 0 rgba(21, 23, 46, 0.1),
-        0 0 0.5em 0 rgba(21, 23, 46, 0.05);
+      box-shadow: @app-root-block-box-shadow;
 
       border-radius: 10px;
 

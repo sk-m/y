@@ -39,7 +39,9 @@ export const AppAside: ComponentWithChildren = (props) => {
       <div class="section-bottom">
         <Stack spacing={"1em"}>
           <AsideStorageUploadProgress />
-          <UserIsland />
+          <div class="user-container">
+            <UserIsland />
+          </div>
         </Stack>
       </div>
     </div>
