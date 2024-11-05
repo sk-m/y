@@ -3,6 +3,7 @@ import { Component, For, Show, createMemo, lazy } from "solid-js"
 
 import { Route, Routes } from "@solidjs/router"
 
+import { Note } from "@/app/components/common/note/note"
 import { AppAside } from "@/app/layout/app-aside"
 import { AppContent } from "@/app/layout/app-content"
 import { AsideEntry } from "@/app/layout/components/aside-entry"
@@ -11,7 +12,9 @@ import { useAuth } from "@/modules/core/auth/auth.service"
 
 import { useStorageEndpoints } from "../storage-endpoint/storage-endpoint.service"
 import { useStorageLocations } from "../storage-location/storage-location.service"
+import { useStorageUserPins } from "../storage-user-pin/storage-user-pin.service"
 import { StorageLocations } from "./components/storage-locations"
+import { StorageUserPins } from "./components/storage-user-pins"
 
 const FileExplorerPage = lazy(
   async () => import("@/modules/storage/pages/file-explorer")
@@ -43,6 +46,11 @@ const StorageLayout: Component = () => {
     () => $storageLocations.data?.locations ?? []
   )
 
+  const $storageUserPins = useStorageUserPins()
+  const storageUserPins = createMemo(
+    () => $storageUserPins.data?.user_pins ?? []
+  )
+
   const $storageEndpoints = useStorageEndpoints()
   const storageEndpoints = createMemo(
     () => $storageEndpoints.data?.endpoints ?? []
@@ -56,6 +64,26 @@ const StorageLayout: Component = () => {
             <div class="aside-section-title">Locations</div>
 
             <StorageLocations locations={storageLocations()} />
+          </Show>
+
+          <div class="aside-section-title">Pinned</div>
+
+          <Show
+            when={storageUserPins().length > 0}
+            fallback={
+              <Note
+                type="secondary"
+                fontSize="var(--text-sm)"
+                style={{
+                  "font-weight": 480,
+                  color: "var(--color-text-grey-1)",
+                }}
+              >
+                You don't have any pins yet
+              </Note>
+            }
+          >
+            <StorageUserPins userPins={storageUserPins()} />
           </Show>
 
           <Show

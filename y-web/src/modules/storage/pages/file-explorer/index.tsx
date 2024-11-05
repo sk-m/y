@@ -60,7 +60,10 @@ import { FileWithPath } from "@/modules/storage/upload"
 import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
 import { createStorageLocation } from "../../storage-location/storage-location.api"
 import { storageLocationsKey } from "../../storage-location/storage-location.service"
+import { createStorageUserPin } from "../../storage-user-pin/storage-user-pin.api"
+import { storageUserPinsKey } from "../../storage-user-pin/storage-user-pin.service"
 import { FileExplorerAddLocationModal } from "./components/file-explorer-add-location-modal"
+import { FileExplorerAddPinModal } from "./components/file-explorer-add-user-pin-modal"
 import { FileExplorerDeleteModal } from "./components/file-explorer-delete-modal"
 import { FileExplorerDisplaySettings } from "./components/file-explorer-display-settings"
 import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
@@ -93,6 +96,7 @@ const FileExplorerPage: Component = () => {
   const $deleteEntries = createMutation(deleteStorageEntries)
   const $createFolder = createMutation(createStorageFolder)
   const $createLocation = createMutation(createStorageLocation)
+  const $createUserPin = createMutation(createStorageUserPin)
 
   let searchInputFieldRef: HTMLInputElement
   let browserContentsRef: HTMLDivElement
@@ -202,6 +206,10 @@ const FileExplorerPage: Component = () => {
 
   const [createLocationTargetEntry, setCreateLocationTargetEntry] =
     createSignal<number | null>(null)
+
+  const [createPinTargetEntry, setCreatePinTargetEntry] = createSignal<
+    number | null
+  >(null)
 
   const isFolderEmpty = createMemo(() => folderEntries().length === 0)
 
@@ -650,6 +658,23 @@ const FileExplorerPage: Component = () => {
     )
   }
 
+  const createUserPin = (name: string) => {
+    $createUserPin.mutate(
+      {
+        endpointId: Number.parseInt(params.endpointId as string, 10),
+        entryId: createPinTargetEntry()!,
+        name,
+      },
+      {
+        onSuccess: () => {
+          void queryClient.invalidateQueries([storageUserPinsKey])
+          setCreatePinTargetEntry(null)
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
+  }
+
   // eslint-disable-next-line sonarjs/cognitive-complexity
   onMount(() => {
     const keydownHandler = (event: KeyboardEvent) => {
@@ -817,6 +842,11 @@ const FileExplorerPage: Component = () => {
         open={createLocationTargetEntry() !== null}
         onClose={() => setCreateLocationTargetEntry(null)}
         onConfirm={createLocation}
+      />
+      <FileExplorerAddPinModal
+        open={createPinTargetEntry() !== null}
+        onClose={() => setCreatePinTargetEntry(null)}
+        onConfirm={createUserPin}
       />
       <FileExplorerDeleteModal
         subtitle={`${
@@ -1169,6 +1199,16 @@ const FileExplorerPage: Component = () => {
                     <div class="separator" />
 
                     <ContextMenuLink
+                      icon="keep"
+                      onClick={() => {
+                        setCreatePinTargetEntry(contextMenuTargetEntry()!.id)
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Pin folder
+                    </ContextMenuLink>
+
+                    <ContextMenuLink
                       icon="playlist_add"
                       onClick={() => {
                         setCreateLocationTargetEntry(
@@ -1177,7 +1217,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Add to sidebar
+                      Create sidebar location
                     </ContextMenuLink>
                   </Show>
                   <Show when={contextMenuTargetEntry()?.entry_type === "file"}>
