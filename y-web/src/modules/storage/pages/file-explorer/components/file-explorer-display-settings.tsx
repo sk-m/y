@@ -69,7 +69,7 @@ export const FileExplorerDisplaySettings: Component<
   })
 
   return (
-    <Stack direction="row" spacing="0.5em">
+    <Stack direction="row" alignItems="center" spacing="0.5em">
       <DropdownPill
         expanded={sortByDropdownExpanded()}
         onExpand={setSortByDropdownExpanded}
