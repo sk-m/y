@@ -16,5 +16,10 @@ export const debug = (...args: unknown[]) => {
   if (DEV) console.debug(...args)
 }
 
+export const lerp = (a: number, b: number, alpha: number) => {
+  // prettier-ignore
+  return a + (alpha * (b - a))
+}
+
 // Because firefox is a special snowflake sometimes
 export const isFirefox = /firefox/i.test(navigator.userAgent)

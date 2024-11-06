@@ -34,6 +34,7 @@ import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 import { useFilesDrop } from "@/app/core/util/use-files-drop"
+import { lerp } from "@/app/core/utils"
 import { websocketCtl } from "@/app/core/websocket"
 import { updateLocationStorage } from "@/app/core/websocket.utils"
 import { globalUploadProgressCtl } from "@/app/storage/global-upload-progress"
@@ -57,7 +58,13 @@ import {
 } from "@/modules/storage/storage-entry/storage-entry.codecs"
 import { FileWithPath } from "@/modules/storage/upload"
 
-import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
+import {
+  FILE_EXPLORER_ENTRY_FONT_SIZE_MAX,
+  FILE_EXPLORER_ENTRY_FONT_SIZE_MIN,
+  FILE_EXPLORER_ENTRY_WIDTH_MAX,
+  FILE_EXPLORER_ENTRY_WIDTH_MIN,
+  useFileExplorerDisplayConfig,
+} from "../../file-explorer/use-file-explorer-display-config"
 import { createStorageLocation } from "../../storage-location/storage-location.api"
 import { storageLocationsKey } from "../../storage-location/storage-location.service"
 import { createStorageUserPin } from "../../storage-user-pin/storage-user-pin.api"
@@ -125,8 +132,20 @@ const FileExplorerPage: Component = () => {
     sortDirection,
     setSortDirection,
 
+    entrySize,
+    setEntrySize,
+
     sortFn,
   } = useFileExplorerDisplayConfig()
+
+  const entryTextSize = createMemo(() =>
+    lerp(
+      FILE_EXPLORER_ENTRY_FONT_SIZE_MIN,
+      FILE_EXPLORER_ENTRY_FONT_SIZE_MAX,
+      (entrySize() - FILE_EXPLORER_ENTRY_WIDTH_MIN) /
+        (FILE_EXPLORER_ENTRY_WIDTH_MAX - FILE_EXPLORER_ENTRY_WIDTH_MIN)
+    )
+  )
 
   const [search, setSearch] = createSignal("")
 
@@ -926,6 +945,8 @@ const FileExplorerPage: Component = () => {
                 setSortBy={setSortBy}
                 sortDirection={sortDirection()}
                 setSortDirection={setSortDirection}
+                entrySize={entrySize()}
+                setEntrySize={setEntrySize}
               />
               <Show when={selectedEntries().size > 0}>
                 <div class="top-container-separator" />
@@ -1293,6 +1314,10 @@ const FileExplorerPage: Component = () => {
               classList={{
                 items: true,
                 [`layout-${layout()}`]: true,
+              }}
+              style={{
+                "--entry-width": entrySize(),
+                "--entry-text-size": entryTextSize(),
               }}
             >
               {/* TODO: Maybe use Index instaed of For? */}

@@ -1,10 +1,20 @@
 /* eslint-disable unicorn/no-nested-ternary */
-import { Component, Setter, batch, createSignal } from "solid-js"
+import {
+  Component,
+  Setter,
+  batch,
+  createSignal,
+  onCleanup,
+  onMount,
+} from "solid-js"
 
 import { DropdownPill } from "@/app/components/common/dropdown-pill/dropdown-pill"
 import { Icon } from "@/app/components/common/icon/icon"
 import { Stack } from "@/app/components/common/stack/stack"
 import {
+  FILE_EXPLORER_ENTRY_WIDTH_DEFAULT,
+  FILE_EXPLORER_ENTRY_WIDTH_MAX,
+  FILE_EXPLORER_ENTRY_WIDTH_MIN,
   Layout,
   SortBy,
   SortDirection,
@@ -19,16 +29,44 @@ export type FileExplorerDisplaySettingsProps = {
 
   sortBy: SortBy
   setSortBy: Setter<SortBy>
+
+  entrySize: number
+  setEntrySize: Setter<number>
 }
 
 export const FileExplorerDisplaySettings: Component<
   FileExplorerDisplaySettingsProps
 > = (props) => {
+  let entrySizeSliderRef: HTMLInputElement
+
   const [layoutDropdownExpanded, setLayoutDropdownExpanded] =
     createSignal(false)
 
   const [sortByDropdownExpanded, setSortByDropdownExpanded] =
     createSignal(false)
+
+  const sizeScrollHandler = (event: WheelEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    const amount = event.shiftKey ? 10 : 1
+    const delta = event.deltaY > 0 ? amount * -1 : amount
+
+    const value = Math.min(
+      Math.max(props.entrySize + delta, FILE_EXPLORER_ENTRY_WIDTH_MIN),
+      FILE_EXPLORER_ENTRY_WIDTH_MAX
+    )
+
+    props.setEntrySize(value)
+  }
+
+  onMount(() => {
+    document.addEventListener("wheel", sizeScrollHandler, {
+      passive: true,
+    })
+
+    onCleanup(() => {
+      document.removeEventListener("wheel", sizeScrollHandler)
+    })
+  })
 
   return (
     <Stack direction="row" spacing="0.5em">
@@ -191,6 +229,24 @@ export const FileExplorerDisplaySettings: Component<
       >
         {props.layout === "grid" ? "grid" : "slates"}
       </DropdownPill>
+
+      <datalist id="entry-size-slider-detents">
+        <option value={FILE_EXPLORER_ENTRY_WIDTH_DEFAULT} />
+      </datalist>
+      <div class="entry-size-slider-container">
+        <input
+          ref={entrySizeSliderRef!}
+          class="entry-size-slider"
+          type="range"
+          min={FILE_EXPLORER_ENTRY_WIDTH_MIN}
+          max={FILE_EXPLORER_ENTRY_WIDTH_MAX}
+          value={props.entrySize}
+          list="entry-size-slider-detents"
+          onInput={(event) =>
+            props.setEntrySize(event.currentTarget.valueAsNumber)
+          }
+        />
+      </div>
     </Stack>
   )
 }

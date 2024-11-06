@@ -7,10 +7,20 @@ export type Layout = "grid" | "slates"
 export type SortBy = "name" | "mime_type" | "size" | "created_at"
 export type SortDirection = "asc" | "desc"
 
+export const FILE_EXPLORER_ENTRY_WIDTH_MIN = 60
+export const FILE_EXPLORER_ENTRY_WIDTH_MAX = 280
+export const FILE_EXPLORER_ENTRY_WIDTH_DEFAULT = 120
+
+export const FILE_EXPLORER_ENTRY_FONT_SIZE_MIN = 10
+export const FILE_EXPLORER_ENTRY_FONT_SIZE_MAX = 14
+
 export const useFileExplorerDisplayConfig = () => {
   const [layout, setLayout] = createSignal<Layout>("grid")
   const [sortBy, setSortBy] = createSignal<SortBy>("name")
   const [sortDirection, setSortDirection] = createSignal<SortDirection>("desc")
+  const [entrySize, setEntrySize] = createSignal<number>(
+    FILE_EXPLORER_ENTRY_WIDTH_DEFAULT
+  )
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const sortFn = createMemo(() => {
@@ -50,6 +60,9 @@ export const useFileExplorerDisplayConfig = () => {
 
     sortDirection,
     setSortDirection,
+
+    entrySize,
+    setEntrySize,
 
     sortFn,
   }
