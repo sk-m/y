@@ -59,12 +59,12 @@ export const FileExplorerDisplaySettings: Component<
   }
 
   onMount(() => {
-    document.addEventListener("wheel", sizeScrollHandler, {
+    entrySizeSliderRef.addEventListener("wheel", sizeScrollHandler, {
       passive: true,
     })
 
     onCleanup(() => {
-      document.removeEventListener("wheel", sizeScrollHandler)
+      entrySizeSliderRef.removeEventListener("wheel", sizeScrollHandler)
     })
   })
 
