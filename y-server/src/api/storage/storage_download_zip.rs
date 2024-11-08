@@ -1,6 +1,10 @@
+use std::collections::HashMap;
 use std::path::Path;
+use std::vec;
 
 use crate::request::error;
+use crate::storage_access::check_bulk_storage_entries_access_cascade_up;
+use crate::storage_endpoint::get_storage_endpoint;
 use actix_web::http::header::{ContentDisposition, DispositionParam, DispositionType};
 use actix_web::{post, web, Responder};
 use serde::Deserialize;
@@ -9,8 +13,8 @@ use std::fs::File;
 use std::io::{Read, Write};
 use zip::ZipWriter;
 
-use crate::storage_entry::resolve_entries;
-use crate::user::get_client_rights;
+use crate::storage_entry::{get_subfolders_level_with_access_rules, resolve_entries};
+use crate::user::{get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
 
 // TODO research what the best value would be
@@ -32,37 +36,73 @@ async fn storage_download_zip(
     // TODO: Cache all endpoints so we don't have to query for them every time
     let endpoint_id = path.into_inner();
 
-    let client_rights = get_client_rights(&pool, &req).await;
-
-    // TODO this is a temporary solution!
-    // We should get rid of the storage_download_zip right and instead check each file using check_bulk_storage_entries_access_cascade_up
-    let action_allowed = client_rights
-        .iter()
-        .find(|right| right.right_name.eq("storage_download_zip"))
-        .is_some();
-
-    if !action_allowed {
-        return error("storage.access_denied");
-    }
-
     let form = form.into_inner();
 
-    let target_endpoint =
-        sqlx::query_scalar::<_, String>("SELECT base_path FROM storage_endpoints WHERE id = $1")
-            .bind(endpoint_id)
-            .fetch_one(&**pool)
-            .await;
+    let target_endpoint = get_storage_endpoint(endpoint_id, &**pool).await;
 
-    // TODO also check if endpoint is disabled?
     if target_endpoint.is_err() {
         return error("storage.endpoint_not_found");
     }
 
-    let target_endpoint_base_path = target_endpoint.unwrap();
-    let target_endpoint_base_path = Path::new(&target_endpoint_base_path);
+    let target_endpoint = target_endpoint.unwrap();
+
+    if target_endpoint.status != "active" {
+        return error("storage.endpoint_disabled");
+    }
+
+    let target_endpoint_base_path = target_endpoint.base_path;
 
     let file_ids = form.file_ids;
     let folder_ids = form.folder_ids;
+
+    let client = get_user_from_request(&**pool, &req).await;
+
+    if client.is_none() {
+        return error("storage.access_denied");
+    }
+
+    let (user, _) = client.unwrap();
+    let user_groups = get_user_groups(&**pool, user.id).await;
+    let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+    // Traverse up (access check)
+    let all_entries_ids = file_ids.iter().chain(folder_ids.iter()).copied().collect();
+
+    let action_allowed_cascade_up = check_bulk_storage_entries_access_cascade_up(
+        endpoint_id,
+        &all_entries_ids,
+        "download",
+        user.id,
+        &group_ids,
+        &**pool,
+    )
+    .await;
+
+    if !action_allowed_cascade_up {
+        return error("storage.access_denied");
+    }
+
+    // Traverse down (access check)
+    let mut file_filesystem_ids: Vec<String> = Vec::new();
+    let mut folder_parents: HashMap<i64, Option<i64>> =
+        folder_ids.iter().map(|id| (*id, None)).collect();
+
+    let traverse_down_result = get_subfolders_level_with_access_rules(
+        endpoint_id,
+        &mut folder_parents,
+        &mut file_filesystem_ids,
+        folder_ids.clone(),
+        (user.id, &group_ids),
+        "download",
+        &**pool,
+    )
+    .await;
+
+    if traverse_down_result.is_err() {
+        return error(traverse_down_result.unwrap_err().get_code());
+    }
+
+    // Access allowed, proceed to creating the zip archive
 
     // Based on the list of folder ids provided by the user, we need to find every
     // entry that exists somewhere inside of the requested folders
@@ -98,7 +138,8 @@ async fn storage_download_zip(
 
             // For each file that we have found
             for (file_path_str, file_filesystem_id) in resolved_entries.iter() {
-                let file_path = Path::new(target_endpoint_base_path).join(file_filesystem_id);
+                let file_path =
+                    Path::new(target_endpoint_base_path.as_str()).join(file_filesystem_id);
                 let mut file = File::open(file_path).unwrap();
                 let mut chunk = [0; WRITE_FILE_CHUNK_SIZE];
 

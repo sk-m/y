@@ -210,7 +210,7 @@ async fn get_subfolders_level(
 }
 
 #[async_recursion]
-async fn get_subfolders_level_with_access_rules(
+pub async fn get_subfolders_level_with_access_rules(
     endpoint_id: i32,
     folder_parents: &mut HashMap<i64, Option<i64>>,
     filesystem_ids: &mut Vec<String>,

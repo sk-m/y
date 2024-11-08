@@ -178,12 +178,6 @@ pub fn get_right_categories() -> Vec<RightCategory> {
                     tags: vec![RightTag::Administrative],
                     feature: Some("storage"),
                 },
-                Right {
-                    name: "storage_download_zip",
-                    options: vec![],
-                    tags: vec![],
-                    feature: Some("storage"),
-                },
             ],
         },
     ]

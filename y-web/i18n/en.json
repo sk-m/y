@@ -66,10 +66,6 @@
       "storage_root_access": {
         "name": "Endpoint root access",
         "description": "Allows access to the root of a storage endpoint. Non-root entries do not require this right and will be subject to their own access rules."
-      },
-      "storage_download_zip": {
-        "name": "Download files (zip)",
-        "description": "Allows downloading multiple files as a single zip archive. This right ignores the per-entry 'download' access rule, allowing users to download any file whatsoever."
       }
     },
     "userRightTagDescription": {
