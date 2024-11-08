@@ -38,29 +38,29 @@ async fn storage_create_folder(
 
     let is_root = form.target_folder.is_none();
 
-    if !is_root {
-        let client = get_user_from_request(&pool, &req).await;
+    let client = get_user_from_request(&**pool, &req).await;
 
-        let action_allowed = if let Some((client_user, _)) = client {
-            let user_groups = get_user_groups(&**pool, client_user.id).await;
-            let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+    if client.is_none() {
+        return error("storage.access_denied");
+    }
 
-            check_storage_entry_access(
-                form.endpoint_id,
-                form.target_folder.unwrap(),
-                "upload",
-                client_user.id,
-                &group_ids,
-                &**pool,
-            )
-            .await
-        } else {
-            false
-        };
+    let (client_user, _) = client.unwrap();
 
-        if !action_allowed {
-            return error("storage.access_denied");
-        }
+    let user_groups = get_user_groups(&**pool, client_user.id).await;
+    let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+    let action_allowed = check_storage_entry_access(
+        form.endpoint_id,
+        form.target_folder.unwrap(),
+        "upload",
+        client_user.id,
+        &group_ids,
+        &**pool,
+    )
+    .await;
+
+    if !action_allowed {
+        return error("storage.access_denied");
     }
 
     let target_endpoint = get_storage_endpoint(form.endpoint_id, &pool).await;
@@ -75,19 +75,21 @@ async fn storage_create_folder(
 
     let new_folder_id = if is_root {
         sqlx::query_scalar::<_, i64>(
-            "INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type) VALUES ($1, NULL, $2, 'folder'::storage_entry_type) RETURNING id",
+            "INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type, created_by) VALUES ($1, NULL, $2, 'folder'::storage_entry_type, $3) RETURNING id",
         )
         .bind(form.endpoint_id)
         .bind(form.new_folder_name)
+        .bind(client_user.id)
         .fetch_one(&**pool)
         .await
     } else {
         sqlx::query_scalar::<_, i64>(
-            "INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type) VALUES ($1, $2, $3, 'folder'::storage_entry_type) RETURNING id",
+            "INSERT INTO storage_entries (endpoint_id, parent_folder, name, entry_type, created_by) VALUES ($1, $2, $3, 'folder'::storage_entry_type, $4) RETURNING id",
         )
         .bind(form.endpoint_id)
         .bind(form.target_folder)
         .bind(form.new_folder_name)
+        .bind(client_user.id)
         .fetch_one(&**pool)
         .await
     };
