@@ -2,8 +2,11 @@
 import { Component, For, Show, createMemo, lazy } from "solid-js"
 
 import { Route, Routes } from "@solidjs/router"
+import { useQueryClient } from "@tanstack/solid-query"
 
 import { Note } from "@/app/components/common/note/note"
+import { toastCtl } from "@/app/core/toast"
+import { websocketCtl } from "@/app/core/websocket"
 import { AppAside } from "@/app/layout/app-aside"
 import { AppContent } from "@/app/layout/app-content"
 import { AsideEntry } from "@/app/layout/components/aside-entry"
@@ -12,16 +15,25 @@ import { useAuth } from "@/modules/core/auth/auth.service"
 
 import { useStorageEndpoints } from "../storage-endpoint/storage-endpoint.service"
 import { useStorageLocations } from "../storage-location/storage-location.service"
+import {
+  storageUserArchivesKey,
+  useStorageUserArchives,
+} from "../storage-user-archive/storage-user-archive.service"
 import { useStorageUserPins } from "../storage-user-pin/storage-user-pin.service"
 import { StorageLocations } from "./components/storage-locations"
+import { StorageUserArchives } from "./components/storage-user-archives"
 import { StorageUserPins } from "./components/storage-user-pins"
+import "./storage-layout.less"
 
 const FileExplorerPage = lazy(
   async () => import("@/modules/storage/pages/file-explorer")
 )
 
 const StorageLayout: Component = () => {
+  const { onMessage: onWsMessage } = websocketCtl
   const $auth = useAuth()
+  const queryClient = useQueryClient()
+  const { notify } = toastCtl
 
   const storageEndpointsWithRootAccess = createMemo(() => {
     const storageRootAccess = $auth.data?.user_rights.find(
@@ -51,10 +63,29 @@ const StorageLayout: Component = () => {
     () => $storageUserPins.data?.user_pins ?? []
   )
 
+  const $storageUserArchives = useStorageUserArchives()
+  const storageUserArchives = createMemo(
+    () => $storageUserArchives.data?.user_archives ?? []
+  )
+
   const $storageEndpoints = useStorageEndpoints()
   const storageEndpoints = createMemo(
     () => $storageEndpoints.data?.endpoints ?? []
   )
+
+  onWsMessage((message) => {
+    if (message.type === "storage_user_archive_status_updated") {
+      void queryClient.invalidateQueries([storageUserArchivesKey])
+
+      notify({
+        title: "Archive ready",
+        content: "Your archive is now ready to download",
+        icon: "folder_zip",
+        severity: "info",
+        duration: 60_000,
+      })
+    }
+  })
 
   return (
     <>
@@ -107,6 +138,9 @@ const StorageLayout: Component = () => {
               }}
             </For>
           </Show>
+        </AsideSection>
+        <AsideSection>
+          <StorageUserArchives userArchives={storageUserArchives()} />
         </AsideSection>
       </AppAside>
       <AppContent noShadows>

@@ -23,9 +23,6 @@ importers:
       date-fns:
         specifier: ^2.30.0
         version: 2.30.0
-      downloadjs:
-        specifier: ^1.4.7
-        version: 1.4.7
       material-symbols:
         specifier: ^0.25.0
         version: 0.25.0
@@ -39,9 +36,6 @@ importers:
       '@trivago/prettier-plugin-sort-imports':
         specifier: ^4.1.1
         version: 4.1.1(prettier@2.8.8)
-      '@types/downloadjs':
-        specifier: ^1.4.6
-        version: 1.4.6
       '@typescript-eslint/eslint-plugin':
         specifier: ^5.59.9
         version: 5.59.9(@typescript-eslint/parser@5.62.0(eslint@8.42.0)(typescript@5.1.6))(eslint@8.42.0)(typescript@5.1.6)
@@ -535,9 +529,6 @@ packages:
       '@vue/compiler-sfc':
         optional: true
 
-  '@types/downloadjs@1.4.6':
-    resolution: {integrity: sha512-mp3w70vsaiLRT9ix92fmI9Ob2yJAPZm6tShJtofo2uHbN11G2i6a0ApIEjBl/kv3e9V7Pv7jMjk1bUwYWvMHvA==}
-
   '@types/json-schema@7.0.12':
     resolution: {integrity: sha512-Hr5Jfhc9eYOQNPYO5WLDq/n4jqijdHNlDXjuAQkkt+mWdQR+XJToOHrsD4cPaMXpn6KO7y2+wM8AZEs8VpBLVA==}
 
@@ -798,9 +789,6 @@ packages:
   doctrine@3.0.0:
     resolution: {integrity: sha512-yS+Q5i3hBf7GBkd4KG8a7eBNNWNGLTaEwwYWUijIYM7zrlYDM0BFXHjjPWlWZ1Rg7UaddZeIDmi9jF3HmqiQ2w==}
     engines: {node: '>=6.0.0'}
-
-  downloadjs@1.4.7:
-    resolution: {integrity: sha512-LN1gO7+u9xjU5oEScGFKvXhYf7Y/empUIIEAGBs1LzUq/rg5duiDrkuH5A2lQGd5jfMOb9X9usDa2oVXwJ0U/Q==}
 
   duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
@@ -2313,8 +2301,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@types/downloadjs@1.4.6': {}
-
   '@types/json-schema@7.0.12': {}
 
   '@types/normalize-package-data@2.4.1': {}
@@ -2603,8 +2589,6 @@ snapshots:
   doctrine@3.0.0:
     dependencies:
       esutils: 2.0.3
-
-  downloadjs@1.4.7: {}
 
   duplexer@0.1.2: {}
 

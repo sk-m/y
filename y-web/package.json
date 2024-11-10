@@ -12,7 +12,6 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
-    "@types/downloadjs": "^1.4.6",
     "@typescript-eslint/eslint-plugin": "^5.59.9",
     "@typescript-eslint/parser": "^5.62.0",
     "eslint": "^8.42.0",
@@ -33,7 +32,6 @@
     "@solidjs/router": "^0.8.3",
     "@tanstack/solid-query": "^4.32.6",
     "date-fns": "^2.30.0",
-    "downloadjs": "^1.4.7",
     "material-symbols": "^0.25.0",
     "solid-js": "^1.8.7",
     "zod": "^3.22.4"

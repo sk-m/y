@@ -673,7 +673,7 @@
                   }
 
                   &.pending {
-                    @keyframes pulse {
+                    @keyframes storage-file-explorer-entry-details-pending-pulse {
                       0% {
                         color: hsla(36, 100%, 55%, 1);
                         background: rgba(250, 242, 0, 0);
@@ -692,7 +692,8 @@
                       color: inherit;
                     }
 
-                    animation: pulse ease-in-out 0.75s infinite alternate;
+                    animation: storage-file-explorer-entry-details-pending-pulse
+                      ease-in-out 0.75s infinite alternate;
                   }
                 }
               }

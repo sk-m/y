@@ -19,6 +19,16 @@ const TWebsocketMessage = z
   })
   .or(
     z.object({
+      type: z.literal("storage_user_archive_status_updated"),
+
+      payload: z.object({
+        user_archive_id: z.number(),
+        ready: z.boolean(),
+      }),
+    })
+  )
+  .or(
+    z.object({
       type: z.literal("ok"),
     })
   )
@@ -56,6 +66,7 @@ const createWebsocketController = () => {
       handler(message)
     }
 
+    // TODO we create a new event listener on every call to onMessage. Maybe have just one for the whole app?
     ws.addEventListener("message", innerHandle)
 
     onCleanup(() => {
