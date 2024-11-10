@@ -35,14 +35,17 @@ async fn user_groups(
         None => "name",
     };
 
-    let user_groups = sqlx::query_as::<_, UserGroup>(
-        "SELECT * FROM user_groups WHERE name LIKE '%' || $1 || '%' ORDER BY $2 LIMIT $3 OFFSET $4",
-    )
-    .bind(search)
-    .bind(order_by)
-    .bind(query.limit.unwrap_or(DEFAULT_LIMIT))
-    .bind(query.skip.unwrap_or(0))
-    .fetch_all(&**pool);
+    let sql = format!(
+        "SELECT * FROM user_groups WHERE name LIKE '%' || $1 || '%' ORDER BY group_type ASC, {} {} LIMIT {} OFFSET {}",
+        order_by,
+        query.get_direction(),
+        query.limit.unwrap_or(DEFAULT_LIMIT),
+        query.skip.unwrap_or(0)
+    );
+
+    let user_groups = sqlx::query_as::<_, UserGroup>(sql.as_str())
+        .bind(search)
+        .fetch_all(&**pool);
 
     let user_groups_count =
         sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM user_groups").fetch_one(&**pool);

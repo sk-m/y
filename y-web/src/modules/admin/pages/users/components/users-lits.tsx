@@ -94,18 +94,10 @@ export const UsersList: Component = () => {
     defaultRowsPerPage: 25,
   })
 
-  const $users = useUsers(
-    () => ({
-      search: tableState.search(),
-      limit: tableState.rowsPerPage(),
-      orderBy: tableState.orderBy(),
-      skip: tableState.skip(),
-    }),
-    {
-      refetchInterval: 60_000,
-      refetchOnWindowFocus: true,
-    }
-  )
+  const $users = useUsers(tableState.toInput, {
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  })
 
   const $deleteUsers = createMutation(deleteUsers)
 

@@ -88,25 +88,11 @@ export const UserGroupsList: Component = () => {
     defaultRowsPerPage: 500,
   })
 
-  const $userGroups = useUserGroups(
-    () => ({
-      search: tableState.search(),
-      limit: tableState.rowsPerPage(),
-      orderBy: tableState.orderBy(),
-      skip: tableState.skip(),
-    }),
-    {
-      refetchOnWindowFocus: true,
-    }
-  )
+  const $userGroups = useUserGroups(tableState.toInput, {
+    refetchOnWindowFocus: true,
+  })
 
-  const userGroups = createMemo(
-    () =>
-      // eslint-disable-next-line no-confusing-arrow
-      $userGroups.data?.user_groups.sort((group) =>
-        group.group_type === null ? 1 : -1
-      ) ?? []
-  )
+  const userGroups = createMemo(() => $userGroups.data?.user_groups ?? [])
 
   return (
     <Show when={$userGroups.isSuccess}>

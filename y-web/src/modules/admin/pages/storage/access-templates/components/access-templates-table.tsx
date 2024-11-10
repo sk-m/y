@@ -89,18 +89,10 @@ export const StorageAccessTemplatesList: Component = () => {
     defaultRowsPerPage: 25,
   })
 
-  const $templates = useStorageAccessRulesTemplates(
-    () => ({
-      search: tableState.search(),
-      limit: tableState.rowsPerPage(),
-      orderBy: tableState.orderBy(),
-      skip: tableState.skip(),
-    }),
-    {
-      refetchInterval: 60_000,
-      refetchOnWindowFocus: true,
-    }
-  )
+  const $templates = useStorageAccessRulesTemplates(tableState.toInput, {
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  })
 
   const $deleteTemplates = createMutation(deleteStorageAccessRulesTemplates)
 
