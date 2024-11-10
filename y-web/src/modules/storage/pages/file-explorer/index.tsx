@@ -206,7 +206,10 @@ const FileExplorerPage: Component = () => {
     contextMenuProps: selectionContextMenuProps,
   } = useContextMenu()
 
-  const dragletState = createMutable({ entry: null as IStorageEntry | null })
+  const dragletState = createMutable({
+    entry: null as IStorageEntry | null,
+    selectedEntriesCount: 0,
+  })
 
   const [entriesToDelete, setEntriesToDelete] = createSignal<{
     folderIds: number[]
@@ -1370,6 +1373,7 @@ const FileExplorerPage: Component = () => {
                       isRenaming={isRenaming()}
                       entry={entry}
                       isSelected={selected()}
+                      selectedCount={selectedEntries().size}
                       isActive={active()}
                       isContextMenuTarget={isContextMenuTarget()}
                       thumbnails={thumbnails()}

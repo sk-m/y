@@ -36,6 +36,8 @@ export type StorageEntryProps = {
   thumbnails?: Record<string, string>
   isRenaming?: boolean
 
+  selectedCount?: number
+
   onDblClick: (event: MouseEvent) => void
   onOpenContextMenu?: (event: MouseEvent) => void
   onSelect?: (event: MouseEvent | undefined) => void
@@ -93,6 +95,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       event.dataTransfer?.setDragImage(draggable, 0, 0)
 
       props.dragletState.entry = props.entry
+      props.dragletState.selectedEntriesCount = props.selectedCount ?? 1
 
       props.dragletRef.style.display = "flex"
       props.dragletRef.style.top = `${event.clientY}px`

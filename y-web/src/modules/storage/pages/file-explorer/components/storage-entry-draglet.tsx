@@ -11,6 +11,7 @@ export type StorageEntryDragletProps = {
 
   state: {
     entry: IStorageEntry | null
+    selectedEntriesCount: number
   }
 }
 
@@ -38,6 +39,9 @@ export const StorageEntryDraglet: Component<StorageEntryDragletProps> = (
             {props.state.entry?.name}
             {props.state.entry?.extension
               ? `.${props.state.entry.extension}`
+              : ""}
+            {props.state.selectedEntriesCount > 1
+              ? ` and ${props.state.selectedEntriesCount - 1} other`
               : ""}
           </div>
         </div>
