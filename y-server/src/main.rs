@@ -176,7 +176,7 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_locations::storage_locations)
                     .service(crate::api::storage::storage_entries::storage_entries)
                     .service(crate::api::storage::storage_download::storage_download)
-                    .service(crate::api::storage::storage_download_zip::storage_download_zip)
+                    .service(crate::api::storage::storage_create_archive::storage_create_archive)
                     .service(crate::api::storage::storage_create_folder::storage_create_folder)
                     .service(crate::api::storage::storage_get_folder_path::storage_get_folder_path)
                     .service(crate::api::storage::storage_delete_entries::storage_delete_entries)
@@ -194,6 +194,8 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_user_pins::storage_user_pins)
                     .service(crate::api::storage::storage_create_user_pin::storage_create_user_pin)
                     .service(crate::api::storage::storage_delete_user_pin::storage_delete_user_pin)
+                    .service(crate::api::storage::storage_user_archives::storage_user_archives)
+                    .service(crate::api::storage::storage_download_archive::storage_download_archive),
             )
             .service(
                 web::scope("/api/admin")

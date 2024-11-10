@@ -46,9 +46,9 @@ import {
 import { useFileExplorerThumbnails } from "@/modules/storage/file-explorer/use-file-explorer-thumbnails"
 import {
   createStorageFolder,
+  createStorageUserArchive,
   deleteStorageEntries,
   downloadStorageFile,
-  downloadStorageFilesZip,
   moveStorageEntries,
   renameStorageEntry,
 } from "@/modules/storage/storage-entry/storage-entry.api"
@@ -67,6 +67,7 @@ import {
 } from "../../file-explorer/use-file-explorer-display-config"
 import { createStorageLocation } from "../../storage-location/storage-location.api"
 import { storageLocationsKey } from "../../storage-location/storage-location.service"
+import { storageUserArchivesKey } from "../../storage-user-archive/storage-user-archive.service"
 import { createStorageUserPin } from "../../storage-user-pin/storage-user-pin.api"
 import { storageUserPinsKey } from "../../storage-user-pin/storage-user-pin.service"
 import { FileExplorerAddLocationModal } from "./components/file-explorer-add-location-modal"
@@ -645,18 +646,36 @@ const FileExplorerPage: Component = () => {
   const downloadSelectedEntries = () => {
     const { folderIds, fileIds } = partitionEntries([...selectedEntries()])
 
-    void downloadStorageFilesZip({
+    void createStorageUserArchive({
       endpointId: params.endpointId as string,
       folderIds,
       fileIds,
+    }).then(() => {
+      notify({
+        title: "Archivation started",
+        content: "We will notify you once your archive is ready for download",
+        icon: "folder_zip",
+        severity: "success",
+      })
+
+      void queryClient.invalidateQueries([storageUserArchivesKey])
     })
   }
 
   const downloadFolder = (entryId: number) => {
-    void downloadStorageFilesZip({
+    void createStorageUserArchive({
       endpointId: params.endpointId as string,
       folderIds: [entryId],
       fileIds: [],
+    }).then(() => {
+      notify({
+        title: "Archivation started",
+        content: "We will notify you once your archive is ready for download",
+        icon: "folder_zip",
+        severity: "success",
+      })
+
+      void queryClient.invalidateQueries([storageUserArchivesKey])
     })
   }
 
