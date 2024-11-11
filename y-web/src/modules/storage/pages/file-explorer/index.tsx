@@ -19,7 +19,7 @@ import {
 } from "solid-js"
 import { createMutable } from "solid-js/store"
 
-import { useParams, useSearchParams } from "@solidjs/router"
+import { useNavigate, useParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Button } from "@/app/components/common/button/button"
@@ -34,7 +34,7 @@ import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 import { useFilesDrop } from "@/app/core/util/use-files-drop"
-import { lerp } from "@/app/core/utils"
+import { debug, lerp } from "@/app/core/utils"
 import { websocketCtl } from "@/app/core/websocket"
 import { updateLocationStorage } from "@/app/core/websocket.utils"
 import { globalUploadProgressCtl } from "@/app/storage/global-upload-progress"
@@ -94,7 +94,7 @@ const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
   const queryClient = useQueryClient()
   const params = useParams()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
 
   const { status: uploadStatus, setStatus: setUploadStatus } =
     globalUploadProgressCtl
@@ -115,8 +115,8 @@ const FileExplorerPage: Component = () => {
 
   // prettier-ignore
   const folderId = createMemo(() =>
-    (searchParams.folderId
-      ? Number.parseInt(searchParams.folderId, 10)
+    (params.folderId
+      ? Number.parseInt(params.folderId, 10)
       // eslint-disable-next-line no-undefined
       : undefined)
   )
@@ -164,7 +164,7 @@ const FileExplorerPage: Component = () => {
     contextMenuTargetEntry,
   } = useFileExplorer({
     endpointId: () => params.endpointId as string,
-    folderId: () => searchParams.folderId,
+    folderId: () => params.folderId,
 
     entriesSortFn: sortFn,
     // eslint-disable-next-line solid/reactivity
@@ -509,7 +509,7 @@ const FileExplorerPage: Component = () => {
 
   // TODO rename this to something more generic. We use this function for both dnd upload
   // and file input upload
-  // TODO also, we should move half this logic to a separate function. This does way to much,
+  // TODO also, we should move half this logic to a separate function. This does way too much,
   // it should be more generic
   const handleDrop = (filesToUpload: FileWithPath[]) => {
     let totalSizeBytes = 0
@@ -537,8 +537,8 @@ const FileExplorerPage: Component = () => {
 
     uploadUrl.searchParams.set("endpoint_id", params.endpointId as string)
 
-    if (searchParams.folderId) {
-      uploadUrl.searchParams.set("target_folder", searchParams.folderId)
+    if (params.folderId) {
+      uploadUrl.searchParams.set("target_folder", params.folderId)
     }
 
     const request = new XMLHttpRequest()
@@ -631,8 +631,8 @@ const FileExplorerPage: Component = () => {
     handleDrop(files)
   }
 
-  const navigateToFolder = (targetFolderId: number) => {
-    setSearchParams({ folderId: targetFolderId.toString() })
+  const navigateToFolder = (targetFolderId?: number | string | null) => {
+    navigate(`/files/browse/${params.endpointId!}/${targetFolderId ?? ""}`)
   }
 
   const downloadFile = (fileId: number) => {
@@ -718,6 +718,8 @@ const FileExplorerPage: Component = () => {
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
   onMount(() => {
+    debug("Files explorer mounted")
+
     const keydownHandler = (event: KeyboardEvent) => {
       if ((event.target as HTMLElement | undefined)?.nodeName === "INPUT")
         return
@@ -731,9 +733,7 @@ const FileExplorerPage: Component = () => {
         // eslint-disable-next-line @typescript-eslint/no-magic-numbers
         const parentFolder = folderPath()[folderPath().length - 2]
 
-        setSearchParams({
-          folderId: parentFolder?.id.toString() ?? null,
-        })
+        navigateToFolder(parentFolder?.id)
       }
 
       // Reset selection
@@ -930,9 +930,7 @@ const FileExplorerPage: Component = () => {
           <div class="top-container">
             <FileExplorerPath
               path={folderPath()}
-              onNavigate={(newFolderId) =>
-                setSearchParams({ folderId: newFolderId })
-              }
+              onNavigate={navigateToFolder}
               onMove={(sourceEntrySignature, targetFolderId) => {
                 const isInMultiselect =
                   selectedEntries().has(sourceEntrySignature)

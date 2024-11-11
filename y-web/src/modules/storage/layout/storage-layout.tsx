@@ -145,7 +145,10 @@ const StorageLayout: Component = () => {
       </AppAside>
       <AppContent noShadows>
         <Routes>
-          <Route path="browse/:endpointId" component={FileExplorerPage} />
+          <Route
+            path={["browse/:endpointId/:folderId", "browse/:endpointId"]}
+            component={FileExplorerPage}
+          />
         </Routes>
       </AppContent>
     </>
