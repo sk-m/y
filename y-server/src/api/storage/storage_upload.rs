@@ -323,6 +323,7 @@ async fn storage_upload(
                         // single chunk error, we should just rollback the transaction and
                         // continue on to the next file in the request?
                         if let Ok(chunk) = chunk {
+                            // TODO don't branch in this loop. Just get the first chunk before the loop.
                             if first_chunk {
                                 first_chunk = false;
                                 file_kind = infer::get(&chunk);

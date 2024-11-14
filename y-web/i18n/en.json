@@ -59,6 +59,10 @@
         "name": "Manage storage locations",
         "description": "Allows adding and removing storage locations."
       },
+      "create_storage_links": {
+        "name": "Create storage links",
+        "description": "Allows creating random short links for storage entries."
+      },
       "storage_manage_access": {
         "name": "Manage storage access",
         "description": "Allows setting access rules for storage entries. This is not an override - entries that prohibit managing access will still be unmodifiable. Users without this right will never be able to manage access on any entry."
@@ -112,6 +116,11 @@
       "storage_manage_access": {
         "allow_managing_templates": {
           "description": "Allow managing access rule templates."
+        }
+      },
+      "create_storage_links": {
+        "allow_updating_code": {
+          "description": "Allow setting a custom code for a storage link (including links created by other users)."
         }
       }
     },
@@ -199,6 +208,11 @@
       },
       "delete_storage_user_pin": {
         "not_found": "Pin not found"
+      },
+      "config": {
+        "access_denined": "Access denied",
+        "invalid_input": "Invalid input",
+        "internal": "Internal error"
       },
       "storage": {
         "access_denined": "Access denied",
