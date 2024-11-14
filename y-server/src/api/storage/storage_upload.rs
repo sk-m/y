@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::time::Instant;
 
+use crate::config::get_config;
 use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
 use crate::storage_entry::{
     generate_audio_entry_cover_thumbnail, generate_browser_friendly_video,
@@ -410,6 +411,27 @@ async fn storage_upload(
 
     // Generate thumbnails
     std::thread::spawn(move || {
+        let storage_config = block_on(get_config(&**pool));
+
+        let generate_image_thumbnails =
+            storage_config.get("storage.generate_thumbnails.image") == Some(&"true".to_string());
+
+        let generate_video_thumbnails =
+            storage_config.get("storage.generate_thumbnails.video") == Some(&"true".to_string());
+
+        let generate_audio_thumbnails =
+            storage_config.get("storage.generate_thumbnails.audio") == Some(&"true".to_string());
+
+        let generate_seeking_thumbnails = storage_config
+            .get("storage.generate_seeking_thumbnails.enabled")
+            == Some(&"true".to_string());
+
+        let seeking_thumbnails_frames_count = storage_config
+            .get("storage.generate_seeking_thumbnails.desired_frames")
+            .unwrap_or(&"10".to_string())
+            .parse::<u32>()
+            .unwrap_or(10);
+
         if let Some(target_endpoint_artifacts_path) = &target_endpoint.artifacts_path {
             for filesystem_id in &uploaded_files {
                 let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
@@ -423,54 +445,67 @@ async fn storage_upload(
                         match mime_type {
                             "image/jpeg" | "image/png" | "image/gif" | "image/webp"
                             | "image/bmp" => {
-                                let file_metadata =
-                                    fs::File::open(&path).unwrap().metadata().unwrap();
+                                if generate_image_thumbnails {
+                                    let file_metadata =
+                                        fs::File::open(&path).unwrap().metadata().unwrap();
 
-                                if file_metadata.len() <= MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION {
-                                    let generate_thumbnail_result = generate_image_entry_thumbnail(
-                                        &filesystem_id,
-                                        &target_endpoint.base_path.as_str(),
-                                        &target_endpoint_artifacts_path.as_str(),
-                                    );
+                                    if file_metadata.len() <= MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION
+                                    {
+                                        let generate_thumbnail_result =
+                                            generate_image_entry_thumbnail(
+                                                &filesystem_id,
+                                                &target_endpoint.base_path.as_str(),
+                                                &target_endpoint_artifacts_path.as_str(),
+                                            );
 
-                                    if generate_thumbnail_result.is_err() {
-                                        error!(
+                                        if generate_thumbnail_result.is_err() {
+                                            error!(
                                             "Failed to create a thumbnail for an uploaded image file ({})",
                                             &filesystem_id
                                         );
+                                        }
                                     }
                                 }
                             }
 
                             "video/mp4" | "video/webm" | "video/mov" | "video/avi"
                             | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
-                                let generate_thumbnail_result = generate_video_entry_thumbnails(
-                                    &filesystem_id,
-                                    &target_endpoint.base_path.as_str(),
-                                    &target_endpoint_artifacts_path.as_str(),
-                                );
+                                if generate_video_thumbnails {
+                                    let generate_thumbnail_result = generate_video_entry_thumbnails(
+                                        &filesystem_id,
+                                        &target_endpoint.base_path.as_str(),
+                                        &target_endpoint_artifacts_path.as_str(),
+                                        if generate_seeking_thumbnails {
+                                            Some(seeking_thumbnails_frames_count)
+                                        } else {
+                                            None
+                                        },
+                                    );
 
-                                if generate_thumbnail_result.is_err() {
-                                    error!(
+                                    if generate_thumbnail_result.is_err() {
+                                        error!(
                                         "Failed to create a thumbnail for an uploaded video file ({})",
                                         &filesystem_id
                                     );
+                                    }
                                 }
                             }
 
                             "audio/mpeg" | "audio/x-flac" | "audio/x-wav" | "audio/aac" => {
-                                let generate_thumbnail_result =
-                                    generate_audio_entry_cover_thumbnail(
-                                        &filesystem_id,
-                                        &target_endpoint.base_path.as_str(),
-                                        &target_endpoint_artifacts_path.as_str(),
-                                    );
+                                if generate_audio_thumbnails {
+                                    let generate_thumbnail_result =
+                                        generate_audio_entry_cover_thumbnail(
+                                            &filesystem_id,
+                                            &target_endpoint.base_path.as_str(),
+                                            &target_endpoint_artifacts_path.as_str(),
+                                        );
 
-                                if generate_thumbnail_result.is_err() {
-                                    error!(
-                                        "Failed to create a cover image thumbnail for an uploaded audio file ({})",
-                                        &filesystem_id
-                                    );
+                                    if generate_thumbnail_result.is_err() {
+                                        error!(
+                                            "Failed to create a cover image thumbnail for an uploaded audio file ({})",
+                                            &filesystem_id
+                                        );
+                                    }
                                 }
                             }
 
@@ -480,76 +515,96 @@ async fn storage_upload(
                 }
             }
 
-            let mut files_to_transcode: Vec<String> = Vec::new();
+            let transcoding_enabled =
+                storage_config.get("storage.transcode_videos.enabled") == Some(&"true".to_string());
 
-            for filesystem_id in &uploaded_files {
-                let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
+            if transcoding_enabled {
+                let target_height = storage_config
+                    .get("storage.transcode_videos.target_height")
+                    .unwrap_or(&"720".to_string())
+                    .parse::<u32>()
+                    .unwrap_or(720);
 
-                let file_kind = infer::get_from_path(&path);
+                let target_bitrate = storage_config
+                    .get("storage.transcode_videos.target_bitrate")
+                    .unwrap_or(&"4000".to_string())
+                    .parse::<u32>()
+                    .unwrap_or(4000);
 
-                if !file_kind.is_err() {
-                    if let Some(file_kind) = file_kind.unwrap() {
-                        let mime_type = file_kind.mime_type();
+                let mut files_to_transcode: Vec<String> = Vec::new();
 
-                        match mime_type {
-                            "video/mp4" | "video/webm" | "video/mov" | "video/avi"
-                            | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
-                                files_to_transcode.push(filesystem_id.clone());
+                for filesystem_id in &uploaded_files {
+                    let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
+
+                    let file_kind = infer::get_from_path(&path);
+
+                    if !file_kind.is_err() {
+                        if let Some(file_kind) = file_kind.unwrap() {
+                            let mime_type = file_kind.mime_type();
+
+                            match mime_type {
+                                "video/mp4" | "video/webm" | "video/mov" | "video/avi"
+                                | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
+                                    files_to_transcode.push(filesystem_id.clone());
+                                }
+
+                                _ => {}
                             }
-
-                            _ => {}
                         }
                     }
                 }
-            }
 
-            let _ = block_on(sqlx::query("UPDATE storage_entries SET transcoded_version_available = FALSE WHERE endpoint_id = $1 AND filesystem_id = ANY($2)")
-                .bind(endpoint_id)
-                .bind(&files_to_transcode)
-                .execute(&**pool));
+                let _ = block_on(sqlx::query("UPDATE storage_entries SET transcoded_version_available = FALSE WHERE endpoint_id = $1 AND filesystem_id = ANY($2)")
+                    .bind(endpoint_id)
+                    .bind(&files_to_transcode)
+                    .execute(&**pool));
 
-            // Refresh folder when thumbnails are ready
-            let _ = block_on(ws_state2.lock().unwrap().send_storage_location_updated(
-                None,
-                endpoint_id,
-                // TODO stop cloning stuff...
-                folders_to_update2.clone(),
-                if files_to_transcode.is_empty() {
-                    false
-                } else {
-                    true
-                },
-                true,
-            ));
+                // Refresh folder when thumbnails are ready
+                let _ = block_on(ws_state2.lock().unwrap().send_storage_location_updated(
+                    None,
+                    endpoint_id,
+                    // TODO stop cloning stuff...
+                    folders_to_update2.clone(),
+                    if files_to_transcode.is_empty() {
+                        false
+                    } else {
+                        true
+                    },
+                    true,
+                ));
 
-            for filesystem_id in &files_to_transcode {
-                let generate_preview_result = generate_browser_friendly_video(
-                    &filesystem_id,
-                    &target_endpoint.base_path.as_str(),
-                    &target_endpoint_artifacts_path.as_str(),
-                );
-
-                if generate_preview_result.is_ok() {
-                    let parent_folder = block_on(sqlx::query_scalar::<_, Option<i64>>("UPDATE storage_entries SET transcoded_version_available = TRUE WHERE endpoint_id = $1 AND filesystem_id = $2 RETURNING parent_folder")
-                        .bind(endpoint_id)
-                        .bind(filesystem_id)
-                        .fetch_one(&**pool));
-
-                    if let Ok(parent_folder) = parent_folder {
-                        // Refresh folder when a video is ready
-                        let _ = block_on(ws_state2.lock().unwrap().send_storage_location_updated(
-                            None,
-                            endpoint_id,
-                            vec![parent_folder],
-                            true,
-                            false,
-                        ));
-                    }
-                } else {
-                    error!(
-                        "Failed to create a browser friendly preview for an uploaded video file ({})",
+                for filesystem_id in &files_to_transcode {
+                    let generate_preview_result = generate_browser_friendly_video(
                         &filesystem_id,
+                        &target_endpoint.base_path.as_str(),
+                        &target_endpoint_artifacts_path.as_str(),
+                        target_height,
+                        target_bitrate,
                     );
+
+                    if generate_preview_result.is_ok() {
+                        let parent_folder = block_on(sqlx::query_scalar::<_, Option<i64>>("UPDATE storage_entries SET transcoded_version_available = TRUE WHERE endpoint_id = $1 AND filesystem_id = $2 RETURNING parent_folder")
+                            .bind(endpoint_id)
+                            .bind(filesystem_id)
+                            .fetch_one(&**pool));
+
+                        if let Ok(parent_folder) = parent_folder {
+                            // Refresh folder when a video is ready
+                            let _ =
+                                block_on(ws_state2.lock().unwrap().send_storage_location_updated(
+                                    None,
+                                    endpoint_id,
+                                    vec![parent_folder],
+                                    true,
+                                    false,
+                                ));
+                        }
+                    } else {
+                        error!(
+                            "Failed to create a browser friendly preview for an uploaded video file ({})",
+                            &filesystem_id,
+                        );
+                    }
                 }
             }
         }

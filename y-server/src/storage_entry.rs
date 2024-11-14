@@ -786,47 +786,61 @@ pub fn generate_video_entry_thumbnails(
     filesystem_id: &str,
     endpoint_path: &str,
     endpoint_artifacts_path: &str,
+    desired_frames_count: Option<u32>,
 ) -> Result<(), StorageError> {
     // TODO this function is exceptionally ugly
 
     let ffmpeg_bin_path = env::var("FFMPEG_BIN");
-    let ffprobe_bin_path = env::var("FFPROBE_BIN");
 
-    if !ffmpeg_bin_path.is_ok() || !ffprobe_bin_path.is_ok() {
+    if !ffmpeg_bin_path.is_ok() {
         return Ok(());
     }
 
     let ffmpeg_bin_path = ffmpeg_bin_path.unwrap();
-    let ffprobe_bin_path = ffprobe_bin_path.unwrap();
-
     let ffmpeg_bin_path = Path::new(&ffmpeg_bin_path);
-    let ffprobe_bin_path = Path::new(&ffprobe_bin_path);
 
-    if ffmpeg_bin_path.exists() && ffprobe_bin_path.exists() {
-        let file_path = Path::new(endpoint_path).join(&filesystem_id);
-        let endpoint_thumbnails_path = Path::new(endpoint_artifacts_path).join("thumbnails");
-        let file_path_string = file_path.to_str().unwrap();
+    if !ffmpeg_bin_path.exists() {
+        return Err(StorageError::Internal);
+    }
 
-        let thumbnail_result = Command::new(ffmpeg_bin_path)
-            .arg("-ss")
-            .arg("00:00:01")
-            .arg("-i")
-            .arg(file_path.to_str().unwrap())
-            .arg("-frames:v")
-            .arg("1")
-            .arg("-c:v")
-            .arg("libwebp")
-            .arg(
-                endpoint_thumbnails_path
-                    .join(&filesystem_id)
-                    .with_extension("webp")
-                    .to_str()
-                    .unwrap(),
-            )
-            .output();
+    let file_path = Path::new(endpoint_path).join(&filesystem_id);
+    let endpoint_thumbnails_path = Path::new(endpoint_artifacts_path).join("thumbnails");
+    let file_path_string = file_path.to_str().unwrap();
 
-        if !thumbnail_result.is_ok() {
-            return Err(StorageError::ConvertError);
+    let thumbnail_result = Command::new(ffmpeg_bin_path)
+        .arg("-ss")
+        .arg("00:00:01")
+        .arg("-i")
+        .arg(file_path.to_str().unwrap())
+        .arg("-frames:v")
+        .arg("1")
+        .arg("-c:v")
+        .arg("libwebp")
+        .arg(
+            endpoint_thumbnails_path
+                .join(&filesystem_id)
+                .with_extension("webp")
+                .to_str()
+                .unwrap(),
+        )
+        .output();
+
+    if !thumbnail_result.is_ok() {
+        return Err(StorageError::ConvertError);
+    }
+
+    if desired_frames_count.is_some() {
+        let ffprobe_bin_path = env::var("FFPROBE_BIN");
+
+        if !ffprobe_bin_path.is_ok() {
+            return Ok(());
+        }
+
+        let ffprobe_bin_path = ffprobe_bin_path.unwrap();
+        let ffprobe_bin_path = Path::new(&ffprobe_bin_path);
+
+        if !ffprobe_bin_path.exists() {
+            return Err(StorageError::Internal);
         }
 
         let frames_count_result = Command::new(ffprobe_bin_path)
@@ -849,14 +863,14 @@ pub fn generate_video_entry_thumbnails(
                 return Err(StorageError::ConvertError);
             }
 
-            let frames_count = frames_count_output.unwrap().trim().parse::<i32>();
+            let frames_count = frames_count_output.unwrap().trim().parse::<u32>();
 
             if frames_count.is_err() {
                 return Err(StorageError::ConvertError);
             }
 
             let frames_count = frames_count.unwrap();
-            let desired_frames = 9;
+            let desired_frames = desired_frames_count.unwrap();
 
             let frames_dir_path = &endpoint_thumbnails_path.join(&filesystem_id);
             fs::create_dir(frames_dir_path).unwrap();
@@ -895,7 +909,7 @@ pub fn generate_video_entry_thumbnails(
             return Err(StorageError::ConvertError);
         }
     } else {
-        Err(StorageError::Internal)
+        Ok(())
     }
 }
 
@@ -903,6 +917,8 @@ pub fn generate_browser_friendly_video(
     filesystem_id: &str,
     endpoint_path: &str,
     endpoint_artifacts_path: &str,
+    target_height: u32,
+    target_bitrate: u32,
 ) -> Result<(), StorageError> {
     let ffmpeg_bin_path = env::var("FFMPEG_BIN");
     let ffmpeg_hwaccel_nvenc =
@@ -939,11 +955,11 @@ pub fn generate_browser_friendly_video(
                     .arg("-c:v")
                     .arg("h264_nvenc")
                     .arg("-b:v")
-                    .arg("600k")
+                    .arg(format!("{}k", target_bitrate))
                     .arg("-b:a")
                     .arg("192k")
                     .arg("-vf")
-                    .arg("scale_cuda=-2:720")
+                    .arg(format!("scale_cuda=-2:{}", target_height))
                     .arg(
                         endpoint_preview_videos_path
                             .join(&filesystem_id)
@@ -960,11 +976,11 @@ pub fn generate_browser_friendly_video(
                     .arg("-c:v")
                     .arg("libx264")
                     .arg("-b:v")
-                    .arg("600k")
+                    .arg(format!("{}k", target_bitrate))
                     .arg("-b:a")
                     .arg("192k")
                     .arg("-vf")
-                    .arg("scale=-2:720")
+                    .arg(format!("scale=-2:{}", target_height))
                     .arg(
                         endpoint_preview_videos_path
                             .join(&filesystem_id)
