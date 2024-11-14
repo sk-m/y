@@ -1,6 +1,9 @@
 import { createRoot, onCleanup } from "solid-js"
 
-import { makeReconnectingWS } from "@solid-primitives/websocket"
+import {
+  makeHeartbeatWS,
+  makeReconnectingWS,
+} from "@solid-primitives/websocket"
 import { z } from "zod"
 
 import { debug } from "./utils"
@@ -41,14 +44,15 @@ const TWebsocketMessage = z
 type IWebsocketMessage = z.infer<typeof TWebsocketMessage>
 
 const createWebsocketController = () => {
-  // Heartbeat task is running on the server, no need to do that on the frontend
-  const ws = makeReconnectingWS(
-    `ws://${window.location.host}/api/ws`,
-    // eslint-disable-next-line no-undefined
-    undefined,
-    {
-      delay: 5000,
-    }
+  const ws = makeHeartbeatWS(
+    makeReconnectingWS(
+      `ws://${window.location.host}/api/ws`,
+      // eslint-disable-next-line no-undefined
+      undefined,
+      {
+        delay: 5000,
+      }
+    )
   )
 
   const send = (message: string) => {
