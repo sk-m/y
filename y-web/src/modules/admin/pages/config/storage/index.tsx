@@ -10,8 +10,10 @@ import { Checkbox } from "@/app/components/common/checkbox/checkbox"
 import { InputField } from "@/app/components/common/input-field/input-field"
 import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
+import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
 import { validateInt } from "@/app/core/use-form.utils"
+import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { updateConfig } from "@/modules/admin/config/admin-config.api"
@@ -44,6 +46,7 @@ type FieldValues = { [key in (typeof fields)[number]]: string | null }
 
 const ConfigStoragePage = () => {
   const queryClient = useQueryClient()
+  const { notify } = toastCtl
 
   const $updateConfigOption = createMutation(updateConfig)
 
@@ -64,7 +67,14 @@ const ConfigStoragePage = () => {
         onSuccess: () => {
           void queryClient.invalidateQueries([adminConfigOptionsKey])
           void queryClient.invalidateQueries([instanceConfigKey])
+
+          notify({
+            title: "Saved",
+            icon: "check",
+            severity: "success",
+          })
         },
+        onError: (error) => genericErrorToast(error),
       })
     },
   })
