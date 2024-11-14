@@ -44,8 +44,12 @@ const StorageAccessTemplatesPage = lazy(
   async () => import("@/modules/admin/pages/storage/access-templates")
 )
 
-const ConfigGeneralPage = lazy(
-  async () => import("@/modules/admin/pages/config/general")
+const ConfigInstancePage = lazy(
+  async () => import("@/modules/admin/pages/config/instance")
+)
+
+const ConfigStoragePage = lazy(
+  async () => import("@/modules/admin/pages/config/storage")
 )
 
 const FeaturesPage = lazy(async () => import("@/modules/admin/pages/features"))
@@ -106,14 +110,20 @@ const AdminLayout: Component = () => {
               <AsideEntry
                 icon="page_info"
                 title="Configuration"
-                to="config/general"
-                relatedPaths={["config", "config/general"]}
+                to="config/instance"
+                relatedPaths={["config", "config/instance", "config/storage"]}
               >
                 <AsideEntry
                   subEntry
-                  icon="manufacturing"
-                  title="General"
-                  to="config/general"
+                  icon="home"
+                  title="Instance"
+                  to="config/instance"
+                />
+                <AsideEntry
+                  subEntry
+                  icon="hard_drive"
+                  title="Storage"
+                  to="config/storage"
                 />
               </AsideEntry>
             </Show>
@@ -159,7 +169,8 @@ const AdminLayout: Component = () => {
           <Route path="/users/:userId/*" component={UserPage} />
           <Route path="/users/new" component={NewUserPage} />
           <Route path="/features" component={FeaturesPage} />
-          <Route path="/config/general" component={ConfigGeneralPage} />
+          <Route path="/config/instance" component={ConfigInstancePage} />
+          <Route path="/config/storage" component={ConfigStoragePage} />
           <Route path="/storage/endpoints" component={StorageEndpointsPage} />
           <Route
             path="/storage/endpoints/:endpointId"

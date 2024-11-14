@@ -27,6 +27,7 @@ export type AdminUpdateUserPasswordModalProps = {
   onClose: () => void
 }
 
+// TODO Move change password logic out of the component
 export const AdminUpdateUserPasswordModal: Component<
   AdminUpdateUserPasswordModalProps
 > = (props) => {

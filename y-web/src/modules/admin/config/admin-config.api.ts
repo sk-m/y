@@ -1,4 +1,4 @@
-import { get, put } from "@/app/core/request"
+import { get, patch } from "@/app/core/request"
 
 import { TGetAdminConfigOptions } from "./admin-config.codecs"
 
@@ -8,15 +8,10 @@ export const adminConfigOptions = async () => {
   return get(apiAdminConfig).then((data) => TGetAdminConfigOptions.parse(data))
 }
 
-export type UpdateConfigOptionInput = {
-  key: string
-  value: string
-}
+export type UpdateConfigInput = { [key: string]: string }
 
-export const updateConfigOption = async (input: UpdateConfigOptionInput) => {
-  return put(`${apiAdminConfig}/${input.key}`, {
-    body: {
-      value: input.value,
-    },
+export const updateConfig = async (input: UpdateConfigInput) => {
+  return patch(apiAdminConfig, {
+    body: input,
   })
 }
