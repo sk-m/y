@@ -67,7 +67,9 @@ const ConfigInstancePage = () => {
     },
   })
 
-  const $config = useAdminConfigOptions({})
+  const $config = useAdminConfigOptions({
+    useErrorBoundary: true,
+  })
 
   const config = createMemo(() => {
     const configMap: Record<string, IAdminConfigOption> = {}

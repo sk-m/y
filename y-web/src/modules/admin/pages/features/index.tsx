@@ -27,7 +27,9 @@ const FeaturesPage: Component = () => {
     storage: false,
   })
 
-  const $features = useFeatures()
+  const $features = useFeatures({
+    useErrorBoundary: true,
+  })
   const $updateFeature = createMutation(updateFeature)
 
   let featuresLoaded = false

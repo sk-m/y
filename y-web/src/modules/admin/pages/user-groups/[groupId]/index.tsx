@@ -23,6 +23,7 @@ import { Stack } from "@/app/components/common/stack/stack"
 import { Tab, TabContent, TabsContainer } from "@/app/components/common/tab/tab"
 import { Text } from "@/app/components/common/text/text"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
+import { AppErrorBoundary } from "@/app/layout/components/app-error-boundary"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { userGroupType } from "@/modules/admin/user-groups/user-groups.codecs"
@@ -185,17 +186,19 @@ const UserGroupPage: Component = () => {
                   />
                 }
               />
-              <Route
-                path="/rights"
-                element={
-                  <UserGroupRightsSubpage
-                    group={$userGroup.data!}
-                    groupManagementAllowed={
-                      groupManagementPermissions().groupManagementAllowed
-                    }
-                  />
-                }
-              />
+              <AppErrorBoundary message="Could not load group rights">
+                <Route
+                  path="/rights"
+                  element={
+                    <UserGroupRightsSubpage
+                      group={$userGroup.data!}
+                      groupManagementAllowed={
+                        groupManagementPermissions().groupManagementAllowed
+                      }
+                    />
+                  }
+                />
+              </AppErrorBoundary>
             </Routes>
           </Show>
         </TabContent>

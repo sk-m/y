@@ -90,6 +90,7 @@ export const UserGroupsList: Component = () => {
 
   const $userGroups = useUserGroups(tableState.toInput, {
     refetchOnWindowFocus: true,
+    useErrorBoundary: true,
   })
 
   const userGroups = createMemo(() => $userGroups.data?.user_groups ?? [])

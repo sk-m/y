@@ -61,7 +61,9 @@ const UserGroupsSubpage: Component<UserGroupsSubpageProps> = (props) => {
     return { allowedGroups, anyGroupIsAllowed }
   })
 
-  const $userGroups = useUserGroups(() => ({}))
+  const $userGroups = useUserGroups(() => ({}), {
+    useErrorBoundary: true,
+  })
   const userGroups = createMemo(
     () =>
       $userGroups.data?.user_groups.filter((group) => !group.group_type) ?? []

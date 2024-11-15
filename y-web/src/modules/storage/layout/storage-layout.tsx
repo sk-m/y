@@ -140,7 +140,9 @@ const StorageLayout: Component = () => {
           </Show>
         </AsideSection>
         <AsideSection>
-          <StorageUserArchives userArchives={storageUserArchives()} />
+          <Show when={storageUserArchives().length > 0}>
+            <StorageUserArchives userArchives={storageUserArchives()} />
+          </Show>
         </AsideSection>
       </AppAside>
       <AppContent noShadows>

@@ -7,6 +7,7 @@ import { Card } from "@/app/components/common/card/card"
 import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { AppErrorBoundary } from "@/app/layout/components/app-error-boundary"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { useAuth } from "@/modules/core/auth/auth.service"
@@ -34,7 +35,9 @@ const UserGroupsListPage: Component = () => {
           <Breadcrumb path={routes["/admin/user-groups"]}>Groups</Breadcrumb>
         </Breadcrumbs>
 
-        <UserGroupsList />
+        <AppErrorBoundary message="Could not load user groups list">
+          <UserGroupsList />
+        </AppErrorBoundary>
 
         <Show when={groupCreationAllowed()}>
           <Card>

@@ -97,6 +97,7 @@ export const UsersList: Component = () => {
   const $users = useUsers(tableState.toInput, {
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
+    useErrorBoundary: true,
   })
 
   const $deleteUsers = createMutation(deleteUsers)

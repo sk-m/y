@@ -10,6 +10,7 @@ export type ServiceOptions = Partial<{
   refetchOnWindowFocus: boolean
   refetchInterval: number
   refetchOnMount: boolean
+  useErrorBoundary: boolean
 }>
 
 export const debug = (...args: unknown[]) => {
