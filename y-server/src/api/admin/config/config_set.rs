@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::config::validate_config_value;
+use crate::request::error_message;
 use crate::user::get_user_from_request;
 use crate::util::RequestPool;
 use crate::{request::error, user::get_client_rights};
@@ -31,6 +33,17 @@ async fn config_set(
 
     if !action_allowed {
         return error("config.access_denined");
+    }
+
+    for (key, value) in &new_config {
+        let check_result = validate_config_value(key, value);
+
+        if let Err(err_message) = check_result {
+            return error_message(
+                "config.invalid_input",
+                format!("{}: {}", key, err_message).as_str(),
+            );
+        }
     }
 
     let mut query_builder = QueryBuilder::new(

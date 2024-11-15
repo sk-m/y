@@ -29,6 +29,7 @@ async fn me(pool: web::Data<RequestPool>, req: HttpRequest) -> impl Responder {
         HttpResponse::Unauthorized().json(Response {
             error: ResponseError {
                 code: "auth.unauthorized".to_string(),
+                message: None,
             },
         })
     };

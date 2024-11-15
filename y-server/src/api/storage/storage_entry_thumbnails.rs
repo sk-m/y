@@ -6,7 +6,6 @@ use actix_web::http::header::{self, HeaderValue};
 use actix_web::web::Query;
 use actix_web::{get, web, HttpResponse, Responder};
 use base64::prelude::*;
-use log::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;

@@ -41,6 +41,7 @@ impl TableInput {
 #[derive(Serialize)]
 pub struct ResponseError {
     pub code: String,
+    pub message: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -52,6 +53,16 @@ pub fn error(code: &str) -> HttpResponse {
     HttpResponse::BadRequest().json(web::Json(Response {
         error: ResponseError {
             code: code.to_string(),
+            message: None,
+        },
+    }))
+}
+
+pub fn error_message(code: &str, message: &str) -> HttpResponse {
+    HttpResponse::BadRequest().json(web::Json(Response {
+        error: ResponseError {
+            code: code.to_string(),
+            message: Some(message.to_string()),
         },
     }))
 }

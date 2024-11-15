@@ -27,3 +27,47 @@ pub async fn get_config(pool: &RequestPool) -> HashMap<String, String> {
         Err(_) => HashMap::new(),
     }
 }
+
+pub fn validate_config_value(key: &str, value: &str) -> Result<(), &'static str> {
+    match key {
+        "instance.name" => {
+            if value.len() < 1 || value.len() > 127 {
+                return Err("Invalid value length");
+            }
+
+            Ok(())
+        }
+
+        "instance.logo_url" => {
+            if value.len() > 255 {
+                return Err("Invalid value length");
+            }
+
+            Ok(())
+        }
+
+        "storage.transcode_videos.enabled"
+        | "storage.generate_seeking_thumbnails.enabled"
+        | "storage.generate_thumbnails.video"
+        | "storage.generate_thumbnails.audio"
+        | "storage.generate_thumbnails.image" => {
+            if value != "true" && value != "false" {
+                return Err("Invalid boolean value");
+            }
+
+            Ok(())
+        }
+
+        "storage.transcode_videos.target_height"
+        | "storage.transcode_videos.target_bitrate"
+        | "storage.generate_seeking_thumbnails.desired_frames" => {
+            if value.parse::<u32>().is_err() {
+                return Err("Invalid integer value");
+            }
+
+            Ok(())
+        }
+
+        _ => Err("Unknown key"),
+    }
+}
