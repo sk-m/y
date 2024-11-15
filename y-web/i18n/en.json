@@ -220,6 +220,7 @@
         "internal": "Internal error",
 
         "name_conflict": "Name conflict",
+        "recursion_error": "This action would result in a recursive path. Stop it!",
         "convert_error": "Convert error",
 
         "endpoint_not_found": "Endpoint not found",

@@ -20,6 +20,7 @@ pub enum StorageError {
     AccessDenied,
 
     NameConflict,
+    RecursionError,
     EndpointNotFound,
     EndpointArtifactsDisabled,
 
@@ -34,6 +35,7 @@ impl StorageError {
             StorageError::AccessDenied => "storage.access_denied",
 
             StorageError::NameConflict => "storage.name_conflict",
+            StorageError::RecursionError => "storage.recursion_error",
             StorageError::EndpointNotFound => "storage.endpoint_not_found",
             StorageError::EndpointArtifactsDisabled => "storage.endpoint_artifacts_disabled",
 
@@ -707,7 +709,13 @@ pub async fn move_entries(
     .execute(pool)
     .await;
 
-    if move_result.is_err() {
+    if let Err(move_error) = move_result {
+        if let Some(database_error) = move_error.into_database_error() {
+            if database_error.constraint() == Some("storage_entries_recursion_check") {
+                return Err(StorageError::RecursionError);
+            }
+        }
+
         return Err(StorageError::NameConflict);
     }
 
