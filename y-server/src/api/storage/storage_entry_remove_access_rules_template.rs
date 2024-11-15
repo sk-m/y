@@ -1,5 +1,4 @@
 use actix_web::{delete, web, HttpResponse, Responder};
-use log::*;
 
 use crate::{
     request::error,
@@ -23,7 +22,7 @@ async fn storage_entry_remove_access_rules_template(
         .any(|right| right.right_name == "storage_manage_access");
 
     if !manage_access_allowed {
-        return error("storage.entry_remove_rules_template.unauthorized");
+        return error("storage.access_denied");
     }
 
     let client = get_user_from_request(&**pool, &req).await;
@@ -46,7 +45,7 @@ async fn storage_entry_remove_access_rules_template(
     };
 
     if !action_allowed {
-        return error("storage.entry_remove_rules_template.unauthorized");
+        return error("storage.access_denied");
     }
 
     let delete_result =
@@ -59,9 +58,6 @@ async fn storage_entry_remove_access_rules_template(
 
     match delete_result {
         Ok(_) => HttpResponse::Ok().body("{}"),
-        Err(err) => {
-            error!("{}", err);
-            error("storage.entry_remove_rules_template.other")
-        }
+        Err(_) => error("storage.internal"),
     }
 }

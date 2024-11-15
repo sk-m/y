@@ -1,5 +1,4 @@
 use actix_web::http::header::{self, HeaderValue};
-use log::*;
 use std::path::Path;
 
 use actix_web::{get, web, Responder};
@@ -35,7 +34,7 @@ async fn storage_get(
     query: web::Query<StorageGetQuery>,
 ) -> impl Responder {
     let query = query.into_inner();
-    let is_preview = query.preview.unwrap_or(false);
+    let preview_requested = query.preview.unwrap_or(false);
 
     let (endpoint_id, file_id) = path.into_inner();
 
@@ -59,7 +58,7 @@ async fn storage_get(
     };
 
     if !action_allowed {
-        return error("storage.get.unauthorized");
+        return error("storage.access_denied");
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
@@ -77,7 +76,7 @@ async fn storage_get(
             let mut is_preview_version = false;
 
             // TODO cleanup
-            let file_path = if is_preview {
+            let file_path = if preview_requested {
                 if let Some(artifacts_path) = &entry.artifacts_path {
                     let browser_friendly_version_path = Path::new(artifacts_path)
                         .join("preview_videos")
@@ -119,20 +118,23 @@ async fn storage_get(
                 );
             }
 
+            let src_entry_mime_type = entry.mime_type.clone().unwrap();
+
             if entry.mime_type.is_some() {
                 res.headers_mut().insert(
                     header::CONTENT_TYPE,
-                    HeaderValue::from_str(&entry.mime_type.unwrap()).unwrap(),
+                    HeaderValue::from_str(if is_preview_version {
+                        "video/mp4"
+                    } else {
+                        src_entry_mime_type.as_str()
+                    })
+                    .unwrap(),
                 );
             }
 
             return res;
         }
 
-        Err(err) => {
-            error!("{}", err);
-
-            return error("storage.get.internal");
-        }
+        Err(_) => error("storage.internal"),
     }
 }

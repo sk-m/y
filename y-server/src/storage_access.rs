@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
-use log::error;
 use serde::Serialize;
 use sqlx::FromRow;
 
 use crate::{
     storage_endpoint::get_storage_endpoint,
+    storage_entry::StorageError,
     user::{get_group_rights, UserRight},
     util::RequestPool,
 };
@@ -182,7 +182,7 @@ async fn get_storage_entry_access_rule_cascade_up(
     user_groups: &Vec<i32>,
 
     pool: &RequestPool,
-) -> Result<StorageAccessCheckResult, sqlx::Error> {
+) -> Result<StorageAccessCheckResult, StorageError> {
     let tree_rules = sqlx::query_as::<_, ProccessEntryRuleInput>("
         SELECT tree.tree_step::INT4, 2 AS rule_source, storage_access.entry_id, NULL as template_id, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
 
@@ -236,7 +236,7 @@ async fn get_storage_entry_access_rule_cascade_up(
 
             Ok(StorageAccessCheckResult::Inherited(group_rules))
         }
-        Err(err) => Err(err),
+        Err(_) => Err(StorageError::Internal),
     }
 }
 
@@ -319,8 +319,8 @@ pub async fn check_storage_entry_access(
             }
         },
 
-        Err(err) => {
-            error!("{:?}", err);
+        Err(_) => {
+            // Internal error retured from `get_storage_entry_access_rule_cascade_up`
             return false;
         }
     }
@@ -382,6 +382,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
     match target_endpoint {
         Err(_) => {
+            // Internal error returned from `get_storage_endpoint`
             return false;
         }
         Ok(target_endpoint) => {

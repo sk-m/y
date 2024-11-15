@@ -61,7 +61,7 @@ async fn login(pool: web::Data<RequestPool>, form: web::Json<LoginInput>) -> imp
                         }
                     }
                 } else {
-                    return error("auth.other");
+                    return error("auth.internal");
                 }
             }
             None => {
@@ -72,5 +72,5 @@ async fn login(pool: web::Data<RequestPool>, form: web::Json<LoginInput>) -> imp
         return error("auth.user_does_not_exist");
     }
 
-    error("auth.other")
+    error("auth.internal")
 }

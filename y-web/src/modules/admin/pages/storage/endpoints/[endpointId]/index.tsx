@@ -1,7 +1,7 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { Show, createEffect, createMemo } from "solid-js"
 
-import { useNavigate, useParams } from "@solidjs/router"
+import { useParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Card } from "@/app/components/common/card/card"
@@ -38,7 +38,6 @@ import { StorageEndpointTypePill } from "../components/storage-endpoint-type-pil
 
 const StorageEndpointPage = () => {
   const $auth = useAuth()
-  const navigate = useNavigate()
   const params = useParams()
   const queryClient = useQueryClient()
   const { notify } = toastCtl
@@ -46,9 +45,14 @@ const StorageEndpointPage = () => {
   const endpointId = createMemo(() => params.endpointId as string)
 
   const $updateStorageEndpoint = createMutation(updateStorageEndpoint)
-  const $storageEndpoint = useStorageEndpoint(() => ({
-    endpointId: endpointId(),
-  }))
+  const $storageEndpoint = useStorageEndpoint(
+    () => ({
+      endpointId: endpointId(),
+    }),
+    {
+      useErrorBoundary: true,
+    }
+  )
 
   const endpointsAccessAllowed = createMemo(
     () =>
@@ -59,7 +63,7 @@ const StorageEndpointPage = () => {
 
   createEffect(() => {
     if ($auth.isFetched && !endpointsAccessAllowed()) {
-      navigate(routes["/admin/storage"])
+      throw new Error("Access denied")
     }
   })
 

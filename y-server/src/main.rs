@@ -11,6 +11,7 @@ mod user;
 mod user_group;
 mod util;
 mod vfs;
+mod ws;
 
 use crate::storage_archives::cleanup_storage_archives;
 use actix_web::{web, App, HttpServer};
@@ -19,13 +20,16 @@ use dotenvy::dotenv;
 use futures::TryFutureExt;
 use log::*;
 use simplelog::*;
+use std::collections::HashMap;
 use std::path::Path;
 use std::process::exit;
+use std::sync::Mutex;
 use std::{env, fs};
 use std::{str::FromStr, time::Duration};
 use users::{get_current_gid, get_current_uid};
 use util::RequestPool;
 use vfs::vfs_mount;
+use ws::WSState;
 
 async fn process_cli_arguments(pool: &RequestPool) {
     let cli_arguments: Vec<String> = env::args().collect();
@@ -95,8 +99,8 @@ async fn main() -> std::io::Result<()> {
     // Initialize the logger
     CombinedLogger::init(vec![
         TermLogger::new(
-            // LevelFilter::Info,
-            LevelFilter::Debug,
+            LevelFilter::Info,
+            // LevelFilter::Debug,
             Config::default(),
             TerminalMode::Mixed,
             ColorChoice::Auto,
@@ -112,13 +116,19 @@ async fn main() -> std::io::Result<()> {
     // Connect to the database
     let pool = db::connect().await;
 
-    let fs = vfs_mount(
+    // VFS
+    let vfs = vfs_mount(
         1,
         "/mnt/test",
         // TODO! do not pool.clone() !!!
         pool.clone(),
         (get_current_uid(), get_current_gid()),
     );
+
+    // Global websocket state
+    let ws_state = web::Data::new(Mutex::new(WSState {
+        ws_connections: HashMap::new(),
+    }));
 
     // Process command line arguments. We might want to do something and terminate
     process_cli_arguments(&pool).await;
@@ -165,7 +175,9 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             // TODO! do not pool.clone() !!!
+            .app_data(web::Data::clone(&ws_state))
             .app_data(web::Data::new(pool.clone()))
+            .route("/api/ws", web::get().to(ws::ws))
             .service(
                 web::scope("/api/auth")
                     .service(crate::api::auth::login::login)
@@ -179,7 +191,7 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_locations::storage_locations)
                     .service(crate::api::storage::storage_entries::storage_entries)
                     .service(crate::api::storage::storage_download::storage_download)
-                    .service(crate::api::storage::storage_download_zip::storage_download_zip)
+                    .service(crate::api::storage::storage_create_archive::storage_create_archive)
                     .service(crate::api::storage::storage_create_folder::storage_create_folder)
                     .service(crate::api::storage::storage_get_folder_path::storage_get_folder_path)
                     .service(crate::api::storage::storage_delete_entries::storage_delete_entries)
@@ -194,6 +206,11 @@ async fn main() -> std::io::Result<()> {
                     .service(crate::api::storage::storage_access_rules_templates::storage_access_rules_templates)
                     .service(crate::api::storage::storage_get_access_rules::storage_get_access_rules)
                     .service(crate::api::storage::storage_delete_access_rules_template::storage_delete_access_rules_template)
+                    .service(crate::api::storage::storage_user_pins::storage_user_pins)
+                    .service(crate::api::storage::storage_create_user_pin::storage_create_user_pin)
+                    .service(crate::api::storage::storage_delete_user_pin::storage_delete_user_pin)
+                    .service(crate::api::storage::storage_user_archives::storage_user_archives)
+                    .service(crate::api::storage::storage_download_archive::storage_download_archive),
             )
             .service(
                 web::scope("/api/admin")
@@ -232,7 +249,7 @@ async fn main() -> std::io::Result<()> {
         info!("Server stopped");
 
         info!("Unmounting virtual file system");
-        fs.join();
+        vfs.join();
 
         Ok(())
     })

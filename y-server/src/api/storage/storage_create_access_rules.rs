@@ -1,5 +1,4 @@
 use actix_web::{post, web, HttpResponse, Responder};
-use log::*;
 use serde::Deserialize;
 use sqlx::QueryBuilder;
 use validator::Validate;
@@ -34,7 +33,7 @@ async fn storage_create_access_rules(
     let form = form.into_inner();
 
     if form.validate().is_err() {
-        return error("storage.create_storage_access_rules.invalid_input");
+        return error("storage.invalid_input");
     }
 
     let rules = form.rules;
@@ -47,7 +46,7 @@ async fn storage_create_access_rules(
         .any(|right| right.right_name == "storage_manage_access");
 
     if !manage_access_allowed {
-        return error("storage.create_storage_access_rules.unauthorized");
+        return error("storage.access_denied");
     }
 
     let client = get_user_from_request(&**pool, &req).await;
@@ -70,7 +69,7 @@ async fn storage_create_access_rules(
     };
 
     if !action_allowed {
-        return error("storage.create_storage_access_rules.unauthorized");
+        return error("storage.access_denied");
     }
 
     let mut transaction = pool.begin().await.unwrap();
@@ -83,7 +82,7 @@ async fn storage_create_access_rules(
             .await;
 
     if delete_result.is_err() {
-        return error("storage.create_storage_access_rules.internal");
+        return error("storage.internal");
     }
 
     if !rules.is_empty() {
@@ -111,7 +110,7 @@ async fn storage_create_access_rules(
         let create_result = query.execute(&mut *transaction).await;
 
         if create_result.is_err() {
-            return error("storage.create_storage_access_rules.internal");
+            return error("storage.internal");
         }
     }
 
@@ -119,9 +118,6 @@ async fn storage_create_access_rules(
 
     match transaction_result {
         Ok(_) => HttpResponse::Ok().body("{}"),
-        Err(err) => {
-            error!("{}", err);
-            error("storage.create_storage_access_rules.internal")
-        }
+        Err(_) => error("storage.internal"),
     }
 }

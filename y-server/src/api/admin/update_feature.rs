@@ -47,7 +47,7 @@ async fn update_feature(
             }
         }
         Err(_) => {
-            return error("update_feature.other");
+            return error("update_feature.internal");
         }
     }
 }

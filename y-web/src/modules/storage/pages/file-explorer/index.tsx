@@ -17,8 +17,9 @@ import {
   onCleanup,
   onMount,
 } from "solid-js"
+import { createMutable } from "solid-js/store"
 
-import { useParams, useSearchParams } from "@solidjs/router"
+import { useNavigate, useParams } from "@solidjs/router"
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
 import { Button } from "@/app/components/common/button/button"
@@ -33,6 +34,9 @@ import { toastCtl } from "@/app/core/toast"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { useContextMenu } from "@/app/core/util/use-context-menu"
 import { useFilesDrop } from "@/app/core/util/use-files-drop"
+import { debug, lerp } from "@/app/core/utils"
+import { websocketCtl } from "@/app/core/websocket"
+import { updateLocationStorage } from "@/app/core/websocket.utils"
 import { globalUploadProgressCtl } from "@/app/storage/global-upload-progress"
 import { DropFilesHere } from "@/modules/storage/components/drop-files-here"
 import {
@@ -42,9 +46,9 @@ import {
 import { useFileExplorerThumbnails } from "@/modules/storage/file-explorer/use-file-explorer-thumbnails"
 import {
   createStorageFolder,
+  createStorageUserArchive,
   deleteStorageEntries,
   downloadStorageFile,
-  downloadStorageFilesZip,
   moveStorageEntries,
   renameStorageEntry,
 } from "@/modules/storage/storage-entry/storage-entry.api"
@@ -54,10 +58,20 @@ import {
 } from "@/modules/storage/storage-entry/storage-entry.codecs"
 import { FileWithPath } from "@/modules/storage/upload"
 
-import { useFileExplorerDisplayConfig } from "../../file-explorer/use-file-explorer-display-config"
+import {
+  FILE_EXPLORER_ENTRY_FONT_SIZE_MAX,
+  FILE_EXPLORER_ENTRY_FONT_SIZE_MIN,
+  FILE_EXPLORER_ENTRY_WIDTH_MAX,
+  FILE_EXPLORER_ENTRY_WIDTH_MIN,
+  useFileExplorerDisplayConfig,
+} from "../../file-explorer/use-file-explorer-display-config"
 import { createStorageLocation } from "../../storage-location/storage-location.api"
 import { storageLocationsKey } from "../../storage-location/storage-location.service"
+import { storageUserArchivesKey } from "../../storage-user-archive/storage-user-archive.service"
+import { createStorageUserPin } from "../../storage-user-pin/storage-user-pin.api"
+import { storageUserPinsKey } from "../../storage-user-pin/storage-user-pin.service"
 import { FileExplorerAddLocationModal } from "./components/file-explorer-add-location-modal"
+import { FileExplorerAddPinModal } from "./components/file-explorer-add-user-pin-modal"
 import { FileExplorerDeleteModal } from "./components/file-explorer-delete-modal"
 import { FileExplorerDisplaySettings } from "./components/file-explorer-display-settings"
 import { FileExplorerInfoPanel } from "./components/file-explorer-info-panel"
@@ -66,6 +80,7 @@ import { FileExplorerPath } from "./components/file-explorer-path"
 import { FileExplorerSelectionInfo } from "./components/file-explorer-selection-info"
 import { NewFolderEntry } from "./components/new-folder-entry"
 import { StorageEntry } from "./components/storage-entry"
+import { StorageEntryDraglet } from "./components/storage-entry-draglet"
 import "./file-explorer.less"
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -79,7 +94,7 @@ const FileExplorerPage: Component = () => {
   const { notify } = toastCtl
   const queryClient = useQueryClient()
   const params = useParams()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
 
   const { status: uploadStatus, setStatus: setUploadStatus } =
     globalUploadProgressCtl
@@ -89,20 +104,24 @@ const FileExplorerPage: Component = () => {
   const $deleteEntries = createMutation(deleteStorageEntries)
   const $createFolder = createMutation(createStorageFolder)
   const $createLocation = createMutation(createStorageLocation)
+  const $createUserPin = createMutation(createStorageUserPin)
 
   let searchInputFieldRef: HTMLInputElement
   let browserContentsRef: HTMLDivElement
   const entryRefs: HTMLDivElement[] = []
   let uploadFilesInputRef: HTMLInputElement
   let uploadFoldersInputRef: HTMLInputElement
+  let dragletRef: HTMLDivElement
 
   // prettier-ignore
   const folderId = createMemo(() =>
-    (searchParams.folderId
-      ? Number.parseInt(searchParams.folderId, 10)
+    (params.folderId
+      ? Number.parseInt(params.folderId, 10)
       // eslint-disable-next-line no-undefined
       : undefined)
   )
+
+  const { send: wsSend, onMessage: wsOnMessage } = websocketCtl
 
   const {
     layout,
@@ -114,8 +133,20 @@ const FileExplorerPage: Component = () => {
     sortDirection,
     setSortDirection,
 
+    entrySize,
+    setEntrySize,
+
     sortFn,
   } = useFileExplorerDisplayConfig()
+
+  const entryTextSize = createMemo(() =>
+    lerp(
+      FILE_EXPLORER_ENTRY_FONT_SIZE_MIN,
+      FILE_EXPLORER_ENTRY_FONT_SIZE_MAX,
+      (entrySize() - FILE_EXPLORER_ENTRY_WIDTH_MIN) /
+        (FILE_EXPLORER_ENTRY_WIDTH_MAX - FILE_EXPLORER_ENTRY_WIDTH_MIN)
+    )
+  )
 
   const [search, setSearch] = createSignal("")
 
@@ -133,7 +164,7 @@ const FileExplorerPage: Component = () => {
     contextMenuTargetEntry,
   } = useFileExplorer({
     endpointId: () => params.endpointId as string,
-    folderId: () => searchParams.folderId,
+    folderId: () => params.folderId,
 
     entriesSortFn: sortFn,
     // eslint-disable-next-line solid/reactivity
@@ -175,6 +206,11 @@ const FileExplorerPage: Component = () => {
     contextMenuProps: selectionContextMenuProps,
   } = useContextMenu()
 
+  const dragletState = createMutable({
+    entry: null as IStorageEntry | null,
+    selectedEntriesCount: 0,
+  })
+
   const [entriesToDelete, setEntriesToDelete] = createSignal<{
     folderIds: number[]
     fileIds: number[]
@@ -193,6 +229,10 @@ const FileExplorerPage: Component = () => {
 
   const [createLocationTargetEntry, setCreateLocationTargetEntry] =
     createSignal<number | null>(null)
+
+  const [createPinTargetEntry, setCreatePinTargetEntry] = createSignal<
+    number | null
+  >(null)
 
   const isFolderEmpty = createMemo(() => folderEntries().length === 0)
 
@@ -237,10 +277,36 @@ const FileExplorerPage: Component = () => {
 
           setSearch("")
           searchInputFieldRef.value = ""
+
+          wsSend(
+            updateLocationStorage(
+              Number.parseInt(params.endpointId as string, 10),
+              folderId() ?? null
+            )
+          )
         })
       }
     )
   )
+
+  // eslint-disable-next-line solid/reactivity
+  wsOnMessage((msg) => {
+    if (
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      msg.type === "storage_location_updated" &&
+      msg.payload.endpoint_id ===
+        Number.parseInt(params.endpointId as string, 10) &&
+      msg.payload.folder_id === (folderId() ?? null)
+    ) {
+      if (msg.payload.invalidate_entries) {
+        void invalidateEntries()
+      }
+
+      if (msg.payload.invalidate_thumbs) {
+        void refreshThumbnails()
+      }
+    }
+  })
 
   const previewableEntries = createMemo(() =>
     folderEntries().filter(
@@ -321,10 +387,13 @@ const FileExplorerPage: Component = () => {
         newFolderName,
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
           void invalidateEntries()
 
-          setFolderCreationInitiated(false)
+          batch(() => {
+            setFolderCreationInitiated(false)
+            setInfoPanelSelectedEntryId(response.new_folder_id)
+          })
         },
         onError: (error) => genericErrorToast(error),
       }
@@ -440,7 +509,7 @@ const FileExplorerPage: Component = () => {
 
   // TODO rename this to something more generic. We use this function for both dnd upload
   // and file input upload
-  // TODO also, we should move half this logic to a separate function. This does way to much,
+  // TODO also, we should move half this logic to a separate function. This does way too much,
   // it should be more generic
   const handleDrop = (filesToUpload: FileWithPath[]) => {
     let totalSizeBytes = 0
@@ -468,8 +537,8 @@ const FileExplorerPage: Component = () => {
 
     uploadUrl.searchParams.set("endpoint_id", params.endpointId as string)
 
-    if (searchParams.folderId) {
-      uploadUrl.searchParams.set("target_folder", searchParams.folderId)
+    if (params.folderId) {
+      uploadUrl.searchParams.set("target_folder", params.folderId)
     }
 
     const request = new XMLHttpRequest()
@@ -562,8 +631,8 @@ const FileExplorerPage: Component = () => {
     handleDrop(files)
   }
 
-  const navigateToFolder = (targetFolderId: number) => {
-    setSearchParams({ folderId: targetFolderId.toString() })
+  const navigateToFolder = (targetFolderId?: number | string | null) => {
+    navigate(`/files/browse/${params.endpointId!}/${targetFolderId ?? ""}`)
   }
 
   const downloadFile = (fileId: number) => {
@@ -580,18 +649,36 @@ const FileExplorerPage: Component = () => {
   const downloadSelectedEntries = () => {
     const { folderIds, fileIds } = partitionEntries([...selectedEntries()])
 
-    void downloadStorageFilesZip({
+    void createStorageUserArchive({
       endpointId: params.endpointId as string,
       folderIds,
       fileIds,
+    }).then(() => {
+      notify({
+        title: "Archivation started",
+        content: "We will notify you once your archive is ready for download",
+        icon: "folder_zip",
+        severity: "success",
+      })
+
+      void queryClient.invalidateQueries([storageUserArchivesKey])
     })
   }
 
   const downloadFolder = (entryId: number) => {
-    void downloadStorageFilesZip({
+    void createStorageUserArchive({
       endpointId: params.endpointId as string,
       folderIds: [entryId],
       fileIds: [],
+    }).then(() => {
+      notify({
+        title: "Archivation started",
+        content: "We will notify you once your archive is ready for download",
+        icon: "folder_zip",
+        severity: "success",
+      })
+
+      void queryClient.invalidateQueries([storageUserArchivesKey])
     })
   }
 
@@ -612,8 +699,27 @@ const FileExplorerPage: Component = () => {
     )
   }
 
+  const createUserPin = (name: string) => {
+    $createUserPin.mutate(
+      {
+        endpointId: Number.parseInt(params.endpointId as string, 10),
+        entryId: createPinTargetEntry()!,
+        name,
+      },
+      {
+        onSuccess: () => {
+          void queryClient.invalidateQueries([storageUserPinsKey])
+          setCreatePinTargetEntry(null)
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
+  }
+
   // eslint-disable-next-line sonarjs/cognitive-complexity
   onMount(() => {
+    debug("Files explorer mounted")
+
     const keydownHandler = (event: KeyboardEvent) => {
       if ((event.target as HTMLElement | undefined)?.nodeName === "INPUT")
         return
@@ -627,9 +733,7 @@ const FileExplorerPage: Component = () => {
         // eslint-disable-next-line @typescript-eslint/no-magic-numbers
         const parentFolder = folderPath()[folderPath().length - 2]
 
-        setSearchParams({
-          folderId: parentFolder?.id.toString() ?? null,
-        })
+        navigateToFolder(parentFolder?.id)
       }
 
       // Reset selection
@@ -689,6 +793,15 @@ const FileExplorerPage: Component = () => {
         deleteEntries(folderIds, fileIds, event.shiftKey)
       }
 
+      // rename highlighted entry
+      if (event.key === "F2") {
+        event.preventDefault()
+
+        if (!infoPanelSelectedEntryId()) return
+
+        setEntryToRename(infoPanelSelectedEntryId())
+      }
+
       // Focus onto search field
       if (event.key === "f" && event.ctrlKey) {
         event.preventDefault()
@@ -744,6 +857,8 @@ const FileExplorerPage: Component = () => {
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
     >
+      <StorageEntryDraglet ref={dragletRef!} state={dragletState} />
+
       <input
         hidden
         name="upload-files"
@@ -768,6 +883,11 @@ const FileExplorerPage: Component = () => {
         open={createLocationTargetEntry() !== null}
         onClose={() => setCreateLocationTargetEntry(null)}
         onConfirm={createLocation}
+      />
+      <FileExplorerAddPinModal
+        open={createPinTargetEntry() !== null}
+        onClose={() => setCreatePinTargetEntry(null)}
+        onConfirm={createUserPin}
       />
       <FileExplorerDeleteModal
         subtitle={`${
@@ -810,9 +930,7 @@ const FileExplorerPage: Component = () => {
           <div class="top-container">
             <FileExplorerPath
               path={folderPath()}
-              onNavigate={(newFolderId) =>
-                setSearchParams({ folderId: newFolderId })
-              }
+              onNavigate={navigateToFolder}
               onMove={(sourceEntrySignature, targetFolderId) => {
                 const isInMultiselect =
                   selectedEntries().has(sourceEntrySignature)
@@ -847,6 +965,8 @@ const FileExplorerPage: Component = () => {
                 setSortBy={setSortBy}
                 sortDirection={sortDirection()}
                 setSortDirection={setSortDirection}
+                entrySize={entrySize()}
+                setEntrySize={setEntrySize}
               />
               <Show when={selectedEntries().size > 0}>
                 <div class="top-container-separator" />
@@ -882,15 +1002,14 @@ const FileExplorerPage: Component = () => {
               openGeneralContextMenu(event)
             }}
           >
-            <Show when={isFolderEmpty()}>
+            <Show when={folderEntriesError() || isFolderEmpty()}>
               <div class="folder-notice-container">
                 <Switch
                   fallback={<div class="folder-notice">Empty folder</div>}
                 >
                   <Match
                     when={
-                      folderEntriesError()?.code ===
-                      "storage.entries.unauthorized"
+                      folderEntriesError()?.code === "storage.access_denied"
                     }
                   >
                     <div class="folder-notice error">Folder access denied</div>
@@ -1121,6 +1240,16 @@ const FileExplorerPage: Component = () => {
                     <div class="separator" />
 
                     <ContextMenuLink
+                      icon="keep"
+                      onClick={() => {
+                        setCreatePinTargetEntry(contextMenuTargetEntry()!.id)
+                        closeEntryContextMenu()
+                      }}
+                    >
+                      Pin folder
+                    </ContextMenuLink>
+
+                    <ContextMenuLink
                       icon="playlist_add"
                       onClick={() => {
                         setCreateLocationTargetEntry(
@@ -1129,7 +1258,7 @@ const FileExplorerPage: Component = () => {
                         closeEntryContextMenu()
                       }}
                     >
-                      Add to sidebar
+                      Create sidebar location
                     </ContextMenuLink>
                   </Show>
                   <Show when={contextMenuTargetEntry()?.entry_type === "file"}>
@@ -1206,6 +1335,10 @@ const FileExplorerPage: Component = () => {
                 items: true,
                 [`layout-${layout()}`]: true,
               }}
+              style={{
+                "--entry-width": entrySize(),
+                "--entry-text-size": entryTextSize(),
+              }}
             >
               {/* TODO: Maybe use Index instaed of For? */}
               <For each={folderEntries()}>
@@ -1230,10 +1363,15 @@ const FileExplorerPage: Component = () => {
                     <StorageEntry
                       ref={(entryRef: HTMLDivElement) => {
                         entryRefs[index()] = entryRef
+
+                        return entryRef
                       }}
+                      dragletRef={dragletRef}
+                      dragletState={dragletState}
                       isRenaming={isRenaming()}
                       entry={entry}
                       isSelected={selected()}
+                      selectedCount={selectedEntries().size}
                       isActive={active()}
                       isContextMenuTarget={isContextMenuTarget()}
                       thumbnails={thumbnails()}

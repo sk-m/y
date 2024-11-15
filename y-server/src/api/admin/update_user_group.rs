@@ -60,7 +60,7 @@ async fn update_user_group(
             .await;
 
         if result.is_err() {
-            return error("update_user_group.other");
+            return error("update_user_group.internal");
         }
     }
 
@@ -75,7 +75,7 @@ async fn update_user_group(
                     .await;
 
             if delete_rights_result.is_err() {
-                return error("update_user_group.other");
+                return error("update_user_group.internal");
             }
 
             let mut rights_query_builder = QueryBuilder::new(
@@ -102,17 +102,17 @@ async fn update_user_group(
                     .await;
 
                 if assign_rights_result.is_err() {
-                    return error("update_user_group.other");
+                    return error("update_user_group.internal");
                 }
             }
 
             let result = transaction.commit().await;
 
             if result.is_err() {
-                return error("update_user_group.other");
+                return error("update_user_group.internal");
             }
         } else {
-            return error("update_user_group.other");
+            return error("update_user_group.internal");
         }
     }
 

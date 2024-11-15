@@ -1,13 +1,12 @@
 import { batch, createMemo, createSignal } from "solid-js"
 
+import { Direction } from "./request.utils"
 import { DEFAULT_DEBOUNCE_MS } from "./utils"
 
 const DEFAULT_ROWS_PER_PAGE = 50
 
-export type Order = "asc" | "desc"
-
 export type UseTableStateConfig<TData> = {
-  defaultOrder?: Order
+  defaultDirection?: Direction
   defaultOrderBy?: string
   defaultSearch?: string
   defaultRowsPerPage?: number
@@ -23,7 +22,9 @@ export const useTableState = <TData>(
 ) => {
   let timeout: number | undefined
 
-  const [order, setOrder] = createSignal<Order>(config.defaultOrder || "asc")
+  const [direction, setDirection] = createSignal<Direction>(
+    config.defaultDirection || "asc"
+  )
   const [orderBy, setOrderBy] = createSignal(config.defaultOrderBy)
   const [rowsPerPage, setRowsPerPage] = createSignal(
     config.defaultRowsPerPage ?? DEFAULT_ROWS_PER_PAGE
@@ -70,8 +71,18 @@ export const useTableState = <TData>(
     })
   }
 
+  const toInput = () => {
+    return {
+      search: search(),
+      limit: rowsPerPage(),
+      orderBy: orderBy(),
+      direction: direction(),
+      skip: skip(),
+    }
+  }
+
   return {
-    order,
+    direction,
     orderBy,
     searchText,
     search,
@@ -81,7 +92,7 @@ export const useTableState = <TData>(
 
     skip,
 
-    setOrder,
+    setDirection,
     setOrderBy,
     setSearch: onSearchChange,
     setSelectedEntries,
@@ -89,5 +100,7 @@ export const useTableState = <TData>(
     setRowsPerPage,
 
     onSelect,
+
+    toInput,
   }
 }

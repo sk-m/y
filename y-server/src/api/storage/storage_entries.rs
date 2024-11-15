@@ -1,6 +1,5 @@
 use actix_web::web::Query;
 use actix_web::{get, web, HttpResponse, Responder};
-use log::*;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
@@ -22,6 +21,7 @@ struct StorageEntryRow {
     created_by: Option<i32>,
     created_at: Option<String>,
     downloads_count: i32,
+    transcoded_version_available: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -74,14 +74,14 @@ async fn storage_entries(
     }
 
     if !action_allowed {
-        return error("storage.entries.unauthorized");
+        return error("storage.access_denied");
     }
 
     let entries = if folder_id.is_some() {
         // Entries inside of a folder
 
         sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT, downloads_count FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2",
+            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT, downloads_count, transcoded_version_available FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2",
         )
         .bind(endpoint_id)
         .bind(folder_id)
@@ -91,7 +91,7 @@ async fn storage_entries(
         // Entries on the root level
 
         sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT, downloads_count FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL",
+            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT, downloads_count, transcoded_version_available FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL",
         )
         .bind(endpoint_id)
         .fetch_all(&**pool)
@@ -99,9 +99,7 @@ async fn storage_entries(
     };
 
     if entries.is_err() {
-        error!("{:?}", entries.unwrap_err());
-
-        return error("storage.entries.internal");
+        return error("storage.internal");
     }
 
     HttpResponse::Ok().json(web::Json(StorageEntriesOutput {

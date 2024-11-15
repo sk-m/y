@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use actix_web::{post, web, HttpResponse, Responder};
 use serde::Deserialize;
 
@@ -9,6 +11,7 @@ use crate::storage_access::{
 use crate::storage_entry::move_entries;
 use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
 use crate::util::RequestPool;
+use crate::ws::WSState;
 
 #[derive(Deserialize)]
 struct StorageMoveEntriesInput {
@@ -20,6 +23,7 @@ struct StorageMoveEntriesInput {
 #[post("/move-entries")]
 async fn storage_move_entries(
     pool: web::Data<RequestPool>,
+    ws_state: web::Data<Mutex<WSState>>,
     form: web::Json<StorageMoveEntriesInput>,
     req: actix_web::HttpRequest,
 ) -> impl Responder {
@@ -33,7 +37,7 @@ async fn storage_move_entries(
     let target_upload_allowed: bool;
     let move_allowed: bool;
 
-    if let Some((client_user, _)) = client {
+    if let Some((client_user, _)) = &client {
         let user_groups = get_user_groups(&**pool, client_user.id).await;
         let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
 
@@ -71,13 +75,39 @@ async fn storage_move_entries(
     };
 
     if !move_allowed {
-        return error("storage.move.unauthorized");
+        return error("storage.access_denied");
     }
 
-    let result = move_entries(endpoint_id, entry_ids, target_folder_id, &**pool).await;
+    let source_parent_folders = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT DISTINCT parent_folder FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2)",
+    )
+    .bind(endpoint_id)
+    .bind(&entry_ids)
+    .fetch_all(&**pool).await;
+
+    let result = move_entries(endpoint_id, &entry_ids, target_folder_id, &**pool).await;
 
     match result {
-        Ok(_) => HttpResponse::Ok().body("{}"),
-        Err(_) => error("storage.move.other"),
+        Ok(_) => {
+            if let Ok(mut folders_to_update) = source_parent_folders {
+                // TODO don't block the request here
+                folders_to_update.push(target_folder_id);
+
+                ws_state
+                    .lock()
+                    .unwrap()
+                    .send_storage_location_updated(
+                        client.map(|(user, _)| user.id),
+                        endpoint_id,
+                        folders_to_update,
+                        true,
+                        false,
+                    )
+                    .await;
+            }
+
+            HttpResponse::Ok().body("{}")
+        }
+        Err(err) => error(&err.get_code()),
     }
 }

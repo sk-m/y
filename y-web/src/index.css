@@ -149,6 +149,7 @@ input[type="checkbox"] {
   --color-error-t-3: rgba(252, 0, 21, 0.33);
 
   --color-success: #22cc00;
+  --color-success-d-1: hsl(110, 100%, 33%);
   --color-success-t-1: rgba(34, 204, 0, 0.1);
   --color-success-t-2: rgba(34, 204, 0, 0.2);
   --color-success-t-3: rgba(34, 204, 0, 0.3);

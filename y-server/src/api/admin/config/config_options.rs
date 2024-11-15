@@ -34,7 +34,7 @@ async fn config_options(pool: web::Data<RequestPool>, req: HttpRequest) -> impl 
         .is_some();
 
     if !action_allowed {
-        return error("config.unauthorized");
+        return error("config.access_denied");
     }
 
     let options = sqlx::query_as::<_, ConfigOptionRow>(

@@ -1,5 +1,4 @@
 use actix_web::{get, web, HttpResponse, Responder};
-use log::*;
 use serde::Serialize;
 use sqlx::FromRow;
 
@@ -81,21 +80,9 @@ async fn storage_get_access_rules(
                         templates: template_rows,
                     }));
                 }
-                Err(err) => {
-                    error!(
-                        "(storage -> get_access_rules) Error returned from the database for templates. {}",
-                        err
-                    );
-                    return error("storage.get_access_rules.error");
-                }
+                Err(_) => error("storage.internal"),
             }
         }
-        Err(err) => {
-            error!(
-                "(storage -> get_access_rules) Error returned from the database for custom rules. {}",
-                err
-            );
-            return error("storage.get_access_rules.error");
-        }
+        Err(_) => error("storage.internal"),
     }
 }

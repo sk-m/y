@@ -193,7 +193,10 @@ export const useForm = <
 
         if (defaultValue) {
           if (ref.type === "checkbox") {
-            ref.checked = defaultValue as boolean
+            ref.checked =
+              typeof defaultValue === "string"
+                ? defaultValue === "true"
+                : (defaultValue as boolean)
           } else {
             ref.value = defaultValue as string
           }
@@ -622,6 +625,7 @@ export const useForm = <
           : value
 
       field.controller[1](rawValue)
+      // eslint-disable-next-line sonarjs/elseif-without-else
     } else if (field?.inputRef) {
       const rawValue =
         typeof value === "function"
@@ -631,7 +635,9 @@ export const useForm = <
           : value
 
       if (field.inputRef.type === "checkbox") {
-        field.inputRef.checked = rawValue
+        field.inputRef.checked =
+          typeof rawValue === "string" ? rawValue === "true" : rawValue
+
         field.inputRef.dispatchEvent(new Event("change", { bubbles: true }))
       } else {
         field.inputRef.value = rawValue

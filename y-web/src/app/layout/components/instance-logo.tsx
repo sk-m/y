@@ -1,5 +1,5 @@
 /* eslint-disable no-undefined */
-import { Component, createMemo } from "solid-js"
+import { Component, Show, createMemo } from "solid-js"
 
 import { useInstanceConfig } from "@/modules/core/instance-config/instance-config.service"
 
@@ -14,16 +14,18 @@ export const InstanceLogo: Component = () => {
   )
 
   return (
-    <img
-      style={{
-        width: "42px",
-        height: "42px",
-        "object-fit": "contain",
-        "user-select": "none",
-      }}
-      draggable={false}
-      src={instanceLogoURL() ?? undefined}
-      alt="Logo"
-    />
+    <Show when={instanceLogoURL()}>
+      <img
+        style={{
+          width: "42px",
+          height: "42px",
+          "object-fit": "contain",
+          "user-select": "none",
+        }}
+        draggable={false}
+        src={instanceLogoURL()!}
+        alt="Logo"
+      />
+    </Show>
   )
 }

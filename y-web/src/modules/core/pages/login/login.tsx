@@ -38,6 +38,16 @@ const LoginPage: Component = () => {
       )?.value
   )
 
+  const returnTo = createMemo(() => {
+    const urlParameters = new URLSearchParams(window.location.search)
+
+    const to = urlParameters.get("return")
+
+    if (to && !to.includes("/login")) {
+      return to
+    }
+  })
+
   const performLogout = () => {
     // eslint-disable-next-line no-undefined
     $logout.mutate(undefined, {
@@ -155,10 +165,16 @@ const LoginPage: Component = () => {
               <Stack direction="row" alignItems="center" spacing={"1em"}>
                 <Button
                   variant="text"
-                  leadingIcon="home"
-                  onClick={() => navigate("/")}
+                  leadingIcon={returnTo() ? "arrow_back" : "home"}
+                  onClick={() => {
+                    if (returnTo()) {
+                      navigate(returnTo()!)
+                    } else {
+                      navigate("/")
+                    }
+                  }}
                 >
-                  Go home
+                  Go {returnTo() ? "back" : "home"}
                 </Button>
                 <Button
                   onClick={performLogout}

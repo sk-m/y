@@ -93,9 +93,9 @@ async fn create_user(
                 Ok(result) => {
                     return HttpResponse::Ok().json(web::Json(CreateUserOutput { id: result }));
                 }
-                Err(_) => return error("create_user.other"),
+                Err(_) => return error("create_user.internal"),
             }
         }
-        Err(_) => return error("create_user.other"),
+        Err(_) => return error("create_user.internal"),
     };
 }

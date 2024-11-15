@@ -1,5 +1,4 @@
 use actix_web::{get, web, HttpResponse, Responder};
-use log::*;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
@@ -59,7 +58,7 @@ async fn storage_get_folder_path(
     };
 
     if !action_allowed {
-        return error("storage.get_folder_path.unauthorized");
+        return error("storage.access_denied");
     }
 
     // storage_get_folder_path() procedure returns us a path in reversed order, due to the way it's implemented
@@ -76,10 +75,6 @@ async fn storage_get_folder_path(
 
             HttpResponse::Ok().json(web::Json(StorageGetFolderPathOutput { folder_path: path }))
         }
-        Err(err) => {
-            error!("{}", err);
-
-            return error("storage.get_folder_path.internal");
-        }
+        Err(_) => error("storage.internal"),
     }
 }

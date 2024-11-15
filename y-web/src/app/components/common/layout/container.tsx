@@ -6,6 +6,7 @@ import "./container.less"
 
 export type ContainerProps = {
   id?: string
+  classList?: Record<string, boolean>
 
   size: "xs" | "s" | "m" | "l" | "xl" | "full"
 
@@ -19,6 +20,7 @@ export const Container: ComponentWithChildren<ContainerProps> = (props) => {
       classList={{
         "ui-container": true,
         [props.size]: true,
+        ...props.classList,
       }}
       style={props.style}
     >

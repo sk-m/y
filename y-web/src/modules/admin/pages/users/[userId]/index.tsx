@@ -13,6 +13,7 @@ import { Stack } from "@/app/components/common/stack/stack"
 import { Tab, TabContent, TabsContainer } from "@/app/components/common/tab/tab"
 import { Text } from "@/app/components/common/text/text"
 import { genericErrorToast } from "@/app/core/util/toast-utils"
+import { AppErrorBoundary } from "@/app/layout/components/app-error-boundary"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { useUser } from "@/modules/admin/user/user.service"
@@ -41,9 +42,14 @@ const UserPage: Component = () => {
   // eslint-disable-next-line no-confusing-arrow
   const userId = createMemo(() => params.userId as string)
 
-  const $user = useUser(() => ({
-    userId: userId(),
-  }))
+  const $user = useUser(
+    () => ({
+      userId: userId(),
+    }),
+    {
+      useErrorBoundary: true,
+    }
+  )
 
   createEffect(() => {
     if ($user.isError) {
@@ -105,10 +111,12 @@ const UserPage: Component = () => {
                   element={<UserGeneralSubpage user={$user.data!} />}
                 />
                 <Show when={allowedTabs().groupsTabAllowed}>
-                  <Route
-                    path="/groups"
-                    element={<UserGroupsSubpage user={$user.data!} />}
-                  />
+                  <AppErrorBoundary message="Could not load user groups list">
+                    <Route
+                      path="/groups"
+                      element={<UserGroupsSubpage user={$user.data!} />}
+                    />
+                  </AppErrorBoundary>
                 </Show>
               </Routes>
             </TabContent>

@@ -1,7 +1,7 @@
 use actix_web::{get, web, HttpResponse, Responder};
 use serde::Serialize;
 
-use crate::request::{error, TableInput, DEFAULT_LIMIT};
+use crate::request::{error, TableInput};
 use futures::join;
 
 use crate::user::User;
@@ -27,19 +27,20 @@ async fn users(pool: web::Data<RequestPool>, query: web::Query<TableInput>) -> i
     let order_by = match query.order_by.as_ref() {
         Some(order_by) => match order_by.as_str() {
             "username" => "username",
+            "created_at" => "created_at",
             _ => "created_at",
         },
         None => "created_at",
     };
 
-    let users = sqlx::query_as::<_, User>(
-        "SELECT * FROM users WHERE username LIKE '%' || $1 || '%' ORDER BY $2 LIMIT $3 OFFSET $4",
-    )
-    .bind(search)
-    .bind(order_by)
-    .bind(query.limit.unwrap_or(DEFAULT_LIMIT))
-    .bind(query.skip.unwrap_or(0))
-    .fetch_all(&**pool);
+    let sql = format!(
+        "SELECT * FROM users WHERE {}",
+        query.get_where_sql("username", order_by)
+    );
+
+    let users = sqlx::query_as::<_, User>(sql.as_str())
+        .bind(search)
+        .fetch_all(&**pool);
 
     let users_count = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM users").fetch_one(&**pool);
 

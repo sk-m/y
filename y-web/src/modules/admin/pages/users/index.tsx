@@ -7,6 +7,7 @@ import { Card } from "@/app/components/common/card/card"
 import { Container } from "@/app/components/common/layout/container"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
+import { AppErrorBoundary } from "@/app/layout/components/app-error-boundary"
 import { Breadcrumb, Breadcrumbs } from "@/app/layout/components/breadcrumbs"
 import { routes } from "@/app/routes"
 import { useAuth } from "@/modules/core/auth/auth.service"
@@ -31,7 +32,9 @@ const UsersListPage: Component = () => {
           <Breadcrumb path={routes["/admin/users"]}>Users</Breadcrumb>
         </Breadcrumbs>
 
-        <UsersList />
+        <AppErrorBoundary message="Could not load users list">
+          <UsersList />
+        </AppErrorBoundary>
 
         <Show when={userCreationAllowed()}>
           <Card>

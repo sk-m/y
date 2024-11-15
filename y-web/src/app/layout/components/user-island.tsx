@@ -1,23 +1,20 @@
-import { Component, Show, createSignal } from "solid-js"
+import { Component, Show } from "solid-js"
 
 import { createMutation, useQueryClient } from "@tanstack/solid-query"
 
-import { Button } from "@/app/components/common/button/button"
-import { Popup } from "@/app/components/common/popup/popup"
-import { PopupContainer } from "@/app/components/common/popup/popup-container"
-import { PopupEntry } from "@/app/components/common/popup/popup-entry"
+import { Icon } from "@/app/components/common/icon/icon"
+import { Stack } from "@/app/components/common/stack/stack"
+import { Text } from "@/app/components/common/text/text"
 import { logout } from "@/modules/core/auth/auth.api"
 import { authKey, useAuth } from "@/modules/core/auth/auth.service"
+
+import "./user-island.less"
 
 export const UserIsland: Component = () => {
   const queryClient = useQueryClient()
 
   const $auth = useAuth()
   const $logout = createMutation(logout)
-
-  const [popupShown, setPopupShown] = createSignal(false)
-
-  const togglePopup = () => setPopupShown((shown) => !shown)
 
   const performLogout = () => {
     // eslint-disable-next-line no-undefined
@@ -30,27 +27,54 @@ export const UserIsland: Component = () => {
 
   return (
     <Show when={$auth}>
-      <PopupContainer>
-        <Button
-          variant="secondary"
-          width="100%"
-          leadingIcon="person"
-          onClick={togglePopup}
-        >
-          <div
+      <Stack
+        id="user-island"
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+      >
+        <Stack direction="row" alignItems="center" spacing={"0.33em"}>
+          <button
+            classList={{
+              "user-notifications": true,
+              new: false,
+            }}
+          >
+            <Icon
+              name="notifications"
+              wght={500}
+              size={18}
+              fill={0}
+              type="sharp"
+            />
+            <div class="red-dot" />
+          </button>
+          <Text
+            fontWeight={500}
             style={{
-              "font-weight": 450,
+              padding: "0 0.5em",
+              "word-break": "break-all",
             }}
           >
             {$auth.data?.username}
-          </div>
-        </Button>
-        <Popup yPosition="top" xPosition="left" show={popupShown()}>
-          <div class="popup-list">
-            <PopupEntry onClick={performLogout}>Log out</PopupEntry>
-          </div>
-        </Popup>
-      </PopupContainer>
+          </Text>
+        </Stack>
+        <Stack direction="row" alignItems="center" spacing={"0.5em"}>
+          {/* <button class="button" title="User settings">
+            <Icon
+              name="settings"
+              wght={500}
+              size={16}
+              fill={1}
+              type="rounded"
+            />
+          </button> */}
+
+          <button class="button logout" onClick={performLogout} title="Log out">
+            <Icon name="logout" wght={500} size={16} fill={1} type="rounded" />
+          </button>
+        </Stack>
+      </Stack>
     </Show>
   )
 }

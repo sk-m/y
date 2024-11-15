@@ -1,5 +1,4 @@
 use actix_web::{put, web, HttpResponse, Responder};
-use log::*;
 
 use crate::{
     request::error,
@@ -21,7 +20,7 @@ async fn storage_entry_add_access_rules_template(
         .any(|right| right.right_name == "storage_manage_access");
 
     if !manage_access_allowed {
-        return error("storage.entry_add_access_rules_template.unauthorized");
+        return error("storage.access_denied");
     }
 
     let (endpoint_id, entry_id, template_id) = path.into_inner();
@@ -46,7 +45,7 @@ async fn storage_entry_add_access_rules_template(
     };
 
     if !entry_action_allowed {
-        return error("storage.entry_add_access_rules_template.unauthorized");
+        return error("storage.access_denied");
     }
 
     let append_template_result  = sqlx::query(
@@ -60,11 +59,6 @@ async fn storage_entry_add_access_rules_template(
 
     match append_template_result {
         Ok(_) => HttpResponse::Ok().body("{}"),
-        Err(err) => {
-            dbg!(&err);
-
-            error!("{}", err);
-            error("storage.entry_add_access_rules_template.other")
-        }
+        Err(_) => error("storage.internal"),
     }
 }

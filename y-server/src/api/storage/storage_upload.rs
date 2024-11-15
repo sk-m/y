@@ -1,5 +1,7 @@
+use futures::executor::block_on;
 use log::*;
 use std::fs;
+use std::sync::Mutex;
 use std::{collections::HashMap, fs::OpenOptions, path::Path};
 
 use actix_multipart::Multipart;
@@ -13,12 +15,14 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::time::Instant;
 
+use crate::config::get_config;
 use crate::storage_access::{check_endpoint_root_access, check_storage_entry_access};
 use crate::storage_entry::{
     generate_audio_entry_cover_thumbnail, generate_browser_friendly_video,
-    generate_image_entry_thumbnail, generate_video_entry_thumbnail,
+    generate_image_entry_thumbnail, generate_video_entry_thumbnails,
 };
 use crate::user::{get_group_rights, get_user_from_request, get_user_groups};
+use crate::ws::WSState;
 use crate::{storage_endpoint::get_storage_endpoint, util::RequestPool};
 
 const MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION: u64 = 50_000_000;
@@ -56,6 +60,7 @@ struct QueryParams {
 #[post("/upload")]
 async fn storage_upload(
     pool: web::Data<RequestPool>,
+    ws_state: web::Data<Mutex<WSState>>,
     query: Query<QueryParams>,
     mut payload: Multipart,
     req: actix_web::HttpRequest,
@@ -113,7 +118,7 @@ async fn storage_upload(
     }
 
     if !action_allowed {
-        return sink_and_error("storage.upload.unauthorized", &mut payload).await;
+        return sink_and_error("storage.access_denied", &mut payload).await;
     }
 
     // Get the target endpoint's base path, so we know where to save the files
@@ -122,13 +127,13 @@ async fn storage_upload(
     let target_endpoint = get_storage_endpoint(endpoint_id, &pool).await;
 
     if target_endpoint.is_err() {
-        return sink_and_error("storage.upload.endpoint_not_found", &mut payload).await;
+        return sink_and_error("storage.endpoint_not_found", &mut payload).await;
     }
 
     let target_endpoint = target_endpoint.unwrap();
 
     if target_endpoint.status != "active" {
-        return sink_and_error("storage.upload.endpoint_not_active", &mut payload).await;
+        return sink_and_error("storage.endpoint_not_active", &mut payload).await;
     }
 
     let target_endpoint_base_path = Path::new(&target_endpoint.base_path);
@@ -287,7 +292,7 @@ async fn storage_upload(
                                         }
                                         Err(_) => {
                                             return sink_and_error(
-                                                "storage.upload.internal",
+                                                "storage.internal",
                                                 &mut payload,
                                             )
                                             .await;
@@ -319,6 +324,7 @@ async fn storage_upload(
                         // single chunk error, we should just rollback the transaction and
                         // continue on to the next file in the request?
                         if let Ok(chunk) = chunk {
+                            // TODO don't branch in this loop. Just get the first chunk before the loop.
                             if first_chunk {
                                 first_chunk = false;
                                 file_kind = infer::get(&chunk);
@@ -328,19 +334,14 @@ async fn storage_upload(
                             let res = file.write(&chunk);
 
                             if res.is_err() {
-                                error!("{}", res.unwrap_err());
-
                                 fs::remove_file(&path).unwrap_or(());
 
-                                return sink_and_error("storage.upload.internal", &mut payload)
-                                    .await;
+                                return sink_and_error("storage.internal", &mut payload).await;
                             }
                         } else {
-                            error!("{}", chunk.unwrap_err());
-
                             fs::remove_file(&path).unwrap_or(());
 
-                            return sink_and_error("storage.upload.internal", &mut payload).await;
+                            return sink_and_error("storage.internal", &mut payload).await;
                         }
                     }
 
@@ -388,7 +389,7 @@ async fn storage_upload(
                 return sink_and_error("storage.upload.no_filename", &mut payload).await;
             }
         } else {
-            return sink_and_error("storage.upload.internal", &mut payload).await;
+            return sink_and_error("storage.internal", &mut payload).await;
         }
     }
 
@@ -396,8 +397,41 @@ async fn storage_upload(
         info!("storage/upload: {}ms", now.elapsed().as_millis());
     }
 
+    // TODO don't block the request
+    let mut folders_to_update = path_ids_cache
+        .values()
+        .map(|v| Some(v.clone()))
+        .collect::<Vec<Option<i64>>>();
+
+    folders_to_update.push(target_folder_id);
+
+    // TODO no.
+    let ws_state2 = ws_state.clone();
+    let folders_to_update2 = folders_to_update.clone();
+
     // Generate thumbnails
     std::thread::spawn(move || {
+        let storage_config = block_on(get_config(&**pool));
+
+        let generate_image_thumbnails =
+            storage_config.get("storage.generate_thumbnails.image") == Some(&"true".to_string());
+
+        let generate_video_thumbnails =
+            storage_config.get("storage.generate_thumbnails.video") == Some(&"true".to_string());
+
+        let generate_audio_thumbnails =
+            storage_config.get("storage.generate_thumbnails.audio") == Some(&"true".to_string());
+
+        let generate_seeking_thumbnails = storage_config
+            .get("storage.generate_seeking_thumbnails.enabled")
+            == Some(&"true".to_string());
+
+        let seeking_thumbnails_frames_count = storage_config
+            .get("storage.generate_seeking_thumbnails.desired_frames")
+            .unwrap_or(&"10".to_string())
+            .parse::<u32>()
+            .unwrap_or(10);
+
         if let Some(target_endpoint_artifacts_path) = &target_endpoint.artifacts_path {
             for filesystem_id in &uploaded_files {
                 let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
@@ -411,54 +445,67 @@ async fn storage_upload(
                         match mime_type {
                             "image/jpeg" | "image/png" | "image/gif" | "image/webp"
                             | "image/bmp" => {
-                                let file_metadata =
-                                    fs::File::open(&path).unwrap().metadata().unwrap();
+                                if generate_image_thumbnails {
+                                    let file_metadata =
+                                        fs::File::open(&path).unwrap().metadata().unwrap();
 
-                                if file_metadata.len() <= MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION {
-                                    let generate_thumbnail_result = generate_image_entry_thumbnail(
-                                        &filesystem_id,
-                                        &target_endpoint.base_path.as_str(),
-                                        &target_endpoint_artifacts_path.as_str(),
-                                    );
+                                    if file_metadata.len() <= MAX_FILE_SIZE_FOR_THUMNAIL_GENERATION
+                                    {
+                                        let generate_thumbnail_result =
+                                            generate_image_entry_thumbnail(
+                                                &filesystem_id,
+                                                &target_endpoint.base_path.as_str(),
+                                                &target_endpoint_artifacts_path.as_str(),
+                                            );
 
-                                    if generate_thumbnail_result.is_err() {
-                                        error!(
-                                            "Failed to create a thumbnail for an uploaded image file. {}",
-                                            generate_thumbnail_result.unwrap_err()
+                                        if generate_thumbnail_result.is_err() {
+                                            error!(
+                                            "Failed to create a thumbnail for an uploaded image file ({})",
+                                            &filesystem_id
                                         );
+                                        }
                                     }
                                 }
                             }
 
                             "video/mp4" | "video/webm" | "video/mov" | "video/avi"
                             | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
-                                let generate_thumbnail_result = generate_video_entry_thumbnail(
-                                    &filesystem_id,
-                                    &target_endpoint.base_path.as_str(),
-                                    &target_endpoint_artifacts_path.as_str(),
-                                );
-
-                                if generate_thumbnail_result.is_err() {
-                                    error!(
-                                        "Failed to create a thumbnail for an uploaded video file. {}",
-                                        generate_thumbnail_result.unwrap_err()
+                                if generate_video_thumbnails {
+                                    let generate_thumbnail_result = generate_video_entry_thumbnails(
+                                        &filesystem_id,
+                                        &target_endpoint.base_path.as_str(),
+                                        &target_endpoint_artifacts_path.as_str(),
+                                        if generate_seeking_thumbnails {
+                                            Some(seeking_thumbnails_frames_count)
+                                        } else {
+                                            None
+                                        },
                                     );
+
+                                    if generate_thumbnail_result.is_err() {
+                                        error!(
+                                        "Failed to create a thumbnail for an uploaded video file ({})",
+                                        &filesystem_id
+                                    );
+                                    }
                                 }
                             }
 
                             "audio/mpeg" | "audio/x-flac" | "audio/x-wav" | "audio/aac" => {
-                                let generate_thumbnail_result =
-                                    generate_audio_entry_cover_thumbnail(
-                                        &filesystem_id,
-                                        &target_endpoint.base_path.as_str(),
-                                        &target_endpoint_artifacts_path.as_str(),
-                                    );
+                                if generate_audio_thumbnails {
+                                    let generate_thumbnail_result =
+                                        generate_audio_entry_cover_thumbnail(
+                                            &filesystem_id,
+                                            &target_endpoint.base_path.as_str(),
+                                            &target_endpoint_artifacts_path.as_str(),
+                                        );
 
-                                if generate_thumbnail_result.is_err() {
-                                    error!(
-                                        "Failed to create a cover image thumbnail for an uploaded audio file. {}",
-                                        generate_thumbnail_result.unwrap_err()
-                                    );
+                                    if generate_thumbnail_result.is_err() {
+                                        error!(
+                                            "Failed to create a cover image thumbnail for an uploaded audio file ({})",
+                                            &filesystem_id
+                                        );
+                                    }
                                 }
                             }
 
@@ -468,39 +515,108 @@ async fn storage_upload(
                 }
             }
 
-            for filesystem_id in &uploaded_files {
-                let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
+            let transcoding_enabled =
+                storage_config.get("storage.transcode_videos.enabled") == Some(&"true".to_string());
 
-                let file_kind = infer::get_from_path(&path);
+            if transcoding_enabled {
+                let target_height = storage_config
+                    .get("storage.transcode_videos.target_height")
+                    .unwrap_or(&"720".to_string())
+                    .parse::<u32>()
+                    .unwrap_or(720);
 
-                if !file_kind.is_err() {
-                    if let Some(file_kind) = file_kind.unwrap() {
-                        let mime_type = file_kind.mime_type();
+                let target_bitrate = storage_config
+                    .get("storage.transcode_videos.target_bitrate")
+                    .unwrap_or(&"4000".to_string())
+                    .parse::<u32>()
+                    .unwrap_or(4000);
 
-                        match mime_type {
-                            "video/mp4" | "video/webm" | "video/mov" | "video/avi"
-                            | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
-                                let generate_preview_result = generate_browser_friendly_video(
-                                    &filesystem_id,
-                                    &target_endpoint.base_path.as_str(),
-                                    &target_endpoint_artifacts_path.as_str(),
-                                );
+                let mut files_to_transcode: Vec<String> = Vec::new();
 
-                                if generate_preview_result.is_err() {
-                                    error!(
-                                        "Failed to create a browser friendly preview for an uploaded video file. {}",
-                                        generate_preview_result.unwrap_err()
-                                    );
+                for filesystem_id in &uploaded_files {
+                    let path = Path::new(&target_endpoint.base_path).join(&filesystem_id);
+
+                    let file_kind = infer::get_from_path(&path);
+
+                    if !file_kind.is_err() {
+                        if let Some(file_kind) = file_kind.unwrap() {
+                            let mime_type = file_kind.mime_type();
+
+                            match mime_type {
+                                "video/mp4" | "video/webm" | "video/mov" | "video/avi"
+                                | "video/mpeg" | "video/quicktime" | "video/x-msvideo" => {
+                                    files_to_transcode.push(filesystem_id.clone());
                                 }
-                            }
 
-                            _ => {}
+                                _ => {}
+                            }
                         }
+                    }
+                }
+
+                let _ = block_on(sqlx::query("UPDATE storage_entries SET transcoded_version_available = FALSE WHERE endpoint_id = $1 AND filesystem_id = ANY($2)")
+                    .bind(endpoint_id)
+                    .bind(&files_to_transcode)
+                    .execute(&**pool));
+
+                // Refresh folder when thumbnails are ready
+                let _ = block_on(ws_state2.lock().unwrap().send_storage_location_updated(
+                    None,
+                    endpoint_id,
+                    // TODO stop cloning stuff...
+                    folders_to_update2.clone(),
+                    if files_to_transcode.is_empty() {
+                        false
+                    } else {
+                        true
+                    },
+                    true,
+                ));
+
+                for filesystem_id in &files_to_transcode {
+                    let generate_preview_result = generate_browser_friendly_video(
+                        &filesystem_id,
+                        &target_endpoint.base_path.as_str(),
+                        &target_endpoint_artifacts_path.as_str(),
+                        target_height,
+                        target_bitrate,
+                    );
+
+                    if generate_preview_result.is_ok() {
+                        let parent_folder = block_on(sqlx::query_scalar::<_, Option<i64>>("UPDATE storage_entries SET transcoded_version_available = TRUE WHERE endpoint_id = $1 AND filesystem_id = $2 RETURNING parent_folder")
+                            .bind(endpoint_id)
+                            .bind(filesystem_id)
+                            .fetch_one(&**pool));
+
+                        if let Ok(parent_folder) = parent_folder {
+                            // Refresh folder when a video is ready
+                            let _ =
+                                block_on(ws_state2.lock().unwrap().send_storage_location_updated(
+                                    None,
+                                    endpoint_id,
+                                    vec![parent_folder],
+                                    true,
+                                    false,
+                                ));
+                        }
+                    } else {
+                        error!(
+                            "Failed to create a browser friendly preview for an uploaded video file ({})",
+                            &filesystem_id,
+                        );
                     }
                 }
             }
         }
     });
+
+    // Refresh folder after successful upload
+    // TODO don't block the request
+    ws_state
+        .lock()
+        .unwrap()
+        .send_storage_location_updated(client_user_id, endpoint_id, folders_to_update, true, false)
+        .await;
 
     HttpResponse::Ok().json(web::Json(StorageUploadOutput { skipped_files }))
 }

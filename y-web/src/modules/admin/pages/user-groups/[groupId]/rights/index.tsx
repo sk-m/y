@@ -52,7 +52,9 @@ const UserGroupRightsSubpage: Component<UserGroupRightsSubpageProps> = (
 
   let formRef: HTMLFormElement | undefined
 
-  const $userRights = useUserRights()
+  const $userRights = useUserRights({
+    useErrorBoundary: true,
+  })
 
   const userRights = createMemo(
     () =>

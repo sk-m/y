@@ -6,7 +6,7 @@ import {
   TGetStorageEntryThumbnails,
   TGetStorageFolderPath,
 } from "./storage-entry.codecs"
-import { downloadFileURL, downloadResponseBlob } from "./storage-entry.util"
+import { downloadFileURL } from "./storage-entry.util"
 
 export const apiStorageFolderPath = "/storage/folder-path" as const
 export const apiStorageEntries = "/storage/entries" as const
@@ -181,28 +181,19 @@ export const downloadStorageFile = (input: DownloadStorageFileInput) => {
   downloadFileURL(url, input.fileName)
 }
 
-export type DownloadStorageFilesZipInput = {
+export type CreateStorageUserArchiveInput = {
   endpointId: number | string
   folderIds: number[]
   fileIds: number[]
 }
 
-export const downloadStorageFilesZip = async (
-  input: DownloadStorageFilesZipInput
+export const createStorageUserArchive = async (
+  input: CreateStorageUserArchiveInput
 ) => {
-  return fetch(`/api${apiStorageEntries}/${input.endpointId}/download-zip`, {
-    method: "POST",
-    mode: "cors",
-    credentials: "same-origin",
-    referrerPolicy: "same-origin",
-
-    headers: {
-      "Content-Type": "application/json",
-    },
-
-    body: JSON.stringify({
+  return post(`${apiStorageEntries}/${input.endpointId}/create-archive`, {
+    body: {
       folder_ids: input.folderIds,
       file_ids: input.fileIds,
-    }),
-  }).then(downloadResponseBlob)
+    },
+  })
 }
