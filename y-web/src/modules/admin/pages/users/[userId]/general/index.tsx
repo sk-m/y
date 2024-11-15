@@ -19,7 +19,10 @@ import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { routes } from "@/app/routes"
 import { AdminUpdateUserPasswordModal } from "@/modules/admin/components/user/update-user-password-modal"
 import { IUser } from "@/modules/admin/user/user.codecs"
-import { deleteUsers } from "@/modules/admin/users/users.api"
+import {
+  deleteUsers,
+  updateUserPassword,
+} from "@/modules/admin/users/users.api"
 import { usersKey } from "@/modules/admin/users/users.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
@@ -34,6 +37,7 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
   const { notify } = toastCtl
 
   const $deleteUsers = createMutation(deleteUsers)
+  const $updatePassword = createMutation(updateUserPassword)
 
   const passwordUpdateAllowed = createMemo(
     () =>
@@ -53,6 +57,28 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
     createSignal(false)
 
   const [deleteModalOpen, setDeleteModalOpen] = createSignal(false)
+
+  const updatePassword = (newPassword: string) => {
+    $updatePassword.mutate(
+      {
+        userId: props.user.id,
+        password: newPassword,
+      },
+      {
+        onSuccess: () => {
+          notify({
+            title: "Password updated",
+            content: "User's password was changed",
+            severity: "success",
+            icon: "check",
+          })
+
+          setUpdatePasswordModalOpen(false)
+        },
+        onError: (error) => genericErrorToast(error),
+      }
+    )
+  }
 
   return (
     <>
@@ -146,7 +172,9 @@ const UserGeneralSubpage: Component<UserGeneralSubpageProps> = (props) => {
       <AdminUpdateUserPasswordModal
         user={props.user}
         open={passwordUpdateAllowed() && updatePasswordModalOpen()}
+        isLoading={$updatePassword.isLoading}
         onClose={() => setUpdatePasswordModalOpen(false)}
+        onSubmit={updatePassword}
       />
 
       <Stack spacing={"1.5em"}>

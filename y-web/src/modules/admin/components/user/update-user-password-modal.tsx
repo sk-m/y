@@ -1,17 +1,12 @@
 import { Component } from "solid-js"
 
-import { createMutation } from "@tanstack/solid-query"
-
 import { Button } from "@/app/components/common/button/button"
 import { Icon } from "@/app/components/common/icon/icon"
 import { InputField } from "@/app/components/common/input-field/input-field"
 import { Modal } from "@/app/components/common/modal/modal"
 import { Stack } from "@/app/components/common/stack/stack"
 import { Text } from "@/app/components/common/text/text"
-import { toastCtl } from "@/app/core/toast"
 import { useForm } from "@/app/core/use-form"
-import { genericErrorToast } from "@/app/core/util/toast-utils"
-import { updateUserPassword } from "@/modules/admin/users/users.api"
 
 import { IUser } from "../../users/users.codecs"
 
@@ -23,47 +18,25 @@ export type AdminUpdateUserPasswordModalProps = {
   defaultValues?: AdminUpdateUserPasswordFormValues
 
   user: IUser | null
+
   open: boolean
+  isLoading: boolean
+
   onClose: () => void
+  onSubmit: (newPassword: string) => void
 }
 
-// TODO Move change password logic out of the component
 export const AdminUpdateUserPasswordModal: Component<
   AdminUpdateUserPasswordModalProps
 > = (props) => {
-  const { notify } = toastCtl
-
-  const $updatePassword = createMutation(updateUserPassword)
-
   const form = useForm<AdminUpdateUserPasswordFormValues>({
     defaultValues: {
       newPassword: "",
 
       ...props.defaultValues,
     },
-    disabled: () => $updatePassword.isLoading,
-    onSubmit: (values) => {
-      if (!props.user) return
-
-      $updatePassword.mutate(
-        {
-          userId: props.user.id,
-          password: values.newPassword,
-        },
-        {
-          onSuccess: () => {
-            notify({
-              title: "Password updated",
-              content: "User's password was changed",
-              severity: "success",
-              icon: "check",
-            })
-
-            props.onClose()
-          },
-          onError: (error) => genericErrorToast(error),
-        }
-      )
+    onSubmit: ({ newPassword }) => {
+      props.onSubmit(newPassword)
     },
   })
 
@@ -142,8 +115,8 @@ export const AdminUpdateUserPasswordModal: Component<
             <Button variant="secondary" onClick={props.onClose}>
               Cancel
             </Button>
-            <Button buttonType="submit" disabled={$updatePassword.isLoading}>
-              {$updatePassword.isLoading ? "Confirm..." : "Confirm"}
+            <Button buttonType="submit" disabled={props.isLoading}>
+              {props.isLoading ? "Confirm..." : "Confirm"}
             </Button>
           </Stack>
         </form>
