@@ -700,13 +700,15 @@ pub async fn move_entries(
         return Ok(());
     }
 
+    let mut transaction = pool.begin().await.unwrap();
+
     let move_result = sqlx::query(
         "UPDATE storage_entries SET parent_folder = $1 WHERE id = ANY($2) AND endpoint_id = $3",
     )
     .bind(target_folder_id)
     .bind(entry_ids)
     .bind(endpoint_id)
-    .execute(pool)
+    .execute(&mut *transaction)
     .await;
 
     if let Err(move_error) = move_result {
@@ -718,6 +720,24 @@ pub async fn move_entries(
 
         return Err(StorageError::NameConflict);
     }
+
+    let recursion_check_result = sqlx::query("SELECT storage_get_folder_path($1, $2)")
+        .bind(endpoint_id)
+        .bind(target_folder_id)
+        .execute(&mut *transaction)
+        .await;
+
+    if let Err(recursion_check_error) = recursion_check_result {
+        if let Some(database_error) = recursion_check_error.into_database_error() {
+            if database_error.constraint() == Some("get_folder_path_recursion_guard_unique") {
+                return Err(StorageError::RecursionError);
+            }
+        }
+
+        return Err(StorageError::Internal);
+    }
+
+    transaction.commit().await.unwrap();
 
     Ok(())
 }
