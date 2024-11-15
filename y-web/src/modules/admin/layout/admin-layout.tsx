@@ -94,15 +94,20 @@ const AdminLayout: Component = () => {
             <AsideEntry
               icon="person"
               title="Users & Groups"
-              to="users"
-              relatedPaths={["users", "user-groups"]}
+              to="/admin/users"
+              relatedPaths={["/admin/users", "/admin/user-groups"]}
             >
-              <AsideEntry subEntry icon="group" title="Users" to="users" />
+              <AsideEntry
+                subEntry
+                icon="group"
+                title="Users"
+                to="/admin/users"
+              />
               <AsideEntry
                 subEntry
                 icon="groups"
                 title="Groups"
-                to="user-groups"
+                to="/admin/user-groups"
               />
             </AsideEntry>
 
@@ -110,20 +115,24 @@ const AdminLayout: Component = () => {
               <AsideEntry
                 icon="page_info"
                 title="Configuration"
-                to="config/instance"
-                relatedPaths={["config", "config/instance", "config/storage"]}
+                to="/admin/config/instance"
+                relatedPaths={[
+                  "/admin/config",
+                  "/admin/config/instance",
+                  "/admin/config/storage",
+                ]}
               >
                 <AsideEntry
                   subEntry
                   icon="home"
                   title="Instance"
-                  to="config/instance"
+                  to="/admin/config/instance"
                 />
                 <AsideEntry
                   subEntry
                   icon="hard_drive"
                   title="Storage"
-                  to="config/storage"
+                  to="/admin/config/storage"
                 />
               </AsideEntry>
             </Show>
@@ -132,31 +141,31 @@ const AdminLayout: Component = () => {
               <AsideEntry
                 icon="hard_drive"
                 title="Storage"
-                to="storage/endpoints"
-                relatedPaths={["storage", "storage/endpoints"]}
+                to="/admin/storage/endpoints"
+                relatedPaths={["/admin/storage", "/admin/storage/endpoints"]}
               >
                 <AsideEntry
                   subEntry
                   icon="data_table"
                   title="Endpoints"
-                  to="storage/endpoints"
+                  to="/admin/storage/endpoints"
                 />
                 <AsideEntry
                   subEntry
                   icon="contract"
                   title="Access Templates"
-                  to="storage/access-templates"
+                  to="/admin/storage/access-templates"
                 />
               </AsideEntry>
             </Show>
 
             <Show when={featuresPageAllowed()}>
-              <AsideEntry icon="bolt" title="Features" to="features" />
+              <AsideEntry icon="bolt" title="Features" to="/admin/features" />
             </Show>
           </AsideSection>
 
           <AsideSection>
-            <AsideEntry icon="info" title="About" to="about" />
+            <AsideEntry icon="info" title="About" to="/admin/about" />
           </AsideSection>
         </Stack>
       </AppAside>

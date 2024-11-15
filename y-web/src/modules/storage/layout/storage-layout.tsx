@@ -132,7 +132,7 @@ const StorageLayout: Component = () => {
                     small
                     icon="hard_drive"
                     title={endpoint.name}
-                    to={`browse/${endpoint.id}`}
+                    to={`/files/browse/${endpoint.id}`}
                   />
                 ) : null
               }}

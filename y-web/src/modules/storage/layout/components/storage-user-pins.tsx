@@ -114,8 +114,10 @@ export const StorageUserPins: Component<StorageUserPinsProps> = (props) => {
             exact
             icon="keep"
             title={userPin.name}
-            to={`browse/${userPin.endpoint_id}/${userPin.entry_id}`}
-            relatedPaths={[`browse/${userPin.endpoint_id}/${userPin.entry_id}`]}
+            to={`/files/browse/${userPin.endpoint_id}/${userPin.entry_id}`}
+            relatedPaths={[
+              `/files/browse/${userPin.endpoint_id}/${userPin.entry_id}`,
+            ]}
             linkProps={{
               onContextMenu: (event) => {
                 event.preventDefault()

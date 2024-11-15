@@ -124,9 +124,9 @@ export const StorageLocations: Component<StorageLocationsProps> = (props) => {
             exact
             icon="folder_open"
             title={location.name}
-            to={`browse/${location.endpoint_id}/${location.entry_id}`}
+            to={`/files/browse/${location.endpoint_id}/${location.entry_id}`}
             relatedPaths={[
-              `browse/${location.endpoint_id}/${location.entry_id}`,
+              `/files/browse/${location.endpoint_id}/${location.entry_id}`,
             ]}
             linkProps={{
               onContextMenu: (event) => {
