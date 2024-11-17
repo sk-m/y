@@ -13,8 +13,9 @@ y does not install anything on your machine, so make sure you have everything re
 1. A linux machine.
 2. PostgreSQL (version 16.0 or higher).
 3. A web server (nginx/apache/etc.).
+4. Required packages: `apt install fuse3`.
 
-_Optional_ dependencies for the "storage" feature:
+#### _Optional_ dependencies for the "storage" feature
 
 1. `imagemagick` - thumbnail generation.
 2. `ffmpeg` - video transcoding, thumbnail generation.
