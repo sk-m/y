@@ -11,6 +11,7 @@ mod user;
 mod user_group;
 mod util;
 mod vfs;
+mod vfs_util;
 mod ws;
 
 use crate::storage_archives::cleanup_storage_archives;
@@ -24,7 +25,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::process::exit;
 use std::sync::Mutex;
-use std::{env, fs};
+use std::{env, fs, io};
 use std::{str::FromStr, time::Duration};
 use users::{get_current_gid, get_current_uid};
 use util::RequestPool;
@@ -41,7 +42,7 @@ async fn process_cli_arguments(pool: &RequestPool) {
             let group_name = &cli_arguments.get(index + 3);
 
             if let (Some(username), Some(password)) = (username, password) {
-                println!("Creating a new user and exiting...");
+                println!("Creating a user and exiting...");
 
                 let create_user = util::cli_create_user(
                     pool,
@@ -53,7 +54,7 @@ async fn process_cli_arguments(pool: &RequestPool) {
 
                 match create_user {
                     Ok(_) => {
-                        println!("No errors reported");
+                        println!("No errors reported.");
                         exit(0);
                     }
                     Err(error) => {
@@ -63,7 +64,7 @@ async fn process_cli_arguments(pool: &RequestPool) {
                 }
             } else {
                 println!("Usage: --create-user <username> <password> [group]");
-                println!("  group: optional, name of the group that will be assigned to the user.");
+                println!("  group: (optional) name of the group the user will be assigned to.");
                 exit(1);
             }
         }
@@ -92,29 +93,44 @@ fn setup_job_scheduler(pool: RequestPool) {
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> io::Result<()> {
     // Load the .env file
     dotenv().ok();
 
     // Initialize the logger
+    let logger_config = ConfigBuilder::new()
+        .set_time_offset_to_local()
+        .unwrap()
+        .build();
+
+    // let log_file = fs::OpenOptions::new()
+    //     .create(true)
+    //     .append(true)
+    //     .open("y-server.log")
+    //     .unwrap();
+
+    let logger_level = if cfg!(debug_assertions) {
+        LevelFilter::Debug
+    } else {
+        LevelFilter::Info
+    };
+
     CombinedLogger::init(vec![
         TermLogger::new(
-            LevelFilter::Info,
-            // LevelFilter::Debug,
-            Config::default(),
+            logger_level,
+            logger_config.clone(),
             TerminalMode::Mixed,
             ColorChoice::Auto,
         ),
-        WriteLogger::new(
-            LevelFilter::Info,
-            Config::default(),
-            std::fs::File::create("y-server.log").unwrap(),
-        ),
+        // WriteLogger::new(logger_level, logger_config, log_file),
     ])
     .unwrap();
 
     // Connect to the database
     let pool = db::connect().await;
+
+    // Process command line arguments. We might want to do something and terminate
+    process_cli_arguments(&pool).await;
 
     // VFS
     let vfs = vfs_mount(
@@ -129,9 +145,6 @@ async fn main() -> std::io::Result<()> {
     let ws_state = web::Data::new(Mutex::new(WSState {
         ws_connections: HashMap::new(),
     }));
-
-    // Process command line arguments. We might want to do something and terminate
-    process_cli_arguments(&pool).await;
 
     // Make sure the server address and port are set by the user
     let server_address =
