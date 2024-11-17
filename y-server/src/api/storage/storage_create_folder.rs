@@ -4,9 +4,9 @@ use validator::Validate;
 
 use crate::{
     request::error,
-    storage_access::check_storage_entry_access,
+    storage_access::{check_endpoint_root_access, check_storage_entry_access},
     storage_endpoint::get_storage_endpoint,
-    user::{get_user_from_request, get_user_groups},
+    user::{get_group_rights, get_user_from_request, get_user_groups},
     util::RequestPool,
 };
 
@@ -44,25 +44,6 @@ async fn storage_create_folder(
         return error("storage.access_denied");
     }
 
-    let (client_user, _) = client.unwrap();
-
-    let user_groups = get_user_groups(&**pool, client_user.id).await;
-    let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
-
-    let action_allowed = check_storage_entry_access(
-        form.endpoint_id,
-        form.target_folder.unwrap(),
-        "upload",
-        client_user.id,
-        &group_ids,
-        &**pool,
-    )
-    .await;
-
-    if !action_allowed {
-        return error("storage.access_denied");
-    }
-
     let target_endpoint = get_storage_endpoint(form.endpoint_id, &pool).await;
 
     if target_endpoint.is_err() {
@@ -71,6 +52,34 @@ async fn storage_create_folder(
 
     if target_endpoint.unwrap().status != "active" {
         return error("storage.endpoint_not_active");
+    }
+
+    let (client_user, _) = client.unwrap();
+
+    let user_groups = get_user_groups(&**pool, client_user.id).await;
+    let group_ids = user_groups.iter().map(|g| g.id).collect::<Vec<i32>>();
+
+    if !is_root {
+        let action_allowed = check_storage_entry_access(
+            form.endpoint_id,
+            form.target_folder.unwrap(),
+            "upload",
+            client_user.id,
+            &group_ids,
+            &**pool,
+        )
+        .await;
+
+        if !action_allowed {
+            return error("storage.access_denied");
+        }
+    } else {
+        let group_rights = get_group_rights(&*pool, &group_ids).await;
+        let root_access = check_endpoint_root_access(form.endpoint_id, group_rights);
+
+        if !root_access {
+            return error("storage.access_denied");
+        }
     }
 
     let new_folder_id = if is_root {
