@@ -3,6 +3,7 @@ use log::*;
 use std::fs;
 use std::sync::Mutex;
 use std::{collections::HashMap, fs::OpenOptions, path::Path};
+use uuid::Uuid;
 
 use actix_multipart::Multipart;
 use actix_web::{
@@ -146,27 +147,20 @@ async fn storage_upload(
     while let Some(item) = payload.next().await {
         if let Ok(mut field) = item {
             let file_relative_path = field.content_disposition().get_filename().clone();
-            let file_filename = String::from(field.name());
+            let full_filename = field.name().to_string();
 
             if let Some(file_relative_path) = file_relative_path {
-                let file_id = uuid::Uuid::new_v4().to_string();
-
+                let file_filesystem_id = Uuid::new_v4().to_string();
                 let mut file_relative_path = String::from(file_relative_path);
-                let mut file_filename_parts = file_filename.split(".").collect::<Vec<&str>>();
 
-                // Extract the file's name and extension
-                // TODO we can extract the file's extension using the `infer` crate
-                let file_extension = if file_filename_parts.len() == 0 {
+                let name_separator = full_filename.rfind('.').unwrap_or(full_filename.len());
+
+                let (file_name, file_extension) = full_filename.split_at(name_separator);
+
+                let file_extension = if file_extension.len() > 0 {
+                    Some(file_extension.trim_start_matches('.'))
+                } else {
                     None
-                } else {
-                    Some(file_filename_parts[file_filename_parts.len() - 1])
-                };
-
-                let file_name = if file_extension.is_none() {
-                    file_filename.clone()
-                } else {
-                    file_filename_parts.pop();
-                    file_filename_parts.join(".")
                 };
 
                 // Now we need to find the folder where the file will be uploaded to.
@@ -310,7 +304,7 @@ async fn storage_upload(
                 // let's actually write it onto the filesystem and create a new row in the databse for it.
 
                 // 1. Write the file onto the filesystem
-                let path = target_endpoint_base_path.join(&file_id);
+                let path = target_endpoint_base_path.join(&file_filesystem_id);
                 let file = OpenOptions::new().write(true).create_new(true).open(&path);
 
                 if let Ok(mut file) = file {
@@ -354,7 +348,7 @@ async fn storage_upload(
 
                     let create_file_result = sqlx::query("INSERT INTO storage_entries (endpoint_id, filesystem_id, parent_folder, name, extension, mime_type, size_bytes, created_by, created_at, entry_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), 'file'::storage_entry_type)")
                     .bind(endpoint_id)
-                    .bind(&file_id)
+                    .bind(&file_filesystem_id)
                     .bind(parent_folder_id)
                     .bind(file_name)
                     .bind(file_extension)
@@ -371,19 +365,19 @@ async fn storage_upload(
 
                         // TODO: it's kind of dumb to upload a file only to delete it later if it already exists...
 
-                        skipped_files.push(file_filename);
+                        skipped_files.push(full_filename);
 
                         warn!("{}", create_file_result.unwrap_err());
 
                         fs::remove_file(&path).unwrap_or(());
                     } else {
-                        uploaded_files.push(file_id.clone());
+                        uploaded_files.push(file_filesystem_id.clone());
                     }
                 } else {
                     // For some reason, we could not write the file onto the filesystem.
                     // This is not critical, we can continue.
 
-                    skipped_files.push(file_filename.clone());
+                    skipped_files.push(full_filename.clone());
                 }
             } else {
                 return sink_and_error("storage.upload.no_filename", &mut payload).await;
