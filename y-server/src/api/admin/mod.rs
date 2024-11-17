@@ -8,6 +8,8 @@ pub mod delete_user;
 pub mod delete_user_group;
 pub mod features;
 pub mod storage_endpoint;
+pub mod storage_endpoint_set_vfs_config;
+pub mod storage_endpoint_vfs;
 pub mod storage_endpoints;
 pub mod update_feature;
 pub mod update_password;

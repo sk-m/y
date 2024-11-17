@@ -141,7 +141,11 @@ pub fn get_right_categories() -> Vec<RightCategory> {
             rights: vec![
                 Right {
                     name: "manage_storage_endpoints",
-                    options: vec![],
+                    options: vec![RightOption {
+                        name: "allow_managing_vfs",
+                        value_type: RightValueType::Boolean,
+                        value_source: None,
+                    }],
                     tags: vec![RightTag::Administrative],
                     feature: Some("storage"),
                 },
