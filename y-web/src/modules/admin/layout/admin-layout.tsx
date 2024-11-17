@@ -182,7 +182,7 @@ const AdminLayout: Component = () => {
           <Route path="/config/storage" component={ConfigStoragePage} />
           <Route path="/storage/endpoints" component={StorageEndpointsPage} />
           <Route
-            path="/storage/endpoints/:endpointId"
+            path="/storage/endpoints/:endpointId/*"
             component={StorageEndpointPage}
           />
           <Route

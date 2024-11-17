@@ -118,6 +118,11 @@
           "description": "Allow managing access rule templates."
         }
       },
+      "manage_storage_endpoints": {
+        "allow_managing_vfs": {
+          "description": "Allow managing virtual file system configuration."
+        }
+      },
       "create_storage_links": {
         "allow_updating_code": {
           "description": "Allow setting a custom code for a storage link (including links created by other users)."
@@ -213,6 +218,15 @@
         "access_denined": "Access denied",
         "invalid_input": "Invalid input",
         "internal": "Internal error"
+      },
+      "storage_vfs": {
+        "invalid_input": "Invalid input",
+        "unauthorized": "Permission denied",
+        "internal": "Internal error",
+
+        "mountpoint_does_not_exist": "Mountpoint does not exist",
+        "mountpoint_not_a_directory": "Mountpoint is not a directory",
+        "mountpoint_not_absolute": "Mountpoint must be an absolute path"
       },
       "storage": {
         "access_denined": "Access denied",
