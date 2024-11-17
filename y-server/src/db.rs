@@ -1,6 +1,11 @@
 use log::info;
-use sqlx::{postgres::PgPoolOptions, Postgres};
-use std::env;
+use sqlx::ConnectOptions;
+use sqlx::{
+    postgres::{PgConnectOptions, PgPoolOptions},
+    Postgres,
+};
+use std::time::Duration;
+use std::{env, str::FromStr};
 
 pub async fn connect() -> sqlx::Pool<Postgres> {
     let max_connections = env::var("DATABASE_MAX_CONNECTIONS")
@@ -15,12 +20,14 @@ pub async fn connect() -> sqlx::Pool<Postgres> {
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL env variable must be set");
 
-    let pool = PgPoolOptions::new()
-        // TODO: Allow setting via .env file
-        .max_connections(max_connections)
-        .connect(database_url.as_str())
-        .await
-        .expect("Could not connect to the database");
+    let options = PgConnectOptions::from_str(&database_url.as_str())
+        .unwrap()
+        .disable_statement_logging()
+        .log_slow_statements(log::LevelFilter::Warn, Duration::from_secs(1));
 
-    return pool;
+    PgPoolOptions::new()
+        .max_connections(max_connections)
+        .connect_with(options)
+        .await
+        .expect("Could not connect to the database")
 }
