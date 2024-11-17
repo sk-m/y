@@ -1,9 +1,6 @@
 import { createRoot, onCleanup } from "solid-js"
 
-import {
-  makeHeartbeatWS,
-  makeReconnectingWS,
-} from "@solid-primitives/websocket"
+import { makeReconnectingWS } from "@solid-primitives/websocket"
 import { z } from "zod"
 
 import { debug } from "./utils"
@@ -44,15 +41,16 @@ const TWebsocketMessage = z
 type IWebsocketMessage = z.infer<typeof TWebsocketMessage>
 
 const createWebsocketController = () => {
-  const ws = makeHeartbeatWS(
-    makeReconnectingWS(
-      `ws://${window.location.host}/api/ws`,
-      // eslint-disable-next-line no-undefined
-      undefined,
-      {
-        delay: 5000,
-      }
-    )
+  // TODO the heartbeat task is running on the server, but there might be a situation
+  // where the server goes down and the client does not know about it, because it does
+  // not have it's own heartbeat checks. Maybe check heartbeat from the client as well?
+  const ws = makeReconnectingWS(
+    `ws://${window.location.host}/api/ws`,
+    // eslint-disable-next-line no-undefined
+    undefined,
+    {
+      delay: 5000,
+    }
   )
 
   const send = (message: string) => {
