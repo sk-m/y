@@ -69,9 +69,6 @@ async fn storage_endpoint_set_vfs_config(
 
     match set_config {
         Ok(_) => HttpResponse::Ok().body("{}"),
-        Err(err) => {
-            dbg!(err);
-            error("storage_vfs.internal")
-        }
+        Err(_) => error("storage_vfs.internal"),
     }
 }

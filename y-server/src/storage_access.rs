@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use log::*;
 use serde::Serialize;
 use sqlx::FromRow;
 
@@ -498,12 +499,12 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         // No entries have explicitly denied access, and no entries are inheriting access rules from
         // their parents. We are done here, the action is allowed.
 
-        println!("No entries that have explicitly denied access, and no entries are inheriting access rules from their parents. We are done here, the action is allowed.");
+        debug!("No entries that have explicitly denied access, and no entries are inheriting access rules from their parents. We are done here, the action is allowed.");
 
         return true;
     }
 
-    println!("None of selected entries have denied access and some of them are inheriting access rules from their parents, now we need to go up the tree and check");
+    debug!("None of selected entries have denied access and some of them are inheriting access rules from their parents, now we need to go up the tree and check");
 
     // Looks like none of the target entries have *explicitly* denied access. Now let's recursively check
     // their parents, they might have inherited access rules from their parents.
