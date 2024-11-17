@@ -808,6 +808,8 @@ pub fn vfs_mount(
     endpoint_id: i32,
     mountpoint: &str,
 
+    options: Vec<MountOption>,
+
     db_pool: RequestPool,
     executor: (u32, u32),
 ) -> BackgroundSession {
@@ -815,14 +817,6 @@ pub fn vfs_mount(
     let (uid, gid) = executor;
 
     let endpoint = block_on(get_storage_endpoint(endpoint_id, &db_pool)).unwrap();
-
-    let options = vec![
-        MountOption::FSName("y".to_string()),
-        MountOption::RW,
-        MountOption::NoAtime,
-        MountOption::NoExec,
-        MountOption::NoDev,
-    ];
 
     fuser::spawn_mount2(
         YFS {

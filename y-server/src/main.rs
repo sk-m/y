@@ -11,6 +11,7 @@ mod user;
 mod user_group;
 mod util;
 mod vfs;
+mod vfs_manager;
 mod vfs_util;
 mod ws;
 
@@ -27,9 +28,8 @@ use std::process::exit;
 use std::sync::Mutex;
 use std::{env, fs, io};
 use std::{str::FromStr, time::Duration};
-use users::{get_current_gid, get_current_uid};
 use util::RequestPool;
-use vfs::vfs_mount;
+use vfs_manager::{mount_vfs_endpoints, VFSState};
 use ws::WSState;
 
 async fn process_cli_arguments(pool: &RequestPool) {
@@ -127,19 +127,17 @@ async fn main() -> io::Result<()> {
     .unwrap();
 
     // Connect to the database
-    let pool = db::connect().await;
+    let mut pool = db::connect().await;
 
     // Process command line arguments. We might want to do something and terminate
     process_cli_arguments(&pool).await;
 
     // VFS
-    let vfs = vfs_mount(
-        1,
-        "/mnt/test",
-        // TODO! do not pool.clone() !!!
-        pool.clone(),
-        (get_current_uid(), get_current_gid()),
-    );
+    let mut vfs_state = VFSState {
+        handles: HashMap::new(),
+    };
+
+    let _ = mount_vfs_endpoints(&mut vfs_state, &mut pool).await;
 
     // Global websocket state
     let ws_state = web::Data::new(Mutex::new(WSState {
@@ -245,6 +243,8 @@ async fn main() -> io::Result<()> {
                     .service(crate::api::admin::delete_storage_location::delete_storage_location)
                     .service(crate::api::admin::storage_endpoints::storage_enpoints)
                     .service(crate::api::admin::storage_endpoint::storage_enpoint)
+                    .service(crate::api::admin::storage_endpoint_vfs::storage_enpoint_vfs)
+                    .service(crate::api::admin::storage_endpoint_set_vfs_config::storage_endpoint_set_vfs_config)
                     .service(crate::api::admin::update_storage_endpoint::update_storage_endpoint)
                     .service(crate::api::admin::config::config_options::config_options)
                     .service(crate::api::admin::config::config_set::config_set)
@@ -261,8 +261,11 @@ async fn main() -> io::Result<()> {
     .and_then(|_| async {
         info!("Server stopped");
 
-        info!("Unmounting virtual file system");
-        vfs.join();
+        for (endpoint_id, handle) in vfs_state.handles.drain() {
+            info!("Unmounting endpoint {endpoint_id}...");
+
+            handle.join();
+        }
 
         Ok(())
     })
