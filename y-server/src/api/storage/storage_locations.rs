@@ -1,5 +1,4 @@
 use actix_web::{get, web, HttpResponse, Responder};
-use log::*;
 use serde::Serialize;
 use sqlx::prelude::FromRow;
 
@@ -28,10 +27,6 @@ async fn storage_locations(pool: web::Data<RequestPool>) -> impl Responder {
 
     match locations {
         Ok(locations) => HttpResponse::Ok().json(web::Json(StorageLocationsOutput { locations })),
-        Err(err) => {
-            error!("{}", err);
-
-            return error("storage_locations.internal");
-        }
+        Err(_) => error("storage.internal"),
     }
 }

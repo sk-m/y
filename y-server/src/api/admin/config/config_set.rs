@@ -1,27 +1,29 @@
+use std::collections::HashMap;
+
+use crate::config::validate_config_value;
+use crate::request::error_message;
 use crate::user::get_user_from_request;
 use crate::util::RequestPool;
 use crate::{request::error, user::get_client_rights};
-use actix_web::{put, web, HttpRequest, HttpResponse, Responder};
-use serde::Deserialize;
+use actix_web::{patch, web, HttpRequest, HttpResponse, Responder};
+use sqlx::QueryBuilder;
 
-#[derive(Deserialize)]
-struct ConfigSetInput {
-    value: String,
-}
-
-#[put("/config/{config_key}")]
+#[patch("/config")]
 async fn config_set(
     pool: web::Data<RequestPool>,
-    form: web::Json<ConfigSetInput>,
-    path: web::Path<String>,
+    form: web::Json<HashMap<String, String>>,
     req: HttpRequest,
 ) -> impl Responder {
-    let key = path.into_inner();
-    let value = form.into_inner().value;
+    let new_config = form.into_inner();
 
     // TODO cleanup
     let client = get_user_from_request(&pool, &req).await;
-    let client_user = &client.as_ref().unwrap().0;
+
+    if client.is_none() {
+        return error("config.access_denined");
+    }
+
+    let (client_user, _) = &client.unwrap();
     let client_rights = get_client_rights(&pool, &req).await;
 
     let action_allowed = client_rights
@@ -30,24 +32,48 @@ async fn config_set(
         .is_some();
 
     if !action_allowed {
-        return error("config.set.unauthorized");
+        return error("config.access_denined");
     }
 
-    let result = sqlx::query(
-        "UPDATE config SET value = $2, updated_by = $3, updated_at = now() WHERE key = $1",
-    )
-    .bind(key)
-    .bind(value)
-    .bind(client_user.id)
-    .fetch_all(&**pool)
-    .await;
+    for (key, value) in &new_config {
+        let check_result = validate_config_value(key, value);
+
+        if let Err(err_message) = check_result {
+            return error_message(
+                "config.invalid_input",
+                format!("{}: {}", key, err_message).as_str(),
+            );
+        }
+    }
+
+    let mut query_builder = QueryBuilder::new(
+        "UPDATE config
+        SET value = temp_data.value, updated_by = temp_data.updated_by, updated_at = temp_data.updated_at
+        FROM (",
+    );
+
+    query_builder.push_values(new_config, |mut b, (key, value)| {
+        b.push_bind(key);
+        b.push_bind(value);
+        b.push_bind(client_user.id);
+        b.push("now()");
+    });
+
+    query_builder.push(
+        ") temp_data (key, value, updated_by, updated_at)
+        WHERE config.key = temp_data.key",
+    );
+
+    let query = query_builder.build();
+
+    let result = query.execute(&**pool).await;
 
     match result {
         Ok(_) => {
             return HttpResponse::Ok().body("{}");
         }
         Err(_) => {
-            return error("config.set.internal");
+            return error("config.internal");
         }
     }
 }

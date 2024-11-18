@@ -2,7 +2,7 @@ use actix_web::{get, web, HttpResponse, Responder};
 use serde::Serialize;
 use sqlx::prelude::FromRow;
 
-use crate::request::{error, TableInput, DEFAULT_LIMIT};
+use crate::request::{error, TableInput};
 use futures::join;
 
 use crate::util::RequestPool;
@@ -34,14 +34,14 @@ async fn storage_access_rules_templates(
         None => "name",
     };
 
-    let templates = sqlx::query_as::<_, TemplateOutput>(
-        "SELECT * FROM storage_access_templates WHERE name LIKE '%' || $1 || '%' ORDER BY $2 LIMIT $3 OFFSET $4",
-    )
-    .bind(search)
-    .bind(order_by)
-    .bind(query.limit.unwrap_or(DEFAULT_LIMIT))
-    .bind(query.skip.unwrap_or(0))
-    .fetch_all(&**pool);
+    let sql = format!(
+        "SELECT * FROM storage_access_templates WHERE {}",
+        query.get_where_sql("name", order_by)
+    );
+
+    let templates = sqlx::query_as::<_, TemplateOutput>(sql.as_str())
+        .bind(search)
+        .fetch_all(&**pool);
 
     let templates_count =
         sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM storage_access_templates")
@@ -65,7 +65,7 @@ async fn storage_access_rules_templates(
             }));
         }
         Err(_) => {
-            return error("storage_access_rules_templates.internal");
+            return error("storage.internal");
         }
     }
 }

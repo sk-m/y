@@ -11,6 +11,7 @@ export const routes = {
   "/admin/storage/endpoints/new": "/admin/storage/endpoints/new",
   "/admin/storage/access-templates": "/admin/storage/access-templates",
   "/admin/config": "/admin/config",
-  "/admin/config/general": "/admin/config/general",
+  "/admin/config/instance": "/admin/config/instance",
+  "/admin/config/storage": "/admin/config/storage",
   "/about": "/about",
 } as const

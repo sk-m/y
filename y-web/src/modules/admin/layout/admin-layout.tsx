@@ -44,8 +44,12 @@ const StorageAccessTemplatesPage = lazy(
   async () => import("@/modules/admin/pages/storage/access-templates")
 )
 
-const ConfigGeneralPage = lazy(
-  async () => import("@/modules/admin/pages/config/general")
+const ConfigInstancePage = lazy(
+  async () => import("@/modules/admin/pages/config/instance")
+)
+
+const ConfigStoragePage = lazy(
+  async () => import("@/modules/admin/pages/config/storage")
 )
 
 const FeaturesPage = lazy(async () => import("@/modules/admin/pages/features"))
@@ -90,15 +94,20 @@ const AdminLayout: Component = () => {
             <AsideEntry
               icon="person"
               title="Users & Groups"
-              to="users"
-              relatedPaths={["users", "user-groups"]}
+              to="/admin/users"
+              relatedPaths={["/admin/users", "/admin/user-groups"]}
             >
-              <AsideEntry subEntry icon="group" title="Users" to="users" />
+              <AsideEntry
+                subEntry
+                icon="group"
+                title="Users"
+                to="/admin/users"
+              />
               <AsideEntry
                 subEntry
                 icon="groups"
                 title="Groups"
-                to="user-groups"
+                to="/admin/user-groups"
               />
             </AsideEntry>
 
@@ -106,14 +115,24 @@ const AdminLayout: Component = () => {
               <AsideEntry
                 icon="page_info"
                 title="Configuration"
-                to="config/general"
-                relatedPaths={["config", "config/general"]}
+                to="/admin/config/instance"
+                relatedPaths={[
+                  "/admin/config",
+                  "/admin/config/instance",
+                  "/admin/config/storage",
+                ]}
               >
                 <AsideEntry
                   subEntry
-                  icon="manufacturing"
-                  title="General"
-                  to="config/general"
+                  icon="home"
+                  title="Instance"
+                  to="/admin/config/instance"
+                />
+                <AsideEntry
+                  subEntry
+                  icon="hard_drive"
+                  title="Storage"
+                  to="/admin/config/storage"
                 />
               </AsideEntry>
             </Show>
@@ -122,31 +141,31 @@ const AdminLayout: Component = () => {
               <AsideEntry
                 icon="hard_drive"
                 title="Storage"
-                to="storage/endpoints"
-                relatedPaths={["storage", "storage/endpoints"]}
+                to="/admin/storage/endpoints"
+                relatedPaths={["/admin/storage", "/admin/storage/endpoints"]}
               >
                 <AsideEntry
                   subEntry
                   icon="data_table"
                   title="Endpoints"
-                  to="storage/endpoints"
+                  to="/admin/storage/endpoints"
                 />
                 <AsideEntry
                   subEntry
                   icon="contract"
                   title="Access Templates"
-                  to="storage/access-templates"
+                  to="/admin/storage/access-templates"
                 />
               </AsideEntry>
             </Show>
 
             <Show when={featuresPageAllowed()}>
-              <AsideEntry icon="bolt" title="Features" to="features" />
+              <AsideEntry icon="bolt" title="Features" to="/admin/features" />
             </Show>
           </AsideSection>
 
           <AsideSection>
-            <AsideEntry icon="info" title="About" to="about" />
+            <AsideEntry icon="info" title="About" to="/admin/about" />
           </AsideSection>
         </Stack>
       </AppAside>
@@ -159,10 +178,11 @@ const AdminLayout: Component = () => {
           <Route path="/users/:userId/*" component={UserPage} />
           <Route path="/users/new" component={NewUserPage} />
           <Route path="/features" component={FeaturesPage} />
-          <Route path="/config/general" component={ConfigGeneralPage} />
+          <Route path="/config/instance" component={ConfigInstancePage} />
+          <Route path="/config/storage" component={ConfigStoragePage} />
           <Route path="/storage/endpoints" component={StorageEndpointsPage} />
           <Route
-            path="/storage/endpoints/:endpointId"
+            path="/storage/endpoints/:endpointId/*"
             component={StorageEndpointPage}
           />
           <Route

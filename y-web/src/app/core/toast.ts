@@ -34,11 +34,13 @@ const createToastController = () => {
       },
     ])
 
-    setTimeout(() => {
-      setToasts((currentToasts) =>
-        currentToasts.filter((toast) => toast.id !== toastId)
-      )
-    }, toastDuration)
+    if (toastDuration !== 0) {
+      setTimeout(() => {
+        setToasts((currentToasts) =>
+          currentToasts.filter((toast) => toast.id !== toastId)
+        )
+      }, toastDuration)
+    }
   }
 
   const remove = (toastId: string) => {

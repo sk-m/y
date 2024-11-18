@@ -1,11 +1,12 @@
 use std::collections::{HashMap, HashSet};
 
-use log::error;
+use log::*;
 use serde::Serialize;
 use sqlx::FromRow;
 
 use crate::{
     storage_endpoint::get_storage_endpoint,
+    storage_entry::StorageError,
     user::{get_group_rights, UserRight},
     util::RequestPool,
 };
@@ -182,7 +183,7 @@ async fn get_storage_entry_access_rule_cascade_up(
     user_groups: &Vec<i32>,
 
     pool: &RequestPool,
-) -> Result<StorageAccessCheckResult, sqlx::Error> {
+) -> Result<StorageAccessCheckResult, StorageError> {
     let tree_rules = sqlx::query_as::<_, ProccessEntryRuleInput>("
         SELECT tree.tree_step::INT4, 2 AS rule_source, storage_access.entry_id, NULL as template_id, storage_access.access_type::TEXT, storage_access.executor_type::TEXT, storage_access.executor_id FROM (SELECT row_number() OVER () AS tree_step, id AS entry_id FROM storage_get_folder_path($1, $2)) AS tree
 
@@ -236,7 +237,7 @@ async fn get_storage_entry_access_rule_cascade_up(
 
             Ok(StorageAccessCheckResult::Inherited(group_rules))
         }
-        Err(err) => Err(err),
+        Err(_) => Err(StorageError::Internal),
     }
 }
 
@@ -319,8 +320,8 @@ pub async fn check_storage_entry_access(
             }
         },
 
-        Err(err) => {
-            error!("{:?}", err);
+        Err(_) => {
+            // Internal error retured from `get_storage_entry_access_rule_cascade_up`
             return false;
         }
     }
@@ -382,6 +383,7 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
 
     match target_endpoint {
         Err(_) => {
+            // Internal error returned from `get_storage_endpoint`
             return false;
         }
         Ok(target_endpoint) => {
@@ -497,12 +499,12 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         // No entries have explicitly denied access, and no entries are inheriting access rules from
         // their parents. We are done here, the action is allowed.
 
-        println!("No entries that have explicitly denied access, and no entries are inheriting access rules from their parents. We are done here, the action is allowed.");
+        debug!("No entries that have explicitly denied access, and no entries are inheriting access rules from their parents. We are done here, the action is allowed.");
 
         return true;
     }
 
-    println!("None of selected entries have denied access and some of them are inheriting access rules from their parents, now we need to go up the tree and check");
+    debug!("None of selected entries have denied access and some of them are inheriting access rules from their parents, now we need to go up the tree and check");
 
     // Looks like none of the target entries have *explicitly* denied access. Now let's recursively check
     // their parents, they might have inherited access rules from their parents.

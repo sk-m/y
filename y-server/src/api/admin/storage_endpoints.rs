@@ -27,7 +27,7 @@ async fn storage_enpoints(
     }
 
     // TODO dont use just queries. Use a general function, like get_all_storage_endpoints
-    let endpoints = sqlx::query_as::<_, StorageEndpointRow>("SELECT id, name, endpoint_type::TEXT, status::TEXT, preserve_file_structure, base_path, artifacts_path, description, access_rules_enabled FROM storage_endpoints")
+    let endpoints = sqlx::query_as::<_, StorageEndpointRow>("SELECT storage_endpoints.id, storage_endpoints.name, storage_endpoints.endpoint_type::TEXT, storage_endpoints.status::TEXT, storage_endpoints.preserve_file_structure, storage_endpoints.base_path, storage_endpoints.artifacts_path, storage_endpoints.description, storage_endpoints.access_rules_enabled, storage_vfs.enabled AS vfs_enabled FROM storage_endpoints LEFT JOIN storage_vfs ON storage_vfs.endpoint_id = storage_endpoints.id")
         .fetch_all(&**pool)
         .await;
 

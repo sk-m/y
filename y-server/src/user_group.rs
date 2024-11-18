@@ -1,7 +1,7 @@
 use serde::Serialize;
 use sqlx::FromRow;
 
-use crate::util::RequestPool;
+use crate::{user::UserError, util::RequestPool};
 
 #[derive(FromRow, Serialize, Debug)]
 pub struct UserGroup {
@@ -36,7 +36,7 @@ struct UserGroupAndRights {
 pub async fn get_user_group(
     pool: &RequestPool,
     user_group_id: i32,
-) -> Result<UserGroupWithRights, sqlx::Error> {
+) -> Result<UserGroupWithRights, UserError> {
     let group_and_rights = sqlx::query_as::<_, UserGroupAndRights>(
         "SELECT user_groups.id, user_groups.name, user_groups.group_type, user_group_rights.right_name, user_group_rights.right_options FROM user_groups LEFT JOIN user_group_rights ON user_group_rights.group_id = user_groups.id WHERE user_groups.id = $1"
     )
@@ -46,7 +46,7 @@ pub async fn get_user_group(
     match group_and_rights {
         Ok(group_and_rights) => {
             if group_and_rights.len() == 0 {
-                return Err(sqlx::Error::RowNotFound);
+                return Err(UserError::GroupNotFound);
             }
 
             let group_id = group_and_rights[0].id.clone();
@@ -72,6 +72,6 @@ pub async fn get_user_group(
                 rights,
             });
         }
-        Err(err) => return Err(err),
+        Err(_) => return Err(UserError::Internal),
     };
 }

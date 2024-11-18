@@ -38,11 +38,11 @@ async fn storage_create_access_rules_template(
     let form = form.into_inner();
 
     if form.validate().is_err() {
-        return error("storage.create_storage_access_rules_template.invalid_input");
+        return error("storage.invalid_input");
     }
 
     if form.rules.is_empty() {
-        return error("storage.create_storage_access_rules_template.invalid_input");
+        return error("storage.invalid_input");
     }
 
     let rules = form.rules;
@@ -62,7 +62,7 @@ async fn storage_create_access_rules_template(
         .is_some();
 
     if !manage_templates_allowed {
-        return error("storage.create_storage_access_rules_template.unauthorized");
+        return error("storage.access_denied");
     }
 
     if form.initial_entry_endpoint_id.is_some() && form.initial_entry_id.is_some() {
@@ -86,7 +86,7 @@ async fn storage_create_access_rules_template(
         };
 
         if !initial_entry_action_allowed {
-            return error("storage.create_storage_access_rules_template.unauthorized");
+            return error("storage.access_denied");
         }
     }
 
@@ -100,7 +100,7 @@ async fn storage_create_access_rules_template(
     .await;
 
     if create_template_result.is_err() {
-        return error("storage.create_storage_access_rules_template.other");
+        return error("storage.internal");
     }
 
     let new_template_id = create_template_result.unwrap();
@@ -128,7 +128,7 @@ async fn storage_create_access_rules_template(
     let rules_create_result = rules_query.execute(&mut *transaction).await;
 
     if rules_create_result.is_err() {
-        return error("storage.create_storage_access_rules_template.other");
+        return error("storage.internal");
     }
 
     if form.initial_entry_endpoint_id.is_some() && form.initial_entry_id.is_some() {
@@ -142,7 +142,7 @@ async fn storage_create_access_rules_template(
         .await;
 
         if add_entry_result.is_err() {
-            return error("storage.create_storage_access_rules_template.other");
+            return error("storage.internal");
         }
     }
 
@@ -150,6 +150,6 @@ async fn storage_create_access_rules_template(
 
     match transaction_result {
         Ok(_) => HttpResponse::Ok().body("{}"),
-        Err(_) => error("storage.create_storage_access_rules_template.other"),
+        Err(_) => error("storage.internal"),
     }
 }

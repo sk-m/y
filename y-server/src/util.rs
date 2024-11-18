@@ -41,7 +41,7 @@ pub async fn cli_create_user(
                         .await;
 
                         if !group_id.is_ok() {
-                            return Err("Could not find the group");
+                            return Err("Could not find requested group.");
                         }
 
                         let group_result = sqlx::query(
@@ -54,20 +54,20 @@ pub async fn cli_create_user(
 
                         match group_result {
                             Ok(_) => {
-                                println!("User added to the group successfully.");
+                                println!("Group added.");
                                 return Ok(());
                             }
                             Err(_) => {
-                                return Err("Could not add the user to the group");
+                                return Err("Could not add the user to the group.");
                             }
                         }
                     } else {
                         Ok(())
                     }
                 }
-                Err(_) => Err("Error creating a new user"),
+                Err(_) => Err("Error creating a new user."),
             }
         }
-        Err(_) => Err("Error hashing the password for a new user"),
+        Err(_) => Err("Error hashing the password for a new user."),
     }
 }

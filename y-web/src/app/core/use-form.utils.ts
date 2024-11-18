@@ -1,3 +1,4 @@
+/* eslint-disable no-undefined */
 import { Field } from "./use-form"
 
 export type ValueFromPath<FieldValues, FieldName> =
@@ -93,4 +94,14 @@ export const isFieldWatched = <WatchedFields extends Readonly<string[]>>(
         fieldName.includes(watchedField.replace("*", ""))
     )
   )
+}
+
+export const validateInt = (value: string) => {
+  if (!/^\d*$/.test(value)) return false
+
+  const asInt = Number.parseInt(value, 10)
+
+  if (Number.isNaN(asInt)) return false
+
+  return asInt
 }

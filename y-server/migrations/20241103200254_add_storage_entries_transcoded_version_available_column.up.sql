@@ -1,0 +1,1 @@
+ALTER TABLE public.storage_entries ADD transcoded_version_available boolean NULL;

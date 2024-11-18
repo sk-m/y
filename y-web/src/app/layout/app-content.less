@@ -36,13 +36,85 @@
     background-color: white;
 
     border-radius: 10px;
-    box-shadow: 0 0 1px 0 rgba(@brand-black-rgb, 0.1),
-      0 0 0.5em 0 rgba(@brand-black-rgb, 0.05);
+    box-shadow: @app-root-block-box-shadow;
 
     .__default-scrollbar();
   }
 
   > * {
     animation: page-show 0.33s cubic-bezier(0, 0.55, 0.45, 1) 0s 1 forwards;
+  }
+
+  .app-error-boundary {
+    box-sizing: border-box;
+
+    width: 100%;
+
+    padding: 1em;
+
+    > .error-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      gap: 0.75em;
+
+      box-sizing: border-box;
+
+      width: 100%;
+
+      padding: 1em 2em;
+
+      color: var(--color-error-d-1);
+
+      background-color: var(--color-error-t-1);
+      border-radius: @border-radius-primary;
+
+      > .text {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        gap: 0.25em;
+
+        > .title {
+          font-weight: var(--text-body2);
+          font-weight: 600;
+        }
+
+        > .message {
+          font-size: var(--text-sm);
+          font-weight: 400;
+        }
+      }
+
+      > .buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+
+        > button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          padding: 0.5em 1em;
+
+          font-family: "Inter", sans-serif;
+          font-weight: 500;
+          font-size: var(--text-sm);
+
+          color: var(--color-error-d-1);
+          background-color: var(--color-error-t-1);
+          border: none;
+          border-radius: @border-radius-primary;
+
+          cursor: pointer;
+
+          transition: 0.15s;
+        }
+      }
+    }
   }
 }

@@ -106,9 +106,9 @@ async fn update_password(
                         return error("update_password.user_not_found");
                     }
                 }
-                Err(_) => return error("update_password.other"),
+                Err(_) => return error("update_password.internal"),
             }
         }
-        Err(_) => return error("update_password.other"),
+        Err(_) => return error("update_password.internal"),
     };
 }

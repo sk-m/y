@@ -28,25 +28,22 @@ export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
   const subEntries = createMemo(() => children(() => props.children).toArray())
 
   const isActive = createMemo(() => {
-    const target = props.exact
-      ? `${location.pathname}${location.search}`
-      : location.pathname
+    if (props.exact) {
+      const target = `${location.pathname}${location.search}`
 
-    if (target.includes(props.to)) return true
+      if (target === props.to) return true
 
-    for (const path of props.relatedPaths ?? []) {
-      if (target.includes(path)) return true
-    }
-  })
+      for (const path of props.relatedPaths ?? []) {
+        if (target === path) return true
+      }
+    } else {
+      const target = location.pathname
 
-  const isSelected = createMemo(() => {
-    const target = props.exact
-      ? `${location.pathname}${location.search}`
-      : location.pathname
+      if (target.startsWith(props.to)) return true
 
-    if (target.endsWith(props.to)) return true
-    for (const path of props.relatedPaths ?? []) {
-      if (target.endsWith(path)) return true
+      for (const path of props.relatedPaths ?? []) {
+        if (target.startsWith(path)) return true
+      }
     }
   })
 
@@ -57,7 +54,7 @@ export const AsideEntry: ComponentWithChildren<AsideEnytryProps> = (props) => {
         classList={{
           "aside-entry": true,
           small: props.small,
-          selected: isSelected() || isActive(),
+          selected: isActive(),
           group: subEntries().length > 0,
         }}
         {...props.linkProps}

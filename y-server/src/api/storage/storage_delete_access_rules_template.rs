@@ -30,7 +30,7 @@ async fn storage_delete_access_rules_template(
         .is_some();
 
     if !manage_templates_allowed {
-        return error("storage.delete_storage_access_rules_templates.unauthorized");
+        return error("storage.access_denied");
     }
 
     let template_ids = form.into_inner().template_ids;
@@ -42,7 +42,7 @@ async fn storage_delete_access_rules_template(
             .await;
 
     if delete_templates_result.is_err() {
-        return error("storage.delete_storage_access_rules_templates.other");
+        return error("storage.internal");
     } else {
         return HttpResponse::Ok().body("{}");
     }

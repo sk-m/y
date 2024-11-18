@@ -1,6 +1,7 @@
 /* eslint-disable unicorn/consistent-function-scoping */
 import {
   Component,
+  For,
   Match,
   Show,
   Switch,
@@ -15,19 +16,27 @@ import { isDev } from "solid-js/web"
 
 import { Checkbox } from "@/app/components/common/checkbox/checkbox"
 import { Icon } from "@/app/components/common/icon/icon"
+import { isFirefox } from "@/app/core/utils"
 import { SelectedEntry } from "@/modules/storage/file-explorer/use-file-explorer"
 import { IStorageEntry } from "@/modules/storage/storage-entry/storage-entry.codecs"
 
+import { StorageEntryDragletProps } from "./storage-entry-draglet"
+
 export type StorageEntryProps = {
   ref?: (ref: HTMLDivElement) => void
+
+  dragletRef: HTMLDivElement
+  dragletState: StorageEntryDragletProps["state"]
 
   entry: IStorageEntry
 
   isSelected?: boolean
   isActive?: boolean
   isContextMenuTarget?: boolean
-  thumbnails?: Record<number, string>
+  thumbnails?: Record<string, string>
   isRenaming?: boolean
+
+  selectedCount?: number
 
   onDblClick: (event: MouseEvent) => void
   onOpenContextMenu?: (event: MouseEvent) => void
@@ -43,10 +52,12 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
   let nameFieldRef: HTMLInputElement
   let nameFloaterRef: HTMLDivElement | undefined
 
-  const [isAboutToRecieve, setIsAboutToReceive] = createSignal(false)
+  const [isAboutToReceive, setIsAboutToReceive] = createSignal(false)
   const [isDragging, setIsDragging] = createSignal(false)
   const [showNameFloaterOnHover, setShowNameFloaterOnHover] =
     createSignal(false)
+
+  const [currentFrame, setCurrentFrame] = createSignal<number | null>(null)
 
   // prettier-ignore
   const thumbnail = createMemo(() =>
@@ -55,10 +66,41 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       : null)
   )
 
+  const frames = createMemo(() => {
+    if (props.entry.entry_type !== "file") return []
+
+    if (props.thumbnails?.[`${props.entry.id}:0`]) {
+      const framesArray: string[] = []
+
+      let index = 0
+
+      while (props.thumbnails[`${props.entry.id}:${index}`]) {
+        framesArray.push(props.thumbnails[`${props.entry.id}:${index}`]!)
+        index++
+      }
+
+      return framesArray
+    }
+
+    return []
+  })
+
   const fileMimeType = createMemo(() => props.entry.mime_type?.split("/") ?? [])
 
   const onDragStart = (event: DragEvent) => {
     setIsDragging(true)
+
+    if (!isFirefox) {
+      const draggable = document.createElement("div")
+      event.dataTransfer?.setDragImage(draggable, 0, 0)
+
+      props.dragletState.entry = props.entry
+      props.dragletState.selectedEntriesCount = props.selectedCount ?? 1
+
+      props.dragletRef.style.display = "flex"
+      props.dragletRef.style.top = `${event.clientY}px`
+      props.dragletRef.style.left = `${event.clientX}px`
+    }
 
     event.dataTransfer?.setData(
       "text/plain",
@@ -66,8 +108,18 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
     )
   }
 
+  const onDrag = (event: DragEvent) => {
+    props.dragletRef.style.top = `${event.clientY}px`
+    props.dragletRef.style.left = `${event.clientX}px`
+  }
+
   const onDragEnd = () => {
     setIsDragging(false)
+
+    if (!isFirefox) {
+      props.dragletState.entry = null
+      props.dragletRef.style.display = "none"
+    }
   }
 
   const onDragOver = (event: DragEvent) => {
@@ -111,6 +163,8 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
     }
   })
 
+  // TODO not sure I like the idea of adding an event handler to every single storage entry
+  // Can this logic be moved to the files explorer component?
   onMount(() => {
     const keyUpHandler = (event: KeyboardEvent) => {
       if (event.key === "Enter") {
@@ -156,6 +210,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
       ref={props.ref}
       draggable={true}
       onDragStart={onDragStart}
+      onDrag={isFirefox ? void 0 : onDrag}
       onDragEnd={onDragEnd}
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
@@ -165,7 +220,7 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
         selected: props.isSelected,
         active: props.isActive,
         "context-menu-target": props.isContextMenuTarget,
-        "about-to-receive": isAboutToRecieve(),
+        "about-to-receive": isAboutToReceive(),
         dragging: isDragging(),
       }}
       onDblClick={(event) => props.onDblClick(event)}
@@ -239,6 +294,37 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
             class="thumbnail"
             src={`data:image/jpeg;base64, ${thumbnail() ?? ""}`}
           />
+        </Show>
+        <Show when={frames().length > 0}>
+          <For each={frames()}>
+            {(frame, index) => (
+              <img
+                hidden={currentFrame() === null || index() !== currentFrame()}
+                draggable={false}
+                class="frame"
+                src={`data:image/jpeg;base64, ${frame}`}
+              />
+            )}
+          </For>
+          <div class="frame-targets" onMouseLeave={[setCurrentFrame, null]}>
+            <For each={frames()}>
+              {(_, index) => (
+                <div class="target" onMouseEnter={[setCurrentFrame, index]} />
+              )}
+            </For>
+          </div>
+          <div class="frame-indicators">
+            <For each={frames()}>
+              {(_, index) => (
+                <div
+                  classList={{
+                    indicator: true,
+                    active: index() === currentFrame(),
+                  }}
+                />
+              )}
+            </For>
+          </div>
         </Show>
       </div>
       <div
@@ -317,7 +403,13 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
                 </div>
               </Match>
               <Match when={fileMimeType()[0] === "video"}>
-                <div class="block">
+                <div
+                  classList={{
+                    block: true,
+                    success: props.entry.transcoded_version_available === true,
+                    pending: props.entry.transcoded_version_available === false,
+                  }}
+                >
                   <Icon
                     name="play_arrow"
                     type="rounded"

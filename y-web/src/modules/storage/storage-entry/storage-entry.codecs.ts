@@ -32,6 +32,7 @@ export const TStorageEntry = z.object({
   created_by: z.number().nullable(),
 
   downloads_count: z.number(),
+  transcoded_version_available: z.boolean().nullable(),
 })
 
 export type IStorageEntry = z.infer<typeof TStorageEntry>

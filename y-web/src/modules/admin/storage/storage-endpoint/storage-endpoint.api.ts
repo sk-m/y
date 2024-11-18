@@ -1,9 +1,10 @@
-import { get, patch, post } from "@/app/core/request"
+import { get, patch, post, put } from "@/app/core/request"
 
 import {
   IStorageEndpointStatus,
   TCreateStorageEndpoint,
   TGetStorageEndpoint,
+  TGetStorageEndpointVFSConfig,
   TGetStorageEndpoints,
 } from "./storage-endpoint.codecs"
 
@@ -16,6 +17,16 @@ export type GetStorageEndpointInput = {
 export const storageEndpoint = async (input: GetStorageEndpointInput) => {
   return get(`${apiAdminStorageEndpoints}/${input.endpointId}`).then((data) =>
     TGetStorageEndpoint.parse(data)
+  )
+}
+
+export type GetStorageEndpointVFSConfigInput = GetStorageEndpointInput
+
+export const storageEndpointVFSConfig = async (
+  input: GetStorageEndpointVFSConfigInput
+) => {
+  return get(`${apiAdminStorageEndpoints}/${input.endpointId}/vfs`).then(
+    (data) => TGetStorageEndpointVFSConfig.parse(data)
   )
 }
 
@@ -48,6 +59,26 @@ export const updateStorageEndpoint = async (
       ...(input.access_rules_enabled !== undefined && {
         access_rules_enabled: input.access_rules_enabled,
       }),
+    },
+  })
+}
+
+export type SetStorageEndpointVFSConfigInput = {
+  endpointId: number
+
+  enabled: boolean
+  writable: boolean
+  mountpoint: string
+}
+
+export const setStorageEndpointVFSConfig = async (
+  input: SetStorageEndpointVFSConfigInput
+) => {
+  return put(`${apiAdminStorageEndpoints}/${input.endpointId}/vfs`, {
+    body: {
+      enabled: input.enabled,
+      writable: input.writable,
+      mountpoint: input.mountpoint,
     },
   })
 }

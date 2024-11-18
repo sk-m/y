@@ -5,7 +5,7 @@ import { ComponentWithChildren } from "@/module"
 import "./pill.less"
 
 export type PillProps = {
-  variant?: "secondary" | "warning" | "success"
+  variant?: "secondary" | "warning" | "success" | "purple"
   dot?: boolean
 
   style?: JSX.CSSProperties

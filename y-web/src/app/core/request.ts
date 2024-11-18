@@ -11,6 +11,7 @@ export type RequestData = {
 
 export type ResponseError = {
   code: string
+  message?: string
 }
 
 export type ResponseData = {

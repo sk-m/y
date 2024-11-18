@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+// Fields
 export const storageEndpointStatus = [
   "active",
   "read_only",
@@ -19,6 +20,7 @@ export const TStorageEndpointStatus = z.union([
 ])
 export type IStorageEndpointStatus = z.infer<typeof TStorageEndpointStatus>
 
+// Objects
 export const TStorageEndpoint = z.object({
   id: z.number(),
   name: z.string(),
@@ -29,18 +31,36 @@ export const TStorageEndpoint = z.object({
   artifacts_path: z.nullable(z.string()),
   description: z.nullable(z.string()),
   access_rules_enabled: z.boolean(),
+  vfs_enabled: z.boolean().nullable(),
 })
 export type IStorageEndpoint = z.infer<typeof TStorageEndpoint>
 
 export const TStorageEndpointRow = TStorageEndpoint
 export type IStorageEndpointRow = z.infer<typeof TStorageEndpointRow>
 
+export const TStorageEndpointVFSConfig = z.object({
+  enabled: z.boolean(),
+  writable: z.boolean(),
+  mountpoint: z.string(),
+})
+
+export type IStorageEndpointVFSConfig = z.infer<
+  typeof TStorageEndpointVFSConfig
+>
+
+// Requests
 export const TGetStorageEndpoints = z.object({
   storage_endpoints: z.array(TStorageEndpointRow),
 })
 
 export const TGetStorageEndpoint = TStorageEndpoint
 
+export const TGetStorageEndpointVFSConfig = z.object({
+  vfs_config: TStorageEndpointVFSConfig.nullable(),
+})
+
 export const TCreateStorageEndpoint = z.object({
   id: z.number(),
 })
+
+export const TSetStorageEndpointVFSConfig = TStorageEndpointVFSConfig

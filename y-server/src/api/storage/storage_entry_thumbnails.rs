@@ -6,7 +6,6 @@ use actix_web::http::header::{self, HeaderValue};
 use actix_web::web::Query;
 use actix_web::{get, web, HttpResponse, Responder};
 use base64::prelude::*;
-use log::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
@@ -82,20 +81,20 @@ async fn storage_entry_thumbnails(
     }
 
     if !action_allowed {
-        return error("storage.entry_thumbnails.unauthorized");
+        return error("storage.access_denied");
     }
 
     // TODO? cache endpoints?
     let endpoint = get_storage_endpoint(endpoint_id, &**pool).await;
 
     if endpoint.is_err() {
-        return error("storage.entry_thumbnails.endpoint_not_found");
+        return error("storage.endpoint_not_found");
     }
 
     let endpoint = endpoint.unwrap();
 
     if endpoint.artifacts_path.is_none() {
-        return error("storage.entry_thumbnails.artifacts_disabled");
+        return error("storage.endpoint_artifacts_disabled");
     }
 
     let endpoint_artifacts_path = endpoint.artifacts_path.unwrap();
@@ -139,8 +138,12 @@ async fn storage_entry_thumbnails(
             for file_entry in file_entries {
                 let thumbnail_path = Path::new(endpoint_artifacts_path.as_str())
                     .join("thumbnails")
-                    .join(file_entry.filesystem_id)
+                    .join(&file_entry.filesystem_id)
                     .with_extension("webp");
+
+                let frames_path = Path::new(endpoint_artifacts_path.as_str())
+                    .join("thumbnails")
+                    .join(&file_entry.filesystem_id);
 
                 if thumbnail_path.exists() {
                     let thumbnail = fs::read(thumbnail_path);
@@ -149,6 +152,37 @@ async fn storage_entry_thumbnails(
                         let thumbnail_base64 = BASE64_STANDARD.encode(thumbnail.unwrap());
 
                         thumbnails.insert(file_entry.id.to_string(), thumbnail_base64);
+                    }
+                }
+
+                // TODO probably ok, but think about optimizing this
+                if frames_path.exists() {
+                    let frames = fs::read_dir(frames_path);
+
+                    if let Ok(frames) = frames {
+                        let mut i = 0;
+
+                        let mut sorted_frames = frames.collect::<Vec<_>>();
+
+                        sorted_frames.sort_by(|a, b| {
+                            let a = a.as_ref().unwrap().file_name();
+                            let b = b.as_ref().unwrap().file_name();
+
+                            a.cmp(&b)
+                        });
+
+                        for frame_path in sorted_frames {
+                            let frame_path = frame_path.unwrap().path();
+                            let frame = fs::read(frame_path);
+
+                            if frame.is_ok() {
+                                let frame_base64 = BASE64_STANDARD.encode(frame.unwrap());
+
+                                thumbnails.insert(format!("{}:{}", file_entry.id, i), frame_base64);
+
+                                i += 1;
+                            }
+                        }
                     }
                 }
             }
@@ -164,9 +198,6 @@ async fn storage_entry_thumbnails(
 
             return res;
         }
-        Err(e) => {
-            error!("{:?}", e);
-            return error("storage.entry_thumbnails.internal");
-        }
+        Err(_) => error("storage.internal"),
     }
 }
