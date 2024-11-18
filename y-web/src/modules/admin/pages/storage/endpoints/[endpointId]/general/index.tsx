@@ -50,6 +50,7 @@ const StorageEndpointGeneralSubpage: Component<
       {
         onSuccess: () => {
           void queryClient.invalidateQueries([storageEndpointsKey])
+          void queryClient.invalidateQueries([adminStorageEndpointsKey])
           void queryClient.invalidateQueries([
             adminStorageEndpointsKey,
             { endpointId: props.endpoint.id },

@@ -20,6 +20,7 @@ import { genericErrorToast } from "@/app/core/util/toast-utils"
 import { setStorageEndpointVFSConfig } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.api"
 import { IStorageEndpointVFSConfig } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.codecs"
 import {
+  adminStorageEndpointsKey,
   adminStorageEndpointsVFSConfigKey,
   useStorageEndpointVFSConfig,
 } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.service"
@@ -61,6 +62,7 @@ const StorageEndpointVFSSubpage: Component<StorageEndpointVFSSubpageProps> = (
             icon: "check",
           })
 
+          void queryClient.invalidateQueries([adminStorageEndpointsKey])
           void queryClient.invalidateQueries([
             adminStorageEndpointsVFSConfigKey,
             { endpointId: props.endpoint.id },

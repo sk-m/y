@@ -28,8 +28,10 @@ pub async fn mount_vfs_endpoints(state: &mut VFSState, pool: &mut RequestPool) {
     if let Ok(endpoints) = endpoints {
         for endpoint in endpoints {
             info!(
-                "Mounting endpoint {} at {}...",
-                endpoint.endpoint_id, endpoint.mountpoint
+                "Mounting endpoint {} ({}) at {}...",
+                endpoint.endpoint_id,
+                if endpoint.writable { "rw" } else { "ro" },
+                endpoint.mountpoint
             );
 
             let options = vec![

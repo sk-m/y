@@ -16,6 +16,7 @@ import { routes } from "@/app/routes"
 import { useStorageEndpoints } from "@/modules/admin/storage/storage-endpoint/storage-endpoint.service"
 import { useAuth } from "@/modules/core/auth/auth.service"
 
+import { StorageEndpointVFSPill } from "./components/storage-endpoint-vfs-pill"
 import "./endpoints-page.less"
 
 const endpointStatusSortingWeight = {
@@ -83,6 +84,9 @@ const EndpointsList: Component = () => {
                   <div class="pills">
                     <Show when={endpoint.access_rules_enabled}>
                       <Pill variant="success">access rules</Pill>
+                    </Show>
+                    <Show when={endpoint.vfs_enabled}>
+                      <StorageEndpointVFSPill />
                     </Show>
                   </div>
 

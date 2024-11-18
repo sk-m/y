@@ -21,6 +21,7 @@ import { useAuth } from "@/modules/core/auth/auth.service"
 
 import { StorageEndpointStatusPill } from "../components/storage-endpoint-status-pill"
 import { StorageEndpointTypePill } from "../components/storage-endpoint-type-pill"
+import { StorageEndpointVFSPill } from "../components/storage-endpoint-vfs-pill"
 import StorageEndpointGeneralSubpage from "./general"
 import StorageEndpointVFSSubpage from "./vfs"
 
@@ -97,6 +98,9 @@ const StorageEndpointPage = () => {
               />
               <Show when={$storageEndpoint.data!.access_rules_enabled}>
                 <Pill variant="success">access rules</Pill>
+              </Show>
+              <Show when={$storageEndpoint.data!.vfs_enabled}>
+                <StorageEndpointVFSPill />
               </Show>
             </Stack>
           </Stack>
