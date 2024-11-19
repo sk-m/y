@@ -41,11 +41,13 @@ const TWebsocketMessage = z
 type IWebsocketMessage = z.infer<typeof TWebsocketMessage>
 
 const createWebsocketController = () => {
+  const websocketProtocol = location.protocol === "https:" ? "wss:" : "ws:"
+
   // TODO the heartbeat task is running on the server, but there might be a situation
   // where the server goes down and the client does not know about it, because it does
   // not have it's own heartbeat checks. Maybe check heartbeat from the client as well?
   const ws = makeReconnectingWS(
-    `ws://${window.location.host}/api/ws`,
+    `${websocketProtocol}//${window.location.host}/api/ws`,
     // eslint-disable-next-line no-undefined
     undefined,
     {
