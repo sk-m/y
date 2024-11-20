@@ -6,6 +6,7 @@ authors = ["sk-m <m@ax.mk>"]
 description = "y API server"
 repository = "https://github.com/sk-m/y"
 publish = false
+default-run = "y-server"
 
 [dependencies]
 actix-web = "4"
@@ -38,3 +39,6 @@ libc = "0.2.161"
 fuser = "0.15.0"
 users = "0.11.0"
 actix-ws = "0.3.0"
+colored = "2.1.0"
+inquire = "0.7.5"
+clap = { version = "4.5.21", features = ["derive"] }

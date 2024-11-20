@@ -1,21 +1,10 @@
-mod api;
-mod config;
-mod db;
-mod request;
-mod right;
-mod storage_access;
-mod storage_archives;
-mod storage_endpoint;
-mod storage_entry;
-mod user;
-mod user_group;
-mod util;
-mod vfs;
-mod vfs_manager;
-mod vfs_util;
-mod ws;
+use y_server::*;
 
-use crate::storage_archives::cleanup_storage_archives;
+use storage_archives::cleanup_storage_archives;
+use util::RequestPool;
+use vfs_manager::{mount_vfs_endpoints, VFSState};
+use ws::WSState;
+
 use actix_web::{web, App, HttpServer};
 use chrono::{FixedOffset, Local};
 use dotenvy::dotenv;
@@ -28,9 +17,6 @@ use std::process::exit;
 use std::sync::Mutex;
 use std::{env, fs, io};
 use std::{str::FromStr, time::Duration};
-use util::RequestPool;
-use vfs_manager::{mount_vfs_endpoints, VFSState};
-use ws::WSState;
 
 async fn process_cli_arguments(pool: &RequestPool) {
     let cli_arguments: Vec<String> = env::args().collect();
