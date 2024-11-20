@@ -36,7 +36,7 @@ base64 = "0.21.7"
 infer = "0.15.0"
 validator = { version = "0.17.0", features = ["derive"] }
 libc = "0.2.161"
-fuser = "0.15.0"
+fuser = { version = "0.15.0", features = [], default-features = false }
 users = "0.11.0"
 actix-ws = "0.3.0"
 colored = "2.1.0"
