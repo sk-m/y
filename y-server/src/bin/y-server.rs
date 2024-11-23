@@ -18,42 +18,49 @@ use std::sync::Mutex;
 use std::{env, fs, io};
 use std::{str::FromStr, time::Duration};
 
-async fn process_cli_arguments(pool: &RequestPool) {
+const Y_VERSION: &str = "0.0.8-alpha";
+
+fn process_cli_arguments() {
     let cli_arguments: Vec<String> = env::args().collect();
 
-    for (index, argument) in cli_arguments.iter().enumerate() {
-        if argument == "--create-user" {
-            let username = &cli_arguments.get(index + 1);
-            let password = &cli_arguments.get(index + 2);
-            let group_name = &cli_arguments.get(index + 3);
-
-            if let (Some(username), Some(password)) = (username, password) {
-                println!("Creating a user and exiting...");
-
-                let create_user = util::cli_create_user(
-                    pool,
-                    username,
-                    password,
-                    group_name.and_then(|name| Some(name.as_str())),
-                )
-                .await;
-
-                match create_user {
-                    Ok(_) => {
-                        println!("No errors reported.");
-                        exit(0);
-                    }
-                    Err(error) => {
-                        println!("{}", error);
-                        exit(1);
-                    }
-                }
-            } else {
-                println!("Usage: --create-user <username> <password> [group]");
-                println!("  group: (optional) name of the group the user will be assigned to.");
-                exit(1);
-            }
+    for (_, argument) in cli_arguments.iter().enumerate() {
+        if argument == "-v" || argument == "--version" {
+            println!("{}", Y_VERSION);
+            exit(0);
         }
+
+        // if argument == "--create-user" {
+        //     let username = &cli_arguments.get(index + 1);
+        //     let password = &cli_arguments.get(index + 2);
+        //     let group_name = &cli_arguments.get(index + 3);
+
+        //     if let (Some(username), Some(password)) = (username, password) {
+        //         println!("Creating a user and exiting...");
+
+        //         let create_user = util::cli_create_user(
+        //             pool,
+        //             username,
+        //             password,
+        //             group_name.and_then(|name| Some(name.as_str())),
+        //         )
+        //         .await;
+
+        //         match create_user {
+        //             Ok(_) => {
+        //                 println!("No errors reported.");
+        //                 exit(0);
+        //             }
+        //             Err(error) => {
+        //                 println!("{}", error);
+        //                 exit(1);
+        //             }
+        //         }
+        //     } else {
+        //         println!("Usage: --create-user <username> <password> [group]");
+        //         println!("  group: (optional) name of the group the user will be assigned to.");
+        //         exit(1);
+        //     }
+        // }
     }
 }
 
@@ -80,6 +87,9 @@ fn setup_job_scheduler(pool: RequestPool) {
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
+    // Process command line arguments. We might want to do something and terminate
+    process_cli_arguments();
+
     // Load the .env file
     dotenv().ok();
 
@@ -114,9 +124,6 @@ async fn main() -> io::Result<()> {
 
     // Connect to the database
     let mut pool = db::connect().await;
-
-    // Process command line arguments. We might want to do something and terminate
-    process_cli_arguments(&pool).await;
 
     // VFS
     let mut vfs_state = VFSState {

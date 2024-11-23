@@ -1,5 +1,6 @@
 pub type RequestPool = sqlx::Pool<sqlx::Postgres>;
 
+// TODO! move this into y-cli
 pub async fn cli_create_user(
     pool: &RequestPool,
     username: &str,
