@@ -7,6 +7,8 @@ use sqlx::{
 use std::time::Duration;
 use std::{env, str::FromStr};
 
+use crate::util::Y_VERSION;
+
 pub async fn connect() -> sqlx::Pool<Postgres> {
     let max_connections = env::var("DATABASE_MAX_CONNECTIONS")
         .unwrap_or("5".to_string())
@@ -22,6 +24,7 @@ pub async fn connect() -> sqlx::Pool<Postgres> {
 
     let options = PgConnectOptions::from_str(&database_url.as_str())
         .unwrap()
+        .application_name(&format!("y server {}", Y_VERSION))
         .disable_statement_logging()
         .log_slow_statements(log::LevelFilter::Warn, Duration::from_secs(1));
 

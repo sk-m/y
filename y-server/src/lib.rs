@@ -3,6 +3,7 @@ pub mod config;
 pub mod db;
 pub mod request;
 pub mod right;
+pub mod scheduler;
 pub mod storage_access;
 pub mod storage_archives;
 pub mod storage_endpoint;
