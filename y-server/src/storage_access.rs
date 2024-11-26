@@ -1,6 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-use log::*;
 use serde::Serialize;
 use sqlx::FromRow;
 
@@ -28,10 +27,12 @@ impl StorageAccessType {
     }
 }
 
+type RuleSource = i32;
+type TreeStep = i32;
+
 pub enum StorageAccessCheckResult {
     Explicit(StorageAccessType),
-    // user_group_id: (Access Type, Rule Source, Tree Step)
-    Inherited(HashMap<i32, (StorageAccessType, i32, i32)>),
+    Inherited(HashMap<i32, (StorageAccessType, RuleSource, TreeStep)>),
 }
 
 // TODO ew @cleanup
@@ -109,11 +110,12 @@ pub struct ProccessEntryRuleInput {
 pub fn process_storage_entry(
     rules: &[ProccessEntryRuleInput],
 ) -> (
-    HashMap<i32, (StorageAccessType, i32, i32)>,
-    (StorageAccessType, i32, i32),
+    HashMap<i32, (StorageAccessType, RuleSource, TreeStep)>,
+    (StorageAccessType, RuleSource, TreeStep),
 ) {
-    let mut group_rules: HashMap<i32, (StorageAccessType, i32, i32)> = HashMap::new();
-    let mut user_rule: (StorageAccessType, i32, i32) = (StorageAccessType::Unset, -1, 1);
+    let mut group_rules: HashMap<i32, (StorageAccessType, RuleSource, TreeStep)> = HashMap::new();
+    let mut user_rule: (StorageAccessType, RuleSource, TreeStep) =
+        (StorageAccessType::Unset, -1, 1);
 
     // TODO Are we sure we need to compare rule_sources? The SQL query will always ORDER BY rule_source DESC.
     // I think we should just rely on the input data. The higher rule source will always be processed first, so no overrides should happen, hence no checks and no keeping track of rule_source.
@@ -499,12 +501,8 @@ pub async fn check_bulk_storage_entries_access_cascade_up(
         // No entries have explicitly denied access, and no entries are inheriting access rules from
         // their parents. We are done here, the action is allowed.
 
-        debug!("No entries that have explicitly denied access, and no entries are inheriting access rules from their parents. We are done here, the action is allowed.");
-
         return true;
     }
-
-    debug!("None of selected entries have denied access and some of them are inheriting access rules from their parents, now we need to go up the tree and check");
 
     // Looks like none of the target entries have *explicitly* denied access. Now let's recursively check
     // their parents, they might have inherited access rules from their parents.
