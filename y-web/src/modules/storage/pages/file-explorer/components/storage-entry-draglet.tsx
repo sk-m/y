@@ -37,9 +37,6 @@ export const StorageEntryDraglet: Component<StorageEntryDragletProps> = (
           </div>
           <div class="name">
             {props.state.entry?.name}
-            {props.state.entry?.extension
-              ? `.${props.state.entry.extension}`
-              : ""}
             {props.state.selectedEntriesCount > 1
               ? ` and ${props.state.selectedEntriesCount - 1} other`
               : ""}

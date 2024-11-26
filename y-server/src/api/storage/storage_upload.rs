@@ -147,21 +147,11 @@ async fn storage_upload(
     while let Some(item) = payload.next().await {
         if let Ok(mut field) = item {
             let file_relative_path = field.content_disposition().get_filename().clone();
-            let full_filename = field.name().to_string();
+            let file_name = field.name().to_string();
 
             if let Some(file_relative_path) = file_relative_path {
                 let file_filesystem_id = Uuid::new_v4().to_string();
                 let mut file_relative_path = String::from(file_relative_path);
-
-                let name_separator = full_filename.rfind('.').unwrap_or(full_filename.len());
-
-                let (file_name, file_extension) = full_filename.split_at(name_separator);
-
-                let file_extension = if file_extension.len() > 0 {
-                    Some(file_extension.trim_start_matches('.'))
-                } else {
-                    None
-                };
 
                 // Now we need to find the folder where the file will be uploaded to.
                 //
@@ -346,12 +336,11 @@ async fn storage_upload(
                         None
                     };
 
-                    let create_file_result = sqlx::query("INSERT INTO storage_entries (endpoint_id, filesystem_id, parent_folder, name, extension, mime_type, size_bytes, created_by, created_at, entry_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), 'file'::storage_entry_type)")
+                    let create_file_result = sqlx::query("INSERT INTO storage_entries (endpoint_id, filesystem_id, parent_folder, name, mime_type, size_bytes, created_by, created_at, entry_type) VALUES ($1, $2, $3, $4, $5, $6, $7, now(), 'file'::storage_entry_type)")
                     .bind(endpoint_id)
                     .bind(&file_filesystem_id)
                     .bind(parent_folder_id)
-                    .bind(file_name)
-                    .bind(file_extension)
+                    .bind(&file_name)
                     .bind(file_mime_type)
                     .bind(file_size_bytes)
                     .bind(client_user_id)
@@ -365,7 +354,7 @@ async fn storage_upload(
 
                         // TODO: it's kind of dumb to upload a file only to delete it later if it already exists...
 
-                        skipped_files.push(full_filename);
+                        skipped_files.push(file_name);
 
                         warn!("{}", create_file_result.unwrap_err());
 
@@ -377,7 +366,7 @@ async fn storage_upload(
                     // For some reason, we could not write the file onto the filesystem.
                     // This is not critical, we can continue.
 
-                    skipped_files.push(full_filename.clone());
+                    skipped_files.push(file_name.clone());
                 }
             } else {
                 return sink_and_error("storage.upload.no_filename", &mut payload).await;

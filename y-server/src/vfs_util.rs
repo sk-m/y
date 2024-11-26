@@ -43,30 +43,16 @@ pub fn vfs_find_entry(
     name: &str,
     pool: &mut RequestPool,
 ) -> Result<VFSStorageEntry, sqlx::Error> {
-    let name_separator = name.rfind('.').unwrap_or(name.len());
-
-    let (target_name, mut target_extension) = name.split_at(name_separator);
-
-    if target_extension.len() > 0 {
-        target_extension = target_extension.trim_start_matches('.');
-    }
-
     block_on(
         sqlx::query_as::<_, VFSStorageEntry>(
             format!(
-                "SELECT id, filesystem_id FROM storage_entries WHERE endpoint_id = $1 AND parent_folder {} AND name = $3 AND extension {}",
+                "SELECT id, filesystem_id FROM storage_entries WHERE endpoint_id = $1 AND parent_folder {} AND name = $3",
                 if parent_folder > 0 { "= $2" } else { "IS NULL" },
-                if target_extension.len() > 0 {
-                    "= $4"
-                } else {
-                    "IS NULL"
-                }
             ).as_str()
         )
         .bind(endpoint_id)
         .bind(parent_folder)
-        .bind(target_name)
-        .bind(target_extension)
+        .bind(name)
         .fetch_one(&*pool)
     )
 }
@@ -79,14 +65,6 @@ pub fn vfs_create_entry(
     parent_folder: i64,
     pool: &mut RequestPool,
 ) -> Result<FileAttr, StorageError> {
-    let name_separator = name.rfind('.').unwrap_or(name.len());
-
-    let (target_name, mut target_extension) = name.split_at(name_separator);
-
-    if target_extension.len() > 0 {
-        target_extension = target_extension.trim_start_matches('.');
-    }
-
     let filesystem_id = Uuid::new_v4().to_string();
 
     let file_path = Path::new(endpoint_base_path).join(&filesystem_id);
@@ -95,22 +73,16 @@ pub fn vfs_create_entry(
     if let Ok(mut file) = file {
         let entry_result = block_on(sqlx::query_scalar::<_, i64>(
             format!(
-            "INSERT INTO storage_entries (endpoint_id, name, extension, parent_folder, entry_type, filesystem_id, created_at) VALUES ($1, $2, {}, {}, 'file'::storage_entry_type, $5, now()) RETURNING id",
-                if target_extension.len() > 0 {
-                    "$3"
-                } else {
-                    "NULL"
-                },
+            "INSERT INTO storage_entries (endpoint_id, name, parent_folder, entry_type, filesystem_id, created_at) VALUES ($1, $2, {}, 'file'::storage_entry_type, $4, now()) RETURNING id",
                 if parent_folder > 0 {
-                    "$4"
+                    "$3"
                 } else {
                     "NULL"
                 }
             ).as_str(),
         )
         .bind(endpoint_id)
-        .bind(target_name)
-        .bind(target_extension)
+        .bind(name)
         .bind(parent_folder)
         .bind(filesystem_id)
         .fetch_one(&*pool));
@@ -216,24 +188,14 @@ pub fn vfs_delete_entry_from_db(
     name: &str,
     pool: &mut RequestPool,
 ) -> Result<VFSStorageEntry, StorageError> {
-    let name_separator = name.rfind('.').unwrap_or(name.len());
-
-    let (target_name, mut target_extension) = name.split_at(name_separator);
-
-    if target_extension.len() > 0 {
-        target_extension = target_extension.trim_start_matches('.');
-    }
-
     let delete_result = block_on(
         sqlx::query_as::<_, VFSStorageEntry>(
-            format!("DELETE FROM storage_entries WHERE endpoint_id = $1 AND name = $2 AND extension {} AND parent_folder {} RETURNING id, filesystem_id",
-                if target_extension.len() > 0 { "= $3" } else { "IS NULL" },
-                if parent_folder > 0 { "= $4" } else { "IS NULL" }
+            format!("DELETE FROM storage_entries WHERE endpoint_id = $1 AND name = $2 AND parent_folder {} RETURNING id, filesystem_id",
+                if parent_folder > 0 { "= $3" } else { "IS NULL" }
             ).as_str(),
         )
             .bind(endpoint_id)
-            .bind(target_name)
-            .bind(target_extension)
+            .bind(name)
             .bind(parent_folder)
             .fetch_one(&*pool),
     );

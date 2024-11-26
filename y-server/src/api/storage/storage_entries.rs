@@ -14,7 +14,6 @@ struct StorageEntryRow {
     id: i64,
     parent_folder: Option<i64>,
     name: String,
-    extension: Option<String>,
     entry_type: String,
     mime_type: Option<String>,
     size_bytes: Option<i64>,
@@ -77,26 +76,15 @@ async fn storage_entries(
         return error("storage.access_denied");
     }
 
-    let entries = if folder_id.is_some() {
-        // Entries inside of a folder
-
+    let entries = 
         sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT, downloads_count, transcoded_version_available FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2",
+            &format!(
+            "SELECT id, name, parent_folder, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT, downloads_count, transcoded_version_available FROM storage_entries WHERE endpoint_id = $1 AND parent_folder {}", if folder_id.is_some() { "= $2" } else { "IS NULL" } ),
         )
         .bind(endpoint_id)
         .bind(folder_id)
         .fetch_all(&**pool)
-        .await
-    } else {
-        // Entries on the root level
-
-        sqlx::query_as::<_, StorageEntryRow>(
-            "SELECT id, name, parent_folder, extension, mime_type, size_bytes, created_by, created_at::TEXT, entry_type::TEXT, downloads_count, transcoded_version_available FROM storage_entries WHERE endpoint_id = $1 AND parent_folder IS NULL",
-        )
-        .bind(endpoint_id)
-        .fetch_all(&**pool)
-        .await
-    };
+        .await;
 
     if entries.is_err() {
         return error("storage.internal");

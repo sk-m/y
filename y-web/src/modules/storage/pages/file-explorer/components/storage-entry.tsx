@@ -86,6 +86,16 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
   })
 
   const fileMimeType = createMemo(() => props.entry.mime_type?.split("/") ?? [])
+  const fileNameParts = createMemo(() => {
+    const separatorPos = props.entry.name.lastIndexOf(".")
+
+    return separatorPos === -1
+      ? [props.entry.name, null]
+      : [
+          props.entry.name.slice(0, separatorPos),
+          props.entry.name.slice(separatorPos + 1),
+        ]
+  })
 
   const onDragStart = (event: DragEvent) => {
     setIsDragging(true)
@@ -335,18 +345,14 @@ export const StorageEntry: Component<StorageEntryProps> = (props) => {
         }}
       >
         <div ref={nameFloaterRef} class="item-name-floater">
-          <div class="name">
-            {`${props.entry.name}${
-              props.entry.extension ? `.${props.entry.extension}` : ""
-            }`}
-          </div>
+          <div class="name">{props.entry.name}</div>
         </div>
         <div class="item-name">
           <div hidden={props.isRenaming} class="name">
-            {props.entry.name}
+            {fileNameParts()[0]}
           </div>
-          <Show when={!props.isRenaming && props.entry.extension}>
-            <div class="extension">{props.entry.extension}</div>
+          <Show when={!props.isRenaming && fileNameParts()[1]}>
+            <div class="extension">{fileNameParts()[1]}</div>
           </Show>
           {/* <Show when={!props.isRenaming && props.entry.entry_type === "folder"}>
             <div class="icon">

@@ -66,7 +66,6 @@ pub struct StorageFolder {
 struct PartialStorageFileRow {
     filesystem_id: String,
     name: String,
-    extension: Option<String>,
 }
 
 #[derive(FromRow)]
@@ -96,7 +95,7 @@ async fn traverse_folder(
 
     // Find files inside of the target folder
     let folder_files = sqlx::query_as::<_, PartialStorageFileRow>(
-        "SELECT filesystem_id, name, extension FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND storage_entries.entry_type = 'file'::storage_entry_type",
+        "SELECT filesystem_id, name FROM storage_entries WHERE endpoint_id = $1 AND parent_folder = $2 AND storage_entries.entry_type = 'file'::storage_entry_type",
     )
     .bind(endpoint_id)
     .bind(target_folder_id)
@@ -106,16 +105,10 @@ async fn traverse_folder(
     match folder_files {
         Ok(folder_files) => {
             for file in folder_files {
-                let file_base_path = if current_path.len() > 0 {
+                let file_path = if current_path.len() > 0 {
                     format!("{}/{}", current_path, file.name)
                 } else {
                     file.name
-                };
-
-                let file_path = if file.extension.is_some() {
-                    format!("{}.{}", file_base_path, file.extension.unwrap())
-                } else {
-                    file_base_path
                 };
 
                 resolved_entries.insert(file_path, file.filesystem_id);
@@ -391,7 +384,7 @@ pub async fn resolve_entries(
     // Proccess files
     if target_files.len() > 0 {
         let files = sqlx::query_as::<_, PartialStorageFileRow>(
-            "SELECT filesystem_id, name, extension FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2) AND storage_entries.entry_type = 'file'::storage_entry_type",
+            "SELECT filesystem_id, name FROM storage_entries WHERE endpoint_id = $1 AND id = ANY($2) AND storage_entries.entry_type = 'file'::storage_entry_type",
         )
         .bind(endpoint_id)
         .bind(target_files)
@@ -401,13 +394,7 @@ pub async fn resolve_entries(
         match files {
             Ok(files) => {
                 for file in files {
-                    let file_name = if file.extension.is_some() {
-                        format!("{}.{}", file.name, file.extension.unwrap())
-                    } else {
-                        file.name
-                    };
-
-                    resolved_entries.insert(file_name, file.filesystem_id);
+                    resolved_entries.insert(file.name, file.filesystem_id);
                 }
             }
 

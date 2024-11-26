@@ -537,7 +537,6 @@ impl Filesystem for YFS {
         struct StorageEntry {
             id: i64,
             name: String,
-            extension: Option<String>,
             entry_type: String,
         }
 
@@ -546,7 +545,7 @@ impl Filesystem for YFS {
         let entries_result = block_on(
             sqlx::query_as::<_, StorageEntry>(
                 format!(
-                    "SELECT id, name, extension, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder {}",
+                    "SELECT id, name, entry_type::TEXT FROM storage_entries WHERE endpoint_id = $1 AND parent_folder {}",
                     if adjusted_ino == 0 { "IS NULL" } else { "= $2" }
                 ).as_str()
             )
@@ -581,12 +580,6 @@ impl Filesystem for YFS {
         entries.extend(entries_result.into_iter().map(|entry| {
             let is_file = entry.entry_type == "file";
 
-            let name = if is_file && entry.extension.is_some() {
-                format!("{}.{}", entry.name, entry.extension.unwrap())
-            } else {
-                entry.name
-            };
-
             (
                 entry.id as u64 + 1,
                 if is_file {
@@ -594,7 +587,7 @@ impl Filesystem for YFS {
                 } else {
                     FileType::Directory
                 },
-                name,
+                entry.name,
             )
         }));
 
@@ -680,49 +673,17 @@ impl Filesystem for YFS {
         let adjusted_parent_ino = parent as i64 - 1;
         let adjusted_newparent_ino = newparent as i64 - 1;
 
-        let old_full_name = name.to_string_lossy();
-        let new_full_name = newname.to_string_lossy();
-
-        let old_name_separator = old_full_name.rfind('.').unwrap_or(old_full_name.len());
-        let new_name_separator = new_full_name.rfind('.').unwrap_or(new_full_name.len());
-
-        let (old_name, mut old_extension) = old_full_name.split_at(old_name_separator);
-        let (new_name, mut new_extension) = new_full_name.split_at(new_name_separator);
-
-        if old_extension.len() > 0 {
-            old_extension = old_extension.trim_start_matches('.');
-        }
-
-        if new_extension.len() > 0 {
-            new_extension = new_extension.trim_start_matches('.');
-        }
-
         let rename_sql = format!(
-            "UPDATE storage_entries SET parent_folder = $1, name = $2, extension = $3 WHERE endpoint_id = $4 AND parent_folder {} AND name = $6 AND extension {} RETURNING id",
-            if adjusted_parent_ino > 0 { "= $5" } else { "IS NULL" },
-            if old_extension.len() > 0 {
-                "= $7"
-            } else {
-                "IS NULL"
-            }
+            "UPDATE storage_entries SET parent_folder = $1, name = $2 WHERE endpoint_id = $3 AND parent_folder {} AND name = $5 RETURNING id",
+            if adjusted_parent_ino > 0 { "= $4" } else { "IS NULL" },
         );
 
         let rename_query = sqlx::query_scalar::<_, Option<i64>>(rename_sql.as_str())
             .bind(adjusted_newparent_ino)
-            .bind(new_name)
-            .bind(if new_extension.len() > 0 {
-                Some(new_extension)
-            } else {
-                None
-            })
+            .bind(newname.to_string_lossy())
             .bind(self.endpoint_id)
             .bind(adjusted_parent_ino)
-            .bind(old_name)
-            .bind(if old_extension.len() > 0 {
-                Some(old_extension)
-            } else {
-                None
-            });
+            .bind(name.to_string_lossy());
 
         let rename_result = block_on(rename_query.fetch_one(&self.db_pool));
 
@@ -769,20 +730,10 @@ impl Filesystem for YFS {
                         let retry_rename_query =
                             sqlx::query_scalar::<_, Option<i64>>(rename_sql.as_str())
                                 .bind(adjusted_newparent_ino)
-                                .bind(new_name)
-                                .bind(if new_extension.len() > 0 {
-                                    Some(new_extension)
-                                } else {
-                                    None
-                                })
+                                .bind(newname.to_string_lossy())
                                 .bind(self.endpoint_id)
                                 .bind(adjusted_parent_ino)
-                                .bind(old_name)
-                                .bind(if old_extension.len() > 0 {
-                                    Some(old_extension)
-                                } else {
-                                    None
-                                });
+                                .bind(name.to_string_lossy());
 
                         let retry_rename_result =
                             block_on(retry_rename_query.fetch_one(&self.db_pool));

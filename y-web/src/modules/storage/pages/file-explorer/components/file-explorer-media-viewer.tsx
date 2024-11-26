@@ -200,10 +200,7 @@ export const FileExplorerMediaViewer: Component<
             </button>
           </div>
           <div class="middle">
-            <div class="file-name">
-              {props.entry.name}
-              {props.entry.extension ? `.${props.entry.extension}` : ""}
-            </div>
+            <div class="file-name">{props.entry.name}</div>
           </div>
           <div class="right">
             <button class="action-button" onClick={props.onDownload}>

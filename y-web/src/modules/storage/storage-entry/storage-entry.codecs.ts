@@ -20,7 +20,6 @@ export const TStorageEntry = z.object({
    *  */
   parent_folder: z.number().nullable(),
   name: z.string(),
-  extension: z.string().nullable(),
   entry_type: z.enum(["file", "folder"]),
 
   mime_type: z.string().nullable(),

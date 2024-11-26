@@ -495,7 +495,7 @@ const FileExplorerPage: Component = () => {
         entryIds,
         targetFolderId:
           // eslint-disable-next-line no-undefined
-          targetFolderId === null ? undefined : targetFolderId ?? folderId(),
+          targetFolderId === null ? undefined : (targetFolderId ?? folderId()),
       },
       {
         onSuccess: () => {
@@ -598,7 +598,7 @@ const FileExplorerPage: Component = () => {
 
     for (const file of rawFiles) {
       // prettier-ignore
-      (file as FileWithPath).path = ""
+      ;(file as FileWithPath).path = ""
 
       files.push(file as FileWithPath)
     }
@@ -1285,9 +1285,6 @@ const FileExplorerPage: Component = () => {
                         }}
                       >
                         {contextMenuTargetEntry()!.name}
-                        {contextMenuTargetEntry()!.extension
-                          ? `.${contextMenuTargetEntry()!.extension!}`
-                          : ""}
                       </Text>
                     </Stack>
 

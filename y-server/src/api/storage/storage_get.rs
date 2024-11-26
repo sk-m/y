@@ -14,7 +14,6 @@ use crate::util::RequestPool;
 #[derive(Serialize, FromRow)]
 struct StorageEntryAndBasePathRow {
     name: String,
-    extension: Option<String>,
     filesystem_id: String,
     mime_type: Option<String>,
     base_path: String,
@@ -62,7 +61,7 @@ async fn storage_get(
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
-        "SELECT storage_entries.name, storage_entries.extension, storage_entries.filesystem_id, storage_entries.mime_type, storage_endpoints.base_path, storage_endpoints.artifacts_path FROM storage_entries
+        "SELECT storage_entries.name, storage_entries.filesystem_id, storage_entries.mime_type, storage_endpoints.base_path, storage_endpoints.artifacts_path FROM storage_entries
         RIGHT OUTER JOIN storage_endpoints ON storage_entries.endpoint_id = storage_endpoints.id
         WHERE storage_entries.id = $1 AND endpoint_id = $2",
     )

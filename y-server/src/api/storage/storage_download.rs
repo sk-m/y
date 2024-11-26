@@ -15,7 +15,6 @@ use crate::util::RequestPool;
 #[derive(Serialize, FromRow)]
 struct StorageEntryAndBasePathRow {
     name: String,
-    extension: Option<String>,
     filesystem_id: String,
     base_path: String,
 }
@@ -63,7 +62,7 @@ async fn storage_download(
     }
 
     let entry = sqlx::query_as::<_, StorageEntryAndBasePathRow>(
-        "SELECT storage_entries.name, storage_entries.extension, storage_entries.filesystem_id, storage_endpoints.base_path FROM storage_entries
+        "SELECT storage_entries.name, storage_entries.filesystem_id, storage_endpoints.base_path FROM storage_entries
         RIGHT OUTER JOIN storage_endpoints ON storage_entries.endpoint_id = storage_endpoints.id
         WHERE storage_entries.id = $1 AND endpoint_id = $2",
     )
@@ -88,15 +87,9 @@ async fn storage_download(
 
             let mut file = actix_files::NamedFile::open(file_path).unwrap();
 
-            let raw_filename = format!(
-                "{}.{}",
-                entry.name,
-                entry.extension.unwrap_or("".to_string())
-            );
-
             file = file.set_content_disposition(ContentDisposition {
                 disposition: DispositionType::Attachment,
-                parameters: vec![DispositionParam::Filename(raw_filename)],
+                parameters: vec![DispositionParam::Filename(entry.name)],
             });
 
             return file.into_response(&req);
