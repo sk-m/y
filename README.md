@@ -13,13 +13,18 @@ y does not install anything on your machine, so make sure you have everything re
 1. A linux machine.
 2. PostgreSQL (version 16.0 or higher).
 3. A web server (nginx/apache/etc.).
-4. Required packages: `apt install fuse3`.
 
 #### _Optional_ dependencies for the "storage" feature
 
 1. `imagemagick` - thumbnail generation.
 2. `ffmpeg` - video transcoding, thumbnail generation.
 3. `ffprobe` (usually comes with `ffmpeg`).
+
+##### If you are planning on using VFS
+
+1. Edit `/etc/fuse.conf` and uncomment the `user_allow_other` line.
+
+This is required because by default `fuse` allows access to the mounted filesystem _only_ to the user that performed the mount (`y-server` in this case), which would make the feature useless, as you won't be able to access mounted endpoints from any other user, including SMB, FTP and other servers.
 
 ### 2. Setting up PostgreSQL
 

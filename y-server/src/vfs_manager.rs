@@ -41,6 +41,7 @@ pub async fn mount_vfs_endpoints(state: &mut VFSState, pool: &mut RequestPool) {
                 } else {
                     MountOption::RO
                 },
+                MountOption::AllowOther,
                 MountOption::NoAtime,
                 MountOption::NoExec,
                 MountOption::NoDev,
